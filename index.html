@@ -1997,26 +1997,50 @@ function openDB(callback){
 }
 function saveBgToDB(blob, callback){
   openDB(function(db){
-    const tx = db.transaction('bg','readwrite');
-    tx.objectStore('bg').put(blob, 'custom');
-    tx.oncomplete = function(){ if(callback) callback(); };
-    tx.onerror = function(){ toast('保存失败'); };
+    try{
+      const tx = db.transaction('bg','readwrite');
+      tx.objectStore('bg').put(blob, 'custom');
+      tx.oncomplete = function(){ if(callback) callback(); };
+      tx.onerror = function(){ toast('保存失败'); };
+    }catch(e){
+      // bg store 不存在（极旧用户），手动升级数据库版本
+      console.warn('bg store 缺失，尝试创建');
+      const curVer = db.version;
+      db.close();
+      const req = indexedDB.open('learnAppDB', curVer + 1);
+      req.onupgradeneeded = function(ev){
+        const d = ev.target.result;
+        if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
+      };
+      req.onsuccess = function(ev){
+        const newDb = ev.target.result;
+        const tx = newDb.transaction('bg','readwrite');
+        tx.objectStore('bg').put(blob, 'custom');
+        tx.oncomplete = function(){ if(callback) callback(); };
+      };
+      req.onerror = function(){ toast('保存失败'); };
+    }
   });
 }
 function loadBgFromDB(callback){
   openDB(function(db){
-    const tx = db.transaction('bg','readonly');
-    const req = tx.objectStore('bg').get('custom');
-    req.onsuccess = function(){
-      const blob = req.result;
-      if(blob){
-        const url = URL.createObjectURL(blob);
-        callback(url);
-      } else {
-        callback(null);
-      }
-    };
-    req.onerror = function(){ callback(null); };
+    try{
+      const tx = db.transaction('bg','readonly');
+      const req = tx.objectStore('bg').get('custom');
+      req.onsuccess = function(){
+        const blob = req.result;
+        if(blob){
+          const url = URL.createObjectURL(blob);
+          callback(url);
+        } else {
+          callback(null);
+        }
+      };
+      req.onerror = function(){ callback(null); };
+    }catch(e){
+      // bg store 不存在，返回 null
+      callback(null);
+    }
   });
 }
 
