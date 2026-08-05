@@ -2334,7 +2334,12 @@ async function cloudPush(){
       method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`token ${token}`},
       body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:JSON.stringify(data)}}})
     });
-    if(resp.ok){_autoSyncDirty=false;_lastSyncTime=Date.now();$('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');}
+    if(resp.ok){
+      _autoSyncDirty=false;
+      // 用 Gitee 返回的服务器时间，确保和下次检查时一致
+      try{ const rj=await resp.json(); const rt=new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
+      $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
+    }
     else{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'推送失败'));}
   }catch(e){$('#cloudStatus').textContent='❌ 网络错误';}
 }
@@ -2357,7 +2362,9 @@ async function cloudPull(){
     {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));let c=false;Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];c=true;}});}
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
-    _lastSyncTime = new Date(data.updatedAt||0).getTime();
+    const t = new Date(data.updatedAt||0).getTime();
+    _lastKnownRemoteTime = t;
+    localStorage.setItem('lastRemoteTime', String(t));
     _autoSyncDirty = false;
     $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
     toast('已从云端同步');renderAll();$('#dataModal').classList.remove('show');
@@ -2383,6 +2390,7 @@ async function autoPush(){
     });
     if(resp.ok){
       _autoSyncDirty = false;
+      try{ const rj=await resp.json(); const rt=new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
       const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString();
     }
   }catch(_){}
@@ -2395,20 +2403,36 @@ function startAutoSyncTimer(){
   // 每 10 分钟检查一次，在线且有脏数据就推
   _autoSyncTimer = setInterval(() => autoPush(), 10 * 60 * 1000);
 }
-// 页面加载时询问是否拉取云端数据（先弹窗，确定后再请求，取消不浪费请求）
+// 页面加载时静默检查云端时间戳，只有云端更新了才弹窗询问
+let _lastKnownRemoteTime = 0; // 本地记录的云端最后更新时间
 async function askPullOnStart(){
   const token = localStorage.getItem('giteeToken')||'';
   const gistId = localStorage.getItem('giteeGistId')||'';
   if(!token || !gistId) return;
-  if(!confirm('是否从云端拉取最新数据？\n\n（请确保已在其他设备推送最新数据）')) return;
+  // 距上次检查不到 30 分钟，跳过
+  const lastCheck = parseInt(localStorage.getItem('lastCheckTime')||'0');
+  if(Date.now() - lastCheck < 30 * 60 * 1000) return;
+  // 读取本地记录的上次云端时间
+  _lastKnownRemoteTime = parseInt(localStorage.getItem('lastRemoteTime')||'0');
   try{
     const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
       headers:{'Authorization':`token ${token}`}
     });
-    if(!resp.ok){ toast('拉取失败，请检查网络或配置'); return; }
+    if(!resp.ok) return;
+    // 请求成功后才记录检查时间，避免失败时误拦后续检查
+    localStorage.setItem('lastCheckTime', String(Date.now()));
     const gist = await resp.json();
+    // 先检查是否有 learn-data.json 文件，没有就跳过
     const file = gist.files['learn-data.json'];
-    if(!file || !file.content){ toast('云端暂无数据'); return; }
+    if(!file || !file.content) return;
+    const updatedAt = gist.updated_at;
+    if(!updatedAt) return;
+    const remoteTime = new Date(updatedAt).getTime();
+    // 云端没有比本地记录更新，不弹窗
+    if(remoteTime <= _lastKnownRemoteTime) return;
+    // 云端更新了，弹窗询问
+    if(!confirm(`云端有更新的数据（${new Date(updatedAt).toLocaleString()}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)) return;
+    // 拉取完整数据
     const remote = JSON.parse(file.content);
     DOCS = remote.documents||[];
     PROGRESS = remote.progress||{};
@@ -2419,9 +2443,11 @@ async function askPullOnStart(){
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
     _autoSyncDirty = false;
+    localStorage.setItem('lastRemoteTime', String(remoteTime));
+    _lastKnownRemoteTime = remoteTime;
     renderAll();
     toast('已从云端拉取最新数据');
-  }catch(_){ toast('拉取失败，请检查网络'); }
+  }catch(_){}
 }
 
 // 添加题目弹窗
