@@ -529,14 +529,28 @@ const Store = (() => {
     return new Promise(resolve => {
       try{
         if(!('indexedDB' in window) || !window.indexedDB) throw new Error('no idb');
-        // 版本号 2：升级时同时创建 kv 和 bg 两个 store（修复旧用户只有 kv 缺少 bg 的 bug）
         const req = indexedDB.open('learnAppDB', 2);
         req.onupgradeneeded = e => {
           const d = e.target.result;
           if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', {keyPath:'key'});
           if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
         };
-        req.onsuccess = e => { db = e.target.result; resolve(); };
+        req.onsuccess = e => {
+          db = e.target.result;
+          // 兜底：如果 bg store 仍然缺失，再升一次版本创建
+          if(!db.objectStoreNames.contains('bg')){
+            const curVer = db.version;
+            db.close();
+            const r2 = indexedDB.open('learnAppDB', curVer + 1);
+            r2.onupgradeneeded = ev => {
+              if(!ev.target.result.objectStoreNames.contains('bg')) ev.target.result.createObjectStore('bg');
+            };
+            r2.onsuccess = ev => { db = ev.target.result; resolve(); };
+            r2.onerror = () => { useLS = true; resolve(); };
+          } else {
+            resolve();
+          }
+        };
         req.onerror = () => { useLS = true; resolve(); };
       }catch(_){ useLS = true; resolve(); }
     });
