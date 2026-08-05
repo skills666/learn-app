@@ -525,35 +525,22 @@ window.SEED = {"blank": true, "documents": []};
 const Store = (() => {
   const LS_KEY = 'learnAppData_v1';
   let db = null, useLS = false;
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   function open(){
     return new Promise(resolve => {
       try{
         if(!('indexedDB' in window) || !window.indexedDB) throw new Error('no idb');
-        function doOpen(){
-          const req = indexedDB.open('learnAppDB', DB_VERSION);
-          req.onupgradeneeded = e => {
-            const d = e.target.result;
-            if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', {keyPath:'key'});
-            if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
-          };
-          req.onsuccess = e => {
-            db = e.target.result;
-            // 完整性检查：两个 store 都必须存在
-            if(!db.objectStoreNames.contains('kv') || !db.objectStoreNames.contains('bg')){
-              db.close(); db = null;
-              indexedDB.deleteDatabase('learnAppDB').onsuccess = () => doOpen();
-              return;
-            }
-            resolve();
-          };
-          req.onerror = () => { useLS = true; resolve(); };
-          req.onblocked = () => {
-            // 有旧连接阻塞，等一下重试
-            setTimeout(() => doOpen(), 500);
-          };
-        }
-        doOpen();
+        const req = indexedDB.open('learnAppDB', DB_VERSION);
+        req.onupgradeneeded = e => {
+          const d = e.target.result;
+          if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', {keyPath:'key'});
+          if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
+        };
+        req.onsuccess = e => {
+          db = e.target.result;
+          resolve();
+        };
+        req.onerror = () => { useLS = true; resolve(); };
       }catch(_){ useLS = true; resolve(); }
     });
   }
@@ -1997,7 +1984,7 @@ document.addEventListener('click',()=>$('#themePopup').classList.remove('show'))
 
 // ===== IndexedDB 图片存储 =====
 function openBgDB(callback){
-  const req = indexedDB.open('learnAppDB', 2);
+  const req = indexedDB.open('learnAppDB', 3);
   req.onsuccess = function(e){ callback(e.target.result); };
   req.onerror = function(){ toast('数据库打开失败'); };
 }
