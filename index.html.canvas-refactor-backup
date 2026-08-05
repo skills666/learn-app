@@ -100,7 +100,7 @@
          box-shadow:var(--shadow);display:flex;flex-direction:column}
   .pcard .ptag{font-size:11px;letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
   .pcard .ptitle{font-size:22px;font-weight:800;line-height:1.5;margin:10px 0 18px;flex:1}
-  .pcard .panswer{color:#e8ecf5;line-height:1.8;font-size:18px;font-weight:600;border-top:1px dashed var(--line2);padding-top:16px}
+  .pcard .panswer{color:#d3d9ec;line-height:1.8;font-size:15.5px;border-top:1px dashed var(--line2);padding-top:16px}
   .pcard .panswer p{margin:0 0 10px}
   .pcard .panswer code{background:#0c0f1a;padding:1px 6px;border-radius:5px;color:var(--accent)}
   .pcard .panswer strong{color:#fff}
@@ -109,7 +109,7 @@
   .reveal-hint{color:var(--faint);font-size:13px;text-align:center;margin-top:14px}
 
   /* overview */
-  .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+  .ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px}
   .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
   .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -186,36 +186,6 @@
   .modal .row > div{flex:1}
   .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
   .modal .desc{color:var(--faint);font-size:12.5px;line-height:1.6;margin:6px 0 0}
-
-  /* ===== 设置弹窗（.settings-modal 作用域，不影响其它弹窗） ===== */
-  .settings-modal .modal{display:flex;flex-direction:column;max-height:88vh}
-  .settings-modal .modal-head{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-  .settings-modal .modal-title{font-size:17px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
-  .settings-modal .modal-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
-  .settings-modal .modal-x:hover{background:var(--card-hover);color:var(--text);border-color:var(--bad)}
-  .settings-modal .modal-scroll{flex:1;overflow-y:auto;padding:18px 24px}
-  .set-list{display:flex;flex-direction:column;gap:14px}
-  .set-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);transition:border-color .15s}
-  .set-section.open{border-color:var(--line2)}
-  .set-head{cursor:pointer;padding:14px 16px;font-size:14px;font-weight:700;color:var(--text);background:var(--panel);display:flex;justify-content:space-between;align-items:center;transition:.15s;user-select:none}
-  .set-head:hover{background:var(--card-hover)}
-  .set-section.open .set-head{color:var(--accent)}
-  .set-arrow{font-size:11px;transition:transform .25s;color:var(--muted)}
-  .set-section.open .set-arrow{transform:rotate(180deg);color:var(--accent)}
-  .set-body{padding:16px;background:var(--panel);display:flex;flex-direction:column;gap:18px}
-  .set-hint{font-size:12.5px;color:var(--muted);line-height:1.6;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:8px 0 18px}
-  .set-field{display:flex;align-items:center;gap:12px}
-  .set-field label{font-size:13px;font-weight:600;color:var(--text);min-width:66px;flex-shrink:0;text-align:right}
-  .set-field input,.set-field select{flex:1 1 auto;min-width:0;width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:9px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
-  .set-field input:focus,.set-field select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(139,124,246,.18)}
-  .set-row2{display:flex;gap:14px;margin-bottom:12px}
-  .set-row2 .set-field{flex:1 1 0;min-width:0}
-  .set-col{display:flex;flex-direction:column;gap:18px}
-  .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
-  .set-status{font-size:12px;color:var(--muted);margin-top:2px;width:100%;text-align:center}
-  .btn{padding:11px 18px}
-  .btn.sm{padding:9px 14px;font-size:12px}
-
   .seg{display:flex;gap:0;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:6px}
   .seg button{flex:1;background:var(--panel);border:none;color:var(--muted);padding:9px;cursor:pointer;font-size:13px;font-weight:600}
   .seg button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0e16}
@@ -225,7 +195,7 @@
          font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* ---------- 模拟面试 ---------- */
+  /* ---------- 弱项复习 / 模拟面试 ---------- */
   .feature-wrap{max-width:880px;margin:0 auto}
   .cfg-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .cfg-card h2{margin:0 0 4px;font-size:20px}
@@ -238,15 +208,10 @@
   .mock-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .mock-card .ptag{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .mock-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:.2s}
-  .memory-card:hover{border-color:var(--accent2)}
-  .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
-  .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-answer{border-top:1px dashed var(--line2);padding-top:16px;color:var(--muted);line-height:1.8;font-size:15px}
-  .memory-answer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
-  .memory-answer p{margin:0 0 10px}
-  .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
-  .memory-answer strong{color:var(--text)}
+  .timer{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;
+    background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:8px 16px;margin:2px 0 16px}
+  .timer.low{color:var(--bad);border-color:var(--bad);animation:tpulse 1s infinite}
+  @keyframes tpulse{50%{opacity:.45}}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -288,8 +253,32 @@
   .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
   .ai-grading{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px;max-height:600px;overflow-y:auto}
   /* 闪卡 */
+  .flash-card{background:var(--card);border:2px solid var(--line2);border-radius:18px;padding:40px 32px;text-align:center;cursor:pointer;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.3s}
+  .flash-card:hover{border-color:var(--accent2)}
+  .flash-card.flipped{border-color:var(--accent);background:linear-gradient(135deg,rgba(90,209,201,.06),rgba(139,124,246,.06))}
+  .flash-q{font-size:18px;font-weight:700;color:var(--text);line-height:1.6;margin-bottom:16px}
+  .flash-a{display:none;font-size:15px;color:var(--muted);line-height:1.8;text-align:left;max-width:700px;margin:0 auto}
+  .flash-card.flipped .flash-a{display:block}
+  .flash-card.flipped .flash-q{font-size:15px;color:var(--muted);font-weight:500;margin-bottom:20px}
+  .flash-card .hint{color:var(--faint);font-size:13px;margin-top:20px}
+  .flash-card.flipped .hint{display:none}
+  .flash-rate{display:none;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+  .flash-card.flipped .flash-rate{display:flex}
+  .flash-rate .r{flex:1;min-width:80px;padding:10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;font-weight:600;transition:.15s;text-align:center}
+  .flash-rate .r:hover{border-color:var(--accent2)}
+  .flash-rate .r.r1{border-color:var(--bad);color:var(--bad)}
+  .flash-rate .r.r2{border-color:var(--accent3);color:var(--accent3)}
+  .flash-rate .r.r3{border-color:var(--warn);color:var(--warn)}
+  .flash-rate .r.r4{border-color:var(--accent);color:var(--accent)}
+  .flash-rate .r.r5{border-color:var(--good);color:var(--good)}
+  .flash-progress{display:flex;justify-content:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .flash-progress .fp{width:12px;height:12px;border-radius:50%;background:var(--line);transition:.3s}
+  .flash-progress .fp.done{background:var(--good)}
+  .flash-progress .fp.now{border:2px solid var(--accent2);background:transparent;width:16px;height:16px;margin-top:-2px}
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
+  .flash-info{display:flex;align-items:center;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;font-size:12px;color:var(--muted)}
+  .flash-info b{color:var(--text)}
   /* 主题选择器 */
   .theme-popup{display:none;position:fixed;top:52px;right:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(5,1fr);gap:5px;max-width:340px}
   .theme-popup.show{display:grid}
@@ -297,19 +286,6 @@
   .theme-dot:hover{transform:scale(1.08);border-color:var(--accent2)}
   .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
   .theme-sep{grid-column:1/-1;font-size:10px;color:var(--faint);font-weight:700;letter-spacing:1px;padding:2px 0;text-align:center}
-  /* 项目拷打 */
-  .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
-    border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
-  .grill-resume:focus{border-color:var(--accent2)}
-  .grill-chat{display:flex;flex-direction:column;gap:12px;max-height:55vh;overflow-y:auto;padding-right:4px;margin:16px 0}
-  .grill-msg{max-width:85%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
-  .grill-msg.ai{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
-  .grill-msg.user{align-self:flex-end;background:rgba(139,124,246,.15);border:1px solid rgba(139,124,246,.3);border-bottom-right-radius:4px}
-  .grill-input-row{display:flex;gap:10px;margin-top:12px}
-  .grill-input-row input{flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line2);color:var(--text);border-radius:12px;font-size:14px;outline:none;font-family:inherit}
-  .grill-input-row input:focus{border-color:var(--accent2)}
-  .grill-loading{color:var(--muted);font-size:13px;text-align:center;padding:12px}
-  .grill-loading::after{content:'';display:inline-block;width:12px;height:12px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:6px;vertical-align:middle}
 
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
@@ -328,31 +304,25 @@
     .salary-card .salary-num{font-size:32px}
     .salary-card .salary-inner{padding:16px}
     .salary-card .salary-sub{font-size:10px}
-    .memory-card{padding:20px 16px}
-    .memory-card .ptitle{font-size:16px}
-    .memory-answer{font-size:13px}
+    .flash-card{padding:20px 16px;min-height:150px}
+    .flash-q{font-size:15px}
+    .flash-card.flipped .flash-q{font-size:13px}
+    .flash-card.flipped .flash-a{font-size:13px}
+    .flash-rate{gap:4px}
+    .flash-rate .r{padding:8px 4px;font-size:11px;min-width:50px}
+    .flash-info{font-size:10px;gap:8px}
+    .flash-progress{gap:5px}
+    .flash-progress .fp{width:8px;height:8px}
     .q{padding:10px 12px}
-    .set-section{border-radius:10px}
-    .set-head{padding:12px 14px;font-size:13.5px}
-    .set-body{padding:14px 14px 14px;gap:14px}
-    .set-field label{min-width:56px;font-size:12.5px}
-    .set-field input,.set-field select{padding:8px 10px;font-size:12.5px}
-    .set-row2{gap:10px;flex-direction:column}
-    .set-row2 .set-field{flex:1 1 auto}
-    .settings-modal .modal-head{padding:14px 18px}
-    .settings-modal .modal-scroll{padding:14px 18px}
-    .modal-title{font-size:16px}
     .qhead{gap:6px}
     .qnum{width:24px;height:24px;font-size:11px;line-height:24px}
     .qtitle{font-size:13px}
-    .grill-msg{font-size:13px;max-width:90%}
-    .grill-chat{max-height:45vh}
     .qacts{gap:4px}
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
-  .theme-popup{right:4px;max-width:300px;padding:8px;gap:4px;grid-template-columns:repeat(5,1fr)}
-  .theme-dot{width:48px;height:38px;font-size:9px}
+    .theme-popup{right:4px;max-width:300px;padding:8px;gap:4px;grid-template-columns:repeat(5,1fr)}
+    .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
     .ref-answer{font-size:13px;padding:10px 12px}
     .grade-btn{padding:8px;font-size:12px;min-width:80px}
@@ -368,8 +338,8 @@
     .tab .ic{display:none}
     .topbar .search input{width:70px}
     .ov-grid{grid-template-columns:repeat(2,1fr);gap:6px}
-    .memory-card{padding:14px 10px}
-    .memory-card .ptitle{font-size:14px}
+    .flash-rate .r{min-width:44px;font-size:10px}
+    .flash-card{padding:14px 10px}
     .btn{font-size:10px;padding:4px 6px;gap:3px}
     .salary-card .salary-num{font-size:24px}
     .theme-dot{width:40px;height:32px;font-size:8px}
@@ -384,14 +354,14 @@
       <div class="tab active" data-view="overview"><span class="ic">📊</span> 总览</div>
       <div class="tab" data-view="docs"><span class="ic">📁</span> 文档</div>
       <div class="tab" data-view="campaign"><span class="ic">🗡️</span> 闯关</div>
+      <div class="tab" data-view="weak"><span class="ic">📌</span> 弱项</div>
       <div class="tab" data-view="mock"><span class="ic">🎤</span> 面试</div>
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
-      <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
     </div>
     <div class="search">
       🔍 <input id="searchInput" placeholder="搜索题目…" autocomplete="off">
     </div>
-    <button class="btn ghost" id="dataBtn">⚙️ 设置</button>
+    <button class="btn ghost" id="dataBtn">⚙️ 数据</button>
     <button class="btn ghost" id="themeBtn" title="切换主题">🎨</button>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
@@ -400,6 +370,7 @@
 
 <!-- THEME POPUP -->
 <div class="theme-popup" id="themePopup">
+  <div class="theme-sep">✨ 动态</div>
   <div class="theme-dot" data-theme="aurora" style="background:linear-gradient(135deg,#8b7cf6,#5ad1c9)">星云</div>
   <div class="theme-dot" data-theme="gold" style="background:linear-gradient(135deg,#f5c542,#e09020)">流光</div>
   <div class="theme-dot" data-theme="midnight" style="background:linear-gradient(135deg,#6366f1,#818cf8)">子夜</div>
@@ -407,64 +378,54 @@
   <div class="theme-dot" data-theme="void" style="background:linear-gradient(135deg,#c084fc,#a855f7)">虚空</div>
   <div class="theme-dot" data-theme="ripple" style="background:linear-gradient(135deg,#22d3ee,#6366f1)">水波</div>
   <div class="theme-dot" data-theme="particle" style="background:linear-gradient(135deg,#f472b6,#22d3ee)">粒子</div>
-  <div class="theme-dot" data-theme="shuangren" style="background:linear-gradient(135deg,#60c0f0,#88d8ff)">霜刃</div>
-  <div class="theme-dot" data-theme="night" style="background:linear-gradient(135deg,#1a1a3e,#2d2d5e)">夜萤</div>
-  <div class="theme-dot" data-theme="img-bg" style="background:linear-gradient(135deg,#666,#444)">自定义</div>
+  <div class="theme-sep">🎨 静态</div>
+  <div class="theme-dot" data-theme="ocean" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">深海</div>
+  <div class="theme-dot" data-theme="forest" style="background:linear-gradient(135deg,#10b981,#34d399)">森林</div>
+  <div class="theme-dot" data-theme="rose" style="background:linear-gradient(135deg,#f472b6,#e04080)">暗樱</div>
+  <div class="theme-dot" data-theme="mint" style="background:linear-gradient(135deg,#2dd4bf,#14b8a6)">薄荷</div>
+  <div class="theme-dot" data-theme="lavender" style="background:linear-gradient(135deg,#a78bfa,#c4b5fd)">薰衣草</div>
+  <div class="theme-dot" data-theme="steel" style="background:linear-gradient(135deg,#9ca3af,#6b7280)">钢铁</div>
+  <div class="theme-dot" data-theme="crimson" style="background:linear-gradient(135deg,#ef4444,#dc2626)">猩红</div>
+  <div class="theme-dot" data-theme="amber" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">琥珀</div>
+  <div class="theme-dot" data-theme="frost" style="background:linear-gradient(135deg,#60a5fa,#93c5fd)">霜冻</div>
+  <div class="theme-dot" data-theme="ember" style="background:linear-gradient(135deg,#f97316,#ea580c)">余烬</div>
+  <div class="theme-dot" data-theme="spring" style="background:linear-gradient(135deg,#a3e635,#f472b6)">春</div>
+  <div class="theme-dot" data-theme="candy" style="background:linear-gradient(135deg,#f472b6,#a78bfa)">糖果</div>
   <div class="theme-sep">💎 定制</div>
   <div class="theme-dot" data-theme="ziliang" style="background:linear-gradient(135deg,#7eb8da,#a0a0b8)">子良</div>
   <div class="theme-dot" data-theme="songxing" style="background:linear-gradient(135deg,#a78bfa,#d4a854)">松星</div>
-  <div class="theme-dot" data-theme="zirong" style="background:linear-gradient(135deg,#00FF88,#E03A3A)">子荣</div>
-  <button class="btn sm" id="uploadBgBtn" style="grid-column:1/-1;justify-self:center;font-size:11px;padding:4px 12px;margin-top:2px">📤 上传背景图</button>
+  <div class="theme-dot" data-theme="shuangren" style="background:linear-gradient(135deg,#60c0f0,#88d8ff)">霜刃</div>
 </div>
 
-<!-- SETTINGS MODAL -->
+<!-- DATA MODAL -->
 <div class="modal-bg" id="dataModal">
-  <div class="modal settings-modal">
-    <div class="modal-head">
-      <span class="modal-title">⚙️ 设置</span>
-      <button class="modal-x" id="closeModalX" type="button" aria-label="关闭">✕</button>
+  <div class="modal">
+    <h3>⚙️ 数据管理</h3>
+    <div class="desc">所有数据仅存储在你的浏览器本地（IndexedDB / localStorage）。导出可用于备份或把题目迁移到其他设备；导入用于合并新的题目来源。支持两种：① <b>JSON</b>（格式 {documents:[{id,title,questions:[{title,answer}]}]}）；② <b>Markdown</b>：直接选你从笔记导出的 .md 文件即可——以 <code>#</code> / <code>##</code> 标题作为每道题的题目、标题下的正文作为答案，自动生成一篇文档并合并进现有题库。</div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn primary" id="exportBtn">⬇️ 导出全部数据（JSON 备份）</button>
+      <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button>
+      <button class="btn danger" id="resetBtn">🗑️ 仅清除学习进度</button>
+      <div class="sep"></div>
+      <div class="sub">要把应用交给别人用？</div>
+      <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button>
+      <button class="btn" id="exportBlankBtn">📦 导出空白应用</button>
     </div>
-    <div class="modal-scroll">
-    <div class="set-list">
-      <!-- 1. 数据备份 -->
-      <div class="set-section open">
-        <div class="set-head" onclick="toggleSetPanel(this)">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:block">
-          <div class="set-hint">所有数据存储在浏览器本地，导出 JSON 用于备份或迁移到其他设备。</div>
-          <div class="set-btns"><button class="btn primary" id="exportBtn">⬇️ 导出全部数据（JSON 备份）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
-        </div>
+    <div class="sep"></div>
+    <div class="sub">🤖 AI 模型设置（用于智能阅卷 / AI 查询）</div>
+    <div class="ai-config" id="aiConfigPanel">
+      <div class="row">
+        <select id="aiPreset" style="max-width:180px"><option value="">自定义</option><option value="deepseek">DeepSeek（¥1/百万token）</option><option value="silicon-dsv3">硅基流动·DeepSeek-V3（免费）</option><option value="silicon">硅基流动·Qwen 2.5（免费）</option></select>
+        <input placeholder="API 地址" id="aiUrl">
       </div>
-      <!-- 2. 云同步 -->
-      <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:none">
-          <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" style="color:var(--accent2)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
-          <div class="set-col">
-            <div class="set-field" style="flex:1"><label>Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password"></div>
-            <div class="set-field" style="flex:1"><label>Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId"></div>
-            <div class="set-btns"><button class="btn sm" id="cloudPull">⬇️ 拉取云端</button> <button class="btn sm" id="cloudPush">⬆️ 推送本地</button></div>
-          </div>
-          <div id="cloudStatus" class="set-status"></div>
-        </div>
+      <div class="row">
+        <input placeholder="API Key" id="aiKey" type="password">
+        <input placeholder="模型名" id="aiModel" style="flex:2">
       </div>
-      <!-- 3. AI 设置 -->
-      <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
-        <div class="set-body" id="aiConfigPanel" style="display:none">
-          <div class="set-hint">配置大模型 API 以启用 AI 阅卷、AI 问答、项目拷打等功能。Key 仅存储在你的浏览器本地，不会上传。</div>
-          <div class="set-row2"><div class="set-field" style="flex:1"><label>预设</label><select id="aiPreset"><option value="">自定义</option><option value="silicon">硅基流动</option><option value="aliyun">阿里云百炼</option></select></div><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl"></div></div>
-          <div class="set-row2"><div class="set-field" style="flex:1"><label>API Key</label><input placeholder="sk-..." id="aiKey" type="password"></div><div class="set-field" style="flex:1"><label>模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel"></div></div>
-        </div>
-      </div>
-      <!-- 4. 进阶操作 -->
-      <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:none">
-          <div class="set-hint">以下操作不可撤销，请确认后再执行。</div>
-          <div class="set-btns"><button class="btn danger" id="resetBtn">🗑️ 仅清除学习进度</button> <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button> <button class="btn" id="exportBlankBtn">📦 导出空白应用</button></div>
-        </div>
-      </div>
+      <div class="desc" style="font-size:11.5px;color:var(--muted);margin-top:6px">Key 仅存浏览器本地。硅基流动去 <a href="https://siliconflow.cn" target="_blank" style="color:var(--accent2)">siliconflow.cn</a> 注册（免费 2000 万 token）。</div>
     </div>
+    <div class="actions">
+      <button class="btn ghost" id="closeModal">关闭</button>
     </div>
   </div>
 </div>
@@ -596,7 +557,7 @@ let CLEARS = {};                  // docId -> 通关次数
 let UNLOCK_ALL = false;           // 闯关是否全部解锁（默认按完成度解锁）
 
 // 视图常量
-const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', CAMPAIGN:'campaign', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse' };
+const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', CAMPAIGN:'campaign', PRACTICE:'practice', WEAK:'weak', MOCK:'mock', MEMORY:'memory', BROWSE:'browse' };
 
 // 闯关默认顺序：按 Java 学习难度梯度（基础 → 数据/存储 → 网络/分布式 → 框架工程 → 综合），而非题目数量
 const SEED_ORDER = ["java基础","集合","算法","锁","JVM","并发","线程池","mysql","redis","mybatis","es","网络io","网络通讯","mq","分布式事务","nginx","注册中心","负载均衡组件","网关","微服务","openfeign","SpringBoot","web","设计模式","git","开发流程","测试","运维","对接第三方","项目","前端","AI","非技术题"];
@@ -605,10 +566,10 @@ let currentDocId = null;
 let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
-let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
+let weak = { queue: [], index: 0, revealed: false, done: false };
+let mock = { cfg:{count:10, secs:120, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', timer:null, timeLeft:0, revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
 let memory = { queue:[], index:0, flipped:false };
-let grill = { resume:'', messages:[], started:false, loading:false };
 
 // 艾宾浩斯间隔：评分 1-5 对应下次复习天数
 // 面试题复习间隔（天）：L0→L1→L2→L3→L4→L5（L5后回退L4循环）
@@ -684,12 +645,11 @@ function isUnlocked(i){
    ========================================================= */
 function renderStatsBar(){
   const tq = totalQuestions(), ts = totalSeen(), tm = totalMastered();
-  const seenPct = tq ? Math.round(ts/tq*100) : 0;
-  const masteredPct = tq ? Math.round(tm/tq*100) : 0;
+  const pct = tq ? Math.round(ts/tq*100) : 0;
   const due = memoryDueCount();
   $('#statsBar').innerHTML = `
-    <span>总进度 <b>${seenPct}%</b></span>
-    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:var(--good)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent2)"></i></div>
+    <span>总进度 <b>${pct}%</b></span>
+    <div class="bar"><i style="width:${pct}%"></i></div>
     <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
     ${due>0?`<span class="urg">🧠 记忆 <b>${due}</b> 题待复习</span>`:''}
   `;
@@ -700,9 +660,9 @@ function renderStatsBar(){
       (v===Views.OVERVIEW&&(view===Views.OVERVIEW||view===Views.BROWSE)) ||
       (v===Views.DOCS&&view===Views.DOCS) ||
       (v===Views.CAMPAIGN&&view===Views.CAMPAIGN) ||
+      (v===Views.WEAK&&view===Views.WEAK) ||
       (v===Views.MOCK&&view===Views.MOCK) ||
-      (v===Views.MEMORY&&view===Views.MEMORY) ||
-      (v===Views.GRILL&&view===Views.GRILL));
+      (v===Views.MEMORY&&view===Views.MEMORY));
   });
 }
 
@@ -711,20 +671,22 @@ function renderStatsBar(){
    ========================================================= */
 function renderContent(){
   const c = content();
+  if(view!==Views.MOCK) clearMockTimer();
   if(view===Views.OVERVIEW) return renderOverview(c);
   if(view===Views.DOCS) return renderDocs(c);
   if(view===Views.SEARCH) return renderSearch(c);
   if(view===Views.CAMPAIGN) return renderCampaign(c);
   if(view===Views.PRACTICE) return renderPractice(c);
+  if(view===Views.WEAK) return renderWeak(c);
   if(view===Views.MOCK) return renderMock(c);
   if(view===Views.MEMORY) return renderMemory(c);
-  if(view===Views.GRILL) return renderGrill(c);
   if(view===Views.BROWSE) return renderBrowse(c);
 }
 
 function renderOverview(c){
   const tq=totalQuestions(), ts=totalSeen(), tm=totalMastered(), tc=totalClears();
   const salary = tm * 100;
+  const weakCount = computeWeak().length;
   const chartDays = (window._ovChartDays||7);
   c.innerHTML = `
     <div class="salary-card">
@@ -741,44 +703,57 @@ function renderOverview(c){
       <div class="ov-card"><div class="n">${ts}</div><div class="t">已学</div></div>
       <div class="ov-card"><div class="n" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
       <div class="ov-card"><div class="n" style="color:var(--accent3)">${tc}</div><div class="t">通关</div></div>
+      <div class="ov-card"><div class="n" style="color:${weakCount>0?'var(--warn)':'var(--good)'}">${weakCount}</div><div class="t">弱项</div></div>
       <div class="ov-card"><div class="n">${DOCS.length}</div><div class="t">文档</div></div>
     </div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:0">
+    ${(()=>{
+      // 今日推荐复习：1-7天前练过的 + 从未练过的，取前5题
+      const now=Date.now(); const queue=[];
+      DOCS.forEach(d=>d.questions.forEach(q=>{
+        const lp=PROGRESS[q.id]?.lastPracticed; const days=lp?Math.floor((now-lp)/86400000):999;
+        if(days>=1&&days<=7) queue.push({q,d,days});
+        else if(days>7) queue.push({q,d,days});
+      }));
+      queue.sort((a,b)=>b.days-a.days);  // 越久没练越优先
+      const top=queue.slice(0,5);
+      if(!top.length) return '';
+      return `<div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:20px">
+        <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--accent3)">🧠 今日推荐复习</div>
+        ${top.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer" data-hotdoc="${esc(x.d.id)}">
+          <span style="font-size:11px;color:var(--warn);min-width:60px">${x.days===999?'🆕 新题':x.days+' 天前'}</span>
+          <span style="flex:1;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.q.title)}</span>
+          <span style="font-size:11px;color:var(--muted)">${esc(x.d.title)}</span>
+        </div>`).join('')}
+        <div style="text-align:center;margin-top:8px"><button class="btn sm primary" id="hotReviewBtn">🎯 开始复习这 ${top.length} 题</button></div>
+      </div>`;
+    })()}
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span style="font-weight:700;font-size:15px">📈 刷题趋势</span>
         <div style="display:flex;gap:4px">
-          <button class="btn sm ${chartDays===7?'primary':''}" id="chartBtn7">7天</button>
-          <button class="btn sm ${chartDays===30?'primary':''}" id="chartBtn30">30天</button>
-          <button class="btn sm" id="chartBtnBar">柱状</button>
-          <button class="btn sm" id="chartBtnLine">折线</button>
+          <button class="btn sm ${chartDays===7?'primary':''}" id="chartBtn7">近 7 天</button>
+          <button class="btn sm ${chartDays===30?'primary':''}" id="chartBtn30">近 30 天</button>
         </div>
       </div>
       <canvas id="chartCanvas" width="1080" height="260" style="width:100%;height:auto;border-radius:8px"></canvas>
     </div>
   `;
   // Draw chart
-  setTimeout(()=>drawChart(chartDays, window._ovChartMode||'bar'), 30);
-  $('#chartBtn7').onclick = ()=>{ window._ovChartDays=7; $('#chartBtn7').classList.add('primary');$('#chartBtn30').classList.remove('primary'); drawChart(7, window._ovChartMode||'bar'); };
-  $('#chartBtn30').onclick = ()=>{ window._ovChartDays=30; $('#chartBtn30').classList.add('primary');$('#chartBtn7').classList.remove('primary'); drawChart(30, window._ovChartMode||'bar'); };
-  $('#chartBtnBar').onclick = ()=>{ window._ovChartMode='bar'; $('#chartBtnBar').classList.add('primary');$('#chartBtnLine').classList.remove('primary'); drawChart(window._ovChartDays||7, 'bar'); };
-  $('#chartBtnLine').onclick = ()=>{ window._ovChartMode='line'; $('#chartBtnLine').classList.add('primary');$('#chartBtnBar').classList.remove('primary'); drawChart(window._ovChartDays||7, 'line'); };
+  setTimeout(()=>drawChart(chartDays), 30);
+  $('#chartBtn7').onclick = ()=>{ window._ovChartDays=7; drawChart(7); };
+  $('#chartBtn30').onclick = ()=>{ window._ovChartDays=30; drawChart(30); };
+  // 推荐复习：点击跳转到对应文档，按钮启动弱项复习
+  c.querySelectorAll('[data-hotdoc]').forEach(el=>el.onclick=()=>{ currentDocId=el.dataset.hotdoc; view=Views.BROWSE; renderAll(); });
+  const hrBtn = $('#hotReviewBtn'); if(hrBtn) hrBtn.onclick = () => startWeakReview();
 }
 
-function drawChart(days, mode){
+function drawChart(days){
   const canvas = $('#chartCanvas'); if(!canvas) return;
   try { var ctx = canvas.getContext('2d'); } catch(_){ return; }
   if(!ctx) return;
   const W=canvas.width, H=canvas.height; ctx.clearRect(0,0,W,H);
   const now=Date.now(), dayMs=86400000;
-  // 读取当前主题色
-  const style = getComputedStyle(document.documentElement);
-  const accent = style.getPropertyValue('--accent').trim() || '#8b7cf6';
-  const accent2 = style.getPropertyValue('--accent2').trim() || '#5ad1c9';
-  const lineColor = style.getPropertyValue('--line').trim() || '#272d44';
-  const mutedColor = style.getPropertyValue('--muted').trim() || '#9aa3c0';
-  const faintColor = style.getPropertyValue('--faint').trim() || '#6b7494';
-  const textColor = style.getPropertyValue('--text').trim() || '#e7eaf3';
-
+  // Count practice per day
   const counts = new Array(days).fill(0);
   DOCS.forEach(d=>d.questions.forEach(q=>{
     const lp=PROGRESS[q.id]?.lastPracticed; if(!lp) return;
@@ -788,76 +763,31 @@ function drawChart(days, mode){
   const padL=50, padR=30, padT=20, padB=35;
   const barW = (W-padL-padR)/days;
   const chartH = H-padT-padB;
-
   // Grid lines
-  ctx.strokeStyle=lineColor; ctx.lineWidth=0.5; ctx.fillStyle=mutedColor; ctx.font='10px sans-serif';
+  ctx.strokeStyle='#272d44'; ctx.lineWidth=0.5; ctx.fillStyle='#9aa3c0'; ctx.font='10px sans-serif';
   for(let i=0;i<=3;i++){
     const y = padT+chartH*(1-i/3);
     ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
     ctx.fillText(Math.round(max*i/3), padL-35, y+3);
   }
-
-  if(mode==='line'){
-    // 折线图
-    ctx.strokeStyle=accent; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round';
-    ctx.beginPath();
-    const firstX = padL+barW/2, firstY = padT+chartH-counts[0]/max*chartH;
-    ctx.moveTo(firstX, firstY);
-    for(let i=1;i<days;i++){
-      const x = padL+i*barW+barW/2;
-      const y = padT+chartH-counts[i]/max*chartH;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    // 面积填充
-    const lastX = padL+(days-1)*barW+barW/2;
-    ctx.lineTo(lastX, padT+chartH);
-    ctx.lineTo(firstX, padT+chartH);
-    ctx.closePath();
-    const areaGrad = ctx.createLinearGradient(0,padT,0,padT+chartH);
-    // 把十六进制转成 rgba
-    function hexToRgba(hex, alpha){
-      const r = parseInt(hex.slice(1,3),16);
-      const g = parseInt(hex.slice(3,5),16);
-      const b = parseInt(hex.slice(5,7),16);
-      return `rgba(${r},${g},${b},${alpha})`;
-    }
-    const accentRgba = accent.startsWith('rgb') ? accent.replace(')',',0.3)').replace('rgb','rgba') : hexToRgba(accent, 0.3);
-    areaGrad.addColorStop(0, accentRgba);
-    areaGrad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = areaGrad;
-    ctx.fill();
-    // 数据点
-    for(let i=0;i<days;i++){
-      const x = padL+i*barW+barW/2;
-      const y = padT+chartH-counts[i]/max*chartH;
-      ctx.fillStyle=accent;
-      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#fff';
-      ctx.beginPath(); ctx.arc(x,y,1.5,0,Math.PI*2); ctx.fill();
-    }
-  } else {
-    // 柱状图
-    for(let i=0;i<days;i++){
-      const h = counts[i]/max*chartH;
-      const x = padL+i*barW+barW*0.1, y = padT+chartH-h, bw=barW*0.7;
-      const grad = ctx.createLinearGradient(x,y,x,y+h);
-      grad.addColorStop(0, accent); grad.addColorStop(1, accent2);
-      ctx.fillStyle=grad; ctx.fillRect(x,Math.max(padT,y),bw,Math.min(h,chartH));
-      if(counts[i]>0){
-        ctx.fillStyle=textColor; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
-        ctx.fillText(counts[i], x+bw/2, y-4);
-      }
-    }
-  }
-
-  // Day labels
+  // Bars
   for(let i=0;i<days;i++){
+    const h = counts[i]/max*chartH;
+    const x = padL+i*barW+barW*0.1, y = padT+chartH-h, bw=barW*0.7;
+    const grad = ctx.createLinearGradient(x,y,x,y+h);
+    grad.addColorStop(0,'#8b7cf6'); grad.addColorStop(1,'#5ad1c9');
+    ctx.fillStyle=grad; ctx.fillRect(x,Math.max(padT,y),bw,Math.min(h,chartH));
+    // Day label (every few days)
     if(days<=7||i%5===0||i===days-1){
-      ctx.fillStyle=faintColor; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillStyle='#6b7494'; ctx.font='10px sans-serif'; ctx.textAlign='center';
       const date = new Date(now-(days-1-i)*dayMs);
       const label = days<=7 ? date.toLocaleDateString('zh-CN',{weekday:'short'}) : (date.getMonth()+1+'/'+date.getDate());
-      ctx.fillText(label, padL+i*barW+barW/2, H-padB+16);
+      ctx.fillText(label, x+bw/2, H-padB+16);
+    }
+    // Count on top
+    if(counts[i]>0){
+      ctx.fillStyle='#e7eaf3'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(counts[i], x+bw/2, y-4);
     }
   }
 }
@@ -961,7 +891,6 @@ function renderBrowse(c){
 function toggleAnswer(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.seen = !p.seen;
-  if(p.seen) p.lastPracticed = Date.now();
   saveProgress();
   const ans = content().querySelector(`[data-ans="${CSS.escape(qid)}"]`);
   const eye = content().querySelector(`[data-eye="${CSS.escape(qid)}"]`);
@@ -972,7 +901,7 @@ function toggleAnswer(qid){
 function toggleMaster(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.mastered = !p.mastered;
-  if(p.mastered){ p.seen = true; p.lastPracticed = Date.now(); }
+  if(p.mastered) p.seen = true;
   saveProgress();
   const btn = content().querySelector(`[data-master="${CSS.escape(qid)}"]`);
   if(btn) btn.classList.toggle('on', p.mastered);
@@ -1245,16 +1174,20 @@ function renderDone(c){
   $('#replayAgain').onclick = () => replayLevel(docId);
   if(nextId) $('#nextLvl').onclick = () => startPractice(nextId);
 }
+function toggleSeenP(qid){
+  const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
+  p.seen = !p.seen; saveProgress(); renderAll();
+}
 function toggleMasterP(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); } saveProgress(); renderAll();
+  p.mastered = !p.mastered; if(p.mastered) p.seen=true; saveProgress(); renderAll();
 }
 // 刷题里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
 function markPracticed(qid){
   if(!practice.practiced) practice.practiced = new Set();
   practice.practiced.add(qid);
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.practiced = true; p.lastPracticed = Date.now(); saveProgress();
+  p.practiced = true; saveProgress();
 }
 // 刷题里的"显示/隐藏答案"只在本次会话内生效，不污染"已看"进度，也不影响通关
 function toggleRevealP(qid){
@@ -1265,7 +1198,107 @@ function toggleRevealP(qid){
 }
 
 /* =========================================================
-   模拟面试：随机抽题 + 自评 + 导出复盘 MD
+   弱项复习：加权聚合"最该复习"的题目，逐题自评
+   ========================================================= */
+// 评分：未看 / 未刷 / 自评差 / 久未练习 → 分数越高越弱
+function computeWeak(){
+  const arr = [];
+  DOCS.forEach(d=>d.questions.forEach(q=>{
+    const p = PROGRESS[q.id] || {};
+    if(p.selfRate==='good') return;   // 自评"熟练" → 已能记住，移出弱项（重置进度后可重现）
+    let score = 0;
+    if(!p.seen) score += 3;
+    if(!p.practiced) score += 1.5;
+    if(p.selfRate==='bad') score += 3;
+    else if(p.selfRate==='mid') score += 1.5;
+    if(p.mastered) score -= 1;                         // 已标掌握但自评不佳，仍偏弱
+    if(p.lastPracticed){
+      const days = (Date.now()-p.lastPracticed)/86400000;
+      score += Math.min(2, days/45*2);                 // 越久没练越弱（封顶 2）
+    } else score += 2;
+    arr.push({q, d, score});
+  }));
+  arr.sort((a,b)=>b.score-a.score);
+  return arr;
+}
+function startWeakReview(){
+  weak.done = false;
+  const list = computeWeak();
+  if(!list.length){ weak.queue=[]; weak.done=true; view=Views.WEAK; renderAll(); return; }
+  weak.queue = list.map(x=>x.q.id);
+  weak.index = 0; weak.revealed = false;
+  view=Views.WEAK; renderAll();
+}
+function renderWeak(c){
+  if(weak.done || !weak.queue.length){
+    c.innerHTML = `<div class="empty-feature"><div class="big">🎉</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">弱项已全部过一遍！</div>
+      <div>继续保持，或去「闯关路线」巩固更多题目。</div>
+      <div style="margin-top:18px">
+        <button class="btn primary" id="weakAgain">🔄 重新复习弱项</button>
+        <button class="btn" id="weakExit">返回总览</button>
+      </div></div>`;
+    $('#weakAgain').onclick = () => startWeakReview();
+    $('#weakExit').onclick = () => { view=Views.OVERVIEW; renderAll(); };
+    return;
+  }
+  const qid = weak.queue[weak.index];
+  const q = questionById(qid);
+  const d = DOCS.find(dd=>dd.questions.some(x=>x.id===qid));
+  const p = PROGRESS[qid]||{};
+  const idx = weak.index+1, tot = weak.queue.length;
+  c.innerHTML = `
+    <div class="feature-wrap">
+      <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
+      <div class="pmeta"><span>📌 弱项复习 · ${esc(d?d.title:'')}</span><span>${idx} / ${tot}</span></div>
+      <div class="mock-card">
+        <div class="ptag">题目</div>
+        <div class="ptitle">${esc(q.title)}</div>
+        ${weak.revealed ? `<div class="ref-answer"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>`
+          : `<div class="reveal-hint">先自己回想，再点「显示答案」核对</div>`}
+      </div>
+      <div class="grade-row">
+        <button class="grade-btn g-good ${p.selfRate==='good'?'sel':''}" data-rate="good">✅ 熟练</button>
+        <button class="grade-btn g-mid ${p.selfRate==='mid'?'sel':''}" data-rate="mid">🟡 模糊</button>
+        <button class="grade-btn g-bad ${p.selfRate==='bad'?'sel':''}" data-rate="bad">❌ 不会</button>
+      </div>
+      <div class="pcontrols" style="margin-top:18px">
+        <button class="btn" id="weakReveal">${weak.revealed?'🙈 隐藏答案':'👁 显示答案'}</button>
+        <button class="btn" id="weakAIBtn">🤖 问问 AI</button>
+        <div class="spacer"></div>
+        <button class="btn ${weak.index===tot-1?'primary':''}" id="weakNext">${weak.index===tot-1?'✅ 完成复习':'下一道 →'}</button>
+      </div>
+      ${renderAIBlock(qid)}
+      <div class="pstatus">自评说明：✅ 熟练会记入进度并从弱项移除；🟡 模糊 / ❌ 不会 会保留到下次复习。自评同步写入学习进度，供模拟面试复用时参考。</div>
+    </div>`;
+  c.querySelectorAll('.grade-btn').forEach(b=>b.onclick=()=>weakGrade(qid, b.dataset.rate));
+  $('#weakReveal').onclick = () => { weak.revealed=!weak.revealed; renderAll(); };
+  $('#weakAIBtn').onclick = () => { askAI(qid); };
+  $('#weakNext').onclick = () => weakNext();
+}
+function weakGrade(qid, rate){
+  const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
+  p.selfRate = rate;
+  p.lastPracticed = Date.now();
+  if(rate==='good'){ p.seen = true; }
+  saveProgress();
+  // ✅ 熟练：从本次弱项队列移除（下轮 computeWeak 也会因 selfRate=good 排除），并自动前进到下一道
+  if(rate==='good'){
+    weak.queue = weak.queue.filter(id=>id!==qid);
+    if(!weak.queue.length){ weak.done = true; renderAll(); return; }
+    if(weak.index >= weak.queue.length) weak.index = weak.queue.length-1;
+    weak.revealed = false;
+    renderAll(); return;
+  }
+  renderAll();   // 🟡/❌ 仍属弱项，仅更新高亮，由用户点"下一道"
+}
+function weakNext(){
+  if(weak.index < weak.queue.length-1){ weak.index++; weak.revealed=false; renderAll(); }
+  else { weak.done = true; renderAll(); }
+}
+
+/* =========================================================
+   模拟面试：随机抽题 + 限时 + 自评 + 导出复盘 MD
    ========================================================= */
 function renderMock(c){
   if(mock.done) return renderMockResult(c);
@@ -1275,15 +1308,17 @@ function renderMock(c){
   const q = questionById(qid);
   const idx = mock.index+1, tot = mock.queue.length;
   const a = mock.answers[qid] || (mock.answers[qid]={answer:'',selfRate:null});
+  const mm = String(Math.floor(mock.timeLeft/60)).padStart(2,'0');
+  const ss = String(mock.timeLeft%60).padStart(2,'0');
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>🎤 模拟面试 · 第 ${idx}/${tot} 题</span></div>
+      <div class="pmeta"><span>🎤 模拟面试 · 第 ${idx}/${tot} 题</span><span>⏱ <b id="timerText">${mm}:${ss}</b></span></div>
       <div class="mock-card">
         <div class="ptag">题目</div>
         <div class="ptitle">${esc(q.title)}</div>
         <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答（可后交给 AI 阅卷）</label>
-        <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…（作答完成后点击「显示答案」核对）">${esc(a.answer)}</textarea>
+        <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…（计时结束或显示答案后，自评时一同导出）">${esc(a.answer)}</textarea>
         ${mock.revealed ? `<div class="ref-answer"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>` : ''}
       </div>
       <div class="grade-row">
@@ -1296,7 +1331,7 @@ function renderMock(c){
         <button class="btn" id="mockAIBtn">🤖 问问 AI</button>
         <button class="btn ghost" id="mockQuit" style="color:var(--bad)">🚪 退出</button>
         <div class="spacer"></div>
-        <button class="btn ${mock.index===tot-1?'primary':''}" id="mockNext">${mock.index===tot-1?'🏁 交卷':'下一题 →'}</button>
+        <button class="btn ${mock.index===tot-1?'primary':''}" id="mockNext" ${mock.revealed?'':'disabled style="opacity:.5;cursor:not-allowed"'}>${mock.index===tot-1?'🏁 交卷':'下一题 →'}</button>
       </div>
       ${renderAIBlock(qid)}
       <div class="pstatus">先作答，再点「显示答案」核对并自评；自评后才可进入下一题 / 交卷。交卷后导出复盘 MD，交给 AI 阅卷。</div>
@@ -1309,14 +1344,16 @@ function renderMock(c){
   c.querySelectorAll('.grade-btn').forEach(b=>b.onclick=()=>mockGrade(qid, b.dataset.rate));
   $('#mockReveal').onclick = () => {
     mock.revealed = !mock.revealed;
+    if(!mock.revealed) clearMockTimer();   // 隐藏答案时停止计时（让用户继续思考）
     renderAll();
   };
   $('#mockAIBtn').onclick = () => { askAI(qid); };
-  $('#mockQuit').onclick = () => { if(!confirm('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
+  $('#mockQuit').onclick = () => { if(!confirm('确定退出模拟面试？已作答的内容将保留。')) return; clearMockTimer(); mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
   $('#mockNext').onclick = () => {
-    if(mock.index < tot-1){ mock.index++; mock.revealed=false; renderAll(); }
-    else { mock.done = true; renderAll(); }
+    if(mock.index < tot-1){ mock.index++; mock.revealed=false; clearMockTimer(); renderAll(); }
+    else { mock.done = true; clearMockTimer(); renderAll(); }
   };
+  startMockTimer();
 }
 function renderMockConfig(c){
   const docs = DOCS.filter(d=>d.questions.length);
@@ -1327,9 +1364,10 @@ function renderMockConfig(c){
     <div class="feature-wrap">
       <div class="cfg-card">
         <h2>🎤 模拟面试</h2>
-        <div class="desc">随机抽取题目进行模拟面试：自由作答，完成后手动显示答案并自评掌握度。交卷后自动生成一份复盘 MD 文档，可直接交给 AI 阅卷评分。</div>
+        <div class="desc">随机抽取题目进行模拟面试：每题限时作答（时间到自动显示参考答案），作答后自评掌握度。交卷后自动生成一份复盘 MD 文档，可直接交给 AI 阅卷评分。</div>
         <div class="cfg-grid">
           <div class="cfg-field"><label>题目数量</label><input type="number" id="mockCount" min="1" max="50" value="${mock.cfg.count}"></div>
+          <div class="cfg-field"><label>每题限时（秒）</label><input type="number" id="mockSecs" min="10" max="600" value="${mock.cfg.secs}"></div>
           <div class="cfg-field"><label>题目范围</label><select id="mockScope">${opts}</select></div>
           <div class="cfg-field"><label>出题顺序</label><select id="mockOrder">
             <option value="random">随机</option>
@@ -1345,6 +1383,7 @@ function renderMockConfig(c){
     </div>`;
   $('#mockStart').onclick = () => {
     mock.cfg.count = Math.max(1, Math.min(50, parseInt($('#mockCount').value)||10));
+    mock.cfg.secs = Math.max(10, Math.min(600, parseInt($('#mockSecs').value)||120));
     mock.cfg.scope = $('#mockScope').value;
     mock.cfg.order = $('#mockOrder').value;
     startMock();
@@ -1371,7 +1410,27 @@ function difficultyRank(qid){
   const qi = d ? d.questions.findIndex(x=>x.id===qid) : 0;
   return (di<0?99999:di)*100000 + (qi<0?0:qi);
 }
-
+function clearMockTimer(){ if(mock.timer){ clearInterval(mock.timer); mock.timer=null; } }
+// 页面卸载时清理计时器，避免泄漏
+window.addEventListener('beforeunload', clearMockTimer);
+function startMockTimer(){
+  clearMockTimer();
+  mock.timeLeft = mock.cfg.secs;
+  mock.timer = setInterval(()=>{
+    mock.timeLeft--;
+    const t = $('#timerText');
+    if(t){
+      const mm = String(Math.floor(mock.timeLeft/60)).padStart(2,'0');
+      const ss = String(mock.timeLeft%60).padStart(2,'0');
+      t.textContent = `${mm}:${ss}`;
+      if(t.parentElement) t.parentElement.classList.toggle('low', mock.timeLeft<=10);
+    }
+    if(mock.timeLeft<=0){
+      clearMockTimer();
+      if(!mock.revealed){ mock.revealed = true; renderAll(); }
+    }
+  }, 1000);
+}
 function mockGrade(qid, rate){
   const a = mock.answers[qid] || (mock.answers[qid]={answer:'',selfRate:null});
   a.selfRate = rate;
@@ -1424,19 +1483,12 @@ function renderMockResult(c){
   $('#mockExit').onclick = () => { view=Views.OVERVIEW; renderAll(); };
   $('#mockAIGrade').onclick = () => gradeInterview();
 }
-// 艾宾浩斯记忆队列：获取今日待复习题目（已掌握的15天后再入队）
+// 艾宾浩斯记忆队列：获取今日待复习题目（排除已掌握的）
 function buildMemoryQueue(){
   const now=Date.now(); const queue=[];
   DOCS.forEach(d=>d.questions.forEach(q=>{
     const p=PROGRESS[q.id]||{};
-    if(p.mastered){
-      if(!p.lastPracticed) return; // 从未练过，跳过
-      const masteredDays=(now-p.lastPracticed)/86400000;
-      if(masteredDays<15) return;  // 掌握后15天内不复习
-      // 15天到，入队但不占主队列，用特殊标记
-      queue.push({q,d,level:-1,overdue:Math.floor(masteredDays-15)});
-      return;
-    }
+    if(p.mastered) return;   // 已掌握的题目不再需要复习
     const level=p.srLevel||0;
     const next=p.srNext||0;
     const days=next?Math.floor((now-next)/86400000):999;
@@ -1462,35 +1514,30 @@ function renderMemory(c){
   const nextInterval = SR_INTERVALS[lvl+1]||1;  // 当前等级对应的复习间隔（天数）
   const tot = memory.queue.length, idx = memory.index+1;
   c.innerHTML = `
-    <div class="feature-wrap">
-      <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>🧠 记忆 · ${esc(d.title)}</span><span>📅 间隔 <b>${lvl===0?'新题':nextInterval+' 天'}</b> · 📊 L${lvl} · ${idx}/${tot}</span></div>
-      <div class="memory-card">
-        <div class="ptag">题目</div>
-        <div class="ptitle">${esc(q.title)}</div>
-        ${memory.flipped ? `<div class="memory-answer"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>`
-          : `<div class="reveal-hint">👆 点击卡片翻转查看答案，也可用键盘 Enter / 空格</div>`}
-        <div class="grade-row" style="${memory.flipped?'':'display:none'}">
-          <div class="grade-btn" data-rate="1" style="border-color:var(--bad);color:var(--bad)">😰 完全忘了</div>
-          <div class="grade-btn" data-rate="2" style="border-color:#e09040;color:#e09040">🤔 记得一点</div>
-          <div class="grade-btn" data-rate="3" style="border-color:var(--warn);color:var(--warn)">😐 差不多</div>
-          <div class="grade-btn" data-rate="4" style="border-color:var(--accent);color:var(--accent)">😊 基本记住</div>
-          <div class="grade-btn" data-rate="5" style="border-color:var(--good);color:var(--good);background:rgba(79,208,138,.08)">😎 倒背如流</div>
-        </div>
-        <div class="pcontrols" style="margin-top:14px;${memory.flipped?'':'display:none'}">
-          <button class="btn sm" id="flashSkip">⏭ 跳过</button>
-          ${memory.index>0 ? `<button class="btn sm" id="flashUndo">↩ 撤销</button>` : ''}
-        </div>
+    <div class="flash-progress">${Array.from({length:Math.min(tot,tot<=15?15:10)},(_,i)=>`<div class="fp ${i<idx?'done':''} ${i===memory.index?'now':''}"></div>`).join('')}${tot>15 ? `<span style="font-size:11px;color:var(--muted)">…${tot}题</span>` : ''}</div>
+    <div class="flash-info"><span>${esc(d.title)}</span><span>📅 间隔 <b>${lvl===0?'新题':nextInterval+' 天'}</b></span><span>📊 等级 <b>L${lvl}</b></span><span>${idx}/${tot}</span></div>
+    <div class="flash-card ${memory.flipped?'flipped':''}" id="flashCard">
+      <div class="flash-q">${esc(q.title)}</div>
+      <div class="flash-a">${renderAnswer(q.answer)}</div>
+      <div class="hint">👆 点击卡片翻转查看答案</div>
+      <div class="flash-rate">
+        <div class="r r1" data-rate="1">😰 完全忘了</div>
+        <div class="r r2" data-rate="2">🤔 记得一点</div>
+        <div class="r r3" data-rate="3">😐 差不多</div>
+        <div class="r r4" data-rate="4">😊 基本记住</div>
+        <div class="r r5" data-rate="5">😎 倒背如流</div>
       </div>
-      <div class="pstatus">键盘快捷键：Enter / 空格 翻转卡片，数字键 1-5 评分</div>
+      <div class="flash-rate" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
+        <div class="r" style="border-color:var(--muted);color:var(--muted);flex:0;min-width:60px" id="flashSkip">⏭ 跳过</div>
+        ${memory.index>0 ? `<div class="r" style="border-color:var(--accent2);color:var(--accent2);flex:0;min-width:60px" id="flashUndo">↩ 撤销</div>` : ''}
+      </div>
     </div>
   `;
-  const card = c.querySelector('.memory-card');
-  card.onclick = (e) => {
-    if(e.target.closest('.grade-btn,.btn,button')) return;
+  $('#flashCard').onclick = (e) => {
+    if(e.target.closest('.r')) return;
     memory.flipped = !memory.flipped; renderAll();
   };
-  c.querySelectorAll('.grade-btn[data-rate]').forEach(r=>r.onclick=(e)=>{
+  c.querySelectorAll('.r[data-rate]').forEach(r=>r.onclick=(e)=>{
     e.stopPropagation();
     const rate=parseInt(r.dataset.rate);
     if(isNaN(rate)) return;
@@ -1505,7 +1552,7 @@ function renderMemory(c){
     else { newLvl=0; }                             // 忘了 → 重置为 L0（新题状态）
     const interval=SR_INTERVALS[newLvl+1]||1;     // L0→1天, L1→3天, ... L4→30天
     const intervalDays=interval;
-    PROGRESS[q.id]={...pr,srLevel:newLvl,srNext:now+intervalDays*86400000,lastPracticed:now,seen:true,mastered:rate>=5?true:(pr.mastered||false)};
+    PROGRESS[q.id]={...pr,srLevel:newLvl,srNext:now+intervalDays*86400000,lastPracticed:now,seen:true};
     saveProgress();
     memory.index++; memory.flipped=false;
     renderAll();
@@ -1522,170 +1569,13 @@ function renderMemory(c){
   if(!window._memoryKeyHandler){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
-      const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = $('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
+      const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = $('.r[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
       else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; renderAll(); }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
 }
 // 统计条中的待复习数
-function renderGrill(c){
-  if(!grill.started) return renderGrillConfig(c);
-  c.innerHTML = `
-    <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 项目拷打</span><span>${grill.messages.length} 轮对话</span></div>
-      <div class="grill-chat" id="grillChat">${grill.messages.map(m=>`
-        <div class="grill-msg ${m.role}">${esc(m.content)}</div>
-      `).join('')}${grill.loading?'<div class="grill-loading">专家思考中…</div>':''}</div>
-      <div class="grill-input-row">
-        <input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}>
-        <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
-        <button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>
-      </div>
-    </div>`;
-  const chat = $('#grillChat');
-  if(chat) chat.scrollTop = chat.scrollHeight;
-  const input = $('#grillInput');
-  const send = () => {
-    const text = input.value.trim(); if(!text || grill.loading) return;
-    input.value = ''; grill.messages.push({role:'user', content:text}); grill.loading=true; renderAll();
-    doGrillChat();
-  };
-  $('#grillSend').onclick = send;
-  input.onkeydown = e => { if(e.key==='Enter') send(); };
-  input.focus();
-  $('#grillQuit').onclick = () => { if(!confirm('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false}; renderAll(); };
-}
-function renderGrillConfig(c){
-  c.innerHTML = `
-    <div class="feature-wrap">
-      <div class="cfg-card">
-        <h2>🔥 项目拷打</h2>
-        <div class="desc">粘贴你的简历，AI 将以十年老技术专家身份，根据你写的项目经历和技术栈逐层深挖提问。模拟真实面试中面试官对项目的追问场景。</div>
-        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容</label>
-        <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性"></textarea>
-        <div style="margin-top:14px">
-          <button class="btn primary" id="grillStart">🔥 开始拷打</button>
-          <button class="btn ghost" id="grillUpload">📎 上传简历（txt/md/pdf）</button>
-          <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
-        </div>
-      </div>
-      <div class="empty-feature" style="padding:26px">
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;text-align:left">
-          💡 提示：简历越详细拷打越深入。AI 会针对你的<b style="color:var(--text)">技术选型、架构决策、踩坑经历</b>逐层追问，模拟真实面试场景。</div>
-      </div>
-    </div>`;
-  $('#grillStart').onclick = () => {
-    const resume = $('#grillResume').value.trim();
-    if(!resume){ toast('请先粘贴简历内容'); return; }
-    grill.resume = resume; grill.messages = []; grill.started = true;
-    grill.messages.push({role:'ai', content:'你好！我已经仔细看了你的简历。准备好接受项目拷打了吗？我会从你最核心的项目开始，逐层深入追问技术细节。请先简单介绍一下你最拿手的那个项目吧。'});
-    renderAll();
-  };
-  $('#grillUpload').onclick = () => $('#grillFileInput').click();
-  $('#grillFileInput').onchange = async e => {
-    const f = e.target.files[0]; if(!f) return;
-    let text='';
-    if(f.name.toLowerCase().endsWith('.pdf')){
-      try{
-        const buf=await f.arrayBuffer();
-        text=await extractPdfText(buf);
-        if(!text.trim()){toast('PDF 无法提取文字，请粘贴简历内容');return;}
-      }catch(ex){toast('PDF 解析失败：'+ex.message);return;}
-    } else {
-      text=await f.text();
-    }
-    $('#grillResume').value = text;
-  };
-}
-async function doGrillChat(){
-  if(!aiConfig){ toast('请先配置 AI API'); grill.loading=false; renderAll(); return; }
-  // 根据简历推断工作年限
-  const years = estimateYears(grill.resume);
-  const depth = years<=1 ? '基础' : years<=3 ? '中等' : years<=5 ? '深入' : '专家';
-  const depthGuide = {
-    '基础': '只问项目做了什么、用到什么技术，不追问底层原理，语气鼓励为主',
-    '中等': '追问技术选型原因和基本设计思路，适度追问一两个"为什么"',
-    '深入': '追问架构设计、性能优化、踩坑经历，追问两三层深度',
-    '专家': '追问底层原理、源码实现、分布式一致性、极端场景容灾，像剥洋葱层层深入'
-  };
-  const msgs = [
-    {role:'system', content:`你是十年老技术专家，正在进行项目面试拷打。根据候选人的工作年限和简历内容，调整拷打难度。
-
-候选人大约 **${years}年** 经验，拷打深度：**${depth}级**。
-${depthGuide[depth]}
-
-规则：
-1. 每次只问一个问题，聚焦一个技术点
-2. 难度严格匹配工作年限，不要超出候选人能力范围
-3. 追问时引用简历中的具体内容
-4. 如果候选人回答得浅，追问"为什么这样设计""有没有考虑过其他方案"
-5. 语气专业，对初级偏鼓励、对高级可适当犀利施压
-6. 用 Markdown 格式，重点加粗，不要用标题
-7. 回答控制在3-5句话
-
-候选人简历：
-${grill.resume}`}
-  ];
-  for(const m of grill.messages){
-    if(m.role==='ai') msgs.push({role:'assistant', content:m.content});
-    else msgs.push({role:'user', content:m.content});
-  }
-  const r = await callAI(msgs);
-  grill.loading = false;
-  if(r){ grill.messages.push({role:'ai', content:r}); }
-  else { grill.messages.push({role:'ai', content:'抱歉，API 调用失败，请检查 AI 配置。'}); }
-  renderAll();
-}
-// PDF 文本提取（使用 pdf.js CDN）
-let _pdfjsReady=false;
-async function ensurePdfJs(){
-  if(_pdfjsReady) return;
-  if(!window.pdfjsLib){
-    await new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload=resolve;s.onerror=()=>reject(new Error('pdf.js 加载失败'));
-      document.head.appendChild(s);
-    });
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-  _pdfjsReady=true;
-}
-async function extractPdfText(buf){
-  await ensurePdfJs();
-  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
-  const pages=[];
-  for(let i=1;i<=pdf.numPages;i++){
-    const page=await pdf.getPage(i);
-    const content=await page.getTextContent();
-    const pageText=content.items.map(it=>it.str).join(' ');
-    pages.push(pageText);
-  }
-  return pages.join('\n\n').replace(/\s+/g,' ').trim();
-}
-function estimateYears(resume){
-  const t = resume.toLowerCase();
-  // 匹配明确的年限声明
-  const m1 = t.match(/(\d+)\s*年\s*(经验|开发|工作|java)/);
-  if(m1) return parseInt(m1[1]);
-  const m2 = t.match(/(\d+)\s*year/);
-  if(m2) return parseInt(m2[1]);
-  // 匹配毕业年份推算
-  const m3 = t.match(/(20\d{2})\s*年?\s*毕业/);
-  if(m3){ const gradYear = parseInt(m3[1]); const now = new Date().getFullYear(); return Math.max(0, now - gradYear); }
-  // 匹配学校 + 毕业时间
-  const m4 = t.match(/本科.*?(20\d{2})|硕士.*?(20\d{2})|(\d{4})届/);
-  if(m4){ const y = parseInt(m4[1]||m4[2]||m4[3]||'0'); if(y>2000) return Math.max(0, new Date().getFullYear() - y); }
-  // 匹配"应届"/"实习"/"校招"
-  if(/应届|校招|实习/.test(t)) return 0;
-  // 匹配初级/高级
-  if(/高级|资深|senior|专家/.test(t)) return 6;
-  if(/中级|mid/.test(t)) return 3;
-  if(/初级|junior/.test(t)) return 1;
-  // 默认中等
-  return 3;
-}
 function memoryDueCount(){
   const now=Date.now(); let cnt=0;
   DOCS.forEach(d=>d.questions.forEach(q=>{const p=PROGRESS[q.id]||{};if(!p.srNext||now>=p.srNext) cnt++;}));
@@ -1764,10 +1654,10 @@ async function gradeInterview(){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   aiGradingLoading=true; aiGrading=null; renderAll();
   const rm={good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'};
-  let p='你是资深技术面试官，请对以下模拟面试作答进行客观阅卷。\n\n**要求：**\n- 逐题评分（满分100），给出：你的标准答案（精简）、得分、优点（1-2句）、不足（1-2句）、遗漏的关键点\n- 最后汇总：总分（所有题平均分）、整体评价（2-3句）、针对性备考建议（2-3条）\n- 评分标准：准确度40分 + 完整度30分 + 深度20分 + 表达10分\n- 严格但不苛刻，考生自评仅供参考\n\n';
+  let p='资深面试官。逐题：AI标准答案、得分(100)、优点、不足、漏点。最后总分、评价、建议。\n\n';
   for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]);const a=mock.answers[mock.queue[i]]||{};
     p+=`## 第${i+1}题\n**题目：** ${q.title}\n**我的回答：** ${a.answer||'(未填)'}\n**自评：** ${rm[a.selfRate]||'无'}\n\n`; }
-  const r=await callAI([{role:'system',content:'你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。'},{role:'user',content:p}],(full)=>{
+  const r=await callAI([{role:'system',content:'资深面试官，基于知识评分。'},{role:'user',content:p}],(full)=>{
     aiGrading='<div class="ai-review">'+formatAI(full)+'</div>'; renderAll(); });
   aiGradingLoading=false; if(r) aiGrading='<div class="ai-review">'+formatAI(r)+'</div>';
   renderAll();
@@ -1821,6 +1711,8 @@ function renderSearch(c){
    顶层渲染
    ========================================================= */
 function renderAll(){ renderStatsBar(); renderContent(); }
+// 仅刷新统计栏（轻量更新，用于刷题/弱项/面试中的进度变化）
+function refreshStats(){ renderStatsBar(); }
 
 /* =========================================================
    事件绑定
@@ -1831,9 +1723,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     const v = tab.dataset.view;
     if(v===Views.CAMPAIGN){ view=Views.CAMPAIGN; renderAll(); }
     else if(v===Views.DOCS){ view=Views.DOCS; renderAll(); }
-    else if(v===Views.MOCK){ view=Views.MOCK; renderAll(); }
+    else if(v===Views.WEAK){ startWeakReview(); }
+    else if(v===Views.MOCK){ clearMockTimer(); view=Views.MOCK; renderAll(); }
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false}; view=Views.MEMORY; renderAll(); }
-    else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
 });
@@ -1850,254 +1742,65 @@ searchInput.oninput = () => {
    主题切换
    ========================================================= */
 const THEMES = {
+  ziliang:{bg:'#0a0a0f',bg2:'#0f0f16',panel:'#12121c',card:'#161622',line:'#222233',line2:'#2e2e44',text:'#e4e4ed',muted:'#88889c',faint:'#5c5c70',accent:'#7eb8da',accent2:'#a0a0b8',accent3:'#c4a86c',good:'#6eb8a0',warn:'#c4a86c',bad:'#d4706a'},
   aurora:{bg:'#0e1018',bg2:'#141826',panel:'#171b2b',card:'#1a1f31',line:'#272d44',line2:'#323a5a',text:'#e7eaf3',muted:'#9aa3c0',faint:'#6b7494',accent:'#5ad1c9',accent2:'#8b7cf6',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#f6a85b',good:'#4fd08a',warn:'#f5c542',bad:'#f06a6a'},
+  ocean: {bg:'#060e18',bg2:'#0a1626',panel:'#0e1c30',card:'#12223d',line:'#1e3050',line2:'#284068',text:'#dce8f5',muted:'#7a9abc',faint:'#4a6a8a',accent:'#3b82f6',accent2:'#06b6d4',accent3:'#f59e0b',good:'#10b981',warn:'#f59e0b',bad:'#ef4444'},
+  forest:{bg:'#08100a',bg2:'#0c180e',panel:'#102014',card:'#14281a',line:'#1e3824',line2:'#285030',text:'#d8f0dc',muted:'#70a080',faint:'#407050',accent:'#10b981',accent2:'#34d399',accent3:'#f6a85b',good:'#34d399',warn:'#f6a85b',bad:'#f87171'},
+  rose:  {bg:'#10080c',bg2:'#180c12',panel:'#1c1016',card:'#22141c',line:'#382028',line2:'#502c38',text:'#f0d8e0',muted:'#a07080',faint:'#704050',accent:'#f472b6',accent2:'#e04080',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#6366f1',accent2:'#818cf8',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#fbbf24',good:'#10b981',warn:'#fbbf24',bad:'#ef4444'},
+  mint:  {bg:'#081210',bg2:'#0c1814',panel:'#101c18',card:'#14221c',line:'#1e322a',line2:'#284438',text:'#d0f0e0',muted:'#70a080',faint:'#407050',accent:'#2dd4bf',accent2:'#14b8a6',accent3:'#fbbf24',good:'#4ade80',warn:'#fbbf24',bad:'#f87171'},
+  lavender:{bg:'#0c0818',bg2:'#120c24',panel:'#161030',card:'#1a143c',line:'#281c50',line2:'#382868',text:'#e0d8f0',muted:'#9080c0',faint:'#605090',accent:'#a78bfa',accent2:'#c4b5fd',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
+  steel: {bg:'#0e1012',bg2:'#141618',panel:'#181a1c',card:'#1c1e20',line:'#2a2c30',line2:'#3a3c40',text:'#e0e2e4',muted:'#909498',faint:'#606468',accent:'#9ca3af',accent2:'#6b7280',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
+  crimson:{bg:'#080404',bg2:'#100808',panel:'#140c0c',card:'#1a1010',line:'#2a1818',line2:'#3a2020',text:'#f0e0e0',muted:'#b08080',faint:'#805050',accent:'#ef4444',accent2:'#dc2626',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
+  amber: {bg:'#0c0804',bg2:'#140c08',panel:'#18100c',card:'#1c1410',line:'#2a1c14',line2:'#3a2418',text:'#f0e8d0',muted:'#b09870',faint:'#786040',accent:'#fbbf24',accent2:'#f59e0b',accent3:'#f6a85b',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
+  frost: {bg:'#080c18',bg2:'#0c121c',panel:'#101620',card:'#141a24',line:'#1e2430',line2:'#2a3040',text:'#d0d8f0',muted:'#90a0c0',faint:'#607090',accent:'#60a5fa',accent2:'#93c5fd',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
+  ember: {bg:'#0c0600',bg2:'#140a02',panel:'#180e04',card:'#1c1208',line:'#2a1a0a',line2:'#3a2210',text:'#f0d8b0',muted:'#c09060',faint:'#906030',accent:'#f97316',accent2:'#ea580c',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
   void:  {bg:'#020204',bg2:'#06060a',panel:'#0a0a10',card:'#0e0e16',line:'#181820',line2:'#222230',text:'#c0c0d0',muted:'#707090',faint:'#404060',accent:'#c084fc',accent2:'#a855f7',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
-  ripple:{bg:'#08140c',bg2:'#0c1a10',panel:'#101e14',card:'#14221a',line:'#1e3228',line2:'#284638',text:'#d0f0d8',muted:'#70b080',faint:'#408050',accent:'#22c55e',accent2:'#f472b6',accent3:'#fbbf24',good:'#22c55e',warn:'#fbbf24',bad:'#f06a6a'},
+  spring:{bg:'#081008',bg2:'#0c140c',panel:'#101810',card:'#141c14',line:'#1e281e',line2:'#283428',text:'#d8f0d0',muted:'#80b070',faint:'#508040',accent:'#a3e635',accent2:'#f472b6',accent3:'#fbbf24',good:'#4ade80',warn:'#fbbf24',bad:'#f87171'},
+  candy: {bg:'#10080c',bg2:'#180c14',panel:'#1c1018',card:'#22141c',line:'#382030',line2:'#502c40',text:'#f0d8e8',muted:'#c080a0',faint:'#905070',accent:'#f472b6',accent2:'#a78bfa',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
+  ripple:{bg:'#081018',bg2:'#0c1420',panel:'#101828',card:'#141c30',line:'#1e2840',line2:'#283452',text:'#d0d8f0',muted:'#88a0c0',faint:'#587090',accent:'#22d3ee',accent2:'#6366f1',accent3:'#f6a85b',good:'#06b6d4',warn:'#f6a85b',bad:'#f06a6a'},
   particle:{bg:'#060810',bg2:'#0a0c18',panel:'#0e1020',card:'#121428',line:'#1c1e38',line2:'#282a48',text:'#c0c8e0',muted:'#7888b0',faint:'#485878',accent:'#f472b6',accent2:'#22d3ee',accent3:'#c084fc',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
   shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#a0e0ff',good:'#50c0a0',warn:'#80d0e0',bad:'#e06070'},
-  night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#a0d8a0',accent2:'#c0e880',accent3:'#e8d860',good:'#60d080',warn:'#e8d860',bad:'#e06060'},
-  'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
-  ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'},
-  zirong: {bg:'#18080a',bg2:'#1c0c0e',panel:'#200e12',card:'#241216',line:'#321a1e',line2:'#422428',text:'#f0dcdc',muted:'#c09094',faint:'#805c60',accent:'#d4606a',accent2:'#c51e2a',accent3:'#f0efea',good:'#5a9e6f',warn:'#c4a43a',bad:'#c51e2a'}
+  ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'}
 };
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
 function applyTheme(name){
   currentTheme = name; const t = THEMES[name]||THEMES.aurora;
   const FX = {
-    aurora:`@keyframes a1{0%{transform:rotate(0deg) translate(45vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(45vw,0) rotate(-360deg)}}@keyframes a2{0%{transform:rotate(0deg) translate(28vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(28vw,0) rotate(-360deg)}}@keyframes a3{0%{transform:rotate(0deg) translate(12vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(12vw,0) rotate(-360deg)}}@keyframes a4{0%{transform:rotate(120deg) translate(42vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(42vw,0) rotate(-480deg)}}@keyframes a5{0%{transform:rotate(120deg) translate(25vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(25vw,0) rotate(-480deg)}}@keyframes a6{0%{transform:rotate(240deg) translate(38vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(38vw,0) rotate(-600deg)}}@keyframes a7{0%{transform:rotate(240deg) translate(20vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(20vw,0) rotate(-600deg)}}body::before{content:'';position:fixed;top:40%;left:50%;width:200px;height:120px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.2),transparent 65%);animation:a1 22s linear infinite}body::after{content:'';position:fixed;top:40%;left:50%;width:150px;height:90px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.15),transparent 65%);animation:a2 18s linear infinite}.app::before{content:'';position:fixed;top:40%;left:50%;width:100px;height:60px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.1),transparent 65%);animation:a3 14s linear infinite}.app::after{content:'';position:fixed;top:40%;left:50%;width:180px;height:110px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.16),transparent 65%);animation:a4 24s linear infinite}.main::before{content:'';position:fixed;top:40%;left:50%;width:130px;height:80px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.12),transparent 65%);animation:a5 20s linear infinite}.main::after{content:'';position:fixed;top:40%;left:50%;width:160px;height:100px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.12),transparent 65%);animation:a6 26s linear infinite}.content::before{content:'';position:fixed;top:40%;left:50%;width:110px;height:70px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.08),transparent 65%);animation:a7 16s linear infinite}`,
-    gold:``,
+    aurora:`@keyframes nA{0%{transform:translateY(-40vh)}50%{transform:translateY(20vh)}100%{transform:translateY(-40vh)}}@keyframes nB{0%{transform:translateY(30vh)}50%{transform:translateY(-30vh)}100%{transform:translateY(30vh)}}@keyframes nC{0%{transform:translateY(-20vh)}50%{transform:translateY(10vh)}100%{transform:translateY(-20vh)}}body::before{content:'';position:fixed;top:-30%;left:-20%;width:140%;height:160%;pointer-events:none;z-index:0;background:linear-gradient(175deg,transparent 40%,rgba(139,124,246,.18) 55%,rgba(90,209,201,.22) 60%,rgba(139,124,246,.12) 65%,transparent 80%);animation:nA 12s ease-in-out infinite}body::after{content:'';position:fixed;top:-30%;left:-20%;width:140%;height:160%;pointer-events:none;z-index:0;background:linear-gradient(185deg,transparent 45%,rgba(90,209,201,.14) 58%,rgba(246,168,91,.12) 62%,rgba(90,209,201,.1) 66%,transparent 78%);animation:nB 15s ease-in-out infinite}.app::before{content:'';position:fixed;top:-30%;left:-20%;width:140%;height:160%;pointer-events:none;z-index:0;background:linear-gradient(180deg,transparent 50%,rgba(139,124,246,.12) 62%,rgba(246,168,91,.1) 66%,transparent 75%);animation:nC 18s ease-in-out infinite}`,
+    gold:`@keyframes gUp1{0%{transform:translate(0,0) scale(.4);opacity:0}6%{opacity:.8}85%{opacity:.7}100%{transform:translate(3vw,-120vh) scale(1);opacity:0}}@keyframes gUp2{0%{transform:translate(0,0) scale(.3);opacity:0}8%{opacity:.7}80%{opacity:.6}100%{transform:translate(-4vw,-110vh) scale(.9);opacity:0}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:100%;left:8%;opacity:0;box-shadow:15vw 10vh 0 1px var(--accent2),30vw 3vh 0 var(--accent),55vw 14vh 0 1px var(--accent),75vw 6vh 0 var(--accent2),22vw 16vh 0 1px var(--accent),65vw 11vh 0 var(--accent2),88vw 18vh 0 1px var(--accent),42vw 22vh 0 var(--accent2);animation:gUp1 12s linear infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:100%;left:18%;opacity:0;box-shadow:20vw 8vh 0 var(--accent),42vw 14vh 0 1px var(--accent2),70vw 5vh 0 var(--accent),85vw 12vh 0 1px var(--accent2),35vw 18vh 0 var(--accent),58vw 10vh 0 1px var(--accent),8vw 25vh 0 var(--accent2),78vw 22vh 0 var(--accent);animation:gUp2 17s linear infinite 5s}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:100%;left:45%;opacity:0;box-shadow:18vw 12vh 0 var(--accent),38vw 6vh 0 1px var(--accent3),58vw 16vh 0 var(--accent2),80vw 9vh 0 1px var(--accent),10vw 20vh 0 1px var(--accent2),92vw 14vh 0 var(--accent3);animation:gUp1 22s linear infinite 8s}`,
     midnight:`@keyframes mTw1{0%,100%{opacity:.15}50%{opacity:.9}}@keyframes mTw2{0%,100%{opacity:.45}30%{opacity:.95}65%{opacity:.2}}@keyframes mTw3{0%,100%{opacity:.2}50%{opacity:.7}}@keyframes mNeb{0%,100%{opacity:.6}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1000px 700px at 25% 20%,rgba(99,102,241,.16),transparent 60%),radial-gradient(ellipse 900px 650px at 75% 70%,rgba(129,140,248,.12),transparent 60%);animation:mNeb 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent2);top:10%;left:8%;box-shadow:18vw 22vh 0 1px var(--accent),40vw 6vh 0 1px var(--accent2),64vw 38vh 0 1px var(--accent),10vw 55vh 0 1px var(--accent2),50vw 18vh 0 2px var(--accent),82vw 8vh 0 1px var(--accent2),28vw 65vh 0 var(--accent),75vw 55vh 0 1px var(--accent2);animation:mTw1 3.5s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent);top:28%;left:28%;box-shadow:22vw 32vh 0 1px var(--accent2),52vw 5vh 0 var(--accent),75vw 42vh 0 1px var(--accent2),8vw 12vh 0 var(--accent),60vw 50vh 0 1px var(--accent),35vw 58vh 0 1px var(--accent2),88vw 48vh 0 var(--accent);animation:mTw2 4.5s ease-in-out infinite}.app::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:#c7cbff;top:5%;left:52%;box-shadow:12vw 48vh 0 var(--accent2),28vw 20vh 0 1px var(--accent),45vw 62vh 0 var(--accent2),68vw 28vh 0 1px var(--accent),85vw 55vh 0 var(--accent2),18vw 78vh 0 1px var(--accent),55vw 82vh 0 var(--accent2),78vw 75vh 0 1px var(--accent);animation:mTw3 5.8s ease-in-out infinite}`,
     sunset:`@keyframes sTop{0%,100%{opacity:.4;transform:translateX(-50%) scale(1)}50%{opacity:.7;transform:translateX(-48%) scale(1.08)}}@keyframes sBot{0%,100%{opacity:.15;transform:translateX(-50%) scale(1)}50%{opacity:.35;transform:translateX(-52%) scale(1.06)}}body::before{content:'';position:fixed;top:-12%;left:50%;pointer-events:none;z-index:0;width:800px;height:380px;border-radius:50%;background:radial-gradient(ellipse,rgba(249,115,22,.65),rgba(239,68,68,.3),transparent 70%);animation:sTop 3.8s ease-in-out infinite}body::after{content:'';position:fixed;bottom:-18%;left:50%;pointer-events:none;z-index:0;width:900px;height:320px;border-radius:50%;background:radial-gradient(ellipse,rgba(251,191,36,.35),rgba(249,115,22,.15),transparent 70%);animation:sBot 5s ease-in-out infinite}`,
-    void:``,
-    ripple:`@keyframes rRip{0%{transform:translate(-50%,-50%) scale(0);opacity:.45}100%{transform:translate(-50%,-50%) scale(4);opacity:0}}body::before{content:'';position:fixed;top:35%;left:30%;pointer-events:none;z-index:0;width:180px;height:180px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite}body::after{content:'';position:fixed;top:60%;left:65%;pointer-events:none;z-index:0;width:140px;height:140px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 1.5s}.app::before{content:'';position:fixed;top:25%;left:68%;pointer-events:none;z-index:0;width:160px;height:160px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite 3s}.app::after{content:'';position:fixed;top:68%;left:28%;pointer-events:none;z-index:0;width:120px;height:120px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 4s}`,
+    void:`@keyframes vDash1{0%{transform:translate(-10vw,20vh);opacity:0}5%{opacity:1}20%{transform:translate(55vw,-10vh);opacity:1}25%{opacity:0}100%{transform:translate(55vw,-10vh);opacity:0}}@keyframes vDash2{0%{transform:translate(110vw,60vh);opacity:0}5%{opacity:1}22%{transform:translate(-15vw,25vh);opacity:1}27%{opacity:0}100%{transform:translate(-15vw,25vh);opacity:0}}@keyframes vDash3{0%{transform:translate(50vw,110vh);opacity:0}5%{opacity:1}18%{transform:translate(20vw,-10vh);opacity:1}23%{opacity:0}100%{transform:translate(20vw,-10vh);opacity:0}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 24px 10px var(--accent2),0 0 50px 20px rgba(192,132,252,.3);opacity:0;animation:vDash1 8s linear infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:5px;height:5px;border-radius:50%;background:var(--accent2);box-shadow:0 0 18px 7px var(--accent),0 0 40px 15px rgba(168,85,247,.25);opacity:0;animation:vDash2 9s linear infinite 3s}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent3);box-shadow:0 0 12px 5px var(--accent3),0 0 28px 10px rgba(246,168,91,.25);opacity:0;animation:vDash3 7s linear infinite 5s}`,
+    ripple:`@keyframes rRip{0%{transform:translate(-50%,-50%) scale(0);opacity:.55}100%{transform:translate(-50%,-50%) scale(3.5);opacity:0}}body::before{content:'';position:fixed;top:30%;left:25%;pointer-events:none;z-index:0;width:220px;height:220px;border-radius:50%;border:1.5px solid var(--accent);opacity:0;animation:rRip 5s ease-out infinite}body::after{content:'';position:fixed;top:65%;left:70%;pointer-events:none;z-index:0;width:170px;height:170px;border-radius:50%;border:1.5px solid var(--accent2);opacity:0;animation:rRip 5s ease-out infinite 1.2s}.app::before{content:'';position:fixed;top:20%;left:72%;pointer-events:none;z-index:0;width:190px;height:190px;border-radius:50%;border:1.5px solid var(--accent);opacity:0;animation:rRip 5s ease-out infinite 2.4s}.app::after{content:'';position:fixed;top:72%;left:22%;pointer-events:none;z-index:0;width:150px;height:150px;border-radius:50%;border:1.5px solid var(--accent2);opacity:0;animation:rRip 5s ease-out infinite 3.6s}`,
     particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
     ziliang:``,
-    songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1.5%{opacity:1}8%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}14%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}20%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1.5%{opacity:1}7%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}12%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}18%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1.5%{opacity:.9}9%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}15%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}22%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1.5%{opacity:.85}8%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}13%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}20%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 8s linear infinite 1.5s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 10s linear infinite 5s}.content::before{content:'';position:fixed;top:2%;left:95%;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot1 7s linear infinite}.content::after{content:'';position:fixed;top:10%;left:95%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot2 9s linear infinite 2.5s}`,
-    shuangren:``,
-    night:``,
-    zirong:``,
-    'img-bg':``,
+    songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}@keyframes sxNebC{0%,100%{opacity:.45}50%{opacity:.85}}@keyframes sxDrift{0%{transform:translate(0,0)}50%{transform:translate(1vw,-.5vh)}100%{transform:translate(0,0)}}@keyframes sxTwA{0%,100%{opacity:.35}50%{opacity:1}}@keyframes sxTwB{0%,100%{opacity:1}50%{opacity:.28}}@keyframes sxTwC{0%,100%{opacity:.22}50%{opacity:.72}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}2%{opacity:1}10%{transform:rotate(-35deg) translateX(-80vw);opacity:.7}16%{transform:rotate(-35deg) translateX(-80vw);opacity:.15}22%{opacity:0}100%{transform:rotate(-35deg) translateX(-80vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}2%{opacity:1}9%{transform:rotate(-30deg) translateX(-75vw);opacity:.6}15%{transform:rotate(-30deg) translateX(-75vw);opacity:.1}21%{opacity:0}100%{transform:rotate(-30deg) translateX(-75vw);opacity:0}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxDrift 30s ease-in-out infinite,sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 350px at 50% 35%,rgba(139,124,246,.12),transparent 65%);animation:sxNebC 28s ease-in-out infinite}.app::after{content:'';position:fixed;top:12%;left:18%;width:3px;height:3px;border-radius:50%;background:#fff;pointer-events:none;z-index:0;box-shadow:10vw 16vh 0 1px #d4a854,26vw 4vh 0 1px #fff,42vw 14vh 0 1px #e0d0ff,58vw 6vh 0 1px #d4a854,72vw 22vh 0 1px #fff,6vw 38vh 0 1px #e0d0ff,30vw 34vh 0 1px #d4a854,48vw 46vh 0 1px #fff,64vw 56vh 0 1px #e0d0ff,18vw 62vh 0 1px #d4a854,38vw 72vh 0 1px #fff,76vw 50vh 0 1px #e0d0ff,86vw 70vh 0 1px #d4a854,10vw 78vh 0 1px #fff,54vw 82vh 0 1px #e0d0ff,88vw 20vh 0 1px #d4a854,22vw 86vh 0 1px #fff,70vw 88vh 0 1px #e0d0ff;animation:sxTwB 5.5s ease-in-out infinite}.main::before{content:'';position:fixed;top:6%;left:5%;width:2px;height:2px;border-radius:50%;background:#e8e2ff;pointer-events:none;z-index:0;box-shadow:8vw 10vh 0 #cfc4f5,20vw 28vh 0 1px #a78bfa,33vw 6vh 0 #e8e2ff,46vw 20vh 0 1px #cfc4f5,60vw 8vh 0 #a78bfa,72vw 26vh 0 1px #e8e2ff,84vw 12vh 0 #cfc4f5,90vw 38vh 0 1px #a78bfa,14vw 46vh 0 1px #e8e2ff,28vw 60vh 0 #cfc4f5,43vw 42vh 0 1px #a78bfa,56vw 68vh 0 1px #e8e2ff,68vw 52vh 0 #cfc4f5,80vw 72vh 0 1px #a78bfa,6vw 70vh 0 #e8e2ff,23vw 84vh 0 1px #cfc4f5,50vw 80vh 0 #a78bfa,88vw 78vh 0 1px #e8e2ff;animation:sxTwA 4.5s ease-in-out infinite}.main::after{content:'';position:fixed;top:3%;left:14%;width:1px;height:1px;border-radius:50%;background:#9d92c8;pointer-events:none;z-index:0;box-shadow:6vw 22vh 0 #8a7fb8,16vw 52vh 0 #b5a9de,26vw 33vh 0 #9d92c8,36vw 72vh 0 #8a7fb8,48vw 38vh 0 #b5a9de,58vw 18vh 0 #9d92c8,68vw 58vh 0 #8a7fb8,76vw 42vh 0 #b5a9de,86vw 26vh 0 #9d92c8,4vw 68vh 0 #b5a9de,31vw 86vh 0 #9d92c8,62vw 82vh 0 #8a7fb8,83vw 76vh 0 #b5a9de,43vw 6vh 0 #9d92c8,72vw 70vh 0 #b5a9de,90vw 56vh 0 #8a7fb8,18vw 88vh 0 #9d92c8,56vw 88vh 0 #b5a9de;animation:sxTwC 6.7s ease-in-out infinite}.content::before{content:'';position:fixed;top:2%;left:95%;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot1 7s linear infinite}.content::after{content:'';position:fixed;top:10%;left:95%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot2 9s linear infinite 2.5s}`,
+  meteor:``,
   };
-  let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}';
-  // 图片背景主题
-  if(name==='img-bg'){
-    document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
-    try{
-      loadBgFromDB(function(bgUrl){
-        if(bgUrl){
-          document.body.style.backgroundImage=`url(${bgUrl})`;
-        } else {
-          document.body.style.backgroundImage='url(img-bg-dark.jpg)';
-        }
-      });
-    }catch(_){
-      document.body.style.backgroundImage='url(img-bg-dark.jpg)';
-    }
-  } else {
-    document.body.style.backgroundImage='';
-    // 清除 img-bg 的文字颜色覆盖
-    if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
-  }
-  themeVars.textContent = cssVars + (FX[name]||'');
-  // themeVars 设置完后，再根据图片亮度覆盖文字颜色
-  if(name==='img-bg'){
-    try{ applyBgTextMode(); }catch(_){}
-  }
+  themeVars.textContent = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}'+(FX[name]||'');
   try{localStorage.setItem('learnAppTheme',name)}catch(_){}
   document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('sel',d.dataset.theme===name));
-  // 所有动态主题统一 Canvas 驱动
-  startUnifiedCanvas(name);
-  // 重绘刷题趋势图（颜色跟随主题变化）
-  setTimeout(() => {
-    if(view === Views.OVERVIEW && typeof drawChart === 'function'){
-      drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
-    }
-  }, 50);
+  // 霜刃/子良主题：Canvas 驱动
+  if(name==='shuangren'){ startShuangrenCanvas(); } else { stopShuangrenCanvas(); }
+  if(name==='ziliang'){ startZiliangCanvas(); } else { stopZiliangCanvas(); }
 }
 $('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.toggle('show'); };
 document.querySelectorAll('.theme-dot').forEach(d=>d.onclick=()=>{applyTheme(d.dataset.theme);$('#themePopup').classList.remove('show');});
 document.addEventListener('click',()=>$('#themePopup').classList.remove('show'));
-// ===== IndexedDB 图片存储 =====
-const DB_NAME = 'LearnAppDB';
-const DB_VER = 1;
-function openDB(callback){
-  const req = indexedDB.open(DB_NAME, DB_VER);
-  req.onupgradeneeded = function(e){
-    const db = e.target.result;
-    if(!db.objectStoreNames.contains('bg')) db.createObjectStore('bg');
-  };
-  req.onsuccess = function(e){ callback(e.target.result); };
-  req.onerror = function(){ toast('数据库打开失败'); };
-}
-function saveBgToDB(blob, callback){
-  openDB(function(db){
-    const tx = db.transaction('bg','readwrite');
-    tx.objectStore('bg').put(blob, 'custom');
-    tx.oncomplete = function(){ if(callback) callback(); };
-    tx.onerror = function(){ toast('保存失败'); };
-  });
-}
-function loadBgFromDB(callback){
-  openDB(function(db){
-    const tx = db.transaction('bg','readonly');
-    const req = tx.objectStore('bg').get('custom');
-    req.onsuccess = function(){
-      const blob = req.result;
-      if(blob){
-        const url = URL.createObjectURL(blob);
-        callback(url);
-      } else {
-        callback(null);
-      }
-    };
-    req.onerror = function(){ callback(null); };
-  });
-}
+try{ const saved=localStorage.getItem('learnAppTheme'); if(saved&&THEMES[saved]) applyTheme(saved); }catch(_){}
 
-// 检测图片主色调和亮度，计算最佳文字颜色
-function detectImageColors(img, callback){
-  const canvas = document.createElement('canvas');
-  const size = 50;
-  canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, size, size);
-  const data = ctx.getImageData(0, 0, size, size).data;
-  let totalR = 0, totalG = 0, totalB = 0, totalLum = 0;
-  const count = size * size;
-  for(let i = 0; i < data.length; i += 4){
-    totalR += data[i]; totalG += data[i+1]; totalB += data[i+2];
-    totalLum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-  }
-  const avgR = totalR / count, avgG = totalG / count, avgB = totalB / count;
-  const avgLum = totalLum / count;
-  // 计算色调偏向：负=冷色 正=暖色
-  const warmth = avgR - avgB;
-  // 文字颜色固定不变（暗色底浅色字），只根据冷暖调整强调色
-  let accent, accent2;
-  if(warmth > 15){
-    accent='#ffb088'; accent2='#ff9868';
-  } else if(warmth < -15){
-    accent='#88d8f0'; accent2='#68b8e0';
-  } else {
-    accent='#a8c8f0'; accent2='#c0a8e8';
-  }
-  callback({accent, accent2});
-}
-
-// 根据保存的颜色配置设置文字颜色
-let _bgColorStyle = null;
-function applyBgTextMode(){
-  const colorsStr = localStorage.getItem('customBgColors');
-  // 先移除旧的内联样式
-  if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
-  if(colorsStr){
-    try{
-      const colors = JSON.parse(colorsStr);
-      // 用独立 style 标签，放在 themeVars 后面保证优先级
-      _bgColorStyle = document.createElement('style');
-      _bgColorStyle.textContent = `:root{--accent:${colors.accent};--accent2:${colors.accent2}}`;
-      document.head.appendChild(_bgColorStyle);
-    }catch(_){}
-  }
-}
-
-// 自定义背景图上传
-const uploadBgBtn = document.getElementById('uploadBgBtn');
-if(uploadBgBtn){
-  uploadBgBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.addEventListener('change', function(){
-      const file = input.files[0];
-      if(!file) return;
-      if(file.size > 50 * 1024 * 1024){ toast('图片不能超过 50MB'); return; }
-      // 存原始 Blob 到 IndexedDB
-      saveBgToDB(file, function(){
-        // 检测图片主色调
-        const img = new Image();
-        img.onload = function(){
-          detectImageColors(img, function(colors){
-            localStorage.setItem('customBgColors', JSON.stringify(colors));
-            // 用文件名（去掉扩展名）作为自定义主题名
-            const name = file.name.replace(/\.[^.]+$/, '');
-            const label = name.length > 6 ? name.slice(0,6)+'…' : name;
-            localStorage.setItem('customBgLabel', label);
-            document.querySelector('.theme-dot[data-theme="img-bg"]').textContent = label;
-            const mb = (file.size / 1024 / 1024).toFixed(1);
-            toast('背景图已保存（'+mb+'MB）');
-            // 如果当前已是自定义主题则刷新背景
-            if(currentTheme === 'img-bg'){
-              applyTheme('img-bg');
-            }
-          });
-        };
-        img.src = URL.createObjectURL(file);
-      });
-    });
-    input.click();
-  });
-}
-
-// 恢复自定义主题名称
-(function(){
-  const label = localStorage.getItem('customBgLabel');
-  if(label){
-    const dot = document.querySelector('.theme-dot[data-theme="img-bg"]');
-    if(dot) dot.textContent = label;
-  }
-})();
-
-// 初始化主题：如果是 img-bg 但没上传过图片，回退到默认
-(function initTheme(){
-  try{
-    let saved = localStorage.getItem('learnAppTheme');
-    if(saved === 'img-bg'){
-      try{
-        openDB(function(db){
-          const tx = db.transaction('bg','readonly');
-          const req = tx.objectStore('bg').get('custom');
-          req.onsuccess = function(){
-            if(!req.result){
-              saved = 'aurora';
-              localStorage.setItem('learnAppTheme', 'aurora');
-            }
-            if(saved && THEMES[saved]) applyTheme(saved);
-          };
-          req.onerror = function(){
-            if(saved && THEMES[saved]) applyTheme(saved);
-          };
-        });
-      }catch(_){
-        if(saved && THEMES[saved]) applyTheme(saved);
-      }
-    } else {
-      if(saved && THEMES[saved]) applyTheme(saved);
-    }
-  }catch(_){}
-})();
-
-// 折叠面板（手风琴模式：展开一个时自动折叠其他）
-function toggleSetPanel(head){
-  const section=head.parentElement;
-  const isOpen=section.classList.contains('open');
-  document.querySelectorAll('.set-section').forEach(s=>{s.classList.remove('open');s.querySelector('.set-body').style.display='none';});
-  if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='block';}
-}
 // 数据弹窗
-$('#closeModalX').onclick = () => $('#dataModal').classList.remove('show');
+$('#dataBtn').onclick = () => { $('#dataModal').classList.add('show'); loadApiCfgUI(); };
+$('#closeModal').onclick = () => $('#dataModal').classList.remove('show');
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal') $('#dataModal').classList.remove('show'); };
 
 // AI API 配置
-const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'}};
+const aiPresets={deepseek:{url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'},'silicon-dsv3':{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'}};
 async function loadApiCfgUI(){ const c=await loadApiConfig()||{}; $('#aiUrl').value=c.url||'';$('#aiKey').value=c.key||'';$('#aiModel').value=c.model||''; }
 $('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) return; $('#aiUrl').value=p.url;$('#aiModel').value=p.model; };
 ['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:$('#aiKey').value.trim(),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; if(aiConfig) Store.saveApiConfig(aiConfig); }});
@@ -2243,48 +1946,6 @@ function exportBlankApp(){
 $('#clearAllBtn').onclick = clearAllDocs;
 $('#exportBlankBtn').onclick = exportBlankApp;
 
-// Gitee 云同步
-function loadGiteeCfg(){const t=localStorage.getItem('giteeToken')||'',g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
-function saveGiteeCfg(){localStorage.setItem('giteeToken',$('#giteeToken').value.trim());localStorage.setItem('giteeGistId',$('#giteeGistId').value.trim());}
-$('#giteeToken').oninput=saveGiteeCfg;$('#giteeGistId').oninput=saveGiteeCfg;
-$('#dataBtn').onclick = () => { $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); };
-async function cloudPush(){
-  const token=$('#giteeToken').value.trim(),gistId=$('#giteeGistId').value.trim();
-  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
-  $('#cloudStatus').textContent='推送中…';
-  const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
-  try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`token ${token}`},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:JSON.stringify(data)}}})
-    });
-    if(resp.ok){$('#cloudStatus').textContent='✅ 推送成功 '+new Date().toLocaleTimeString();toast('已推送到云端');}
-    else{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'推送失败'));}
-  }catch(e){$('#cloudStatus').textContent='❌ 网络错误';}
-}
-async function cloudPull(){
-  const token=$('#giteeToken').value.trim(),gistId=$('#giteeGistId').value.trim();
-  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
-  $('#cloudStatus').textContent='拉取中…';
-  try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      headers:{'Authorization':`token ${token}`}
-    });
-    if(!resp.ok){const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));return;}
-    const gist=await resp.json();
-    const file=gist.files['learn-data.json'];
-    if(!file||!file.content){$('#cloudStatus').textContent='❌ 云端无数据';return;}
-    const data=JSON.parse(file.content);
-    if(!confirm(`云端数据更新时间：${data.updatedAt||'未知'}\n\n拉取将覆盖本地数据，确定？`))return;
-    DOCS=data.documents||[];PROGRESS=data.progress||{};ORDER=data.order||[];CLEARS=data.clears||{};
-    await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
-    buildIndex();
-    $('#cloudStatus').textContent='✅ 拉取成功 '+new Date().toLocaleTimeString();
-    toast('已从云端同步');renderAll();$('#dataModal').classList.remove('show');
-  }catch(e){$('#cloudStatus').textContent='❌ 网络错误或数据格式错误';}
-}
-$('#cloudPush').onclick=cloudPush;$('#cloudPull').onclick=cloudPull;
-
 // 添加题目弹窗
 $('#addCancel').onclick = () => $('#addModal').classList.remove('show');
 $('#addModal').onclick = e => { if(e.target.id==='addModal') $('#addModal').classList.remove('show'); };
@@ -2382,297 +2043,161 @@ function buildOrderFromSeed(){
   loadApiConfig();
   renderAll();
   // 初始主题如果是陨石，启动 Canvas
-  try{ startUnifiedCanvas(localStorage.getItem('learnAppTheme')||'aurora'); }catch(_){}
+  try{ if((localStorage.getItem('learnAppTheme')||'')==='shuangren') startShuangrenCanvas(); }catch(_){}
+  try{ if((localStorage.getItem('learnAppTheme')||'')==='ziliang') startZiliangCanvas(); }catch(_){}
 })();
 
-// ======== 统一 Canvas 2D 引擎（所有动态主题） ========
-let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0;
-let _uTheme = '';
-let _uParticles = [];
+// ======== 霜刃主题 Canvas 2D 引擎 ========
+let _srCanvas = null, _srCtx = null, _srRaf = null, _srTime = 0;
+let _srFlakes = [];
 
-function startUnifiedCanvas(theme){
-  const canvasThemes = ['gold','void','ziliang','shuangren','songxing','night','zirong'];
-  if(!canvasThemes.includes(theme)){
-    // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
-    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
-    if(_uCanvas){
-      _uCtx.clearRect(0, 0, _uCanvas.width, _uCanvas.height);
-      _uCanvas.remove();
-      _uCanvas = null; _uCtx = null;
-    }
-    _uParticles = [];
-    _uTime = 0;
-    _uTheme = '';
-    return;
-  }
-  // Canvas 主题：创建或复用 Canvas
-  if(_uTheme === theme) return;
-  if(!_uCanvas){
-    _uCanvas = document.createElement('canvas');
-    _uCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
-    document.body.appendChild(_uCanvas);
-    _uCtx = _uCanvas.getContext('2d');
-    window.addEventListener('resize', resizeUnified);
-    resizeUnified();
-  }
-  _uTheme = theme;
-  _uParticles = [];
-  _uTime = 0;
-  initThemeParticles(theme);
-  if(!_uRaf) _uRaf = requestAnimationFrame(tickUnified);
-}
-function resizeUnified(){
-  if(!_uCanvas) return;
-  _uCanvas.width = window.innerWidth;
-  _uCanvas.height = window.innerHeight;
-}
-function initThemeParticles(theme){
-  _uParticles = [];
-  const W = _uCanvas.width, H = _uCanvas.height;
-  const count = {gold:50, void:0, ziliang:100, shuangren:50, songxing:120, night:8, zirong:500}[theme] || 0;
-  for(let i=0;i<count;i++){
-    _uParticles.push({
-      x: Math.random()*W, y: Math.random()*H,
-      vx: (Math.random()-0.5)*1, vy: (Math.random()-0.5)*1,
-      life: Math.random(), maxLife: 1+Math.random()*3,
-      size: 0.5+Math.random()*2,
-      seed: Math.random()*9999
+function startShuangrenCanvas(){
+  if(_srCanvas) return;
+  _srCanvas = document.createElement('canvas');
+  _srCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
+  document.body.appendChild(_srCanvas);
+  _srCtx = _srCanvas.getContext('2d');
+  _srCanvas.width = window.innerWidth;
+  _srCanvas.height = window.innerHeight;
+  _srFlakes = [];
+  _srTime = 0;
+  for(let i=0;i<50;i++){
+    _srFlakes.push({
+      x: Math.random()*_srCanvas.width,
+      y: Math.random()*_srCanvas.height*-1,
+      vy: 0.2+Math.random()*0.6,
+      vx: (Math.random()-0.5)*0.3,
+      size: 0.5+Math.random()*2.5,
+      alpha: 0.2+Math.random()*0.5,
+      rot: Math.random()*Math.PI*2,
+      rotV: (Math.random()-0.5)*0.02
     });
   }
-  if(theme==='ziliang'){
-    _uParticles = [];
-    const cols = Math.floor(W/14);
-    for(let i=0;i<cols;i++) _uParticles.push({x:i*14+Math.random()*8, y:Math.random()*H*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
-  }
-  if(theme==='shuangren'){
-    _uParticles = [];
-    for(let i=0;i<50;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, vy:0.2+Math.random()*0.6, vx:(Math.random()-0.5)*0.3, size:0.5+Math.random()*2.5, alpha:0.2+Math.random()*0.5, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.02});
-  }
-  if(theme==='zirong'){
-    _uParticles = [];
-    for(let i=0;i<500;i++){
-      const green=Math.random()<0.25;
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.2, vy:-0.1-Math.random()*0.3,
-        size:0.5+Math.random()*3, alpha:0.08+Math.random()*0.25,
-        green, glowR:green?3+Math.random()*5:2+Math.random()*4,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5
-      });
-    }
-  }
+  window.addEventListener('resize', resizeShuangrenCanvas);
+  _srRaf = requestAnimationFrame(tickShuangren);
 }
-function tickUnified(ts){
-  if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
-  _uRaf = requestAnimationFrame(tickUnified);
-  _uTime += 0.016;
-  const ctx = _uCtx, W = _uCanvas.width, H = _uCanvas.height;
+function stopShuangrenCanvas(){
+  if(!_srCanvas) return;
+  cancelAnimationFrame(_srRaf);
+  window.removeEventListener('resize', resizeShuangrenCanvas);
+  _srCanvas.remove();
+  _srCanvas = _srCtx = _srRaf = null;
+  _srFlakes = [];
+}
+function resizeShuangrenCanvas(){
+  if(!_srCanvas) return;
+  _srCanvas.width = window.innerWidth;
+  _srCanvas.height = window.innerHeight;
+}
+function tickShuangren(ts){
+  _srRaf = requestAnimationFrame(tickShuangren);
+  _srTime += 0.016;
+  const ctx = _srCtx, W = _srCanvas.width, H = _srCanvas.height;
   ctx.clearRect(0, 0, W, H);
-  switch(_uTheme){
-    case 'gold': drawGold(ctx,W,H); break;
-    case 'void': drawVoid(ctx,W,H); break;
-    case 'ziliang': drawZiliang(ctx,W,H); break;
-    case 'shuangren': drawShuangren(ctx,W,H); break;
 
-    case 'songxing': drawSongxing(ctx,W,H); break;
-    case 'night': drawNight(ctx,W,H); break;
-    case 'zirong': drawZirong(ctx,W,H); break;
+  // 冰蓝基底光晕
+  const bgGrad = ctx.createRadialGradient(W*0.5, H*0.35, 0, W*0.5, H*0.5, Math.max(W,H)*0.7);
+  bgGrad.addColorStop(0, 'rgba(60,120,180,0.08)');
+  bgGrad.addColorStop(0.5, 'rgba(30,60,100,0.04)');
+  bgGrad.addColorStop(1, 'rgba(2,8,16,0)');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
 
-    default: break;
-  }
-}
-function drawGold(ctx,W,H){
-  const t = _uTime;
-  const rivers = [
-    {y:0.15, color:[255,200,120,0.12], speed:0.08, width:0.4},
-    {y:0.35, color:[255,160,60,0.1], speed:-0.06, width:0.35},
-    {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
-    {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
-  ];
-  for(let r of rivers){
-    const offset = ((t*r.speed) % 2 - 1) * W;
-    const grad = ctx.createRadialGradient(W*0.5+offset, r.y*H, 0, W*0.5+offset, r.y*H, H*r.width);
-    grad.addColorStop(0, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]})`);
-    grad.addColorStop(0.5, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]*0.3})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-  }
-}
-function drawVoid(ctx,W,H){
-  const t = _uTime;
-  const cx = W*0.5, cy = H*0.48;
-  const maxR = Math.max(W,H);
 
-  // 外层星场：更多更密更随机
-  for(let i=0;i<120;i++){
-    const px = ((i*137.5 + t*2.5) % W + W) % W;
-    const py = ((i*251.3 + t*1.8) % H + H) % H;
-    const a = 0.04 + Math.sin(t*1.5 + i)*0.03;
-    ctx.fillStyle = `rgba(140,120,200,${a})`;
-    ctx.beginPath(); ctx.arc(px, py, 0.8, 0, Math.PI*2); ctx.fill();
-  }
 
-  // 朦胧吸积盘：多层径向渐变叠加，不用椭圆边框
-  for(let ring=0;ring<6;ring++){
-    const ringR = 60 + ring*maxR*0.18;
-    const alpha = 0.1 - ring*0.015;
-    const grad = ctx.createRadialGradient(cx, cy, ringR*0.2, cx, cy, ringR);
-    grad.addColorStop(0, `rgba(60,20,120,${alpha})`);
-    grad.addColorStop(0.3, `rgba(80,30,140,${alpha*0.7})`);
-    grad.addColorStop(0.6, `rgba(50,15,90,${alpha*0.4})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  // 朦胧粒子云：用大量小粒子 + 径向渐变模拟气体感
-  for(let i=0;i<200;i++){
-    const angle = t*0.2 + i*0.18;
-    const r = 20 + (i*2.5) % (maxR*0.65);
-    const spread = Math.sin(t*0.4 + i*0.1)*15;
-    const px = cx + Math.cos(angle)*(r+spread);
-    const py = cy + Math.sin(angle)*(r+spread)*0.55;
-    const distFromCenter = Math.sqrt((px-cx)**2 + ((py-cy)/0.55)**2);
-    const alpha = Math.max(0, 0.06 + (1 - distFromCenter/(maxR*0.7))*0.1);
-    if(px>0 && px<W && py>0 && py<H){
-      const col = i%3===0?'rgba(180,130,240,':i%3===1?'rgba(150,100,220,':'rgba(200,160,250,';
-      ctx.fillStyle = col + alpha + ')';
-      ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI*2); ctx.fill();
+  // 冰晶飘落
+  for(let f of _srFlakes){
+    f.y += f.vy;
+    f.x += f.vx + Math.sin(_srTime*2+f.x*0.01)*0.1;
+    f.rot += f.rotV;
+    if(f.y > H+10){ f.y = -10; f.x = Math.random()*W; }
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    ctx.rotate(f.rot);
+    ctx.fillStyle = `rgba(160,220,255,${f.alpha})`;
+    // 六角冰晶形状
+    ctx.beginPath();
+    for(let i=0;i<6;i++){
+      const ra = i*Math.PI/3;
+      const r = f.size;
+      if(i===0) ctx.moveTo(Math.cos(ra)*r, Math.sin(ra)*r);
+      else ctx.lineTo(Math.cos(ra)*r, Math.sin(ra)*r);
     }
-  }
-
-  // 中心暗核：柔和的径向渐变，不是硬圆
-  const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
-  coreGrad.addColorStop(0, 'rgba(8,3,20,0.95)');
-  coreGrad.addColorStop(0.3, 'rgba(20,8,50,0.6)');
-  coreGrad.addColorStop(0.6, 'rgba(40,15,80,0.2)');
-  coreGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = coreGrad;
-  ctx.fillRect(0, 0, W, H);
-}
-function drawZiliang(ctx,W,H){
-  const bgGrad=ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  bgGrad.addColorStop(0,'rgba(210,210,220,0.03)');bgGrad.addColorStop(1,'rgba(8,8,12,0)');
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
-  for(let d of _uParticles){
-    d.y+=d.speed;
-    if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;}
-    ctx.fillStyle=`rgba(220,220,235,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
-    const grad=ctx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
-    grad.addColorStop(0,'rgba(210,210,220,0)');grad.addColorStop(0.6,`rgba(210,210,220,${d.alpha*0.5})`);grad.addColorStop(1,`rgba(220,220,235,${d.alpha*1.8})`);
-    ctx.strokeStyle=grad;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(d.x,d.y-d.len);ctx.lineTo(d.x,d.y);ctx.stroke();
-  }
-}
-function drawShuangren(ctx,W,H){
-  const bgGrad=ctx.createRadialGradient(W*0.5,H*0.35,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
-  bgGrad.addColorStop(0,'rgba(60,120,180,0.08)');bgGrad.addColorStop(0.5,'rgba(30,60,100,0.04)');bgGrad.addColorStop(1,'rgba(2,8,16,0)');
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
-  for(let f of _uParticles){
-    f.y+=f.vy;f.x+=f.vx+Math.sin(_uTime*2+f.x*0.01)*0.1;f.rot+=f.rotV;
-    if(f.y>H+10){f.y=-10;f.x=Math.random()*W;}
-    ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);
-    ctx.fillStyle=`rgba(160,220,255,${f.alpha})`;ctx.beginPath();
-    for(let i=0;i<6;i++){const ra=i*Math.PI/3;if(i===0)ctx.moveTo(Math.cos(ra)*f.size,Math.sin(ra)*f.size);else ctx.lineTo(Math.cos(ra)*f.size,Math.sin(ra)*f.size);}
-    ctx.closePath();ctx.fill();
-    ctx.fillStyle=`rgba(200,240,255,${f.alpha*0.3})`;ctx.beginPath();ctx.arc(0,0,f.size*1.5,0,Math.PI*2);ctx.fill();
+    ctx.closePath(); ctx.fill();
+    // 光晕
+    ctx.fillStyle = `rgba(200,240,255,${f.alpha*0.3})`;
+    ctx.beginPath(); ctx.arc(0, 0, f.size*1.5, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
 }
-function drawSongxing(ctx,W,H){
-  const t = _uTime;
-  for(let p of _uParticles){
-    // 缓慢漂移，到底部后循环回顶部
-    p.y+=p.vy;if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
-    const twinkle=Math.sin(t*2+p.seed*30);
-    const alpha=0.06+(twinkle+1)*0.18;
-    const isGold=p.seed%5===0;
-    const c=isGold?'212,168,132':'200,195,240';
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3);
-    glow.addColorStop(0,`rgba(${c},${alpha})`);glow.addColorStop(0.5,`rgba(${c},${alpha*0.25})`);glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=`rgba(${c},${alpha*1.2})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
+
+// ======== 子良主题 Canvas 引擎：电子雨 ========
+let _zlCanvas = null, _zlCtx = null, _zlRaf = null;
+let _zlDrops = [];
+function startZiliangCanvas(){
+  if(_zlCanvas) return;
+  _zlCanvas = document.createElement('canvas');
+  _zlCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
+  document.body.appendChild(_zlCanvas);
+  _zlCtx = _zlCanvas.getContext('2d');
+  _zlCanvas.width = window.innerWidth;
+  _zlCanvas.height = window.innerHeight;
+  _zlDrops = [];
+  const cols = Math.floor(_zlCanvas.width / 14);
+  for(let i=0;i<cols;i++) _zlDrops.push({x:i*14+Math.random()*8, y:Math.random()*_zlCanvas.height*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
+  window.addEventListener('resize', resizeZiliangCanvas);
+  _zlRaf = requestAnimationFrame(tickZiliang);
+}
+function stopZiliangCanvas(){
+  if(!_zlCanvas) return;
+  cancelAnimationFrame(_zlRaf);
+  window.removeEventListener('resize', resizeZiliangCanvas);
+  _zlCanvas.remove();
+  _zlCanvas = _zlCtx = _zlRaf = null;
+  _zlDrops = [];
+}
+function resizeZiliangCanvas(){
+  if(!_zlCanvas) return;
+  _zlCanvas.width = window.innerWidth;
+  _zlCanvas.height = window.innerHeight;
+  _zlDrops = [];
+  const cols = Math.floor(_zlCanvas.width / 14);
+  for(let i=0;i<cols;i++) _zlDrops.push({x:i*14+Math.random()*8, y:Math.random()*_zlCanvas.height*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
+}
+function tickZiliang(ts){
+  _zlRaf = requestAnimationFrame(tickZiliang);
+  const ctx = _zlCtx, W = _zlCanvas.width, H = _zlCanvas.height;
+  ctx.clearRect(0, 0, W, H);
+  // 微光底
+  const bgGrad = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.5, Math.max(W,H)*0.8);
+  bgGrad.addColorStop(0, 'rgba(210,210,220,0.03)');
+  bgGrad.addColorStop(1, 'rgba(8,8,12,0)');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
+  for(let d of _zlDrops){
+    d.y += d.speed;
+    if(d.y - d.len > H){ d.y = Math.random()*H*-0.3; d.speed = 0.6+Math.random()*1.8; d.len = 10+Math.random()*40; d.alpha = 0.08+Math.random()*0.15; }
+    const headAlpha = d.alpha * 3;
+    ctx.fillStyle = `rgba(220,220,235,${headAlpha})`;
+    ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI*2); ctx.fill();
+    const grad = ctx.createLinearGradient(d.x, d.y - d.len, d.x, d.y);
+    grad.addColorStop(0, `rgba(210,210,220,0)`);
+    grad.addColorStop(0.6, `rgba(210,210,220,${d.alpha*0.5})`);
+    grad.addColorStop(1, `rgba(220,220,235,${d.alpha*1.8})`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(d.x, d.y - d.len); ctx.lineTo(d.x, d.y); ctx.stroke();
   }
 }
-function drawNight(ctx,W,H){
-  const t = _uTime;
-  // 深夜底色 + 微弱月光渐变
-  const moon=ctx.createRadialGradient(W*0.7,H*0.15,0,W*0.7,H*0.2,H*0.4);
-  moon.addColorStop(0,'rgba(40,50,80,0.2)');moon.addColorStop(0.5,'rgba(20,25,40,0.08)');moon.addColorStop(1,'transparent');
-  ctx.fillStyle=moon;ctx.fillRect(0,0,W,H);
-  // 远处星光（固定，很淡）
-  ctx.fillStyle='rgba(255,255,240,0.015)';
-  for(let i=0;i<50;i++){const sx=(i*137)%W,sy=(i*89)%H;ctx.beginPath();ctx.arc(sx,sy,0.5,0,Math.PI*2);ctx.fill();}
-  // 萤火虫 - 每只独立飞行
-  for(let f of _uParticles){
-    // 使用 sin/cos 做平滑漂移
-    f.x+=Math.sin(t*0.7+f.seed*100)*0.4+Math.cos(t*0.5+f.seed*50)*0.3;
-    f.y+=Math.cos(t*0.6+f.seed*80)*0.35+Math.sin(t*0.4+f.seed*60)*0.3;
-    // 循环边界
-    if(f.x<0)f.x=W;if(f.x>W)f.x=0;if(f.y<0)f.y=H;if(f.y>H)f.y=0;
-    // 呼吸闪烁
-    const pulse=Math.sin(t*2.5+f.seed*50);
-    const alpha=0.15+(pulse+1)*0.35;
-    // 萤火虫光晕 - 黄绿
-    const glow=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.size*8);
-    glow.addColorStop(0,`rgba(200,240,100,${alpha*0.8})`);
-    glow.addColorStop(0.3,`rgba(160,220,80,${alpha*0.35})`);
-    glow.addColorStop(0.6,`rgba(100,180,60,${alpha*0.08})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(f.x,f.y,f.size*8,0,Math.PI*2);ctx.fill();
-    // 萤火虫身体亮点
-    ctx.fillStyle=`rgba(240,255,180,${alpha*0.9})`;
-    ctx.beginPath();ctx.arc(f.x,f.y,f.size*1.2,0,Math.PI*2);ctx.fill();
-  }
-}
-function drawZirong(ctx,W,H){
-  const t=_uTime;
-  ctx.fillStyle='rgba(6,2,3,0.15)';
-  ctx.fillRect(0,0,W,H);
-
-  // 底部暗红光晕
-  const botGlow=ctx.createRadialGradient(W*0.5,H*0.85,0,W*0.5,H*0.85,H*0.5);
-  botGlow.addColorStop(0,'rgba(140,15,20,0.04)');
-  botGlow.addColorStop(1,'transparent');
-  ctx.fillStyle=botGlow;ctx.fillRect(0,0,W,H);
-
-  // 顶部暗绿光晕
-  const topGlow=ctx.createRadialGradient(W*0.5,H*0.15,0,W*0.5,H*0.15,H*0.4);
-  topGlow.addColorStop(0,'rgba(20,80,30,0.03)');
-  topGlow.addColorStop(1,'transparent');
-  ctx.fillStyle=topGlow;ctx.fillRect(0,0,W,H);
-
-  // 全屏荧光粒子
-  ctx.globalCompositeOperation='lighter';
-  for(let p of _uParticles){
-    p.x+=p.vx;p.y+=p.vy;
-    if(p.y<-10){p.y=H+10;p.x=Math.random()*W;}
-    if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;
-    const alpha=p.alpha*(0.6+0.4*Math.sin(t*p.speed+p.phase));
-    const col=p.green?'0,220,80':'220,30,40';
-    const grad=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*1.5);
-    grad.addColorStop(0,`rgba(${col},${alpha})`);
-    grad.addColorStop(0.3,`rgba(${col},${alpha*0.4})`);
-    grad.addColorStop(1,'transparent');
-    ctx.fillStyle=grad;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size*1.5,0,Math.PI*2);ctx.fill();
-  }
-  ctx.globalCompositeOperation='source-over';
-
-  // 暗角
-  const vignette=ctx.createRadialGradient(W*0.5,H*0.5,Math.min(W,H)*0.3,W*0.5,H*0.5,Math.max(W,H)*0.75);
-  vignette.addColorStop(0,'transparent');
-  vignette.addColorStop(1,'rgba(6,2,3,0.5)');
-  ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
-}
-
 </script>
 <script>
-const SW_VERSION = '4';
+// SW 版本号：修改文档内容后手动递增，页面启动时检测到版本变化会自动清理旧缓存
+const SW_VERSION = '3';
+
+// 只在 http/https 下注册 SW；file:// 协议不支持，直接跳过
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
     if(savedVer !== SW_VERSION){
+      // 版本变了 → 清缓存、注销旧 SW
       await caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r => r.unregister()));

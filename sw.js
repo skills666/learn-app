@@ -1,4 +1,4 @@
-const CACHE = 'learn-v6';
+const CACHE = 'learn-v9';
 const PRE_CACHE = ['index.html', 'manifest.json'];
 
 self.addEventListener('install', e => {
