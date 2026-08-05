@@ -405,7 +405,7 @@
     <div class="sub">🤖 AI 模型设置（用于智能阅卷 / AI 查询）</div>
     <div class="ai-config" id="aiConfigPanel">
       <div class="row">
-        <select id="aiPreset" style="max-width:180px"><option value="">自定义</option><option value="deepseek">DeepSeek（¥1/百万token）</option><option value="silicon-dsv3">硅基流动·DeepSeek-V3（免费）</option><option value="silicon">硅基流动·Qwen 2.5（免费）</option></select>
+        <select id="aiPreset" style="max-width:180px"><option value="">自定义</option><option value="silicon">硅基流动（免费额度）</option><option value="aliyun">阿里云百炼</option></select>
         <input placeholder="API 地址" id="aiUrl">
       </div>
       <div class="row">
@@ -1772,7 +1772,7 @@ const THEMES = {
   shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#a0e0ff',good:'#50c0a0',warn:'#80d0e0',bad:'#e06070'},
   night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#a0d8a0',accent2:'#c0e880',accent3:'#e8d860',good:'#60d080',warn:'#e8d860',bad:'#e06060'},
   ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'},
-  zirong: {bg:'#040a08',bg2:'#080e0c',panel:'#0c1210',card:'#101614',line:'#1a2820',line2:'#223830',text:'#d8f0e0',muted:'#60c088',faint:'#308050',accent:'#00FF88',accent2:'#E03A3A',accent3:'#FFD700',good:'#00FF88',warn:'#FFD700',bad:'#E03A3A'}
+  zirong: {bg:'#18080a',bg2:'#1c0c0e',panel:'#200e12',card:'#241216',line:'#321a1e',line2:'#422428',text:'#f0dcdc',muted:'#c09094',faint:'#805c60',accent:'#d4606a',accent2:'#c51e2a',accent3:'#f0efea',good:'#5a9e6f',warn:'#c4a43a',bad:'#c51e2a'}
 };
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
@@ -1806,7 +1806,7 @@ $('#closeModal').onclick = () => $('#dataModal').classList.remove('show');
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal') $('#dataModal').classList.remove('show'); };
 
 // AI API 配置
-const aiPresets={deepseek:{url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'},'silicon-dsv3':{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'}};
+const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'}};
 async function loadApiCfgUI(){ const c=await loadApiConfig()||{}; $('#aiUrl').value=c.url||'';$('#aiKey').value=c.key||'';$('#aiModel').value=c.model||''; }
 $('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) return; $('#aiUrl').value=p.url;$('#aiModel').value=p.model; };
 ['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:$('#aiKey').value.trim(),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; if(aiConfig) Store.saveApiConfig(aiConfig); }});
@@ -2100,7 +2100,7 @@ let _uTheme = '';
 let _uParticles = [];
 
 function startUnifiedCanvas(theme){
-  const canvasThemes = ['gold','void','ziliang','shuangren','zirong','songxing','night'];
+  const canvasThemes = ['gold','void','ziliang','shuangren','songxing','night'];
   if(!canvasThemes.includes(theme)){
     // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
@@ -2138,7 +2138,7 @@ function resizeUnified(){
 function initThemeParticles(theme){
   _uParticles = [];
   const W = _uCanvas.width, H = _uCanvas.height;
-  const count = {gold:50, void:0, ziliang:100, shuangren:50, zirong:80, songxing:120, night:8}[theme] || 0;
+  const count = {gold:50, void:0, ziliang:100, shuangren:50, songxing:120, night:8}[theme] || 0;
   for(let i=0;i<count;i++){
     _uParticles.push({
       x: Math.random()*W, y: Math.random()*H,
@@ -2169,7 +2169,7 @@ function tickUnified(ts){
     case 'void': drawVoid(ctx,W,H); break;
     case 'ziliang': drawZiliang(ctx,W,H); break;
     case 'shuangren': drawShuangren(ctx,W,H); break;
-    case 'zirong': drawZirong(ctx,W,H); break;
+
     case 'songxing': drawSongxing(ctx,W,H); break;
     case 'night': drawNight(ctx,W,H); break;
 
@@ -2287,54 +2287,6 @@ function drawSongxing(ctx,W,H){
     glow.addColorStop(0,`rgba(${c},${alpha})`);glow.addColorStop(0.5,`rgba(${c},${alpha*0.25})`);glow.addColorStop(1,'transparent');
     ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2);ctx.fill();
     ctx.fillStyle=`rgba(${c},${alpha*1.2})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
-  }
-}
-function drawZirong(ctx,W,H){
-  const t = _uTime;
-  // 深黑底色
-  ctx.fillStyle='rgba(6,4,4,0.3)';ctx.fillRect(0,0,W,H);
-  // 透视网格 - 红色主导
-  const gridSize=55, vpY=H*0.35, vpX=W*0.5;
-  for(let x=0;x<=W;x+=gridSize){
-    const sx=(x-vpX)*1.8+vpX;ctx.strokeStyle='rgba(224,58,58,0.05)';ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(sx,vpY);ctx.stroke();
-  }
-  for(let y=vpY;y<=H;y+=gridSize){
-    const t2=(y-vpY)/(H-vpY);const alpha=0.03+t2*0.04;
-    ctx.strokeStyle=`rgba(224,58,58,${alpha})`;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
-  }
-
-  // CRT暗纹
-  ctx.fillStyle='rgba(0,0,0,0.025)';
-  for(let y=0;y<H;y+=3){ctx.fillRect(0,y,W,1);}
-  // 红色主光晕 - 大面积
-  const rx1=vpX+Math.sin(t*0.5)*W*0.12, ry1=H*0.3+Math.cos(t*0.7)*H*0.08;
-  const rg1=ctx.createRadialGradient(rx1,ry1,0,rx1,ry1,Math.max(W,H)*0.5);
-  rg1.addColorStop(0,'rgba(224,58,58,0.15)');rg1.addColorStop(0.35,'rgba(224,58,58,0.05)');rg1.addColorStop(1,'transparent');
-  ctx.fillStyle=rg1;ctx.fillRect(0,0,W,H);
-  // 红色副光晕
-  const rx2=W*0.3+Math.cos(t*0.55)*W*0.15, ry2=H*0.6+Math.sin(t*0.65)*H*0.1;
-  const rg2=ctx.createRadialGradient(rx2,ry2,0,rx2,ry2,400);
-  rg2.addColorStop(0,'rgba(224,58,58,0.1)');rg2.addColorStop(0.4,'rgba(224,58,58,0.03)');rg2.addColorStop(1,'transparent');
-  ctx.fillStyle=rg2;ctx.fillRect(0,0,W,H);
-  // 绿色点缀光晕
-  const gx=W*0.78+Math.cos(t*0.8)*W*0.1, gy=H*0.45+Math.sin(t*0.6)*H*0.06;
-  const gg=ctx.createRadialGradient(gx,gy,0,gx,gy,280);
-  gg.addColorStop(0,'rgba(0,255,136,0.06)');gg.addColorStop(0.5,'rgba(0,255,136,0.02)');gg.addColorStop(1,'transparent');
-  ctx.fillStyle=gg;ctx.fillRect(0,0,W,H);
-  // 粒子 - 红色为主(70%) + 绿色点缀(30%)
-  for(let p of _uParticles){
-    p.y+=p.vy;if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
-    const alpha=0.25+Math.sin(t*3+p.seed)*0.3;
-    const isRed=p.seed%10<7;
-    const c=isRed?'224,58,58':'0,255,136';
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3.5);
-    glow.addColorStop(0,`rgba(${c},${alpha*0.85})`);
-    glow.addColorStop(0.5,`rgba(${c},${alpha*0.25})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.size*3.5,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=`rgba(${c},${alpha})`;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
   }
 }
 function drawNight(ctx,W,H){
