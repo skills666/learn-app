@@ -591,6 +591,23 @@ const Store = (() => {
     saveAutoSync: v => set('autoSync', !!v),
     getSyncInterval: () => get('syncInterval').then(v => v || 5),
     saveSyncInterval: v => set('syncInterval', v),
+    // 重建数据库（关闭连接→删库→重新打开）
+    recreateDB: () => new Promise(resolve => {
+      if(db){ db.close(); db = null; }
+      const delReq = indexedDB.deleteDatabase('learnAppDB');
+      delReq.onsuccess = () => {
+        const newReq = indexedDB.open('learnAppDB', 2);
+        newReq.onupgradeneeded = e => {
+          const d = e.target.result;
+          d.createObjectStore('kv', {keyPath:'key'});
+          d.createObjectStore('bg');
+        };
+        newReq.onsuccess = e => { db = e.target.result; useLS = false; resolve(db); };
+        newReq.onerror = () => { useLS = true; resolve(null); };
+      };
+      delReq.onerror = () => resolve(null);
+      delReq.onblocked = () => resolve(null);
+    }),
   };
 })();
 
@@ -1998,45 +2015,31 @@ function openDB(callback){
   req.onerror = function(){ toast('数据库打开失败'); };
 }
 function saveBgToDB(blob, callback){
-  function trySave(db){
+  openDB(async function(db){
     try{
+      if(!db.objectStoreNames.contains('bg')) throw new Error('no bg store');
       const tx = db.transaction('bg','readwrite');
       tx.objectStore('bg').put(blob, 'custom');
       tx.oncomplete = function(){ if(callback) callback(); };
       tx.onerror = function(){ toast('保存失败'); };
-      return true;
-    }catch(e){ return false; }
-  }
-  openDB(function(db){
-    if(trySave(db)) return;
-    // bg store 不存在，删库重建
-    db.close();
-    const delReq = indexedDB.deleteDatabase('learnAppDB');
-    delReq.onsuccess = function(){
-      const newReq = indexedDB.open('learnAppDB', 2);
-      newReq.onupgradeneeded = function(ev){
-        const d = ev.target.result;
-        d.createObjectStore('kv', {keyPath:'key'});
-        d.createObjectStore('bg');
-      };
-      newReq.onsuccess = function(ev){
-        // 先保存 bg 图片
-        const newDb = ev.target.result;
-        const tx = newDb.transaction('bg','readwrite');
-        tx.objectStore('bg').put(blob, 'custom');
-        tx.oncomplete = function(){
-          // 再把内存数据写回 kv store
-          const tx2 = newDb.transaction('kv','readwrite');
-          tx2.objectStore('kv').put({key:'docs',val:DOCS});
-          tx2.objectStore('kv').put({key:'progress',val:PROGRESS});
-          tx2.objectStore('kv').put({key:'order',val:ORDER});
-          tx2.objectStore('kv').put({key:'clears',val:CLEARS});
-          tx2.oncomplete = function(){ if(callback) callback(); };
-        };
-      };
-      newReq.onerror = function(){ toast('保存失败'); };
-    };
-    delReq.onerror = function(){ toast('保存失败'); };
+    }catch(e){
+      // bg store 缺失，重建数据库
+      const newDb = await Store.recreateDB();
+      if(!newDb){ toast('保存失败'); return; }
+      // 先恢复数据到 kv store
+      await new Promise(res => {
+        const tx = newDb.transaction('kv','readwrite');
+        tx.objectStore('kv').put({key:'docs',val:DOCS});
+        tx.objectStore('kv').put({key:'progress',val:PROGRESS});
+        tx.objectStore('kv').put({key:'order',val:ORDER});
+        tx.objectStore('kv').put({key:'clears',val:CLEARS});
+        tx.oncomplete = res;
+      });
+      // 再保存背景图
+      const tx2 = newDb.transaction('bg','readwrite');
+      tx2.objectStore('bg').put(blob, 'custom');
+      tx2.oncomplete = function(){ if(callback) callback(); };
+    }
   });
 }
 function loadBgFromDB(callback){
