@@ -529,16 +529,12 @@ const Store = (() => {
     return new Promise(resolve => {
       try{
         if(!('indexedDB' in window) || !window.indexedDB) throw new Error('no idb');
-        const req = indexedDB.open('learnAppDB', 2);
+        const req = indexedDB.open('learnAppDB', 1);
         req.onupgradeneeded = e => {
           const d = e.target.result;
           if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', {keyPath:'key'});
-          if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
         };
-        req.onsuccess = e => {
-          db = e.target.result;
-          resolve();
-        };
+        req.onsuccess = e => { db = e.target.result; resolve(); };
         req.onerror = () => { useLS = true; resolve(); };
       }catch(_){ useLS = true; resolve(); }
     });
@@ -591,23 +587,6 @@ const Store = (() => {
     saveAutoSync: v => set('autoSync', !!v),
     getSyncInterval: () => get('syncInterval').then(v => v || 5),
     saveSyncInterval: v => set('syncInterval', v),
-    // 重建数据库（关闭连接→删库→重新打开）
-    recreateDB: () => new Promise(resolve => {
-      if(db){ db.close(); db = null; }
-      const delReq = indexedDB.deleteDatabase('learnAppDB');
-      delReq.onsuccess = () => {
-        const newReq = indexedDB.open('learnAppDB', 2);
-        newReq.onupgradeneeded = e => {
-          const d = e.target.result;
-          d.createObjectStore('kv', {keyPath:'key'});
-          d.createObjectStore('bg');
-        };
-        newReq.onsuccess = e => { db = e.target.result; useLS = false; resolve(db); };
-        newReq.onerror = () => { useLS = true; resolve(null); };
-      };
-      delReq.onerror = () => resolve(null);
-      delReq.onblocked = () => resolve(null);
-    }),
   };
 })();
 
@@ -696,23 +675,9 @@ async function estimateTotalStorage(){
   // 顺序数据
   const order = await Store.getOrder();
   if(order && order.length) size += estimateDataSize(order);
-  // 背景图
-  try{
-    const bgSize = await new Promise(resolve => {
-      openDB(function(db){
-        try{
-          const tx = db.transaction('bg','readonly');
-          const req = tx.objectStore('bg').get('custom');
-          req.onsuccess = function(){
-            const blob = req.result;
-            resolve(blob && blob.size ? blob.size : 0);
-          };
-          req.onerror = () => resolve(0);
-        }catch(_){ resolve(0); }
-      });
-    });
-    size += bgSize;
-  }catch(_){}
+  // 背景图（存 localStorage 的 base64）
+  const bgData = localStorage.getItem('customBgImage');
+  if(bgData) size += bgData.length;
   return size;
 }
 function formatSize(bytes){
@@ -1967,22 +1932,13 @@ function applyTheme(name){
     'img-bg':``,
   };
   let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}';
-  // 图片背景主题
+  // 图片背景主题（从 localStorage 读取 base64）
   if(name==='img-bg'){
     document.body.style.backgroundSize='cover';
     document.body.style.backgroundPosition='center';
     document.body.style.backgroundAttachment='fixed';
-    try{
-      loadBgFromDB(function(bgUrl){
-        if(bgUrl){
-          document.body.style.backgroundImage=`url(${bgUrl})`;
-        } else {
-          document.body.style.backgroundImage='url(img-bg-dark.jpg)';
-        }
-      });
-    }catch(_){
-      document.body.style.backgroundImage='url(img-bg-dark.jpg)';
-    }
+    const bgData = localStorage.getItem('customBgImage');
+    document.body.style.backgroundImage = bgData ? `url(${bgData})` : 'url(img-bg-dark.jpg)';
   } else {
     document.body.style.backgroundImage='';
     // 清除 img-bg 的文字颜色覆盖
@@ -2007,55 +1963,6 @@ function applyTheme(name){
 $('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.toggle('show'); };
 document.querySelectorAll('.theme-dot').forEach(d=>d.onclick=()=>{applyTheme(d.dataset.theme);$('#themePopup').classList.remove('show');});
 document.addEventListener('click',()=>$('#themePopup').classList.remove('show'));
-// ===== IndexedDB 图片存储（复用 Store 的数据库连接） =====
-function openDB(callback){
-  // 使用与 Store 相同的数据库名和版本号
-  const req = indexedDB.open('learnAppDB', 2);
-  req.onsuccess = function(e){ callback(e.target.result); };
-  req.onerror = function(){ toast('数据库打开失败'); };
-}
-function saveBgToDB(blob, callback){
-  openDB(async function(db){
-    try{
-      if(!db.objectStoreNames.contains('bg')) throw new Error('no bg store');
-      const tx = db.transaction('bg','readwrite');
-      tx.objectStore('bg').put(blob, 'custom');
-      tx.oncomplete = function(){ if(callback) callback(); };
-      tx.onerror = function(){ toast('保存失败'); };
-    }catch(e){
-      // bg store 缺失，重建数据库
-      const newDb = await Store.recreateDB();
-      if(!newDb){ toast('保存失败'); return; }
-      // 先恢复数据到 kv store
-      await new Promise(res => {
-        const tx = newDb.transaction('kv','readwrite');
-        tx.objectStore('kv').put({key:'docs',val:DOCS});
-        tx.objectStore('kv').put({key:'progress',val:PROGRESS});
-        tx.objectStore('kv').put({key:'order',val:ORDER});
-        tx.objectStore('kv').put({key:'clears',val:CLEARS});
-        tx.oncomplete = res;
-      });
-      // 再保存背景图
-      const tx2 = newDb.transaction('bg','readwrite');
-      tx2.objectStore('bg').put(blob, 'custom');
-      tx2.oncomplete = function(){ if(callback) callback(); };
-    }
-  });
-}
-function loadBgFromDB(callback){
-  openDB(function(db){
-    try{
-      if(!db.objectStoreNames.contains('bg')){ callback(null); return; }
-      const tx = db.transaction('bg','readonly');
-      const req = tx.objectStore('bg').get('custom');
-      req.onsuccess = function(){
-        const blob = req.result;
-        callback(blob ? URL.createObjectURL(blob) : null);
-      };
-      req.onerror = function(){ callback(null); };
-    }catch(e){ callback(null); }
-  });
-}
 
 // 检测图片主色调和亮度，计算最佳文字颜色
 function detectImageColors(img, callback){
@@ -2116,31 +2023,34 @@ if(uploadBgBtn){
       const file = input.files[0];
       if(!file) return;
       if(file.size > 50 * 1024 * 1024){ toast('图片不能超过 50MB'); return; }
-      // 存储容量检查（题库+背景图不超过500MB）
-      const ok = await checkStorageLimit(file.size);
-      if(!ok) return;
-      // 存原始 Blob 到 IndexedDB
-      saveBgToDB(file, function(){
+      // 压缩图片存 localStorage（不用 IndexedDB，避免数据库兼容问题）
+      const img = new Image();
+      img.onload = function(){
+        // Canvas 压缩到 1920px 宽，JPEG 质量 0.85
+        const canvas = document.createElement('canvas');
+        const maxW = 1920;
+        const scale = Math.min(1, maxW / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        // 检查大小
+        if(dataUrl.length > 10 * 1024 * 1024){ toast('图片压缩后仍超过 10MB，请换一张'); return; }
+        localStorage.setItem('customBgImage', dataUrl);
         // 检测图片主色调
-        const img = new Image();
-        img.onload = function(){
-          detectImageColors(img, function(colors){
-            localStorage.setItem('customBgColors', JSON.stringify(colors));
-            // 用文件名（去掉扩展名）作为自定义主题名
-            const name = file.name.replace(/\.[^.]+$/, '');
-            const label = name.length > 6 ? name.slice(0,6)+'…' : name;
-            localStorage.setItem('customBgLabel', label);
-            document.querySelector('.theme-dot[data-theme="img-bg"]').textContent = label;
-            const mb = (file.size / 1024 / 1024).toFixed(1);
-            toast('背景图已保存（'+mb+'MB）');
-            // 如果当前已是自定义主题则刷新背景
-            if(currentTheme === 'img-bg'){
-              applyTheme('img-bg');
-            }
-          });
-        };
-        img.src = URL.createObjectURL(file);
-      });
+        detectImageColors(img, function(colors){
+          localStorage.setItem('customBgColors', JSON.stringify(colors));
+          const name = file.name.replace(/\.[^.]+$/, '');
+          const label = name.length > 6 ? name.slice(0,6)+'…' : name;
+          localStorage.setItem('customBgLabel', label);
+          document.querySelector('.theme-dot[data-theme="img-bg"]').textContent = label;
+          const mb = (dataUrl.length / 1024 / 1024).toFixed(1);
+          toast('背景图已保存（'+mb+'MB）');
+          if(currentTheme === 'img-bg') applyTheme('img-bg');
+        });
+      };
+      img.src = URL.createObjectURL(file);
     });
     input.click();
   });
@@ -2159,28 +2069,11 @@ if(uploadBgBtn){
 (function initTheme(){
   try{
     let saved = localStorage.getItem('learnAppTheme');
-    if(saved === 'img-bg'){
-      try{
-        openDB(function(db){
-          const tx = db.transaction('bg','readonly');
-          const req = tx.objectStore('bg').get('custom');
-          req.onsuccess = function(){
-            if(!req.result){
-              saved = 'aurora';
-              localStorage.setItem('learnAppTheme', 'aurora');
-            }
-            if(saved && THEMES[saved]) applyTheme(saved);
-          };
-          req.onerror = function(){
-            if(saved && THEMES[saved]) applyTheme(saved);
-          };
-        });
-      }catch(_){
-        if(saved && THEMES[saved]) applyTheme(saved);
-      }
-    } else {
-      if(saved && THEMES[saved]) applyTheme(saved);
+    if(saved === 'img-bg' && !localStorage.getItem('customBgImage')){
+      saved = 'aurora';
+      localStorage.setItem('learnAppTheme', 'aurora');
     }
+    if(saved && THEMES[saved]) applyTheme(saved);
   }catch(_){}
 })();
 
