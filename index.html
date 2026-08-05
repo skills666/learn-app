@@ -537,19 +537,7 @@ const Store = (() => {
         };
         req.onsuccess = e => {
           db = e.target.result;
-          // 兜底：如果 bg store 仍然缺失，再升一次版本创建
-          if(!db.objectStoreNames.contains('bg')){
-            const curVer = db.version;
-            db.close();
-            const r2 = indexedDB.open('learnAppDB', curVer + 1);
-            r2.onupgradeneeded = ev => {
-              if(!ev.target.result.objectStoreNames.contains('bg')) ev.target.result.createObjectStore('bg');
-            };
-            r2.onsuccess = ev => { db = ev.target.result; resolve(); };
-            r2.onerror = () => { useLS = true; resolve(); };
-          } else {
-            resolve();
-          }
+          resolve();
         };
         req.onerror = () => { useLS = true; resolve(); };
       }catch(_){ useLS = true; resolve(); }
@@ -2010,51 +1998,59 @@ function openDB(callback){
   req.onerror = function(){ toast('数据库打开失败'); };
 }
 function saveBgToDB(blob, callback){
-  openDB(function(db){
+  function trySave(db){
     try{
       const tx = db.transaction('bg','readwrite');
       tx.objectStore('bg').put(blob, 'custom');
       tx.oncomplete = function(){ if(callback) callback(); };
       tx.onerror = function(){ toast('保存失败'); };
-    }catch(e){
-      // bg store 不存在（极旧用户），手动升级数据库版本
-      console.warn('bg store 缺失，尝试创建');
-      const curVer = db.version;
-      db.close();
-      const req = indexedDB.open('learnAppDB', curVer + 1);
-      req.onupgradeneeded = function(ev){
+      return true;
+    }catch(e){ return false; }
+  }
+  openDB(function(db){
+    if(trySave(db)) return;
+    // bg store 不存在，删库重建
+    db.close();
+    const delReq = indexedDB.deleteDatabase('learnAppDB');
+    delReq.onsuccess = function(){
+      const newReq = indexedDB.open('learnAppDB', 2);
+      newReq.onupgradeneeded = function(ev){
         const d = ev.target.result;
-        if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
+        d.createObjectStore('kv', {keyPath:'key'});
+        d.createObjectStore('bg');
       };
-      req.onsuccess = function(ev){
+      newReq.onsuccess = function(ev){
+        // 先保存 bg 图片
         const newDb = ev.target.result;
         const tx = newDb.transaction('bg','readwrite');
         tx.objectStore('bg').put(blob, 'custom');
-        tx.oncomplete = function(){ if(callback) callback(); };
+        tx.oncomplete = function(){
+          // 再把内存数据写回 kv store
+          const tx2 = newDb.transaction('kv','readwrite');
+          tx2.objectStore('kv').put({key:'docs',val:DOCS});
+          tx2.objectStore('kv').put({key:'progress',val:PROGRESS});
+          tx2.objectStore('kv').put({key:'order',val:ORDER});
+          tx2.objectStore('kv').put({key:'clears',val:CLEARS});
+          tx2.oncomplete = function(){ if(callback) callback(); };
+        };
       };
-      req.onerror = function(){ toast('保存失败'); };
-    }
+      newReq.onerror = function(){ toast('保存失败'); };
+    };
+    delReq.onerror = function(){ toast('保存失败'); };
   });
 }
 function loadBgFromDB(callback){
   openDB(function(db){
     try{
+      if(!db.objectStoreNames.contains('bg')){ callback(null); return; }
       const tx = db.transaction('bg','readonly');
       const req = tx.objectStore('bg').get('custom');
       req.onsuccess = function(){
         const blob = req.result;
-        if(blob){
-          const url = URL.createObjectURL(blob);
-          callback(url);
-        } else {
-          callback(null);
-        }
+        callback(blob ? URL.createObjectURL(blob) : null);
       };
       req.onerror = function(){ callback(null); };
-    }catch(e){
-      // bg store 不存在，返回 null
-      callback(null);
-    }
+    }catch(e){ callback(null); }
   });
 }
 
