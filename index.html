@@ -530,7 +530,8 @@ const Store = (() => {
     return new Promise(resolve => {
       try{
         if(!('indexedDB' in window) || !window.indexedDB) throw new Error('no idb');
-        const req = indexedDB.open('learnAppDB', 1);
+        // 版本号 2：升级时同时创建 kv 和 bg 两个 store（修复旧用户只有 kv 缺少 bg 的 bug）
+        const req = indexedDB.open('learnAppDB', 2);
         req.onupgradeneeded = e => {
           const d = e.target.result;
           if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', {keyPath:'key'});
@@ -1991,8 +1992,8 @@ document.querySelectorAll('.theme-dot').forEach(d=>d.onclick=()=>{applyTheme(d.d
 document.addEventListener('click',()=>$('#themePopup').classList.remove('show'));
 // ===== IndexedDB 图片存储（复用 Store 的数据库连接） =====
 function openDB(callback){
-  // 使用与 Store 相同的数据库名和版本号，确保 bg store 已在 Store.open 中创建
-  const req = indexedDB.open('learnAppDB', 1);
+  // 使用与 Store 相同的数据库名和版本号
+  const req = indexedDB.open('learnAppDB', 2);
   req.onsuccess = function(e){ callback(e.target.result); };
   req.onerror = function(){ toast('数据库打开失败'); };
 }
