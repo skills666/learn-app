@@ -275,7 +275,6 @@
   .q-summary .qt{font-weight:700;margin-bottom:8px}
   .q-summary .qa{font-size:13px;color:var(--muted);line-height:1.6}
   .q-summary .qa b{color:var(--text)}
-  .pcontrols .spacer{flex:1}
   .ai-config{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-top:14px}
   .ai-config .row{display:flex;gap:8px;align-items:center;margin-bottom:7px;flex-wrap:wrap}
   .ai-config .row:last-child{margin-bottom:0}
@@ -759,7 +758,7 @@ function renderStatsBar(){
   document.querySelectorAll('.tab').forEach(t=>{
     const v = t.dataset.view;
     t.classList.toggle('active',
-      (v===Views.OVERVIEW&&(view===Views.OVERVIEW||view===Views.BROWSE)) ||
+      (v===Views.OVERVIEW&&(view===Views.OVERVIEW||view===Views.BROWSE||view===Views.SEARCH)) ||
       (v===Views.DOCS&&view===Views.DOCS) ||
       (v===Views.CAMPAIGN&&view===Views.CAMPAIGN) ||
       (v===Views.MOCK&&view===Views.MOCK) ||
@@ -1427,7 +1426,6 @@ function startMock(){
 }
 // 难度梯度排名：SEED_ORDER 越靠前（越基础）排名越小
 function difficultyRank(qid){
-  if(typeof SEED_ORDER==='undefined') return 0;
   const d = DOCS.find(dd=>dd.questions.some(x=>x.id===qid));
   const di = SEED_ORDER.indexOf(d ? d.id : null);
   const qi = d ? d.questions.findIndex(x=>x.id===qid) : 0;
@@ -2341,7 +2339,7 @@ async function cloudPush(){
       try{ const rj=await resp.json(); const rt=new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
       $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
     }
-    else{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'推送失败'));}
+    else{try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'推送失败'));}catch(_){$('#cloudStatus').textContent='❌ 推送失败';}}
   }catch(e){$('#cloudStatus').textContent='❌ 网络错误';}
 }
 async function cloudPull(){
@@ -2352,7 +2350,7 @@ async function cloudPull(){
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
       headers:{'Authorization':`token ${token}`}
     });
-    if(!resp.ok){const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));return;}
+    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
     const gist=await resp.json();
     const file=gist.files['learn-data.json'];
     if(!file||!file.content){$('#cloudStatus').textContent='❌ 云端无数据';return;}
