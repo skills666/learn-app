@@ -1509,8 +1509,8 @@ function renderGrillConfig(c){
         <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性"></textarea>
         <div style="margin-top:14px">
           <button class="btn primary" id="grillStart">🔥 开始拷打</button>
-          <button class="btn ghost" id="grillUpload">📎 上传简历文件</button>
-          <input type="file" id="grillFileInput" accept=".txt,.md,.json" style="display:none">
+          <button class="btn ghost" id="grillUpload">📎 上传简历（txt/md/pdf）</button>
+          <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
       </div>
       <div class="empty-feature" style="padding:26px">
@@ -1526,11 +1526,19 @@ function renderGrillConfig(c){
     renderAll();
   };
   $('#grillUpload').onclick = () => $('#grillFileInput').click();
-  $('#grillFileInput').onchange = e => {
+  $('#grillFileInput').onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = () => { $('#grillResume').value = reader.result; };
-    reader.readAsText(f);
+    let text='';
+    if(f.name.toLowerCase().endsWith('.pdf')){
+      try{
+        const buf=await f.arrayBuffer();
+        text=await extractPdfText(buf);
+        if(!text.trim()){toast('PDF 无法提取文字，请粘贴简历内容');return;}
+      }catch(ex){toast('PDF 解析失败：'+ex.message);return;}
+    } else {
+      text=await f.text();
+    }
+    $('#grillResume').value = text;
   };
 }
 async function doGrillChat(){
@@ -1571,6 +1579,33 @@ ${grill.resume}`}
   if(r){ grill.messages.push({role:'ai', content:r}); }
   else { grill.messages.push({role:'ai', content:'抱歉，API 调用失败，请检查 AI 配置。'}); }
   renderAll();
+}
+// PDF 文本提取（使用 pdf.js CDN）
+let _pdfjsReady=false;
+async function ensurePdfJs(){
+  if(_pdfjsReady) return;
+  if(!window.pdfjsLib){
+    await new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload=resolve;s.onerror=()=>reject(new Error('pdf.js 加载失败'));
+      document.head.appendChild(s);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  _pdfjsReady=true;
+}
+async function extractPdfText(buf){
+  await ensurePdfJs();
+  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+  const pages=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const pageText=content.items.map(it=>it.str).join(' ');
+    pages.push(pageText);
+  }
+  return pages.join('\n\n').replace(/\s+/g,' ').trim();
 }
 function estimateYears(resume){
   const t = resume.toLowerCase();
@@ -1760,9 +1795,6 @@ searchInput.oninput = () => {
 const THEMES = {
   aurora:{bg:'#0e1018',bg2:'#141826',panel:'#171b2b',card:'#1a1f31',line:'#272d44',line2:'#323a5a',text:'#e7eaf3',muted:'#9aa3c0',faint:'#6b7494',accent:'#5ad1c9',accent2:'#8b7cf6',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#f6a85b',good:'#4fd08a',warn:'#f5c542',bad:'#f06a6a'},
-  ocean: {bg:'#060e18',bg2:'#0a1626',panel:'#0e1c30',card:'#12223d',line:'#1e3050',line2:'#284068',text:'#dce8f5',muted:'#7a9abc',faint:'#4a6a8a',accent:'#3b82f6',accent2:'#06b6d4',accent3:'#f59e0b',good:'#10b981',warn:'#f59e0b',bad:'#ef4444'},
-  forest:{bg:'#08100a',bg2:'#0c180e',panel:'#102014',card:'#14281a',line:'#1e3824',line2:'#285030',text:'#d8f0dc',muted:'#70a080',faint:'#407050',accent:'#10b981',accent2:'#34d399',accent3:'#f6a85b',good:'#34d399',warn:'#f6a85b',bad:'#f87171'},
-  rose:  {bg:'#10080c',bg2:'#180c12',panel:'#1c1016',card:'#22141c',line:'#382028',line2:'#502c38',text:'#f0d8e0',muted:'#a07080',faint:'#704050',accent:'#f472b6',accent2:'#e04080',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#6366f1',accent2:'#818cf8',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#fbbf24',good:'#10b981',warn:'#fbbf24',bad:'#ef4444'},
   void:  {bg:'#020204',bg2:'#06060a',panel:'#0a0a10',card:'#0e0e16',line:'#181820',line2:'#222230',text:'#c0c0d0',muted:'#707090',faint:'#404060',accent:'#c084fc',accent2:'#a855f7',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
@@ -1788,6 +1820,9 @@ function applyTheme(name){
     particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
     ziliang:``,
     songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1.5%{opacity:1}8%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}14%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}20%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1.5%{opacity:1}7%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}12%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}18%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1.5%{opacity:.9}9%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}15%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}22%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1.5%{opacity:.85}8%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}13%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}20%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 8s linear infinite 1.5s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 10s linear infinite 5s}.content::before{content:'';position:fixed;top:2%;left:95%;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot1 7s linear infinite}.content::after{content:'';position:fixed;top:10%;left:95%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot2 9s linear infinite 2.5s}`,
+    shuangren:``,
+    night:``,
+    zirong:``,
   };
   themeVars.textContent = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}'+(FX[name]||'');
   try{localStorage.setItem('learnAppTheme',name)}catch(_){}
@@ -1801,7 +1836,6 @@ document.addEventListener('click',()=>$('#themePopup').classList.remove('show'))
 try{ const saved=localStorage.getItem('learnAppTheme'); if(saved&&THEMES[saved]) applyTheme(saved); }catch(_){}
 
 // 数据弹窗
-$('#dataBtn').onclick = () => { $('#dataModal').classList.add('show'); loadApiCfgUI(); };
 $('#closeModal').onclick = () => $('#dataModal').classList.remove('show');
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal') $('#dataModal').classList.remove('show'); };
 
