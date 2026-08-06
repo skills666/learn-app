@@ -1927,7 +1927,7 @@ const THEMES = {
   night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#a0d8a0',accent2:'#c0e880',accent3:'#e8d860',good:'#60d080',warn:'#e8d860',bad:'#e06060'},
   'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
   ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'},
-  zirong: {bg:'#fef8f6',bg2:'#fdf0ec',panel:'#fff5f2',card:'#ffffff',line:'#f0d8d0',line2:'#e8c8bc',text:'#2c1814',muted:'#8c6860',faint:'#b89888',accent:'#d4606a',accent2:'#c51e2a',accent3:'#5a8a6a',good:'#4a9a5a',warn:'#c4a43a',bad:'#c51e2a'}
+  zirong: {bg:'#f5f0ed',bg2:'#f0e8e4',panel:'#f8f3f0',card:'#fcfaf8',line:'#e8d8d0',line2:'#dcc8bc',text:'#2c1814',muted:'#8c6860',faint:'#b89888',accent:'#d4606a',accent2:'#c51e2a',accent3:'#5a8a6a',good:'#4a9a5a',warn:'#c4a43a',bad:'#c51e2a'}
 };
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
@@ -2778,7 +2778,7 @@ function drawNight(ctx,W,H){
 }
 function drawZirong(ctx,W,H){
   const t=_uTime;
-  ctx.fillStyle='rgba(254,248,246,0.3)';
+  ctx.fillStyle='rgba(245,240,237,0.35)';
   ctx.fillRect(0,0,W,H);
 
   // 底部暖色光晕
