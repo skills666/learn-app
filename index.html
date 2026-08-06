@@ -88,7 +88,7 @@
   .answer .inner code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .answer .inner strong{color:var(--text)}
   .answer .label{font-size:11px;color:var(--accent);letter-spacing:1px;font-weight:700;margin-bottom:6px}
-  .empty{text-align:center;color:var(--faint);padding:60px 20px;font-size:14px}
+  .empty{text-align:center;color:var(--text);opacity:.5;padding:60px 20px;font-size:14px}
   .empty .big{font-size:40px;margin-bottom:10px}
 
   /* practice mode */
@@ -106,7 +106,7 @@
   .pcard .panswer strong{color:var(--text)}
   .pcontrols{display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap}
   .pcontrols .spacer{flex:1}
-  .reveal-hint{color:var(--faint);font-size:13px;text-align:center;margin-top:14px}
+  .reveal-hint{color:var(--text);opacity:.6;font-size:13px;text-align:center;margin-top:14px}
 
   /* overview */
   .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
@@ -140,7 +140,7 @@
   /* campaign */
   .camp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:8px;flex-wrap:wrap}
   .camp-head h2{margin:0;font-size:24px;font-weight:800}
-  .camp-tip{color:var(--text);opacity:.55;font-size:12.5px;margin:6px 0 18px;line-height:1.6}
+  .camp-tip{color:var(--text);opacity:.7;font-size:13px;margin:6px 0 18px;line-height:1.7;font-weight:450}
   .level{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
          border-radius:14px;padding:14px 16px;margin-bottom:11px;position:relative;transition:.15s}
   .level:hover{border-color:var(--line2)}
@@ -203,7 +203,7 @@
   .set-arrow{font-size:11px;transition:transform .25s;color:var(--muted)}
   .set-section.open .set-arrow{transform:rotate(180deg);color:var(--accent)}
   .set-body{padding:16px;background:var(--panel);display:flex;flex-direction:column;gap:18px}
-  .set-hint{font-size:12.5px;color:var(--muted);line-height:1.6;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:8px 0 18px}
+  .set-hint{font-size:13px;color:var(--text);opacity:.72;line-height:1.6;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:8px 0 18px}
   .set-field{display:flex;align-items:center;gap:12px}
   .set-field label{font-size:13px;font-weight:600;color:var(--text);min-width:66px;flex-shrink:0;text-align:right}
   .set-field input,.set-field select{flex:1 1 auto;min-width:0;width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:9px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
@@ -261,7 +261,7 @@
   .grade-btn.g-mid.sel{border-color:var(--warn);background:rgba(251,191,36,.18)}
   .grade-btn.g-bad.sel{border-color:var(--bad);background:rgba(248,113,113,.18)}
   .pstatus{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5}
-  .empty-feature{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty-feature{text-align:center;padding:60px 20px;color:var(--text);opacity:.6}
   .empty-feature .big{font-size:54px;margin-bottom:10px}
   .mock-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
   .mock-result .big{text-align:center}
@@ -435,7 +435,7 @@
             <div class="set-field" style="flex:1"><label>Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId" autocomplete="off" name="gistid"></div>
             <div class="set-btns"><button class="btn sm" id="cloudPull">⬇️ 拉取云端</button> <button class="btn sm" id="cloudPush">⬆️ 推送本地</button></div>
           </div>
-          <div class="set-hint" style="margin-top:8px;font-size:12px;color:var(--muted)">在线时每 10 分钟自动推送一次，或手动推送。</div>
+          <div class="set-hint" style="margin-top:8px">在线时每 10 分钟自动推送一次，或手动推送。</div>
           <div id="cloudStatus" class="set-status"></div>
         </div>
       </div>
