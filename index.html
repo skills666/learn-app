@@ -100,9 +100,10 @@
          box-shadow:var(--shadow);display:flex;flex-direction:column}
   .pcard .ptag{font-size:11px;letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
   .pcard .ptitle{font-size:22px;font-weight:800;line-height:1.5;margin:10px 0 18px;flex:1}
-  .pcard .panswer{color:var(--text);line-height:1.8;font-size:18px;font-weight:600;border-top:1px dashed var(--line2);padding-top:16px}
+  .pcard .panswer{color:var(--muted);line-height:1.8;font-size:15px;border-top:1px dashed var(--line2);padding-top:16px}
+  .pcard .panswer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
   .pcard .panswer p{margin:0 0 10px}
-  .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;color:var(--accent)}
+  .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .pcard .panswer strong{color:var(--text)}
   .pcontrols{display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap}
   .pcontrols .spacer{flex:1}
@@ -384,7 +385,7 @@
     <div class="tabs" id="tabs">
       <div class="tab active" data-view="overview"><span class="ic">📊</span> 总览</div>
       <div class="tab" data-view="docs"><span class="ic">📁</span> 文档</div>
-      <div class="tab" data-view="campaign"><span class="ic">🔬</span> 诊断</div>
+      <div class="tab" data-view="campaign"><span class="ic">🗡️</span> 闯关</div>
       <div class="tab" data-view="mock"><span class="ic">🎤</span> 面试</div>
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
       <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
@@ -1113,138 +1114,99 @@ function submitEditQuestion(){
 }
 
 /* =========================================================
-   深度诊断 —— 选一题输入回答，AI 分析深度与完整性
+   闯关路线（打怪升级）
    ========================================================= */
-let _diagnoseDoc = null;  // 当前诊断的文档
-let _diagnoseQ = null;    // 当前诊断的题目
-
 function renderCampaign(c){
+  const totalLevels = ORDER.length;
+  const clearedLevels = ORDER.filter(id => docClears(id) > 0).length;
+  const allDocQuestions = ORDER.reduce((a,id)=>a+(docById(id)?docById(id).questions.length:0),0);
+  const allSeen = ORDER.reduce((a,id)=>{ const d=docById(id); return a + (d?docSeen(d):0); },0);
+  const progPct = allDocQuestions ? Math.round(allSeen/allDocQuestions*100) : 0;
+
   let html = `
-    <div class="camp-head"><div><h2>🔬 深度诊断</h2></div></div>
+    <div class="camp-head"><div><h2>🗡️ 闯关路线</h2></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" id="sortDifficulty">↺ 按难度排序</button>
+        <button class="btn sm" id="unlockToggle">${UNLOCK_ALL?'🔓 全部解锁':'🔒 顺序解锁'}</button>
+      </div>
+    </div>
+    <div class="bigbar" style="max-width:none;margin-bottom:16px"><i style="width:${progPct}%"></i></div>
+    ${ clearedLevels===totalLevels && totalLevels>0 ? `<div class="allclear">🏆 全部 ${totalLevels} 关已通关！累计 ${totalClears()} 次</div>` : '' }
     <div class="camp-box">
-      <div class="camp-tip">选一题写下你的回答，AI 会分析你的回答深度、指出遗漏点，并给出完善建议。</div>
+      <div class="camp-tip">像打怪升级一样，按顺序通关：刷完一关自动解锁下一关。点「↺ 按难度排序」按基础到进阶自动排列；点 ▲▼ 可手动微调顺序（手动调整后不再自动排序）。每关可「重刷」重置进度重新计算；右侧显示你通关的次数。</div>
   `;
 
-  // 步骤1：选文档和题目
-  if(!_diagnoseDoc || !_diagnoseQ){
-    ORDER.forEach((id) => {
-      const d = docById(id);
-      if(!d || !d.questions.length) return;
-      html += `
-        <div class="level" style="cursor:pointer" data-doc="${esc(id)}">
-          <div class="lnum">📄</div>
-          <div class="lbody">
-            <div class="lname">${esc(d.title)}</div>
-            <div class="lmeta"><span>${d.questions.length} 题</span></div>
-          </div>
-          <div class="lacts"><button class="btn sm primary" data-choose="${esc(id)}">选择题目</button></div>
-        </div>`;
-    });
-
-    html += '</div>';
-    c.innerHTML = html;
-
-    c.querySelectorAll('[data-choose]').forEach(el=>el.onclick=function(){
-      _diagnoseDoc = docById(this.dataset.choose);
-      renderContent();
-    });
-    return;
-  }
-
-  // 步骤2：从文档中选题
-  if(_diagnoseDoc && !_diagnoseQ){
-    const d = _diagnoseDoc;
-    html += `<div class="set-hint">📄 ${esc(d.title)} — 选择一道题目：</div>
-      <button class="btn sm" id="diagnoseBack" style="margin-bottom:12px">← 换文档</button>`;
-
-    d.questions.forEach((q, i) => {
-      html += `
-        <div class="level" style="cursor:pointer">
-          <div class="lnum">${i+1}</div>
-          <div class="lbody">
-            <div class="lname">${esc(q.question)}</div>
-          </div>
-          <div class="lacts"><button class="btn sm primary" data-pick="${i}">选择</button></div>
-        </div>`;
-    });
-
-    html += '</div>';
-    c.innerHTML = html;
-
-    c.querySelector('#diagnoseBack').onclick = () => { _diagnoseDoc = null; _diagnoseQ = null; renderContent(); };
-    c.querySelectorAll('[data-pick]').forEach(el=>el.onclick=function(){
-      _diagnoseQ = _diagnoseDoc.questions[parseInt(this.dataset.pick)];
-      renderContent();
-    });
-    return;
-  }
-
-  // 步骤3：显示题目 + 输入回答 + AI 分析
-  if(_diagnoseDoc && _diagnoseQ){
-    const q = _diagnoseQ;
+  ORDER.forEach((id, i) => {
+    const d = docById(id);
+    if(!d) return;
+    const tot = d.questions.length;
+    const seen = docSeen(d);
+    const dp = tot ? Math.round(seen/tot*100) : 0;
+    const clears = docClears(id);
+    const unlocked = isUnlocked(i);
+    const isDragon = (i===0);
+    const lvlClass = 'level' + (unlocked?'':' locked') + (isDragon?' dragon':'');
     html += `
-      <button class="btn sm" id="diagnoseBackQ" style="margin-bottom:12px">← 换题目</button>
-      <div class="level" style="flex-direction:column;align-items:stretch;gap:12px;cursor:default">
-        <div style="font-weight:700;font-size:15px;color:var(--text)">📝 ${esc(q.question)}</div>
-        ${q.options&&q.options.length?`<div style="font-size:13px;color:var(--muted);line-height:1.8">${q.options.map((o,i)=>`${String.fromCharCode(65+i)}. ${esc(o)}`).join('<br>')}</div>`:''}
-      </div>
-      <div style="margin-top:14px">
-        <label style="display:block;font-size:13px;color:var(--text);opacity:.8;margin-bottom:6px">✏️ 你的回答：</label>
-        <textarea id="diagnoseAnswer" rows="6" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:14px;resize:vertical;font-family:inherit" placeholder="写下你的完整回答..."></textarea>
-        <button class="btn primary" id="diagnoseSubmit" style="margin-top:10px">🔬 提交 AI 诊断</button>
-      </div>
-      <div id="diagnoseResult" style="margin-top:14px"></div>
-    </div>`;
-
-    html += '</div>';
-    c.innerHTML = html;
-
-    c.querySelector('#diagnoseBackQ').onclick = () => { _diagnoseQ = null; renderContent(); };
-    c.querySelector('#diagnoseSubmit').onclick = async function(){
-      const answer = $('#diagnoseAnswer').value.trim();
-      if(!answer){ toast('请先写下你的回答'); return; }
-      const btn = this; btn.disabled = true; btn.textContent = '⏳ 分析中...';
-      const resultEl = $('#diagnoseResult');
-      resultEl.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center">⏳ AI 正在分析你的回答...</div>';
-
-      try{
-        const apiKey = localStorage.getItem('learnAppApiKey')||'';
-        const baseUrl = (localStorage.getItem('learnAppApiBase')||'').replace(/\/+$/,'');
-        if(!apiKey || !baseUrl) throw new Error('请先在设置中配置 API');
-
-        const refAnswer = q.answer || '暂无参考答案';
-        const prompt = `你是资深技术专家。用户对以下题目给出了自己的回答，请你深度诊断：
-
-【题目】${q.question}
-【用户回答】${answer}
-【参考答案】${refAnswer}
-
-请从以下维度分析（简洁有力，不需要客套）：
-1. **深度评分**（1-10分）：回答是否触及核心原理和底层机制？
-2. **遗漏点**：遗漏了哪些关键概念、边界情况或最佳实践？
-3. **完善建议**：如何让回答更全面、更有深度？
-4. **加分项**：用户回答了哪些参考答案没提到的亮点？`;
-
-        const resp = await fetch(`${baseUrl}/v1/chat/completions`,{
-          method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-          body:JSON.stringify({model:localStorage.getItem('learnAppModel')||'gpt-3.5-turbo',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2048})
-        });
-        if(!resp.ok) throw new Error('API 请求失败');
-
-        const j = await resp.json();
-        const reply = j.choices[0].message.content;
-        resultEl.innerHTML = `<div style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:14px;line-height:1.8;color:var(--text)">${formatAI(reply)}</div>`;
-      }catch(e){
-        resultEl.innerHTML = `<div style="color:var(--bad);padding:12px">❌ ${esc(e.message)}</div>`;
-      }finally{
-        btn.disabled = false; btn.textContent = '🔬 提交 AI 诊断';
-      }
-    };
-    return;
-  }
-
+      <div class="${lvlClass}" data-level="${i}">
+        <div class="lnum">${i+1}</div>
+        <div class="lbody">
+          <div class="lname">${esc(d.title)} ${isDragon?'<span style="font-size:11px;color:var(--accent3)">· 尖刀班</span>':''}</div>
+          <div class="lmeta">
+            <span>${tot} 题</span>
+            <span>${dp}% 已看</span>
+            ${clears>0?`<span class="lclear">🔁 刷过 ${clears} 次</span>`:''}
+            ${!unlocked?'<span style="color:var(--faint)">🔒 未解锁</span>':''}
+          </div>
+          ${tot?`<div class="lbar"><i style="width:${dp}%"></i></div>`:`<div style="font-size:12px;color:var(--faint);margin-top:6px">（暂无题目）</div>`}
+        </div>
+        <div class="lacts">
+          <div class="reorder">
+            <button data-up="${i}" ${i===0?'disabled':''} title="上移">▲</button>
+            <button data-down="${i}" ${i===ORDER.length-1?'disabled':''} title="下移">▼</button>
+          </div>
+          ${ tot ?
+            (unlocked
+              ? `<button class="btn sm primary" data-enter="${esc(id)}">进入</button>`
+              : `<button class="btn sm" disabled>🔒</button>`)
+            : '' }
+          ${ clears>0 || seen>0 ? `<button class="btn sm" data-replay="${esc(id)}">🔄 重刷</button>` : '' }
+        </div>
+      </div>`;
+  });
   html += '</div>';
   c.innerHTML = html;
+
+  c.querySelector('#unlockToggle').onclick = () => { UNLOCK_ALL = !UNLOCK_ALL; renderContent(); };
+  c.querySelector('#sortDifficulty').onclick = async () => {
+    ORDER = buildOrderFromSeed();
+    await Store.saveOrder(ORDER); await Store.saveOrderCustom(false);
+    renderContent(); toast('已按难度梯度重新排序');
+  };
+  c.querySelectorAll('[data-enter]').forEach(el=>el.onclick=()=>startPractice(el.dataset.enter));
+  c.querySelectorAll('[data-replay]').forEach(el=>el.onclick=()=>replayLevel(el.dataset.replay));
+  c.querySelectorAll('[data-up]').forEach(el=>el.onclick=()=>reorderLevel(parseInt(el.dataset.up), -1));
+  c.querySelectorAll('[data-down]').forEach(el=>el.onclick=()=>reorderLevel(parseInt(el.dataset.down), +1));
+}
+
+function reorderLevel(i, dir){
+  const j = i + dir;
+  if(j<0 || j>=ORDER.length) return;
+  const tmp = ORDER[i]; ORDER[i] = ORDER[j]; ORDER[j] = tmp;
+  Store.saveOrder(ORDER); Store.saveOrderCustom(true);
+  renderContent();
+}
+
+function replayLevel(docId){
+  const d = docById(docId);
+  if(!d || !d.questions.length) return;
+  if(!confirm(`重刷「${d.title}」？将清空本题库的学习进度（已看/掌握标记），通关次数不变，方便你重新刷一遍。`)) return;
+  d.questions.forEach(q=>{ if(PROGRESS[q.id]){ delete PROGRESS[q.id]; } });
+  saveProgress();
+  if(practice.scope===docId){ practice.index=0; practice.done=false; }
+  if(currentDocId===docId) currentDocId=null;
+  view = Views.CAMPAIGN;
+  toast('已重置「'+d.title+'」的进度');
+  renderAll();
 }
 
 /* =========================================================
@@ -1303,13 +1265,13 @@ function renderPractice(c){
       <div class="pcard">
         <div class="ptag">题目</div>
         <div class="ptitle">${esc(q.title)}</div>
-        ${revealed ? `<div class="panswer">${renderAnswer(q.answer)}</div>`
+        ${revealed ? `<div class="panswer"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>`
                  : `<div class="reveal-hint">点击「显示答案」查看解析</div>`}
       </div>
       <div class="pcontrols">
         <button class="btn" id="prevBtn">← 上一题</button>
         <button class="btn ${revealed?'':'primary'}" id="revealBtn">${revealed?'🙈 隐藏答案':'👁 显示答案'}</button>
-        <button class="btn" id="aiAskBtn" title="让 AI 解答此题">🤖 问问 AI</button>
+        <button class="btn" id="aiAskBtn" title="输入你的回答，AI 诊断深度">🔬 诊断</button>
         <button class="btn ${p.mastered?'primary':''}" id="masterBtn">${p.mastered?'★ 已掌握':'☆ 标记掌握'}</button>
         <div class="spacer"></div>
         <button class="btn ${atLast?'primary':''}" id="nextBtn" ${atLast && !canComplete ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${atLast ? (canComplete?'🎉 完成本关':'需先刷过前面的题目') : '下一题 →'}</button>
@@ -1342,7 +1304,7 @@ function renderDone(c){
         <h3>本关完成！</h3>
         <div class="sub">「${esc(d?d.title:'')}」已完成，累计刷过 <b style="color:var(--accent3)">${docClears(docId)}</b> 次${nextId&&nextUnlocked?'，下一关已解锁！':''}</div>
         <div class="pcontrols" style="justify-content:center">
-          <button class="btn" id="backCamp">🔬 返回诊断</button>
+          <button class="btn" id="backCamp">🗡️ 返回闯关路线</button>
           <button class="btn" id="replayAgain">🔄 再刷一次</button>
           ${nextId?`<button class="btn primary" id="nextLvl">下一关 →</button>`:''}
         </div>
@@ -1884,9 +1846,20 @@ async function gradeInterview(){
 }
 async function askAI(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
-  aiAnswer[qid]='loading'; renderAll();
   const q=questionById(qid); if(!q) return;
-  const r=await callAI([{role:'system',content:'资深 Java 面试官，只输出答案，不加标记。'},{role:'user',content:'回答：'+q.title}],(full)=>{aiAnswer[qid]=full;renderAll();});
+  aiAnswer[qid]='loading'; renderAll();
+  const prompt = `你是资深技术专家，请对以下面试题做深度诊断：
+
+【题目】${q.title}
+【参考答案】${q.answer||'暂无参考答案'}
+
+请从以下维度分析（简洁有力）：
+1. **核心考点**：这道题考察哪些核心知识点？
+2. **深度拆解**：每个知识点背后的原理和底层机制
+3. **常见误区**：面试者容易答错或遗漏的地方
+4. **加分回答**：怎么回答能让面试官眼前一亮？`;
+
+  const r=await callAI([{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;renderAll();});
   if(!r&&aiAnswer[qid]==='loading') aiAnswer[qid]=null;
   renderAll();
 }
