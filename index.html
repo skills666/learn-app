@@ -1848,16 +1848,18 @@ async function askAI(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   const q=questionById(qid); if(!q) return;
   aiAnswer[qid]='loading'; renderAll();
-  const prompt = `你是资深技术专家，请对以下面试题做深度诊断：
+  const prompt = `你是一个帮朋友准备面试的技术搭子，请口语化地分析这道题：
 
 【题目】${q.title}
 【参考答案】${q.answer||'暂无参考答案'}
 
-请从以下维度分析（简洁有力）：
-1. **核心考点**：这道题考察哪些核心知识点？
-2. **深度拆解**：每个知识点背后的原理和底层机制
-3. **常见误区**：面试者容易答错或遗漏的地方
-4. **加分回答**：怎么回答能让面试官眼前一亮？`;
+用聊天的方式说说：
+1. 这道题到底在考什么？
+2. 怎么理解才到位？用大白话讲讲原理
+3. 面试时容易踩的坑有哪些？
+4. 怎么回答能让面试官觉得你真的很懂？
+
+语气要像朋友聊天，不要列一二三四，不要用"首先其次"这种格式。`;
 
   const r=await callAI([{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;renderAll();});
   if(!r&&aiAnswer[qid]==='loading') aiAnswer[qid]=null;
@@ -2151,7 +2153,7 @@ function toggleSetPanel(head){
   const section=head.parentElement;
   const isOpen=section.classList.contains('open');
   document.querySelectorAll('.set-section').forEach(s=>{s.classList.remove('open');s.querySelector('.set-body').style.display='none';});
-  if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='block';}
+  if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='flex';}
 }
 // 数据弹窗
 $('#closeModalX').onclick = () => $('#dataModal').classList.remove('show');
