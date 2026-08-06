@@ -431,8 +431,8 @@
         <div class="set-body" style="display:block">
           <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" style="color:var(--accent2)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
           <div class="set-col">
-            <div class="set-field" style="flex:1"><label>Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password"></div>
-            <div class="set-field" style="flex:1"><label>Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId"></div>
+            <div class="set-field" style="flex:1"><label>Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password" autocomplete="off"></div>
+            <div class="set-field" style="flex:1"><label>Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId" autocomplete="off"></div>
             <div class="set-btns"><button class="btn sm" id="cloudPull">⬇️ 拉取云端</button> <button class="btn sm" id="cloudPush">⬆️ 推送本地</button></div>
           </div>
           <div class="set-hint" style="margin-top:8px;font-size:12px;color:var(--muted)">在线时每 10 分钟自动推送一次，或手动推送。</div>
@@ -2286,7 +2286,7 @@ $('#exportBlankBtn').onclick = exportBlankApp;
 // Gitee 云同步
 function loadGiteeCfg(){const t=localStorage.getItem('giteeToken')||'',g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
 function saveGiteeCfg(){localStorage.setItem('giteeToken',$('#giteeToken').value.trim());localStorage.setItem('giteeGistId',$('#giteeGistId').value.trim());}
-$('#giteeToken').oninput=saveGiteeCfg;$('#giteeGistId').oninput=saveGiteeCfg;
+$('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
 $('#dataBtn').onclick = async () => { $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
 async function updateStorageUsage(){
   const el = $('#storageUsage'); if(!el) return;
