@@ -33,7 +33,7 @@
   .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
   /* ---------- Topbar (导航标签) ---------- */
-  .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;background:linear-gradient(180deg,rgba(20,24,38,.95),rgba(14,16,24,.9));border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
+  .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
   .tabs{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:5px 13px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background .15s,color .15s}
@@ -1927,7 +1927,7 @@ const THEMES = {
   night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#a0d8a0',accent2:'#c0e880',accent3:'#e8d860',good:'#60d080',warn:'#e8d860',bad:'#e06060'},
   'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
   ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'},
-  zirong: {bg:'#f5f0ed',bg2:'#f0e8e4',panel:'#f8f3f0',card:'#fcfaf8',line:'#e8d8d0',line2:'#dcc8bc',text:'#2c1814',muted:'#8c6860',faint:'#b89888',accent:'#d4606a',accent2:'#c51e2a',accent3:'#5a8a6a',good:'#4a9a5a',warn:'#c4a43a',bad:'#c51e2a'}
+  zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1a14',muted:'#7a5a50',faint:'#b09080',accent:'#c84858',accent2:'#a01822',accent3:'#4a8a5a',good:'#4a8a50',warn:'#b89830',bad:'#a01822'}
 };
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
