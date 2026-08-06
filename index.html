@@ -140,7 +140,8 @@
   /* campaign */
   .camp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:8px;flex-wrap:wrap}
   .camp-head h2{margin:0;font-size:24px;font-weight:800}
-  .camp-tip{color:var(--text);opacity:.7;font-size:13px;margin:6px 0 18px;line-height:1.7;font-weight:450}
+  .camp-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .camp-tip{color:var(--text);opacity:.85;font-size:13px;line-height:1.7;font-weight:450;margin-bottom:12px;padding:12px 14px;background:var(--card);border-radius:8px}
   .level{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
          border-radius:14px;padding:14px 16px;margin-bottom:11px;position:relative;transition:.15s}
   .level:hover{border-color:var(--line2)}
@@ -185,7 +186,7 @@
   .modal .row{display:flex;gap:10px}
   .modal .row > div{flex:1}
   .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
-  .modal .desc{color:var(--faint);font-size:12.5px;line-height:1.6;margin:6px 0 0}
+  .modal .desc{color:var(--text);opacity:.65;font-size:13px;line-height:1.7;margin:6px 0 0}
 
   /* ===== 设置弹窗（.settings-modal 作用域，不影响其它弹窗） ===== */
   .settings-modal .modal{display:flex;flex-direction:column;max-height:88vh}
@@ -229,7 +230,7 @@
   .feature-wrap{max-width:880px;margin:0 auto}
   .cfg-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .cfg-card h2{margin:0 0 4px;font-size:20px}
-  .cfg-card .desc{color:var(--muted);font-size:13.5px;margin-bottom:18px;line-height:1.6}
+  .cfg-card .desc{color:var(--text);opacity:.65;font-size:13.5px;margin-bottom:18px;line-height:1.6}
   .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
   .cfg-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px;font-weight:600}
   .cfg-field input,.cfg-field select{width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--text);
@@ -260,9 +261,10 @@
   .grade-btn.g-good.sel{border-color:var(--good);background:rgba(74,222,128,.18)}
   .grade-btn.g-mid.sel{border-color:var(--warn);background:rgba(251,191,36,.18)}
   .grade-btn.g-bad.sel{border-color:var(--bad);background:rgba(248,113,113,.18)}
-  .pstatus{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5}
-  .empty-feature{text-align:center;padding:60px 20px;color:var(--text);opacity:.6}
+  .pstatus{font-size:12.5px;color:var(--text);opacity:.85;margin-top:12px;padding:10px 14px;background:var(--card);border-radius:8px;line-height:1.5}
+  .empty-feature{text-align:center;padding:0;color:var(--text);opacity:.85}
   .empty-feature .big{font-size:54px;margin-bottom:10px}
+  .empty-feature .desc{padding:14px 18px;background:var(--card);border-radius:10px;margin:16px 0;text-align:left}
   .mock-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
   .mock-result .big{text-align:center}
   .mock-result h2{text-align:center;margin:6px 0 2px;font-size:22px}
@@ -511,7 +513,7 @@
   </div>
 </div>
 
-<input type="file" id="fileInput" accept=".json,.md,.markdown,.txt,application/json,text/markdown" class="hidden">
+<input type="file" id="fileInput" accept=".json,.md,.markdown,.txt,application/json,text/markdown" class="hidden" multiple>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1127,9 +1129,10 @@ function renderCampaign(c){
         <button class="btn sm" id="unlockToggle">${UNLOCK_ALL?'🔓 全部解锁':'🔒 顺序解锁'}</button>
       </div>
     </div>
-    <div class="camp-tip">像打怪升级一样，按顺序通关：刷完一关自动解锁下一关（首关为「尖刀班」）。默认按 Java 学习难度梯度排列（基础 → 数据/存储 → 网络/分布式 → 框架工程 → 综合）。点「↺ 按难度排序」可随时恢复；点 ▲▼ 可手动微调顺序（手动调整后不再自动按难度排）。每关可「重刷」——重置进度重新计算；右侧显示你通关的次数。</div>
     <div class="bigbar" style="max-width:none;margin-bottom:16px"><i style="width:${progPct}%"></i></div>
     ${ clearedLevels===totalLevels && totalLevels>0 ? `<div class="allclear">🏆 全部 ${totalLevels} 关已通关！累计 ${totalClears()} 次</div>` : '' }
+    <div class="camp-box">
+      <div class="camp-tip">像打怪升级一样，按顺序通关：刷完一关自动解锁下一关（首关为「尖刀班」）。默认按 Java 学习难度梯度排列（基础 → 数据/存储 → 网络/分布式 → 框架工程 → 综合）。点「↺ 按难度排序」可随时恢复；点 ▲▼ 可手动微调顺序（手动调整后不再自动按难度排）。每关可「重刷」——重置进度重新计算；右侧显示你通关的次数。</div>
   `;
 
   ORDER.forEach((id, i) => {
@@ -1169,6 +1172,7 @@ function renderCampaign(c){
         </div>
       </div>`;
   });
+  html += '</div>'; // 关闭 camp-box
   c.innerHTML = html;
 
   c.querySelector('#unlockToggle').onclick = () => { UNLOCK_ALL = !UNLOCK_ALL; renderContent(); };
@@ -1400,8 +1404,8 @@ function renderMockConfig(c){
         </div>
         <button class="btn primary" id="mockStart">🚀 开始模拟面试</button>
       </div>
-      <div class="empty-feature" style="padding:26px">
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;text-align:left">
+      <div class="empty-feature" style="padding:0">
+        <div style="font-size:13px;color:var(--text);opacity:.85;line-height:1.7;text-align:left;background:var(--card);padding:14px 18px;border-radius:10px">
           小贴士：答题时尽量<b style="color:var(--text)">口述或打字写出完整答案</b>，时间到或主动点击「显示答案」后，再对照参考答案给自己打分（✅/🟡/❌）。最后导出的 MD 含「题目 + 我的回答 + 参考答案 + 自评」，方便 AI 帮你阅卷。</div>
       </div>
     </div>`;
@@ -1633,8 +1637,8 @@ function renderGrillConfig(c){
           <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
       </div>
-      <div class="empty-feature" style="padding:26px">
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;text-align:left">
+      <div class="empty-feature" style="padding:0">
+        <div style="font-size:13px;color:var(--text);opacity:.85;line-height:1.7;text-align:left;background:var(--card);padding:14px 18px;border-radius:10px">
           💡 提示：简历越详细拷打越深入。AI 会针对你的<b style="color:var(--text)">技术选型、架构决策、踩坑经历</b>逐层追问，模拟真实面试场景。</div>
       </div>
     </div>`;
@@ -2020,17 +2024,25 @@ function detectImageColors(img, callback){
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, size, size);
   const data = ctx.getImageData(0, 0, size, size).data;
-  let totalR = 0, totalG = 0, totalB = 0, totalLum = 0;
+  let totalR = 0, totalG = 0, totalB = 0, totalLum = 0, topLum = 0;
   const count = size * size;
-  for(let i = 0; i < data.length; i += 4){
-    totalR += data[i]; totalG += data[i+1]; totalB += data[i+2];
-    totalLum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+  const halfCount = count / 2;
+  let idx = 0;
+  for(let y = 0; y < size; y++){
+    for(let x = 0; x < size; x++){
+      totalR += data[idx]; totalG += data[idx+1]; totalB += data[idx+2];
+      const lum = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+      totalLum += lum;
+      if(y < size / 2) topLum += lum; // 只算上半部分
+      idx += 4;
+    }
   }
   const avgR = totalR / count, avgG = totalG / count, avgB = totalB / count;
   const avgLum = totalLum / count;
-  // 计算色调偏向：负=冷色 正=暖色
+  const avgTopLum = topLum / halfCount;
   const warmth = avgR - avgB;
-  // 文字颜色固定不变（暗色底浅色字），只根据冷暖调整强调色
+  // 上半部分亮就用深色文字，更贴合内容区域
+  const isBright = avgTopLum > 90;
   let accent, accent2;
   if(warmth > 15){
     accent='#ffb088'; accent2='#ff9868';
@@ -2039,7 +2051,7 @@ function detectImageColors(img, callback){
   } else {
     accent='#a8c8f0'; accent2='#c0a8e8';
   }
-  callback({accent, accent2});
+  callback({accent, accent2, isBright});
 }
 
 // 根据保存的颜色配置设置文字颜色
@@ -2051,8 +2063,8 @@ function applyBgTextMode(){
   if(colorsStr){
     try{
       const colors = JSON.parse(colorsStr);
-      // 用独立 style 标签，放在 themeVars 后面保证优先级
       _bgColorStyle = document.createElement('style');
+      // 自定义主题只覆盖强调色，保持暗色面板+浅色文字方案
       _bgColorStyle.textContent = `:root{--accent:${colors.accent};--accent2:${colors.accent2}}`;
       document.head.appendChild(_bgColorStyle);
     }catch(_){}
@@ -2150,23 +2162,32 @@ $('#exportBtn').onclick = () => {
 
 $('#importBtn').onclick = () => { $('#fileInput').value=''; $('#fileInput').click(); };
 $('#fileInput').onchange = async e => {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
+  const files = [...e.target.files]; if(!files.length) return;
+  // 先检查总容量
+  let totalSize = 0;
+  for(const f of files) totalSize += f.size;
+  const ok = await checkStorageLimit(totalSize);
+  if(!ok){ $('#fileInput').value=''; return; }
+  // 逐个导入
+  let imported=0, failed=0;
+  for(const file of files){
     try{
-      const text = String(reader.result);
-      // 存储容量检查
-      const ok = await checkStorageLimit(text.length);
-      if(!ok){ $('#fileInput').value=''; return; }
+      const text = await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(String(r.result));
+        r.onerror=rej;
+        r.readAsText(file);
+      });
       const looksJson = /^\s*[[{]/.test(text);
       const isMd = /\.(md|markdown|txt)$/i.test(file.name) || (!looksJson && /\n#{1,6}\s+/.test(text));
       if(isMd) importMarkdownDoc(text, file.name);
       else importJsonDocs(text);
-      $('#dataModal').classList.remove('show');
-      renderAll();
-    }catch(err){ alert('导入失败：'+err.message); }
-  };
-  reader.readAsText(file);
+      imported++;
+    }catch(err){ failed++; }
+  }
+  $('#dataModal').classList.remove('show');
+  renderAll();
+  toast(`导入完成：${imported} 个文件成功${failed?'，'+failed+' 个失败':''}，共 ${totalQuestions()} 题`);
 };
 
 // 导入 JSON（格式 {documents:[{id,title,questions:[{title,answer}]}]}，可含 progress/clears/order）
