@@ -2572,13 +2572,34 @@ function buildOrderFromSeed(){
   DOCS.forEach(d=>{ if(!order.includes(d.id)) order.push(d.id); }); // 种子外的文档追加在末尾
   return order;
 }
-// ===== 矿工挖宝箱游戏 =====
-let _minerGame = { state:'idle', x:0, facing:1, timer:0, items:[], sparkles:[], chestLidAngle:0, strikePhase:0, strikeCount:0, maxStrikes:0, animType:'', groundY:160, chestX:620, lastMastered:0, animFrame:0, idlePhase:0 };
+// ===== 矿工挖宝箱游戏（Sprite Sheet版本） =====
+// ---- 精灵图：从PNG加载（AI生成的矿工精灵图） ----
+let _spriteSheet = null; // HTMLImageElement
+let _spriteLoaded = false;
+const SPRITE_FRAME_W = 88;   // 每帧宽度
+const SPRITE_FRAME_H = 100;  // 每帧高度
+const SPRITE_PER_ROW = 8;    // 每行帧数
+// 帧布局：第1行 idle(8帧), 第2行 walk(8帧), 第3行 mine(4帧)
+const SPRITE_ANIMS = { idle:8, walk:8, mine:4 };
+const SPRITE_ROW = { idle:0, walk:1, mine:2 };
+function _loadSpriteSheet(){
+  if(_spriteSheet) return;
+  _spriteSheet = new Image();
+  _spriteSheet.onload = ()=>{ _spriteLoaded = true; };
+  _spriteSheet.onerror = ()=>{ console.warn('精灵图加载失败'); };
+  _spriteSheet.src = 'img-miner-spritesheet.png';
+}
+
+// ---- 全局状态 ----
+let _minerGame = { state:'idle', x:0, facing:1, timer:0, items:[], sparkles:[], chestLidAngle:0, strikePhase:0, strikeCount:0, maxStrikes:0, animType:'', groundY:160, chestX:620, lastMastered:0, animFrame:0, idlePhase:0, frameTick:0 };
 // animType: 'sock'=袜子, 'copper'=铜币, 'silver'=银币, 'gold'=金币(3下), ''=纯休息
+
 function triggerMinerAnimation(type){
   if(_minerGame.state !== 'idle') return;
+  if(!_spriteSheet) _loadSpriteSheet();
   _minerGame.state = type ? 'walking' : 'idle';
   _minerGame.timer = 0;
+  _minerGame.frameTick = 0;
   _minerGame.items = [];
   _minerGame.sparkles = [];
   _minerGame.chestLidAngle = 0;
@@ -2590,6 +2611,37 @@ function triggerMinerAnimation(type){
   _minerGame.x = 0;
   _minerGame.animFrame = requestAnimationFrame(minerLoop);
 }
+
+// 获取当前精灵帧的行和列
+function _getSpriteFrame(g){
+  const totalIdle = SPRITE_ANIMS.idle; // 8
+  const totalWalk = SPRITE_ANIMS.walk; // 8
+  const totalMine = SPRITE_ANIMS.mine; // 4
+
+  if(g.state==='idle'){
+    // idle: 12秒循环映射到8帧
+    const cyc = 12, ip = g.idlePhase;
+    const t = ip % cyc;
+    let col;
+    if(t < 3) col = Math.floor(t/3 * 2) % 2;             // 0-3s: 帧0-1（站立）
+    else if(t < 6) col = 2 + Math.floor((t-3)/3 * 2) % 2;  // 3-6s: 帧2-3（呼吸）
+    else if(t < 7.2) col = 4 + Math.floor((t-6)/1.2 * 2) % 2; // 6-7.2s: 帧4-5（抖肩）
+    else if(t < 8.5) col = 6 + Math.floor((t-7.2)/1.3 * 2) % 2; // 7.2-8.5s: 帧6-7（转镐子）
+    else col = 0;
+    return {row: SPRITE_ROW.idle, col};
+  }
+  if(g.state==='walking' || g.state==='returning'){
+    const col = Math.floor(g.timer * 0.12) % totalWalk;
+    return {row: SPRITE_ROW.walk, col};
+  }
+  if(g.state==='mining'){
+    const col = Math.min(totalMine-1, Math.floor(g.strikePhase * totalMine));
+    return {row: SPRITE_ROW.mine, col};
+  }
+  // 其他状态默认站立第一帧
+  return {row: SPRITE_ROW.idle, col: 0};
+}
+
 function minerLoop(){
   const canvas = document.getElementById('minerGame');
   if(!canvas){ _minerGame.state='idle'; return; }
@@ -2597,52 +2649,51 @@ function minerLoop(){
   const W = canvas.width, H = canvas.height;
   const g = _minerGame, gy = g.groundY;
 
+  if(!_spriteSheet) _loadSpriteSheet();
+
+  // 图片未加载完成就静默等待下一帧
+  if(!_spriteLoaded){
+    g.animFrame = requestAnimationFrame(minerLoop);
+    return;
+  }
+
   ctx.clearRect(0,0,W,H);
 
   // 宝箱在右侧，矿工从左出发
   const chestX = W * 0.9;
   const minerStartX = W * 0.1;
   g.chestX = chestX;
+
   // === 宝箱（奢华版） ===
   const cw=74, ch=50, chestBaseY=gy-42;
-  // 阴影
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(chestX,gy-3,44,8,0,0,Math.PI*2);ctx.fill();
-  // 箱体深色底
   ctx.fillStyle='#2A1808';ctx.fillRect(chestX-cw/2,chestBaseY-ch+14,cw,ch-14);
-  // 木纹条
   ctx.fillStyle='#4A2A12';for(let i=0;i<6;i++)ctx.fillRect(chestX-cw/2+4,chestBaseY-ch+16+i*6,cw-8,1.5);
-  // 主面板（金棕色渐变）
   const g1=ctx.createLinearGradient(chestX-cw/2,0,chestX+cw/2,0);
   g1.addColorStop(0,'#986030');g1.addColorStop(.3,'#A87038');g1.addColorStop(.7,'#A06830');g1.addColorStop(1,'#885028');
   ctx.fillStyle=g1;ctx.fillRect(chestX-cw/2+6,chestBaseY-ch+14,cw-12,ch-19);
-  // 十字金边装饰（X型）
   ctx.strokeStyle='#D4B048';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.moveTo(chestX-cw/2+10,chestBaseY-ch+16);ctx.lineTo(chestX+cw/2-10,chestBaseY-7);ctx.stroke();
   ctx.beginPath();ctx.moveTo(chestX+cw/2-10,chestBaseY-ch+16);ctx.lineTo(chestX-cw/2+10,chestBaseY-7);ctx.stroke();
-  // 铆钉（6颗）
   ctx.fillStyle='#E8C850';
   [[chestX-cw/2+10,chestBaseY-ch+20],[chestX+cw/2-10,chestBaseY-ch+20],
    [chestX-cw/2+10,chestBaseY-8],[chestX+cw/2-10,chestBaseY-8],
    [chestX,chestBaseY-ch+20],[chestX,chestBaseY-8]
   ].forEach(([rx,ry])=>{ctx.beginPath();ctx.arc(rx,ry,3.5,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#FFF8D0';ctx.beginPath();ctx.arc(rx-1,ry-1,1.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#E8C850';});
-  // 金边框
   ctx.strokeStyle='#C89838';ctx.lineWidth=2.5;ctx.strokeRect(chestX-cw/2+6,chestBaseY-ch+14,cw-12,ch-19);
   ctx.strokeStyle='#E8D458';ctx.lineWidth=1;ctx.strokeRect(chestX-cw/2+9,chestBaseY-ch+17,cw-18,ch-25);
-  // 奢华锁
   const ly=chestBaseY-ch+14+ch/3;
   ctx.fillStyle='#382010';ctx.beginPath();ctx.arc(chestX,ly,12,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#E8C840';ctx.beginPath();ctx.arc(chestX,ly,10,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#D4A830';ctx.beginPath();ctx.arc(chestX,ly,8,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#E8D860';ctx.beginPath();ctx.arc(chestX-2,ly-3,3.5,0,Math.PI*2);ctx.fill();
-  // 钥匙孔
   ctx.fillStyle='#180800';ctx.beginPath();ctx.arc(chestX,ly+2,3,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#100400';ctx.fillRect(chestX-1.5,ly+2,3,9);
-  // 锁底部小装饰珠
   ctx.fillStyle='#E8C840';ctx.beginPath();ctx.arc(chestX-4,ly+10,2,0,Math.PI*2);ctx.fill();
   ctx.beginPath();ctx.arc(chestX+4,ly+10,2,0,Math.PI*2);ctx.fill();
 
-  // 宝箱盖（弧形穹顶+王冠装饰）
+  // 宝箱盖
   ctx.save();ctx.translate(chestX,chestBaseY-ch+14);ctx.rotate(g.chestLidAngle);
   ctx.fillStyle='#4A2A12';ctx.beginPath();
   ctx.moveTo(-cw/2,0);ctx.quadraticCurveTo(-cw/2,-16,-cw/3,-20);
@@ -2652,21 +2703,14 @@ function minerLoop(){
   ctx.beginPath();ctx.moveTo(-cw/2+5,0);ctx.quadraticCurveTo(-cw/2+5,-14,-cw/3+3,-18);
   ctx.lineTo(cw/3-3,-18);ctx.quadraticCurveTo(cw/2-5,-14,cw/2-5,0);
   ctx.closePath();ctx.fill();
-  // 盖顶金脊（三层）
   ctx.fillStyle='#A88030';ctx.fillRect(-cw/2+6,-18,cw-12,5);
   ctx.fillStyle='#D4B048';ctx.fillRect(-cw/2+8,-19,cw-16,3);
   ctx.fillStyle='#E8D860';ctx.fillRect(-cw/2+10,-20,cw-20,1.5);
-  // 盖顶王冠小尖刺
   ctx.fillStyle='#E8C840';
-  for(let j=0;j<3;j++){
-    const jx=-12+j*12;
-    ctx.beginPath();ctx.moveTo(jx,-20);ctx.lineTo(jx-2,-28);ctx.lineTo(jx+2,-28);ctx.closePath();ctx.fill();
-  }
-  // 盖护角
+  for(let j=0;j<3;j++){const jx=-12+j*12;ctx.beginPath();ctx.moveTo(jx,-20);ctx.lineTo(jx-2,-28);ctx.lineTo(jx+2,-28);ctx.closePath();ctx.fill();}
   ctx.fillStyle='#A88030';ctx.fillRect(-cw/2+6,-14,7,7);ctx.fillRect(cw/2-13,-14,7,7);
   ctx.fillStyle='#E8D060';ctx.fillRect(-cw/2+7,-14,2,5);ctx.fillRect(cw/2-12,-14,2,5);
   ctx.restore();
-  // 开盖金光
   if(g.chestLidAngle>0.15){
     const ga=0.3+0.4*Math.sin(g.timer*0.08);
     const grd=ctx.createRadialGradient(chestX,chestBaseY-ch+12,3,chestX,chestBaseY-ch+12,40);
@@ -2674,185 +2718,47 @@ function minerLoop(){
     ctx.fillStyle=grd;ctx.beginPath();ctx.arc(chestX,chestBaseY-ch+12,40,0,Math.PI*2);ctx.fill();
   }
 
-  // === 矿工 ===
-  const mx=minerStartX+g.x, my=gy;
-  const isWalking=(g.state==='walking'||g.state==='returning');
-  const walkSwing=isWalking?Math.sin(g.timer*0.15)*0.5:0;
-  // 空闲动画：呼吸 + 偶尔伸展 + 左右微动
-  // 待机动作：大部分时间完全静止，偶尔做一个短动作
-  // 0-6s:静止  6-6.8s:抖肩  6.8-7s:静止  7-8s:转镐子  8-12s:静止 → 循环
-  var idleBob=0,idleExtra=0,idlePickAnim=0;
-  if(g.state==='idle'){
-    const ip=g.idlePhase, cyc=12;
-    const t=ip%(cyc);
-    if(t<6){idleBob=0;idleExtra=0;idlePickAnim=0;}
-    else if(t<6.8){ // 抖肩（0.8秒）
-      const r=(t-6)/0.8;
-      idleBob=Math.sin(r*Math.PI*4)*2*(1-r);
-      idleExtra=Math.sin(r*Math.PI*4)*1.5*(1-r);
-    }else if(t<7){idleBob=0;idleExtra=0;idlePickAnim=0;}
-    else if(t<8){ // 转镐子（1秒）
-      const r=(t-7)/1;
-      idlePickAnim=Math.sin(r*Math.PI)*0.8;
-      idleExtra=Math.sin(r*Math.PI)*1;
-    }else{idleBob=0;idleExtra=0;idlePickAnim=0;}
+  // === 矿工（Sprite Sheet渲染） ===
+  const mx = minerStartX + g.x;
+  const frame = _getSpriteFrame(g);
+  const srcX = frame.col * SPRITE_FRAME_W;
+  const srcY = frame.row * SPRITE_FRAME_H;
+  // 矿工脚底对齐地面
+  const minerFootY = gy - 2;
+  const drawX = mx - SPRITE_FRAME_W/2;
+  const drawY = minerFootY - SPRITE_FRAME_H;
+
+  ctx.save();
+  // 如果面向左边（returning），水平翻转
+  if(g.facing === -1){
+    ctx.translate(drawX + SPRITE_FRAME_W, drawY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(_spriteSheet, srcX, srcY, SPRITE_FRAME_W, SPRITE_FRAME_H, 0, 0, SPRITE_FRAME_W, SPRITE_FRAME_H);
+  } else {
+    ctx.drawImage(_spriteSheet, srcX, srcY, SPRITE_FRAME_W, SPRITE_FRAME_H, drawX, drawY, SPRITE_FRAME_W, SPRITE_FRAME_H);
   }
-  const walkBob=isWalking?Math.abs(Math.cos(g.timer*0.15))*6:idleBob;
-  const bodyY=my-72-walkBob, bodyX=mx+idleExtra;
-  const skin='#F5D0B0', skinS='#E0B898', skinL='#FAE0CC';
-  const headR=18, bw=34, bh=50, bodyTop=bodyY-bh;
-
-  function _rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
-  function _ov(x,y,rw,rh){ctx.beginPath();ctx.ellipse(x,y,rw,rh,0,0,Math.PI*2);ctx.fill();}
-
-  // 阴影
-  ctx.fillStyle='rgba(0,0,0,.3)';_ov(bodyX,my-2,22,8);
-
-  // == 腿（两条，正脸） ==
-  const legR=5, legGap=8, thighH=22, calfH=26;
-  // 左腿
-  ctx.save();ctx.translate(bodyX-legGap,bodyY);ctx.rotate(-0.15-walkSwing*0.6);
-  ctx.fillStyle='#363648';_rr(-legR,0,legR*2,thighH,4);
-  ctx.translate(0,thighH-2);ctx.rotate(0.08+walkSwing*0.4);
-  ctx.fillStyle='#363648';_rr(-legR,0,legR*2,calfH,3);
-  ctx.fillStyle='#5a3820';_rr(-legR-1,calfH-3,legR*2+2,10,4);
-  ctx.fillStyle='#3a2010';ctx.fillRect(-legR-1,calfH+5,legR*2+2,5);
   ctx.restore();
-  // 右腿
-  ctx.save();ctx.translate(bodyX+legGap,bodyY);ctx.rotate(0.15+walkSwing*0.6);
-  ctx.fillStyle='#464658';_rr(-legR,0,legR*2,thighH,4);
-  ctx.translate(0,thighH-2);ctx.rotate(-0.08-walkSwing*0.4);
-  ctx.fillStyle='#464658';_rr(-legR,0,legR*2,calfH,3);
-  ctx.fillStyle='#6a4a28';_rr(-legR-1,calfH-3,legR*2+2,10,4);
-  ctx.fillStyle='#4a2818';ctx.fillRect(-legR-1,calfH+5,legR*2+2,5);
-  ctx.restore();
-
-  // == 身体 ==
-  ctx.fillStyle='#2A50C0';_rr(bodyX-bw/2,bodyTop,bw,bh,8);
-  ctx.fillStyle='#2244AA';_rr(bodyX-bw/2+3,bodyTop+3,bw-6,bh-6,6);
-  // 背带
-  ctx.fillStyle='#152E80';_rr(bodyX-10,bodyTop+3,9,bh-8,3);_rr(bodyX+1,bodyTop+3,9,bh-8,3);
-  // 腰带
-  ctx.fillStyle='#4a2818';_rr(bodyX-bw/2,bodyTop+bh-8,bw,7,3);
-  ctx.fillStyle='#D4A840';_rr(bodyX-7,bodyTop+bh-10,14,9,3);
-  ctx.fillStyle='#E8C860';ctx.fillRect(bodyX-6,bodyTop+bh-9,12,2);
-  // 领口
-  ctx.fillStyle='#1A3080';_rr(bodyX-7,bodyTop,14,7,3);
-
-  // == 脖子 ==
-  ctx.fillStyle=skinS;_rr(bodyX-4,bodyTop-8,8,10,3);
-
-  // == 肩垫 ==
-  ctx.fillStyle='#2248B0';_rr(bodyX-bw/2-2,bodyTop,4,8,2);_rr(bodyX+bw/2-2,bodyTop,4,8,2);
-
-  // == 脸（正脸） ==
-  const headY=bodyTop-30;
-  ctx.fillStyle=skin;_ov(bodyX,headY,headR,headR+2);
-  ctx.fillStyle=skinL;_ov(bodyX,headY-2,headR-3,headR-3);
-  // 头发
-  ctx.fillStyle='#3a2010';
-  ctx.beginPath();ctx.arc(bodyX,headY-headR+4,headR+3,Math.PI*1.05,Math.PI*1.95);ctx.fill();
-  ctx.fillRect(bodyX-headR-2,headY-headR+2,headR*2+4,7);
-  ctx.fillStyle='#4a2818';_ov(bodyX-9,headY-headR+3,6,6);_ov(bodyX+9,headY-headR+3,6,6);
-  ctx.fillStyle='#2244AA';_rr(bodyX-headR-4,headY-headR+6,headR*2+8,5,2);
-  // 眉毛×2
-  ctx.fillStyle='#3a2010';_rr(bodyX-11,headY-13,7,3,1.5);_rr(bodyX+4,headY-13,7,3,1.5);
-  // 眼睛×2
-  ctx.fillStyle='#fff';_ov(bodyX-7,headY-5,5,4.5);_ov(bodyX+7,headY-5,5,4.5);
-  ctx.fillStyle='#1a0a00';_ov(bodyX-6,headY-5,2.5,2.5);_ov(bodyX+8,headY-5,2.5,2.5);
-  ctx.fillStyle='#fff';_ov(bodyX-6,headY-6,1,1);_ov(bodyX+8,headY-6,1,1);
-  // 耳朵×2
-  ctx.fillStyle=skinS;_ov(bodyX-headR-1,headY-1,4,7);_ov(bodyX+headR+1,headY-1,4,7);
-  ctx.fillStyle=skinL;_ov(bodyX-headR,headY-2,3,5);_ov(bodyX+headR,headY-2,3,5);
-  // 鼻子
-  ctx.fillStyle=skinS;_ov(bodyX,headY+2,5,4);
-  ctx.fillStyle=skinL;_ov(bodyX+1,headY+1.5,2.5,2.5);
-  // 胡子
-  ctx.fillStyle='#5a3a20';_ov(bodyX,headY+10,9,5);
-  ctx.fillStyle='#4a2a18';_ov(bodyX+2,headY+8,3,3);
-  // 嘴
-  ctx.fillStyle='#2a1008';_rr(bodyX-2,headY+8,4,2,1);
-  // 脸颊×2
-  ctx.fillStyle='rgba(220,130,100,.2)';_ov(bodyX-10,headY+3,3,3);_ov(bodyX+10,headY+3,3,3);
-
-  // == 手臂（对称）+ 镐子（双手握持，竖在身前） ==
-  const armTop=bodyTop+6, armLen=18, foreLen=22, shoulderW=22;
-  // 上躯体的镐子位置
-  const pickCenterX=bodyX, pickCenterY=bodyTop-10;
-  // 左臂
-  ctx.save();ctx.translate(bodyX-shoulderW,armTop);ctx.rotate(-0.5+idleExtra*0.2+walkSwing*0.2);
-  ctx.fillStyle='#2A50C0';_rr(-4,0,8,armLen,3);
-  ctx.translate(0,armLen-2);ctx.rotate(0.6);
-  ctx.fillStyle=skin;_rr(-3.5,0,7,foreLen,3);
-  ctx.fillStyle='#6B4420';_rr(-4.5,foreLen-4,9,8,3);
-  for(let fi=0;fi<3;fi++){ctx.fillStyle='#7A5020';ctx.fillRect(-3.5+fi*3,foreLen+2,2,3);}
-  ctx.restore();
-  // 右臂
-  ctx.save();ctx.translate(bodyX+shoulderW,armTop);ctx.rotate(0.5-idleExtra*0.2-walkSwing*0.2);
-  ctx.fillStyle='#2A50C0';_rr(-4,0,8,armLen,3);
-  ctx.translate(0,armLen-2);ctx.rotate(-0.6);
-  ctx.fillStyle=skin;_rr(-3.5,0,7,foreLen,3);
-  ctx.fillStyle='#6B4420';_rr(-4.5,foreLen-4,9,8,3);
-  for(let fi=0;fi<3;fi++){ctx.fillStyle='#7A5020';ctx.fillRect(-3.5+fi*3,foreLen+2,2,3);}
-  ctx.restore();
-
-  // 镐子（竖立，双手交握在身前）
-  const pickLen=65;
-  ctx.save();ctx.translate(bodyX,bodyTop-40);
-  if(g.state==='mining'){
-    const sp=g.strikePhase;
-    let pa=0;
-    if(sp<0.25)pa=-sp*4;else if(sp<0.55)pa=-1+(sp-0.25)*6;else pa=2-(sp-0.55)*4;
-    ctx.rotate(pa*0.6);
-  }else if(idlePickAnim>0.1){
-    ctx.rotate(idlePickAnim*0.4);
-  }
-  // 镐柄
-  ctx.fillStyle='#5A2810';ctx.fillRect(-2.5,0,5,pickLen);
-  ctx.fillStyle='#7A4020';ctx.fillRect(-1,3,2,18);ctx.fillStyle='#8A4830';ctx.fillRect(-1,28,2,12);
-  // 镐头在上方
-  ctx.fillStyle='#889098';
-  ctx.beginPath();ctx.moveTo(-22,10);ctx.lineTo(-22,5);ctx.lineTo(18,5);ctx.lineTo(18,10);
-  ctx.lineTo(6,14);ctx.lineTo(-4,14);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#B0B8C0';ctx.beginPath();ctx.moveTo(-20,10);ctx.lineTo(-20,6);ctx.lineTo(-5,13);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#C0C8D0';ctx.beginPath();ctx.moveTo(16,10);ctx.lineTo(16,6);ctx.lineTo(5,13);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#707880';
-  ctx.beginPath();ctx.moveTo(-22,10);ctx.lineTo(-20,10);ctx.lineTo(-21,16);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(18,10);ctx.lineTo(16,10);ctx.lineTo(17,16);ctx.closePath();ctx.fill();
-  ctx.restore();
-
-  // 盖住镐的双手（画在镐子上面）
-  ctx.save();ctx.translate(bodyX-3,bodyTop-52);
-  ctx.fillStyle='#6B4420';_rr(-5,0,10,10,4);
-  ctx.fillStyle='#8B5A30';_rr(-4,1,8,8,3);
-  ctx.restore();
-  ctx.save();ctx.translate(bodyX+3,bodyTop-52);
-  ctx.fillStyle='#6B4420';_rr(-5,0,10,10,4);
-  ctx.fillStyle='#8B5A30';_rr(-4,1,8,8,3);
-  ctx.restore();
-  ctx.beginPath();ctx.moveTo(17,-8);ctx.lineTo(16.5,-12);ctx.lineTo(16,-8);ctx.closePath();ctx.fill();
-  ctx.restore();ctx.restore();
 
   // === 掉落物品 ===
   for(let c of g.items){
     const life=(g.timer-c.birth)/c.duration;
     ctx.save();ctx.globalAlpha=Math.min(1,1-life);
-    if(c.type==='gold'){ // 金币 (rate 4-5)
+    if(c.type==='gold'){
       ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#FFE850';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#B8960A';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
       ctx.fillStyle='#B8960A';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('$',c.x,c.y+2);
-    }else if(c.type==='silver'){ // 银币 (rate 3)
+    }else if(c.type==='silver'){
       ctx.fillStyle='#C8C8D0';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#E0E0E8';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#888898';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
       ctx.fillStyle='#888898';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('S',c.x,c.y+2);
-    }else if(c.type==='copper'){ // 铜币 (rate 2)
+    }else if(c.type==='copper'){
       ctx.fillStyle='#D4884A';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#E8A860';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#885830';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
       ctx.fillStyle='#885830';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('C',c.x,c.y+2);
-    }else if(c.type==='sock'){ // 🧦 (rate 1)
+    }else if(c.type==='sock'){
       ctx.fillStyle='#888';ctx.fillRect(c.x-6,c.y-3,12,10);
       ctx.fillStyle='#999';ctx.fillRect(c.x-5,c.y-2,10,1);
       ctx.fillStyle='#666';ctx.fillRect(c.x-6,c.y+5,8,4);
@@ -2876,7 +2782,7 @@ function minerLoop(){
   }
 
   // 状态更新
-  g.timer++;
+  g.timer++; g.frameTick++;
   if(g.state==='walking'){g.x+=3;if(mx>=chestX-50){
     g.state='mining';g.strikePhase=0;g.strikeCount=0;g.timer=0;
   }}
@@ -2893,17 +2799,17 @@ function minerLoop(){
     if(g.strikeCount>=g.maxStrikes){g.state='closing';g.timer=0;}
   }else if(g.state==='closing'){
     g.timer++;
-    g.chestLidAngle += 0.06; // 箱盖慢慢合上
+    g.chestLidAngle += 0.06;
     if(g.chestLidAngle >= 0){ g.chestLidAngle = 0; g.state='turnAround'; g.timer=0; g.facing=-1; }
   }else if(g.state==='turnAround'){
     g.timer++;
-    if(g.timer>8){ g.state='returning'; g.timer=0; } // 转身停顿一下
+    if(g.timer>8){ g.state='returning'; g.timer=0; }
   }else if(g.state==='returning'){
-    g.x-=3; // 面向左走回
+    g.x-=3;
     if(mx<=minerStartX){ g.state='turnBack'; g.timer=0; g.facing=1; }
   }else if(g.state==='turnBack'){
     g.timer++;
-    if(g.timer>8){ g.state='coinsfall'; g.timer=0; } // 转回来
+    if(g.timer>8){ g.state='coinsfall'; g.timer=0; }
   }
   else if(g.state==='coinsfall'){
     for(let c of g.items){if(c.state!=='fly'){c.state='fly';c.targetX=50+Math.random()*100;c.targetY=-80-Math.random()*60;c.duration=35;c.birth=g.timer;}
@@ -2922,6 +2828,7 @@ function minerLoop(){
   g.animFrame=requestAnimationFrame(minerLoop);
 }
 function startMinerIdle(){
+  if(!_spriteSheet) _loadSpriteSheet();
   _minerGame.lastMastered=totalMastered();
   _minerGame.state='idle';_minerGame.x=0;_minerGame.timer=0;_minerGame.items=[];_minerGame.chestLidAngle=0;_minerGame.idlePhase=0;
   _minerGame.animFrame=requestAnimationFrame(minerLoop);
