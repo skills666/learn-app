@@ -57,9 +57,16 @@
   .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-  .content{flex:1;overflow-y:auto;padding:24px 28px 40px;max-width:1200px;margin:0 auto;width:100%}
+  .content{flex:1;overflow-y:auto;padding:24px 28px 40px;max-width:1200px;margin:0 auto;width:100%;animation:fadeIn .2s ease}
   .content::-webkit-scrollbar{width:10px}
   .content::-webkit-scrollbar-thumb{background:#2a3050;border-radius:8px}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(6px)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .modal-bg.hiding{animation:fadeOut .15s ease forwards}
+  .modal-bg.hiding .modal{animation:scaleOut .15s ease forwards}
 
   .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
   .doc-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:.5px}
@@ -111,7 +118,8 @@
 
   /* overview */
   .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:transform .15s,box-shadow .15s}
+  .ov-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
   .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .ov-card .t{color:var(--muted);font-size:13px;margin-top:4px}
@@ -174,8 +182,9 @@
 
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.7);backdrop-filter:blur(4px);
-            display:none;place-items:center;z-index:50}
+            display:none;place-items:center;z-index:50;animation:fadeIn .15s ease}
   .modal-bg.show{display:grid}
+  .modal-bg.show .modal{animation:scaleIn .2s ease}
   .modal{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:24px;width:min(520px,92vw);
          box-shadow:var(--shadow);max-height:90vh;overflow-y:auto}
   .modal h3{margin:0 0 14px;font-size:18px}
@@ -294,7 +303,8 @@
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
   .theme-popup{display:none;position:fixed;top:52px;right:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(5,1fr);gap:5px;max-width:340px}
-  .theme-popup.show{display:grid}
+  .theme-popup.show{display:grid;animation:scaleIn .15s ease}
+  .theme-popup.hiding{animation:scaleOut .1s ease forwards}
   .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative}
   .theme-dot:hover{transform:scale(1.08);border-color:var(--accent2)}
   .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
@@ -315,8 +325,7 @@
 
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
-    .miner-canvas{display:none}
-    .topbar{padding:6px 8px;gap:3px;justify-content:flex-start}
+      .topbar{padding:6px 8px;gap:3px;justify-content:flex-start}
     .tab{padding:4px 8px;font-size:11px;border-radius:6px}
     .topbar .search{padding:3px 8px}
     .topbar .search input{width:100px;font-size:12px}
@@ -396,6 +405,7 @@
     </div>
     <button class="btn ghost" id="dataBtn">⚙️ 设置</button>
     <button class="btn ghost" id="themeBtn" title="切换主题">🎨</button>
+    <button class="btn ghost" id="skinBtn" title="皮肤">🎭</button>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
   <div class="content" id="content"></div>
@@ -418,6 +428,20 @@
   <div class="theme-dot" data-theme="songxing" style="background:linear-gradient(135deg,#a78bfa,#d4a854)">松星</div>
   <div class="theme-dot" data-theme="zirong" style="background:linear-gradient(135deg,#00FF88,#E03A3A)">子荣</div>
   <button class="btn sm" id="uploadBgBtn" style="grid-column:1/-1;justify-self:center;font-size:11px;padding:4px 12px;margin-top:2px">📤 上传背景图</button>
+</div>
+
+<!-- 皮肤选择弹窗 -->
+<div class="theme-popup" id="skinPopup" style="width:260px">
+  <div class="theme-sep" style="grid-column:1/-1">📦 宝箱皮肤</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="default" style="background:linear-gradient(135deg,#986030,#D4B048)">默认</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="ice" style="background:linear-gradient(135deg,#a8d8ea,#88ccff)">冰霜</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="shadow" style="background:linear-gradient(135deg,#3a1a5e,#1a0a2e)">暗影</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="gold" style="background:linear-gradient(135deg,#FFD700,#D4B048)">黄金</div>
+  <div class="theme-sep" style="grid-column:1/-1">💎 物品皮肤</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="default" style="background:linear-gradient(135deg,#FFD700,#C8C8D0)">默认</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="gems" style="background:linear-gradient(135deg,#ff69b4,#00ffff)">宝石</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="pixel" style="background:linear-gradient(135deg,#4a4,#0a0)">像素</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="candy" style="background:linear-gradient(135deg,#ff6b9d,#c44569)">糖果</div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -613,7 +637,7 @@ const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', CAMPAIGN:'cam
 
 // 闯关默认顺序：按 Java 学习难度梯度（基础 → 数据/存储 → 网络/分布式 → 框架工程 → 综合），而非题目数量
 const SEED_ORDER = ["java基础","集合","算法","锁","JVM","并发","线程池","mysql","redis","mybatis","es","网络io","网络通讯","mq","分布式事务","nginx","注册中心","负载均衡组件","网关","微服务","openfeign","SpringBoot","web","设计模式","git","开发流程","测试","运维","对接第三方","项目","前端","AI","非技术题"];
-let view = Views.OVERVIEW;
+let view = sessionStorage.getItem('lastView') || Views.OVERVIEW;
 let currentDocId = null;
 let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
@@ -718,6 +742,30 @@ async function checkStorageLimit(newDataSize){
 }
 function totalSeen(){ return Object.values(PROGRESS).filter(p=>p.practiced||p.seen).length; }
 function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).length; }
+// 通用模态框关闭（带过渡动画）
+function hideModal(el){
+  el.classList.add('hiding');
+  el.addEventListener('animationend', function h(){
+    el.classList.remove('show','hiding');
+    el.removeEventListener('animationend', h);
+  }, {once:true});
+}
+function confirmDialog(msg){ return new Promise(resolve=>{
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  const dlg=document.createElement('div');
+  dlg.style.cssText='background:var(--card);color:var(--text);padding:24px 28px;border-radius:14px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid var(--line2);text-align:center';
+  dlg.innerHTML='<p style="margin:0 0 20px;font-size:15px;line-height:1.6;white-space:pre-wrap">'+msg+'</p>'
+    +'<div style="display:flex;gap:12px;justify-content:center">'
+    +'<button class="btn-confirm-yes" style="padding:8px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:14px">确定</button>'
+    +'<button class="btn-confirm-no" style="padding:8px 24px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px">取消</button>'
+    +'</div>';
+  ov.appendChild(dlg);
+  document.body.appendChild(ov);
+  dlg.querySelector('.btn-confirm-yes').onclick=()=>{ov.remove();resolve(true)};
+  dlg.querySelector('.btn-confirm-no').onclick=()=>{ov.remove();resolve(false)};
+  ov.onclick=e=>{if(e.target===ov){ov.remove();resolve(false)}};
+});}
 function totalClears(){ return Object.values(CLEARS).reduce((a,b)=>a+(b||0),0); }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
@@ -1044,8 +1092,8 @@ function toggleMaster(qid){
   if(btn) btn.classList.toggle('on', p.mastered);
   renderStatsBar();
 }
-function deleteQuestion(docId, qid){
-  if(!confirm('确定删除这道题目？此操作不可撤销。')) return;
+async function deleteQuestion(docId, qid){
+  if(!await confirmDialog('确定删除这道题目？此操作不可撤销。')) return;
   const d = docById(docId);
   d.questions = d.questions.filter(q=>q.id!==qid);
   delete PROGRESS[qid];
@@ -1197,10 +1245,10 @@ function reorderLevel(i, dir){
   renderContent();
 }
 
-function replayLevel(docId){
+async function replayLevel(docId){
   const d = docById(docId);
   if(!d || !d.questions.length) return;
-  if(!confirm(`重刷「${d.title}」？将清空本题库的学习进度（已看/掌握标记），通关次数不变，方便你重新刷一遍。`)) return;
+  if(!await confirmDialog(`重刷「${d.title}」？将清空本题库的学习进度（已看/掌握标记），通关次数不变，方便你重新刷一遍。`)) return;
   d.questions.forEach(q=>{ if(PROGRESS[q.id]){ delete PROGRESS[q.id]; } });
   saveProgress();
   if(practice.scope===docId){ practice.index=0; practice.done=false; }
@@ -1334,7 +1382,6 @@ function renderDone(c){
 function toggleMasterP(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); } saveProgress();
-  if(p.mastered) triggerMinerAnimation('gold');
   renderAll();
 }
 // 刷题里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
@@ -1400,7 +1447,7 @@ function renderMock(c){
     renderAll();
   };
   $('#mockAIBtn').onclick = () => { askAI(qid); };
-  $('#mockQuit').onclick = () => { if(!confirm('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
+  $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
   $('#mockNext').onclick = () => {
     if(mock.index < tot-1){ mock.index++; mock.revealed=false; renderAll(); }
     else { mock.done = true; renderAll(); }
@@ -1464,9 +1511,7 @@ function mockGrade(qid, rate){
   a.selfRate = rate;
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.selfRate = rate; p.lastPracticed = Date.now();
-  if(rate==='good'){ p.seen = true; p.mastered = true; triggerMinerAnimation('gold'); }
-  else if(rate==='mid') triggerMinerAnimation('silver');
-  else triggerMinerAnimation('copper');
+  if(rate==='good'){ p.seen = true; p.mastered = true; }
   saveProgress();
   renderAll();
 }
@@ -1598,9 +1643,6 @@ function renderMemory(c){
     saveProgress();
     markDirty();
     memory.index++; memory.flipped=false;
-    // 记忆评分：1=袜子, 2=铜币, 3=银币, 4-5=金币
-    const types=['','sock','copper','silver','gold','gold'];
-    triggerMinerAnimation(types[rate]||'');
     renderAll();
   });
   const skipBtn = $('#flashSkip'); if(skipBtn) skipBtn.onclick = (e) => { e.stopPropagation();
@@ -1648,7 +1690,7 @@ function renderGrill(c){
   $('#grillSend').onclick = send;
   input.onkeydown = e => { if(e.key==='Enter') send(); };
   input.focus();
-  $('#grillQuit').onclick = () => { if(!confirm('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false}; renderAll(); };
+  $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false}; renderAll(); };
 }
 function renderGrillConfig(c){
   c.innerHTML = `
@@ -1954,7 +1996,8 @@ function renderSearch(c){
 /* =========================================================
    顶层渲染
    ========================================================= */
-function renderAll(){ renderStatsBar(); renderContent(); }
+function renderAll(){ sessionStorage.setItem('lastView', view); renderStatsBar(); renderContent(); // 触发过渡动画：移除再添加 content
+  const c=$('.content'); if(c){ c.style.animation='none'; c.offsetHeight; c.style.animation=''; } }
 
 /* =========================================================
    事件绑定
@@ -2047,9 +2090,37 @@ function applyTheme(name){
     }
   }, 50);
 }
-$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.toggle('show'); };
-document.querySelectorAll('.theme-dot').forEach(d=>d.onclick=()=>{applyTheme(d.dataset.theme);$('#themePopup').classList.remove('show');});
-document.addEventListener('click',()=>$('#themePopup').classList.remove('show'));
+$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
+$('#skinBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
+document.querySelectorAll('.theme-dot').forEach(d=>{
+  if(d.dataset.theme) d.onclick=()=>{applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
+  else if(d.dataset.skinCat){
+    d.onclick=(e)=>{
+      e.stopPropagation();
+      // 高亮选中
+      const cat=d.dataset.skinCat;
+      document.querySelectorAll(`.theme-dot[data-skin-cat="${cat}"]`).forEach(b=>b.style.outline='');
+      d.style.outline='2px solid var(--accent)';
+      // 保存皮肤
+      const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
+      skins[cat]=d.dataset.skin;
+      localStorage.setItem('learnAppSkins', JSON.stringify(skins));
+    };
+  }
+});
+document.addEventListener('mousedown',(e)=>{
+  if(e.target.closest('#themePopup,#skinPopup,#themeBtn,#skinBtn')) return;
+  hideModal($('#themePopup')); hideModal($('#skinPopup'));
+});
+
+// 初始化皮肤高亮
+(function(){
+  const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
+  Object.entries(skins).forEach(([cat,skin])=>{
+    const el = document.querySelector(`.theme-dot[data-skin-cat="${cat}"][data-skin="${skin}"]`);
+    if(el) el.style.outline='2px solid var(--accent)';
+  });
+})();
 
 // ===== IndexedDB 图片存储 =====
 function openBgDB(callback){
@@ -2205,8 +2276,8 @@ function toggleSetPanel(head){
   if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='flex';}
 }
 // 数据弹窗
-$('#closeModalX').onclick = () => $('#dataModal').classList.remove('show');
-$('#dataModal').onclick = e => { if(e.target.id==='dataModal') $('#dataModal').classList.remove('show'); };
+$('#closeModalX').onclick = () => hideModal($('#dataModal'));
+$('#dataModal').onclick = e => { if(e.target.id==='dataModal') hideModal($('#dataModal')); };
 
 // AI API 配置
 const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'}};
@@ -2221,7 +2292,7 @@ $('#exportBtn').onclick = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href=url; a.download=`learn-data-${dateStr()}.json`; a.click();
   URL.revokeObjectURL(url);
-  $('#dataModal').classList.remove('show');
+  hideModal($('#dataModal'));
   toast('已导出全部数据');
 };
 
@@ -2250,7 +2321,7 @@ $('#fileInput').onchange = async e => {
       imported++;
     }catch(err){ failed++; }
   }
-  $('#dataModal').classList.remove('show');
+  hideModal($('#dataModal'));
   renderAll();
   toast(`导入完成：${imported} 个文件成功${failed?'，'+failed+' 个失败':''}，共 ${totalQuestions()} 题`);
 };
@@ -2326,17 +2397,17 @@ function parseMarkdownToDoc(text, fallbackTitle){
   return { title: docTitle, questions };
 }
 
-$('#resetBtn').onclick = () => {
-  if(confirm('确定仅清除学习进度（已看/掌握标记）？题目数据、闯关顺序与通关次数保留。')){
+$('#resetBtn').onclick = async () => {
+  if(await confirmDialog('确定仅清除学习进度（已看/掌握标记）？题目数据、闯关顺序与通关次数保留。')){
     PROGRESS = {}; Store.saveProgress(PROGRESS);
-    $('#dataModal').classList.remove('show'); renderAll(); toast('学习进度已清除');
+    hideModal($('#dataModal')); renderAll(); toast('学习进度已清除');
   }
 };
 
 // 删除 / 打包
-function deleteDocument(docId){
+async function deleteDocument(docId){
   const d = docById(docId); if(!d) return;
-  if(!confirm(`确定删除文档「${d.title}」及其全部题目？`)) return;
+  if(!await confirmDialog(`确定删除文档「${d.title}」及其全部题目？`)) return;
   d.questions.forEach(q=>{ delete PROGRESS[q.id]; });
   DOCS = DOCS.filter(x=>x.id!==docId); saveDocs(); saveProgress();
   delete CLEARS[docId]; Store.saveClears(CLEARS);
@@ -2345,13 +2416,13 @@ function deleteDocument(docId){
   if(currentDocId===docId){ currentDocId=null; view=Views.OVERVIEW; }
   // 如果正在刷该文档的题，重置刷题状态
   if(practice.scope===docId){ practice={order:[],index:0,scope:null,done:false,practiced:new Set(),revealed:new Set()}; }
-  $('#dataModal').classList.remove('show'); renderAll(); toast('已删除文档「'+d.title+'」');
+  hideModal($('#dataModal')); renderAll(); toast('已删除文档「'+d.title+'」');
 }
-function clearAllDocs(){
-  if(!confirm('确定删除全部文档和学习数据？此操作不可撤销。')) return;
+async function clearAllDocs(){
+  if(!await confirmDialog('确定删除全部文档和学习数据？此操作不可撤销。')) return;
   DOCS=[]; PROGRESS={}; CLEARS={}; ORDER=[]; saveDocs(); Store.saveProgress(PROGRESS);
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
-  view=Views.OVERVIEW; currentDocId=null; $('#dataModal').classList.remove('show'); renderAll(); toast('已清空');
+  view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
 function exportBlankApp(){
   const S='<scr'+'ipt>'; const E='</scr'+'ipt>';
@@ -2364,7 +2435,7 @@ function exportBlankApp(){
   html=html.slice(0,s)+block+html.slice(e+E.length);
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='learn-app-blank.html';a.click();
-  URL.revokeObjectURL(url);$('#dataModal').classList.remove('show'); toast('已导出空白应用');
+  URL.revokeObjectURL(url);hideModal($('#dataModal')); toast('已导出空白应用');
 }
 $('#clearAllBtn').onclick = clearAllDocs;
 $('#exportBlankBtn').onclick = exportBlankApp;
@@ -2414,7 +2485,7 @@ async function cloudPull(){
     const file=gist.files['learn-data.json'];
     if(!file||!file.content){$('#cloudStatus').textContent='❌ 云端无数据';return;}
     const data=JSON.parse(file.content);
-    if(!confirm(`云端数据更新时间：${data.updatedAt||'未知'}\n\n拉取将覆盖本地数据，确定？`))return;
+    if(!await confirmDialog(`云端数据更新时间：${data.updatedAt||'未知'}\n\n拉取将覆盖本地数据，确定？`))return;
     DOCS=data.documents||[];PROGRESS=data.progress||{};ORDER=data.order||[];CLEARS=data.clears||{};
     // 清理孤立进度
     {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));let c=false;Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];c=true;}});}
@@ -2425,7 +2496,7 @@ async function cloudPull(){
     localStorage.setItem('lastRemoteTime', String(t));
     _autoSyncDirty = false;
     $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
-    toast('已从云端同步');renderAll();$('#dataModal').classList.remove('show');
+    toast('已从云端同步');renderAll();hideModal($('#dataModal'));
   }catch(e){$('#cloudStatus').textContent='❌ 网络错误或数据格式错误';}
 }
 $('#cloudPush').onclick=cloudPush;$('#cloudPull').onclick=cloudPull;
@@ -2489,7 +2560,7 @@ async function askPullOnStart(){
     // 云端没有比本地记录更新，不弹窗
     if(remoteTime <= _lastKnownRemoteTime) return;
     // 云端更新了，弹窗询问
-    if(!confirm(`云端有更新的数据（${new Date(updatedAt).toLocaleString()}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)) return;
+    if(!await confirmDialog(`云端有更新的数据（${new Date(updatedAt).toLocaleString()}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)) return;
     // 拉取完整数据
     const remote = JSON.parse(file.content);
     DOCS = remote.documents||[];
@@ -2509,13 +2580,13 @@ async function askPullOnStart(){
 }
 
 // 添加题目弹窗
-$('#addCancel').onclick = () => $('#addModal').classList.remove('show');
-$('#addModal').onclick = e => { if(e.target.id==='addModal') $('#addModal').classList.remove('show'); };
+$('#addCancel').onclick = () => hideModal($('#addModal'));
+$('#addModal').onclick = e => { if(e.target.id==='addModal') hideModal($('#addModal')); };
 $('#addSubmit').onclick = submitAddQuestion;
 
 // 编辑题目弹窗
-$('#editCancel').onclick = () => $('#editModal').classList.remove('show');
-$('#editModal').onclick = e => { if(e.target.id==='editModal') $('#editModal').classList.remove('show'); };
+$('#editCancel').onclick = () => hideModal($('#editModal'));
+$('#editModal').onclick = e => { if(e.target.id==='editModal') hideModal($('#editModal')); };
 $('#editSubmit').onclick = submitEditQuestion;
 
 // 键盘快捷键（刷题模式）
@@ -2572,268 +2643,6 @@ function buildOrderFromSeed(){
   DOCS.forEach(d=>{ if(!order.includes(d.id)) order.push(d.id); }); // 种子外的文档追加在末尾
   return order;
 }
-// ===== 矿工挖宝箱游戏（Sprite Sheet版本） =====
-// ---- 精灵图：从PNG加载（AI生成的矿工精灵图） ----
-let _spriteSheet = null; // HTMLImageElement
-let _spriteLoaded = false;
-const SPRITE_FRAME_W = 88;   // 每帧宽度
-const SPRITE_FRAME_H = 100;  // 每帧高度
-const SPRITE_PER_ROW = 8;    // 每行帧数
-// 帧布局：第1行 idle(8帧), 第2行 walk(8帧), 第3行 mine(4帧)
-const SPRITE_ANIMS = { idle:8, walk:8, mine:4 };
-const SPRITE_ROW = { idle:0, walk:1, mine:2 };
-function _loadSpriteSheet(){
-  if(_spriteSheet) return;
-  _spriteSheet = new Image();
-  _spriteSheet.onload = ()=>{ _spriteLoaded = true; };
-  _spriteSheet.onerror = ()=>{ console.warn('精灵图加载失败'); };
-  _spriteSheet.src = 'img-miner-spritesheet.png';
-}
-
-// ---- 全局状态 ----
-let _minerGame = { state:'idle', x:0, facing:1, timer:0, items:[], sparkles:[], chestLidAngle:0, strikePhase:0, strikeCount:0, maxStrikes:0, animType:'', groundY:160, chestX:620, lastMastered:0, animFrame:0, idlePhase:0, frameTick:0 };
-// animType: 'sock'=袜子, 'copper'=铜币, 'silver'=银币, 'gold'=金币(3下), ''=纯休息
-
-function triggerMinerAnimation(type){
-  if(_minerGame.state !== 'idle') return;
-  if(!_spriteSheet) _loadSpriteSheet();
-  _minerGame.state = type ? 'walking' : 'idle';
-  _minerGame.timer = 0;
-  _minerGame.frameTick = 0;
-  _minerGame.items = [];
-  _minerGame.sparkles = [];
-  _minerGame.chestLidAngle = 0;
-  _minerGame.strikePhase = 0;
-  _minerGame.strikeCount = 0;
-  _minerGame.animType = type || '';
-  _minerGame.maxStrikes = type==='gold'?3:1;
-  _minerGame.facing = 1;
-  _minerGame.x = 0;
-  _minerGame.animFrame = requestAnimationFrame(minerLoop);
-}
-
-// 获取当前精灵帧的行和列
-function _getSpriteFrame(g){
-  const totalIdle = SPRITE_ANIMS.idle; // 8
-  const totalWalk = SPRITE_ANIMS.walk; // 8
-  const totalMine = SPRITE_ANIMS.mine; // 4
-
-  if(g.state==='idle'){
-    // idle: 12秒循环映射到8帧
-    const cyc = 12, ip = g.idlePhase;
-    const t = ip % cyc;
-    let col;
-    if(t < 3) col = Math.floor(t/3 * 2) % 2;             // 0-3s: 帧0-1（站立）
-    else if(t < 6) col = 2 + Math.floor((t-3)/3 * 2) % 2;  // 3-6s: 帧2-3（呼吸）
-    else if(t < 7.2) col = 4 + Math.floor((t-6)/1.2 * 2) % 2; // 6-7.2s: 帧4-5（抖肩）
-    else if(t < 8.5) col = 6 + Math.floor((t-7.2)/1.3 * 2) % 2; // 7.2-8.5s: 帧6-7（转镐子）
-    else col = 0;
-    return {row: SPRITE_ROW.idle, col};
-  }
-  if(g.state==='walking' || g.state==='returning'){
-    const col = Math.floor(g.timer * 0.12) % totalWalk;
-    return {row: SPRITE_ROW.walk, col};
-  }
-  if(g.state==='mining'){
-    const col = Math.min(totalMine-1, Math.floor(g.strikePhase * totalMine));
-    return {row: SPRITE_ROW.mine, col};
-  }
-  // 其他状态默认站立第一帧
-  return {row: SPRITE_ROW.idle, col: 0};
-}
-
-function minerLoop(){
-  const canvas = document.getElementById('minerGame');
-  if(!canvas){ _minerGame.state='idle'; return; }
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const g = _minerGame, gy = g.groundY;
-
-  if(!_spriteSheet) _loadSpriteSheet();
-
-  // 图片未加载完成就静默等待下一帧
-  if(!_spriteLoaded){
-    g.animFrame = requestAnimationFrame(minerLoop);
-    return;
-  }
-
-  ctx.clearRect(0,0,W,H);
-
-  // 宝箱在右侧，矿工从左出发
-  const chestX = W * 0.9;
-  const minerStartX = W * 0.1;
-  g.chestX = chestX;
-
-  // === 宝箱（奢华版） ===
-  const cw=74, ch=50, chestBaseY=gy-42;
-  ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(chestX,gy-3,44,8,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#2A1808';ctx.fillRect(chestX-cw/2,chestBaseY-ch+14,cw,ch-14);
-  ctx.fillStyle='#4A2A12';for(let i=0;i<6;i++)ctx.fillRect(chestX-cw/2+4,chestBaseY-ch+16+i*6,cw-8,1.5);
-  const g1=ctx.createLinearGradient(chestX-cw/2,0,chestX+cw/2,0);
-  g1.addColorStop(0,'#986030');g1.addColorStop(.3,'#A87038');g1.addColorStop(.7,'#A06830');g1.addColorStop(1,'#885028');
-  ctx.fillStyle=g1;ctx.fillRect(chestX-cw/2+6,chestBaseY-ch+14,cw-12,ch-19);
-  ctx.strokeStyle='#D4B048';ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(chestX-cw/2+10,chestBaseY-ch+16);ctx.lineTo(chestX+cw/2-10,chestBaseY-7);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(chestX+cw/2-10,chestBaseY-ch+16);ctx.lineTo(chestX-cw/2+10,chestBaseY-7);ctx.stroke();
-  ctx.fillStyle='#E8C850';
-  [[chestX-cw/2+10,chestBaseY-ch+20],[chestX+cw/2-10,chestBaseY-ch+20],
-   [chestX-cw/2+10,chestBaseY-8],[chestX+cw/2-10,chestBaseY-8],
-   [chestX,chestBaseY-ch+20],[chestX,chestBaseY-8]
-  ].forEach(([rx,ry])=>{ctx.beginPath();ctx.arc(rx,ry,3.5,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#FFF8D0';ctx.beginPath();ctx.arc(rx-1,ry-1,1.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#E8C850';});
-  ctx.strokeStyle='#C89838';ctx.lineWidth=2.5;ctx.strokeRect(chestX-cw/2+6,chestBaseY-ch+14,cw-12,ch-19);
-  ctx.strokeStyle='#E8D458';ctx.lineWidth=1;ctx.strokeRect(chestX-cw/2+9,chestBaseY-ch+17,cw-18,ch-25);
-  const ly=chestBaseY-ch+14+ch/3;
-  ctx.fillStyle='#382010';ctx.beginPath();ctx.arc(chestX,ly,12,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#E8C840';ctx.beginPath();ctx.arc(chestX,ly,10,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#D4A830';ctx.beginPath();ctx.arc(chestX,ly,8,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#E8D860';ctx.beginPath();ctx.arc(chestX-2,ly-3,3.5,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#180800';ctx.beginPath();ctx.arc(chestX,ly+2,3,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#100400';ctx.fillRect(chestX-1.5,ly+2,3,9);
-  ctx.fillStyle='#E8C840';ctx.beginPath();ctx.arc(chestX-4,ly+10,2,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(chestX+4,ly+10,2,0,Math.PI*2);ctx.fill();
-
-  // 宝箱盖
-  ctx.save();ctx.translate(chestX,chestBaseY-ch+14);ctx.rotate(g.chestLidAngle);
-  ctx.fillStyle='#4A2A12';ctx.beginPath();
-  ctx.moveTo(-cw/2,0);ctx.quadraticCurveTo(-cw/2,-16,-cw/3,-20);
-  ctx.lineTo(cw/3,-20);ctx.quadraticCurveTo(cw/2,-16,cw/2,0);
-  ctx.closePath();ctx.fill();
-  ctx.fillStyle='#986030';
-  ctx.beginPath();ctx.moveTo(-cw/2+5,0);ctx.quadraticCurveTo(-cw/2+5,-14,-cw/3+3,-18);
-  ctx.lineTo(cw/3-3,-18);ctx.quadraticCurveTo(cw/2-5,-14,cw/2-5,0);
-  ctx.closePath();ctx.fill();
-  ctx.fillStyle='#A88030';ctx.fillRect(-cw/2+6,-18,cw-12,5);
-  ctx.fillStyle='#D4B048';ctx.fillRect(-cw/2+8,-19,cw-16,3);
-  ctx.fillStyle='#E8D860';ctx.fillRect(-cw/2+10,-20,cw-20,1.5);
-  ctx.fillStyle='#E8C840';
-  for(let j=0;j<3;j++){const jx=-12+j*12;ctx.beginPath();ctx.moveTo(jx,-20);ctx.lineTo(jx-2,-28);ctx.lineTo(jx+2,-28);ctx.closePath();ctx.fill();}
-  ctx.fillStyle='#A88030';ctx.fillRect(-cw/2+6,-14,7,7);ctx.fillRect(cw/2-13,-14,7,7);
-  ctx.fillStyle='#E8D060';ctx.fillRect(-cw/2+7,-14,2,5);ctx.fillRect(cw/2-12,-14,2,5);
-  ctx.restore();
-  if(g.chestLidAngle>0.15){
-    const ga=0.3+0.4*Math.sin(g.timer*0.08);
-    const grd=ctx.createRadialGradient(chestX,chestBaseY-ch+12,3,chestX,chestBaseY-ch+12,40);
-    grd.addColorStop(0,'rgba(255,240,120,'+ga+')');grd.addColorStop(.4,'rgba(255,210,70,'+(ga*.5)+')');grd.addColorStop(1,'transparent');
-    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(chestX,chestBaseY-ch+12,40,0,Math.PI*2);ctx.fill();
-  }
-
-  // === 矿工（Sprite Sheet渲染） ===
-  const mx = minerStartX + g.x;
-  const frame = _getSpriteFrame(g);
-  const srcX = frame.col * SPRITE_FRAME_W;
-  const srcY = frame.row * SPRITE_FRAME_H;
-  // 矿工脚底对齐地面
-  const minerFootY = gy - 2;
-  const drawX = mx - SPRITE_FRAME_W/2;
-  const drawY = minerFootY - SPRITE_FRAME_H;
-
-  ctx.save();
-  // 如果面向左边（returning），水平翻转
-  if(g.facing === -1){
-    ctx.translate(drawX + SPRITE_FRAME_W, drawY);
-    ctx.scale(-1, 1);
-    ctx.drawImage(_spriteSheet, srcX, srcY, SPRITE_FRAME_W, SPRITE_FRAME_H, 0, 0, SPRITE_FRAME_W, SPRITE_FRAME_H);
-  } else {
-    ctx.drawImage(_spriteSheet, srcX, srcY, SPRITE_FRAME_W, SPRITE_FRAME_H, drawX, drawY, SPRITE_FRAME_W, SPRITE_FRAME_H);
-  }
-  ctx.restore();
-
-  // === 掉落物品 ===
-  for(let c of g.items){
-    const life=(g.timer-c.birth)/c.duration;
-    ctx.save();ctx.globalAlpha=Math.min(1,1-life);
-    if(c.type==='gold'){
-      ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#FFE850';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#B8960A';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='#B8960A';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('$',c.x,c.y+2);
-    }else if(c.type==='silver'){
-      ctx.fillStyle='#C8C8D0';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#E0E0E8';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#888898';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='#888898';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('S',c.x,c.y+2);
-    }else if(c.type==='copper'){
-      ctx.fillStyle='#D4884A';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#E8A860';ctx.beginPath();ctx.arc(c.x-1,c.y-1.5,2.5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#885830';ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='#885830';ctx.font='bold 6px sans-serif';ctx.textAlign='center';ctx.fillText('C',c.x,c.y+2);
-    }else if(c.type==='sock'){
-      ctx.fillStyle='#888';ctx.fillRect(c.x-6,c.y-3,12,10);
-      ctx.fillStyle='#999';ctx.fillRect(c.x-5,c.y-2,10,1);
-      ctx.fillStyle='#666';ctx.fillRect(c.x-6,c.y+5,8,4);
-      ctx.fillStyle='#aaa';ctx.fillRect(c.x-1,c.y-3,3,12);
-    }
-    ctx.restore();
-  }
-  // === 金光粒子（gold专属） ===
-  for(let s of g.sparkles){
-    const life=Math.min(1.5,(g.timer-s.birth)/s.duration);
-    ctx.save();ctx.globalAlpha=Math.max(0,1-life);
-    const sz=Math.max(0.5,s.size*(1-life*0.5));
-    ctx.fillStyle='#FFD700';
-    ctx.beginPath();ctx.moveTo(s.x,s.y-sz);ctx.lineTo(s.x+sz*0.3,s.y-sz*0.3);
-    ctx.lineTo(s.x+sz,s.y);ctx.lineTo(s.x+sz*0.3,s.y+sz*0.3);
-    ctx.lineTo(s.x,s.y+sz);ctx.lineTo(s.x-sz*0.3,s.y+sz*0.3);
-    ctx.lineTo(s.x-sz,s.y);ctx.lineTo(s.x-sz*0.3,s.y-sz*0.3);
-    ctx.closePath();ctx.fill();
-    ctx.fillStyle='#FFF8C0';ctx.beginPath();ctx.arc(s.x,s.y,sz*0.25,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-  }
-
-  // 状态更新
-  g.timer++; g.frameTick++;
-  if(g.state==='walking'){g.x+=3;if(mx>=chestX-50){
-    g.state='mining';g.strikePhase=0;g.strikeCount=0;g.timer=0;
-  }}
-  else if(g.state==='mining'){
-    g.strikePhase+=0.035;
-    if(g.strikePhase>=1){g.strikePhase=0;g.strikeCount++;g.chestLidAngle=-0.8+g.strikeCount*0.3;if(g.chestLidAngle>0)g.chestLidAngle=0;
-      const coinType=g.animType==='gold'?'gold':g.animType==='silver'?'silver':g.animType==='copper'?'copper':g.animType==='sock'?'sock':'gold';
-      const count=g.animType==='gold'?30:(g.animType==='sock'?3:10);
-      for(let i=0;i<count;i++)g.items.push({type:coinType,x:chestX-10+Math.random()*30,y:gy-50,gx:chestX-10+Math.random()*30,gy:gy-50,birth:g.timer,duration:40});
-      if(g.animType==='gold'){
-        for(let i=0;i<6;i++)g.sparkles.push({x:chestX-20+Math.random()*40,y:gy-40-Math.random()*30,birth:g.timer,duration:25,size:3+Math.random()*5});
-      }
-    }
-    if(g.strikeCount>=g.maxStrikes){g.state='closing';g.timer=0;}
-  }else if(g.state==='closing'){
-    g.timer++;
-    g.chestLidAngle += 0.06;
-    if(g.chestLidAngle >= 0){ g.chestLidAngle = 0; g.state='turnAround'; g.timer=0; g.facing=-1; }
-  }else if(g.state==='turnAround'){
-    g.timer++;
-    if(g.timer>8){ g.state='returning'; g.timer=0; }
-  }else if(g.state==='returning'){
-    g.x-=3;
-    if(mx<=minerStartX){ g.state='turnBack'; g.timer=0; g.facing=1; }
-  }else if(g.state==='turnBack'){
-    g.timer++;
-    if(g.timer>8){ g.state='coinsfall'; g.timer=0; }
-  }
-  else if(g.state==='coinsfall'){
-    for(let c of g.items){if(c.state!=='fly'){c.state='fly';c.targetX=50+Math.random()*100;c.targetY=-80-Math.random()*60;c.duration=35;c.birth=g.timer;}
-      const t2=(g.timer-c.birth)/c.duration;if(t2<1){c.x=c.gx+(c.targetX-c.gx)*t2;c.y=c.gy+(c.targetY-c.gy)*t2*t2;}}
-    g.items=g.items.filter(c=>g.timer-c.birth<c.duration);g.sparkles=g.sparkles.filter(s=>g.timer-s.birth<s.duration);
-    if(g.items.length===0&&g.sparkles.length===0&&g.timer>30){_minerGame.state='idle';_minerGame.chestLidAngle=0;cancelAnimationFrame(g.animFrame);return;}
-  }
-  // 空闲：动态休息动画 + 监测掌握
-  if(g.state==='idle'){
-    const tm=totalMastered();
-    if(tm>g.lastMastered){g.lastMastered=tm;triggerMinerAnimation('gold');return;}
-    g.lastMastered=tm;g.timer++;g.idlePhase+=0.015;
-    g.animFrame=requestAnimationFrame(minerLoop);
-    return;
-  }
-  g.animFrame=requestAnimationFrame(minerLoop);
-}
-function startMinerIdle(){
-  if(!_spriteSheet) _loadSpriteSheet();
-  _minerGame.lastMastered=totalMastered();
-  _minerGame.state='idle';_minerGame.x=0;_minerGame.timer=0;_minerGame.items=[];_minerGame.chestLidAngle=0;_minerGame.idlePhase=0;
-  _minerGame.animFrame=requestAnimationFrame(minerLoop);
-}
-
 (async function init(){
   setupErrorHandler();
   await Store.open();
@@ -2875,18 +2684,7 @@ function startMinerIdle(){
   CLEARS = await Store.getClears() || {};
   loadApiConfig();
   renderAll();
-  // 创建矿工游戏 canvas（固定底部，全局可见，不受视图切换影响）
-  const old=document.getElementById('minerGame');
-  if(old){ cancelAnimationFrame(_minerGame.animFrame); old.remove(); }
-  _minerGame.state='idle';
-  const mc=document.createElement('canvas');
-  mc.id='minerGame';mc.width=window.innerWidth;mc.height=180;
-  mc.className='miner-canvas';
-  mc.style.cssText='position:fixed;bottom:0;left:0;width:100vw;height:auto;pointer-events:none;z-index:0;display:block';
-  document.body.appendChild(mc);
-  // 启动矿工游戏（检测掌握数变化自动触发动画）
-  startMinerIdle();
-  // 页面加载时询问是否拉取云端数据
+// 页面加载时询问是否拉取云端数据
   askPullOnStart();
   // 启动定时自动推送（每 10 分钟，在线且有变更才推）
   startAutoSyncTimer();
