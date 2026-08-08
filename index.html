@@ -2510,46 +2510,77 @@ async function cloudPush(){
   if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='推送中…';
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
+  const contentStr = JSON.stringify(data);
+  window._pushContentStr = contentStr;
+  console.log('[push] 待推送数据:', {docs:DOCS.length, qTotal:DOCS.reduce((s,d)=>s+d.questions.length,0), progressKeys:Object.keys(PROGRESS).length, size:contentStr.length, updatedAt:data.updatedAt});
   try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`token ${token}`},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:JSON.stringify(data)}}})
+    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}})
     });
+    console.log('[push] 响应:', resp.status, resp.statusText);
+    const respBody = await resp.text();
+    console.log('[push] 响应体:', respBody.substring(0, 500));
     if(resp.ok){
       _autoSyncDirty=false;
-      // 用 Gitee 返回的服务器时间，确保和下次检查时一致
-      try{ const rj=await resp.json(); const rt=new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
+      try{ const rj=JSON.parse(respBody); const rt=new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} console.log('[push] 服务器 updated_at:', rj.updated_at); }catch(_){}
       $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
+      // 推送后 2 秒验证：重新 GET 看云端的 updatedAt 是否已更新
+      setTimeout(async()=>{
+        try{
+          const vResp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+          const vGist=await vResp.json();
+          console.log('[push验证] 云端 updated_at:', vGist.updated_at, '文件数:', Object.keys(vGist.files||{}).length);
+          const vFile=vGist.files['learn-data.json'];
+          if(vFile&&vFile.content){
+            const same = vFile.content === window._pushContentStr;
+            console.log('[push验证] 内容一致:', same, '云端大小:', vFile.content.length, '本地大小:', (window._pushContentStr||'').length);
+            if(!same){
+              console.warn('[push验证] ⚠️ 推送内容与云端不一致！可能 Token 无写入权限');
+              $('#cloudStatus').textContent='⚠️ 推送可能失败：Token 无写入权限或 Gist 不属于你';
+            }
+          }
+        }catch(_){}
+      }, 2000);
     }
-    else{try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'推送失败'));}catch(_){$('#cloudStatus').textContent='❌ 推送失败';}}
-  }catch(e){$('#cloudStatus').textContent='❌ 网络错误';}
+    else{
+      let errMsg = '推送失败';
+      try{ const e=JSON.parse(respBody); errMsg=e.message||errMsg; }catch(_){}
+      console.error('[push] 失败:', errMsg, respBody);
+      $('#cloudStatus').textContent='❌ '+errMsg;
+    }
+  }catch(e){$('#cloudStatus').textContent='❌ 网络错误';console.error('[push] 异常:', e);}
 }
 async function cloudPull(){
+  console.log('[pull] 按钮被点击');
   const token=$('#giteeToken').value.trim(),gistId=$('#giteeGistId').value.trim();
-  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
+  if(!token||!gistId){console.warn('[pull] 缺少 token 或 gistId');toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='拉取中…';
   try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      headers:{'Authorization':`token ${token}`}
-    });
-    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
+    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+    console.log('[pull] 响应:', resp.status, resp.statusText);
+    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));console.error('[pull] 失败:', e);}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
     const gist=await resp.json();
+    console.log('[pull] gist updated_at:', gist.updated_at, 'owner:', gist.owner?.login);
     const file=gist.files['learn-data.json'];
-    if(!file||!file.content){$('#cloudStatus').textContent='❌ 云端无数据';return;}
+    if(!file||!file.content){$('#cloudStatus').textContent='❌ 云端无数据';console.warn('[pull] 云端无 learn-data.json');return;}
     const data=JSON.parse(file.content);
-    if(!await confirmDialog(`云端数据更新时间：${data.updatedAt||'未知'}\n\n拉取将覆盖本地数据，确定？`))return;
+    console.log('[pull] 云端:', {docs:data.documents?.length, progressKeys:Object.keys(data.progress||{}).length, updatedAt:data.updatedAt});
+    console.log('[pull] 本地:', {docs:DOCS.length, progressKeys:Object.keys(PROGRESS).length});
+    const timeLabel = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '未知';
+    if(!await confirmDialog(`云端数据更新时间：${timeLabel}\n\n（Gist 服务器时间：${new Date(gist.updated_at).toLocaleString()}）\n\n拉取将覆盖本地数据，确定？`))return;
     DOCS=data.documents||[];PROGRESS=data.progress||{};ORDER=data.order||[];CLEARS=data.clears||{};
     // 清理孤立进度
     {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));let c=false;Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];c=true;}});}
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
-    const t = new Date(data.updatedAt||0).getTime();
+    const t = new Date(gist.updated_at||0).getTime();
     _lastKnownRemoteTime = t;
     localStorage.setItem('lastRemoteTime', String(t));
     _autoSyncDirty = false;
     $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
     toast('已从云端同步');renderAll();hideModal($('#dataModal'));
-  }catch(e){$('#cloudStatus').textContent='❌ 网络错误或数据格式错误';}
+  }catch(e){$('#cloudStatus').textContent='❌ 网络错误或数据格式错误';console.error('[pull] 异常:', e);}
 }
 $('#cloudPush').onclick=cloudPush;$('#cloudPull').onclick=cloudPull;
 
@@ -2565,8 +2596,8 @@ async function autoPush(){
   if(!navigator.onLine) return;
   const data = {documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   try{
-    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`token ${token}`},
+    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:JSON.stringify(data)}}})
     });
     if(resp.ok){
@@ -2587,30 +2618,33 @@ function startAutoSyncTimer(){
 // 页面加载时静默检查云端时间戳，只有云端更新了才弹窗询问
 let _lastKnownRemoteTime = 0; // 本地记录的云端最后更新时间
 async function askPullOnStart(){
+  console.log('[askPull] 开始检查...');
   const token = localStorage.getItem('giteeToken')||'';
   const gistId = localStorage.getItem('giteeGistId')||'';
-  if(!token || !gistId) return;
+  if(!token || !gistId){console.log('[askPull] 缺少配置，跳过');return;}
   // 距上次检查不到 30 分钟，跳过
   const lastCheck = parseInt(localStorage.getItem('lastCheckTime')||'0');
-  if(Date.now() - lastCheck < 30 * 60 * 1000) return;
+  if(Date.now() - lastCheck < 30 * 60 * 1000){console.log('[askPull] 距上次检查不足30分钟，跳过');return;}
   // 读取本地记录的上次云端时间
   _lastKnownRemoteTime = parseInt(localStorage.getItem('lastRemoteTime')||'0');
+  console.log('[askPull] 本地记录的云端时间:', new Date(_lastKnownRemoteTime).toLocaleString());
   try{
-    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
-      headers:{'Authorization':`token ${token}`}
-    });
-    if(!resp.ok) return;
+    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+    console.log('[askPull] fetch 成功');
+    if(!resp.ok){console.log('[askPull] 响应非 ok:', resp.status);return;}
     // 请求成功后才记录检查时间，避免失败时误拦后续检查
     localStorage.setItem('lastCheckTime', String(Date.now()));
     const gist = await resp.json();
     // 先检查是否有 learn-data.json 文件，没有就跳过
     const file = gist.files['learn-data.json'];
-    if(!file || !file.content) return;
+    if(!file || !file.content){console.log('[askPull] 云端无 learn-data.json');return;}
     const updatedAt = gist.updated_at;
-    if(!updatedAt) return;
+    console.log('[askPull] 云端 updated_at:', updatedAt);
+    if(!updatedAt){console.log('[askPull] 云端无 updatedAt');return;}
     const remoteTime = new Date(updatedAt).getTime();
     // 云端没有比本地记录更新，不弹窗
-    if(remoteTime <= _lastKnownRemoteTime) return;
+    console.log('[askPull] 对比: remoteTime=', new Date(remoteTime).toLocaleString(), 'lastKnownRemoteTime=', new Date(_lastKnownRemoteTime).toLocaleString(), 'remote<=local?', remoteTime <= _lastKnownRemoteTime);
+    if(remoteTime <= _lastKnownRemoteTime){console.log('[askPull] 云端未更新，跳过');return;}
     // 云端更新了，弹窗询问
     if(!await confirmDialog(`云端有更新的数据（${new Date(updatedAt).toLocaleString()}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)) return;
     // 拉取完整数据
@@ -2628,7 +2662,7 @@ async function askPullOnStart(){
     _lastKnownRemoteTime = remoteTime;
     renderAll();
     toast('已从云端拉取最新数据');
-  }catch(_){}
+  }catch(e){console.error('[askPull] 异常:', e);}
 }
 
 // 添加题目弹窗
