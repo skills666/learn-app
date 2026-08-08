@@ -301,7 +301,9 @@
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
-  .theme-popup{display:none;position:fixed;top:52px;right:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px}
+  .theme-popup{display:none;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px}
+  #themePopup{top:52px !important;right:130px !important}
+  #skinPopup{top:52px !important;right:80px !important}
   .theme-popup.show{display:grid;animation:scaleIn .15s ease}
   .theme-popup.hiding{animation:scaleOut .1s ease forwards}
   .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative}
@@ -362,7 +364,7 @@
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
-  .theme-popup{right:4px;max-width:260px;padding:8px;gap:4px;grid-template-columns:repeat(4,1fr)}
+  .theme-popup{max-width:260px;padding:8px;gap:4px}
   .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
     .ref-answer{font-size:13px;padding:10px 12px}
@@ -405,17 +407,13 @@
     <button class="btn ghost" id="dataBtn">⚙️ 设置</button>
     <button class="btn ghost" id="themeBtn" title="切换主题">🎨</button>
     <button class="btn ghost" id="skinBtn" title="皮肤">🎭</button>
-    <button class="btn ghost" id="chestBtn" title="手动开箱">📦</button>
-    <select id="chestTier" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:2px 4px;font-size:12px;cursor:pointer;align-self:center">
-      <option value="5">T5</option><option value="4">T4</option><option value="3">T3</option><option value="2">T2</option><option value="1">T1</option>
-    </select>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
   <div class="content" id="content"></div>
 </div>
 
 <!-- THEME POPUP -->
-<div class="theme-popup" id="themePopup">
+<div class="theme-popup" id="themePopup" style="right:20px;top:44px">
   <div class="theme-dot" data-theme="aurora" style="background:linear-gradient(135deg,#8b7cf6,#5ad1c9)">星云</div>
   <div class="theme-dot" data-theme="gold" style="background:linear-gradient(135deg,#f5c542,#e09020)">流光</div>
   <div class="theme-dot" data-theme="midnight" style="background:linear-gradient(135deg,#6366f1,#818cf8)">子夜</div>
@@ -434,7 +432,7 @@
 </div>
 
 <!-- 皮肤选择弹窗 -->
-<div class="theme-popup" id="skinPopup" style="width:260px">
+<div class="theme-popup" id="skinPopup" style="width:260px;right:80px;top:52px">
   <div class="theme-sep" style="grid-column:1/-1">📦 宝箱皮肤</div>
   <div class="theme-dot" data-skin-cat="chest" data-skin="0" style="background:linear-gradient(135deg,#D4B048,#6a2020)">鎏金蟠龙</div>
   <div class="theme-dot" data-skin-cat="chest" data-skin="1" style="background:linear-gradient(135deg,#a060e0,#100818)">暗影邪魔</div>
@@ -2129,34 +2127,26 @@ function applyTheme(name){
     }
   }, 50);
 }
-let _popupIgnoreClick = false;
-$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); _popupIgnoreClick=true; $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
-$('#skinBtn').onclick = (e)=>{ e.stopPropagation(); _popupIgnoreClick=true; $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
-$('#chestBtn').onclick = (e)=>{
-  e.stopPropagation();
-  const tier = +($('#chestTier').value||5);
-  if(window.openChest) window.openChest(tier);
-};
+$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
+$('#skinBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
 document.querySelectorAll('.theme-dot').forEach(d=>{
-  if(d.dataset.theme) d.onclick=()=>{_popupIgnoreClick=true;applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
+  if(d.dataset.theme) d.onclick=()=>{applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
   else if(d.dataset.skinCat){
     d.onclick=(e)=>{
-      e.stopPropagation(); _popupIgnoreClick=true;
+      e.stopPropagation();
       const cat=d.dataset.skinCat;
       const skin=+d.dataset.skin;
-      // 同步到 chest.js
       if(cat==='chest'&&window.setChestSkin)window.setChestSkin(skin);
       else if(cat==='item'&&window.setRewardSkin)window.setRewardSkin(skin);
-      // 也保留 localStorage 持久化（chest.js 内部也会写，双重保险）
       const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
       skins[cat]=String(skin);
       localStorage.setItem('learnAppSkins', JSON.stringify(skins));
+      hideModal($('#skinPopup'));
     };
   }
 });
 document.addEventListener('click',(e)=>{
-  if(_popupIgnoreClick){ _popupIgnoreClick=false; return; }
-  if(e.target.closest('#themePopup,#skinPopup')) return;
+  if(e.target.closest('#themePopup,#skinPopup,#themeBtn,#skinBtn')) return;
   hideModal($('#themePopup')); hideModal($('#skinPopup'));
 });
 
