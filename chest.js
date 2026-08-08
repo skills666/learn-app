@@ -8,7 +8,6 @@ try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');if(s.chest!=
 let minimized=false;
 function R(){W=340;H=400;flr=H*.76;const d=Math.min(devicePixelRatio||1,2);C.width=W*d;C.height=H*d;X.setTransform(d,0,0,d,0,0);}
 R();window.addEventListener('resize',R);
-// K 固定 220/520 保持宝箱原始大小
 const _K0=Math.min(220,260)/520;
 const K=()=>_K0;
 const CX=()=>W/2, CY=()=>H*.66;
@@ -28,30 +27,42 @@ function shadow(cx,by,bw,bh){X.fillStyle='rgba(0,0,0,.4)';X.beginPath();X.ellips
 function base(cx,by,bw,fill,border){const py=by+2;X.fillStyle='rgba(0,0,0,.25)';X.beginPath();X.ellipse(cx,py+12,bw*.46,bw*.48*.09,0,0,Math.PI*2);X.fill();X.fillStyle=fill||'#1c1830';X.beginPath();X.roundRect(cx-bw*.55,py,bw*1.1,12,6);X.fill();X.strokeStyle=border||'rgba(120,100,180,.12)';X.lineWidth=1;X.beginPath();X.roundRect(cx-bw*.55,py,bw*1.1,12,6);X.stroke();}
 function drawGem(x,y,r,hue){const g=mkRadial(x-r*.1,y-r*.1,r*.02,x,y,r,[0,'hsl('+hue+',90%,70%)',.2,'hsl('+hue+',80%,45%)',.5,'hsl('+hue+',70%,22%)',.8,'hsl('+hue+',60%,8%)',1,'hsl('+hue+',50%,3%)']);X.fillStyle=g;X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.fill();X.strokeStyle='rgba(255,255,255,'+(hue>200?.25:.2)+')';X.lineWidth=r*.12;X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.stroke();X.fillStyle='rgba(255,255,255,.2)';X.beginPath();X.arc(x-r*.2,y-r*.25,r*.22,0,Math.PI*2);X.fill();}
 
-// ════════════════ SKIN 0: 鎏金蟠龙宝箱 ════════════════
-// 八角形箱体 + 三层莲花底座 + 蟠龙圆牌徽记 + 高弧顶盖子 + 龙角装饰
+// ════════════════ 工具：紧贴轮廓框线 + 装饰带 ════════════════
+// 在已绘制的 body path 上叠加一条紧贴轮廓的描边
+function tightBorder(color,alpha,width){
+  if(alpha===undefined)alpha=1;
+  X.save();X.globalAlpha=alpha;X.strokeStyle=color;X.lineWidth=width;X.stroke();X.restore();
+}
+// 紧贴轮廓的底部/顶部装饰带 — 用 clip+rect 切割
+function contourBar(x1,y1,x2,y2,barGrad,barAlpha){
+  X.save();
+  X.beginPath();X.rect(x1,y1,x2-x1,y2-y1);X.clip();
+  X.globalAlpha=barAlpha||1;
+  X.fillStyle=barGrad;
+  X.fillRect(x1,y1,x2-x1,y2-y1);
+  X.restore();
+}
+
+// ════════════════ SKIN 0: 鎏金蟠龙 — 八角形 ════════════════
 function body0(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2,cut=bw*.12;
+  const barH=bh*.06, barTop=by+bh*.025, barBot=by+bh-barH-bh*.025;
   shadow(cx,by,bw,bh);
-  // 八角形箱体
+  // 八角形路径（复用）
+  const oct=()=>{X.beginPath();X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);X.lineTo(bx+bw,by+cut);X.lineTo(bx+bw,by+bh-cut);X.lineTo(bx+bw-cut,by+bh);X.lineTo(bx+cut,by+bh);X.lineTo(bx,by+bh-cut);X.lineTo(bx,by+cut);X.closePath();};
+  // 填充
   const bg=mkGrad([bx,by,bx+bw,by,0,'#2a1010',.3,'#3a1812',.5,'#200c08',.8,'#140604',1,'#0a0202']);
-  X.fillStyle=bg;X.beginPath();
-  X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);
-  X.lineTo(bx+bw,by+cut);X.lineTo(bx+bw,by+bh-cut);
-  X.lineTo(bx+bw-cut,by+bh);X.lineTo(bx+cut,by+bh);
-  X.lineTo(bx,by+bh-cut);X.lineTo(bx,by+cut);
-  X.closePath();X.fill();
-  // 八角鎏金边框
-  X.strokeStyle='rgba(255,200,60,.2)';X.lineWidth=k*.35;X.stroke();
-  // 上下横条
-  const barH=bh*.06;
-  for(const yo of[by+bh*.025,by+bh-barH-bh*.025]){
-    X.fillStyle=gold(bx,yo,bx,yo+barH);X.fillRect(bx-k*4,yo,bw+k*8,barH);
-    X.strokeStyle='rgba(255,240,180,.2)';X.lineWidth=k*.2;X.strokeRect(bx-k*4,yo,bw+k*8,barH);
-  }
-  // 八个小切角处铆钉
-  for(const[rx,ry] of[[bx+cut*.45,by+cut*.45],[bx+bw-cut*.45,by+cut*.45],[bx+bw-cut*.45,by+bh-cut*.45],[bx+cut*.45,by+bh-cut*.45],[bx+cut*.45,by+bh*.5],[bx+bw-cut*.45,by+bh*.5]])rivet(rx,ry,bh*.026);
-  // ═══ 蟠龙徽记 ═══
+  oct();X.fillStyle=bg;X.fill();
+  // 边框 — 同一路径直接stroke，一半在内一半在外，零空隙
+  oct();X.save();X.globalAlpha=.45;X.strokeStyle='#c89830';X.lineWidth=k*2.5;X.stroke();X.restore();
+  // 装饰金带 — clip限制在八角形内
+  X.save();oct();X.clip();
+  contourBar(bx,barTop,bx+bw,barTop+barH,gold(bx,barTop,bx,barTop+barH),.9);
+  contourBar(bx,barBot,bx+bw,barBot+barH,gold(bx,barBot,bx,barBot+barH),.9);
+  X.restore();
+  // 八角铆钉
+  for(const[rx,ry]of[[bx+cut*.45,by+cut*.45],[bx+bw-cut*.45,by+cut*.45],[bx+bw-cut*.45,by+bh-cut*.45],[bx+cut*.45,by+bh-cut*.45],[bx+cut*.45,by+bh*.5],[bx+bw-cut*.45,by+bh*.5]])rivet(rx,ry,bh*.026);
+  // 蟠龙徽记
   const dx=cx,dy=by+bh*.44,dr=bh*.13;
   for(let l=0;l<3;l++){
     const lr=dr*(.65+l*.15),la=l*Math.PI/8;
@@ -83,63 +94,43 @@ function body0(bx,by,bw,bh){
 function lid0(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.44,cut=lw*.12;
-  // 高弧顶 + 八角收边
-  X.beginPath();
-  X.moveTo(lx+cut,ly+lh);X.quadraticCurveTo(lx+cut,lt-lh*.05,lx+lw*.1,lt-lh*.22);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.35,lx+lw*.9,lt-lh*.22);
-  X.quadraticCurveTo(lx+lw-cut,lt-lh*.05,lx+lw-cut,ly+lh);
-  X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#3a1410',.35,'#5a2018',.65,'#1c0804',1,'#0c0200']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.08)';X.lineWidth=k*.45;X.stroke();
-  // 鎏金框
-  X.beginPath();
-  X.moveTo(lx+cut-k*3,ly+lh);X.quadraticCurveTo(lx+cut-k*3,lt-lh*.03,lx+lw*.1,lt-lh*.19);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.32,lx+lw*.9,lt-lh*.19);
-  X.quadraticCurveTo(lx+lw-cut+k*3,lt-lh*.03,lx+lw-cut+k*3,ly+lh);
-  X.lineWidth=k*3;X.strokeStyle='#c89830';X.stroke();
-  X.lineWidth=k*.55;X.strokeStyle='rgba(255,240,200,.18)';X.stroke();
-  // 顶脊
-  X.beginPath();X.moveTo(lx+cut,lt-lh*.08);X.quadraticCurveTo(lx+lw/2,lt-lh*.37,lx+lw-cut,lt-lh*.08);
+  // 高弧顶八角盖子路径
+  const dome=()=>{X.beginPath();X.moveTo(lx+cut,ly+lh);X.quadraticCurveTo(lx+cut,lt-lh*.05,lx+lw*.1,lt-lh*.22);X.quadraticCurveTo(lx+lw/2,lt-lh*.35,lx+lw*.9,lt-lh*.22);X.quadraticCurveTo(lx+lw-cut,lt-lh*.05,lx+lw-cut,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#3a1410',.35,'#5a2018',.65,'#1c0804',1,'#0c0200']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke，零空隙
+  dome();X.save();X.globalAlpha=.8;X.strokeStyle='#c89830';X.lineWidth=k*4;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.35;X.strokeStyle='#f0d868';X.lineWidth=k*1.2;X.stroke();X.restore();
+  // 顶脊 — 跟随顶部弧线，不clip，自然贴合在盖体表面
+  X.beginPath();X.moveTo(lx+cut,lt-lh*.05);X.quadraticCurveTo(lx+cut,lt-lh*.05,lx+lw*.1,lt-lh*.22);X.quadraticCurveTo(lx+lw/2,lt-lh*.35,lx+lw*.9,lt-lh*.22);X.quadraticCurveTo(lx+lw-cut,lt-lh*.05,lx+lw-cut,lt-lh*.05);
   X.lineWidth=k*2.2;X.strokeStyle='#e0c040';X.stroke();
-  X.lineWidth=k*.4;X.strokeStyle='rgba(255,240,200,.14)';X.stroke();
   // 中央金钮
   const fx=lx+lw/2,fy=lt-lh*.18,fr=lh*.04;
   const fg=mkRadial(fx,fy-fr*.08,0,fx,fy,fr,[0,'#fffce0',.3,'#e8c040',.6,'#a07018',.85,'#503008',1,'#200800']);
   X.fillStyle=fg;X.beginPath();X.arc(fx,fy,fr,0,Math.PI*2);X.fill();
-  X.strokeStyle='rgba(255,240,180,.25)';X.lineWidth=k*.2;X.beginPath();X.arc(fx,fy,fr,0,Math.PI*2);X.stroke();
-  // 龙角装饰
-  for(let i=-1;i<=1;i+=2){
-    const hx2=fx+i*lw*.16,hy2=lt-lh*.1;
-    X.fillStyle='#c89830';X.beginPath();X.moveTo(hx2-k*2.5,hy2);X.lineTo(hx2+k*2.5,hy2);
-    X.quadraticCurveTo(hx2+k*4,hy2-lh*.15,hx2+k*6,hy2-lh*.2);X.lineTo(hx2-k*2,hy2-lh*.08);
-    X.closePath();X.fill();
-    X.strokeStyle='rgba(255,240,200,.25)';X.lineWidth=k*.2;X.stroke();
-  }
   X.restore();
 }
 
-// ════════════════ SKIN 1: 暗影邪魔宝箱 ════════════════
-// 倒梯形箱体（上窄下宽）+ 六芒星眼徽记 + 尖刺平顶盖子 + 侧翼装饰
+// ════════════════ SKIN 1: 暗影邪魔 — 倒梯形 ════════════════
 function body1(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2,inset=bw*.08;
+  const barH=bh*.055, barTop=by+bh*.02, barBot=by+bh-barH-bh*.02;
   shadow(cx,by,bw,bh);
   const bg=mkGrad([bx,by,bx+bw,by,0,'#100818',.3,'#180e24',.5,'#0c0612',.8,'#080410',1,'#040208']);
-  X.fillStyle=bg;
-  // 倒梯形：上窄下宽
-  X.beginPath();X.moveTo(bx+inset,by);X.lineTo(bx+bw-inset,by);
-  X.lineTo(bx+bw,by+bh);X.lineTo(bx,by+bh);X.closePath();X.fill();
-  X.strokeStyle='rgba(0,0,0,.12)';X.lineWidth=k*.45;X.stroke();
-  // 暗金边框（沿倒梯形）
-  const barH=bh*.055;
-  for(const[ty,tw,ins] of[[by+bh*.02,bw-inset*2,inset],[by+bh-barH-bh*.02,bw,0]]){
-    X.fillStyle=darkGold(bx,ty,bx,ty+barH);
-    X.fillRect(bx+ins-k*3,ty,tw+k*6,barH);
-    X.strokeStyle='rgba(220,180,100,.18)';X.lineWidth=k*.2;
-    X.strokeRect(bx+ins-k*3,ty,tw+k*6,barH);
-  }
+  // 倒梯形路径
+  const trap=()=>{X.beginPath();X.moveTo(bx+inset,by);X.lineTo(bx+bw-inset,by);X.lineTo(bx+bw,by+bh);X.lineTo(bx,by+bh);X.closePath();};
+  // 填充
+  trap();X.fillStyle=bg;X.fill();
+  // 边框 — 同一路径直接stroke
+  trap();X.save();X.globalAlpha=.45;X.strokeStyle='#a08030';X.lineWidth=k*2.2;X.stroke();X.restore();
+  // 装饰带 — clip限制在倒梯形内
+  X.save();trap();X.clip();
+  contourBar(bx+inset,barTop,bx+bw-inset,barTop+barH,darkGold(bx,barTop,bx,barTop+barH),.9);
+  contourBar(bx,barBot,bx+bw,barBot+barH,darkGold(bx,barBot,bx,barBot+barH),.9);
+  X.restore();
   // 四角铆钉
-  for(const[rx,ry] of[[bx+inset+bh*.05,by+bh*.06],[bx+bw-inset-bh*.05,by+bh*.06],[bx+bh*.05,by+bh-bh*.06],[bx+bw-bh*.05,by+bh-bh*.06]])rivet(rx,ry,bh*.03,'#c09040');
-  // ═══ 邪魔之眼 ═══
+  for(const[rx,ry]of[[bx+inset+bh*.05,by+bh*.06],[bx+bw-inset-bh*.05,by+bh*.06],[bx+bh*.05,by+bh-bh*.06],[bx+bw-bh*.05,by+bh-bh*.06]])rivet(rx,ry,bh*.03,'#c09040');
+  // 邪魔之眼
   const ex=cx,ey=by+bh*.42,er=bh*.12;
   for(let l=0;l<2;l++){
     const lr=er*(.55+l*.22);
@@ -162,33 +153,24 @@ function body1(bx,by,bw,bh){
     X.strokeStyle='rgba(255,60,100,'+(.08+Math.sin(T*3+v)*.04)+')';X.lineWidth=k*.25;
     X.beginPath();X.moveTo(ex,ey);X.lineTo(ex+Math.cos(va)*er*.4,ey+Math.sin(va)*er*.4);X.stroke();
   }
-  const cg=mkRadial(ex,ey,0,ex,ey,er*.07,[0,'rgba(200,150,255,.6)',.5,'rgba(100,50,200,.2)',1,'rgba(0,0,0,0)']);
-  X.fillStyle=cg;X.beginPath();X.arc(ex,ey,er*.07,0,Math.PI*2);X.fill();
   base(cx,by+bh,bw,'#100a18','rgba(160,100,200,.1)');
 }
 function lid1(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.3,inset=lw*.08;
-  // 平顶盖子 + 尖刺
-  X.beginPath();
-  X.moveTo(lx+inset,ly+lh);X.lineTo(lx+inset,lt+lh*.05);
-  X.lineTo(lx+lw*.12,lt-lh*.05);X.lineTo(lx+lw*.88,lt-lh*.05);
-  X.lineTo(lx+lw-inset,lt+lh*.05);X.lineTo(lx+lw-inset,ly+lh);
-  X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt,0,'#200e30',.4,'#381848',.7,'#120818',1,'#080410']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.08)';X.lineWidth=k*.4;X.stroke();
-  // 暗金边框
-  X.beginPath();
-  X.moveTo(lx+inset-k*3,ly+lh);X.lineTo(lx+inset-k*3,lt+lh*.06);
-  X.lineTo(lx+lw*.12,lt-lh*.03);X.lineTo(lx+lw*.88,lt-lh*.03);
-  X.lineTo(lx+lw-inset+k*3,lt+lh*.06);X.lineTo(lx+lw-inset+k*3,ly+lh);
-  X.lineWidth=k*2.4;X.strokeStyle='#a08030';X.stroke();
-  X.lineWidth=k*.45;X.strokeStyle='rgba(220,180,100,.16)';X.stroke();
-  // 三根尖刺
+  // 平顶尖刺盖子路径
+  const dome=()=>{X.beginPath();X.moveTo(lx+inset,ly+lh);X.lineTo(lx+inset,lt+lh*.05);X.lineTo(lx+lw*.12,lt-lh*.05);X.lineTo(lx+lw*.88,lt-lh*.05);X.lineTo(lx+lw-inset,lt+lh*.05);X.lineTo(lx+lw-inset,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt,0,'#200e30',.4,'#381848',.7,'#120818',1,'#080410']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke
+  dome();X.save();X.globalAlpha=.75;X.strokeStyle='#a08030';X.lineWidth=k*3.5;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.15;X.strokeStyle='#d8c0ff';X.lineWidth=k*.8;X.stroke();X.restore();
+  // 顶脊 — 跟随平顶轮廓
+  X.beginPath();X.moveTo(lx+inset,lt+lh*.05);X.lineTo(lx+lw*.12,lt-lh*.05);X.lineTo(lx+lw*.88,lt-lh*.05);X.lineTo(lx+lw-inset,lt+lh*.05);
+  X.lineWidth=k*2.2;X.strokeStyle='#d0a850';X.stroke();
   for(let i=-1;i<=1;i++){
     const sx=lx+lw*(.25+.5*(i+1)/2),sy=lt-lh*.03,th=lh*(.16+Math.abs(i)*.06);
-    X.fillStyle='#402818';X.beginPath();X.moveTo(sx-k*2.5,sy);X.lineTo(sx+k*2.5,sy);
-    X.lineTo(sx,lt-th);X.closePath();X.fill();
+    X.fillStyle='#402818';X.beginPath();X.moveTo(sx-k*2.5,sy);X.lineTo(sx+k*2.5,sy);X.lineTo(sx,lt-th);X.closePath();X.fill();
     X.strokeStyle='#a08030';X.lineWidth=k*.3;X.stroke();
   }
   // 中央邪眼钮
@@ -199,25 +181,26 @@ function lid1(lx,ly,lw,lh,rot){
   X.restore();
 }
 
-// ════════════════ SKIN 2: 青铜莲华宝箱 ════════════════
-// 圆角方形箱体 + 多层莲花浮雕徽记 + 弧形穹顶盖子 + 铜铃装饰
+// ════════════════ SKIN 2: 青铜莲华 — 圆角方形 ════════════════
 function body2(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2,r=bw*.06;
+  const barH=bh*.058, barTop=by+bh*.02, barBot=by+bh-barH-bh*.02;
   shadow(cx,by,bw,bh);
   const bg=mkGrad([bx,by,bx+bw,by,0,'#1a2010',.3,'#263818',.55,'#121c08',.8,'#1a2410',1,'#0c1004']);
-  X.fillStyle=bg;
-  // 圆角方形
-  X.beginPath();X.roundRect(bx,by,bw,bh,r);X.fill();
-  X.strokeStyle='rgba(0,0,0,.15)';X.lineWidth=k*.5;X.stroke();
-  // 铜绿横条
-  const barH=bh*.058;
-  for(const yo of[by+bh*.02,by+bh-barH-bh*.02]){
-    X.fillStyle=copper(bx,yo,bx,yo+barH);X.fillRect(bx-k*3,yo,bw+k*6,barH);
-    X.strokeStyle='rgba(140,220,120,.15)';X.lineWidth=k*.2;X.strokeRect(bx-k*3,yo,bw+k*6,barH);
-  }
+  // 圆角方形路径
+  const rr=()=>{X.beginPath();X.roundRect(bx,by,bw,bh,r);};
+  // 填充
+  rr();X.fillStyle=bg;X.fill();
+  // 边框 — 同一路径直接stroke
+  rr();X.save();X.globalAlpha=.5;X.strokeStyle='#609050';X.lineWidth=k*2.4;X.stroke();X.restore();
+  // 装饰带 — clip限制在圆角方形内
+  X.save();rr();X.clip();
+  contourBar(bx,barTop,bx+bw,barTop+barH,copper(bx,barTop,bx,barTop+barH),.9);
+  contourBar(bx,barBot,bx+bw,barBot+barH,copper(bx,barBot,bx,barBot+barH),.9);
+  X.restore();
   // 四角绿松石
-  for(const[gx,gy] of[[bx+bh*.08,by+bh*.08],[bx+bw-bh*.08,by+bh*.08],[bx+bh*.08,by+bh-bh*.08],[bx+bw-bh*.08,by+bh-bh*.08]])drawGem(gx,gy,bh*.042,140);
-  // ═══ 三层莲华 ═══
+  for(const[gx,gy]of[[bx+bh*.08,by+bh*.08],[bx+bw-bh*.08,by+bh*.08],[bx+bh*.08,by+bh-bh*.08],[bx+bw-bh*.08,by+bh-bh*.08]])drawGem(gx,gy,bh*.042,140);
+  // 莲华徽记
   const lx2=cx,ly2=by+bh*.44,lr=bh*.12;
   for(let l=0;l<3;l++){
     const rr=lr*(.55+l*.18),ra=l*Math.PI/10;
@@ -230,156 +213,107 @@ function body2(bx,by,bw,bh){
     }
     X.closePath();X.fill();
   }
-  const lg2=mkRadial(lx2,ly2-lr*.05,0,lx2,ly2,lr*.42,[0,'#c8f8a0',.15,'#60c840',.45,'#208030',.75,'#0a2810',.92,'#041004',1,'#010401']);
-  X.fillStyle=lg2;X.beginPath();X.arc(lx2,ly2,lr*.42,0,Math.PI*2);X.fill();
+  const lgr=mkRadial(lx2,ly2-lr*.05,0,lx2,ly2,lr*.42,[0,'#c8f8a0',.15,'#60c840',.45,'#208030',.75,'#0a2810',.92,'#041004',1,'#010401']);
+  X.fillStyle=lgr;X.beginPath();X.arc(lx2,ly2,lr*.42,0,Math.PI*2);X.fill();
   X.strokeStyle='rgba(180,240,140,.3)';X.lineWidth=k*.4;X.beginPath();X.arc(lx2,ly2,lr*.42,0,Math.PI*2);X.stroke();
-  X.fillStyle='rgba(200,255,160,.25)';
-  X.beginPath();
-  for(let p=0;p<8;p++){
-    const a=p*Math.PI/4-Math.PI/2,tipX=lx2+Math.cos(a)*lr*.32,tipY=ly2+Math.sin(a)*lr*.32;
-    const mx=lx2+Math.cos(a+Math.PI/8)*lr*.1,my=ly2+Math.sin(a+Math.PI/8)*lr*.1;
-    p===0?X.moveTo(tipX,tipY):X.lineTo(tipX,tipY);X.lineTo(mx,my);
-  }
-  X.closePath();X.fill();
-  const cg=mkRadial(lx2,ly2,0,lx2,ly2,lr*.1,[0,'rgba(255,255,255,.5)',.5,'rgba(200,255,180,.15)',1,'rgba(0,0,0,0)']);
-  X.fillStyle=cg;X.beginPath();X.arc(lx2,ly2,lr*.1,0,Math.PI*2);X.fill();
   base(cx,by+bh,bw,'#141a10','rgba(80,140,50,.1)');
 }
 function lid2(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.4;
-  // 弧形穹顶
-  X.beginPath();
-  X.moveTo(lx,ly+lh);X.quadraticCurveTo(lx,lt-lh*.02,lx+lw*.12,lt-lh*.2);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.32,lx+lw*.88,lt-lh*.2);
-  X.quadraticCurveTo(lx+lw,lt-lh*.02,lx+lw,ly+lh);
-  X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#1e2e16',.4,'#304828',.7,'#0e1806',1,'#040802']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.08)';X.lineWidth=k*.4;X.stroke();
-  // 铜绿边框
-  X.beginPath();
-  X.moveTo(lx-k*3,ly+lh);X.quadraticCurveTo(lx-k*3,lt,lx+lw*.12,lt-lh*.17);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.29,lx+lw*.88,lt-lh*.17);
-  X.quadraticCurveTo(lx+lw+k*3,lt,lx+lw+k*3,ly+lh);
-  X.lineWidth=k*2.4;X.strokeStyle='#609050';X.stroke();
-  X.lineWidth=k*.5;X.strokeStyle='rgba(120,200,100,.18)';X.stroke();
-  // 顶脊
-  X.beginPath();X.moveTo(lx,lt-lh*.06);X.quadraticCurveTo(lx+lw/2,lt-lh*.34,lx+lw,lt-lh*.06);
-  X.lineWidth=k*1.8;X.strokeStyle='#80b060';X.stroke();
-  // 中央大绿松石
+  // 弧形穹顶路径
+  const dome=()=>{X.beginPath();X.moveTo(lx,ly+lh);X.quadraticCurveTo(lx,lt-lh*.02,lx+lw*.12,lt-lh*.2);X.quadraticCurveTo(lx+lw/2,lt-lh*.32,lx+lw*.88,lt-lh*.2);X.quadraticCurveTo(lx+lw,lt-lh*.02,lx+lw,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#1e2e16',.4,'#304828',.7,'#0e1806',1,'#040802']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke
+  dome();X.save();X.globalAlpha=.75;X.strokeStyle='#609050';X.lineWidth=k*3.2;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.2;X.strokeStyle='#a0e080';X.lineWidth=k*.7;X.stroke();X.restore();
+  // 中央绿松石
   const fx=lx+lw/2,fy=lt-lh*.2;
   drawGem(fx,fy,lh*.045,150);
-  // 两侧铜铃
+  // 铜铃
   for(let i=-1;i<=1;i+=2){
     const bx2=fx+i*lw*.2,by2=lt-lh*.08;
     X.fillStyle=copper(bx2-lh*.015,by2,bx2+lh*.015,by2);
     X.beginPath();X.arc(bx2,by2,lh*.02,0,Math.PI*2);X.fill();
-    X.strokeStyle='rgba(140,220,120,.15)';X.lineWidth=k*.15;X.beginPath();X.arc(bx2,by2,lh*.02,0,Math.PI*2);X.stroke();
-    X.fillStyle='rgba(255,255,255,.1)';X.beginPath();X.arc(bx2-lh*.005,by2-lh*.008,lh*.006,0,Math.PI*2);X.fill();
   }
   X.restore();
 }
 
-// ════════════════ SKIN 3: 血月修罗宝箱 ════════════════
-// 六角形箱体 + 血月徽记 + 尖顶盖子 + 血槽纹路
+// ════════════════ SKIN 3: 血月修罗 — 六角形 ════════════════
 function body3(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2,cut=bw*.1;
+  const barH=bh*.055, barTop=by+bh*.02, barBot=by+bh-barH-bh*.02;
   shadow(cx,by,bw,bh);
   const bg=mkGrad([bx,by,bx+bw,by,0,'#180a0a',.3,'#241010',.55,'#100606',.8,'#0c0404',1,'#040101']);
-  X.fillStyle=bg;
-  // 六角形
-  X.beginPath();
-  X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);
-  X.lineTo(bx+bw,by+bh*.5);X.lineTo(bx+bw-cut,by+bh);
-  X.lineTo(bx+cut,by+bh);X.lineTo(bx,by+bh*.5);
-  X.closePath();X.fill();
-  X.strokeStyle='rgba(255,100,60,.15)';X.lineWidth=k*.35;X.stroke();
-  // 血金横条
-  const barH=bh*.055;
-  for(const yo of[by+bh*.02,by+bh-barH-bh*.02]){
-    X.fillStyle=bloodGold(bx,yo,bx,yo+barH);X.fillRect(bx-k*4,yo,bw+k*8,barH);
-    X.strokeStyle='rgba(255,180,160,.2)';X.lineWidth=k*.2;X.strokeRect(bx-k*4,yo,bw+k*8,barH);
-  }
-  // 四角血金铆钉
-  for(const[rx,ry] of[[bx+cut*.5,by+bh*.06],[bx+bw-cut*.5,by+bh*.06],[bx+cut*.5,by+bh-bh*.06],[bx+bw-cut*.5,by+bh-bh*.06]])rivet(rx,ry,bh*.028,'#d86048');
-  // 血槽纹路 — 三道竖直暗痕
-  X.save();X.globalAlpha=.08;X.strokeStyle='#000';X.lineWidth=k*1.2;
-  for(let i=-1;i<=1;i++){const vx=cx+i*bw*.15;X.beginPath();X.moveTo(vx,by+bh*.1);X.lineTo(vx,by+bh*.9);X.stroke();}
+  // 六角形路径
+  const hex=()=>{X.beginPath();X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);X.lineTo(bx+bw,by+bh*.5);X.lineTo(bx+bw-cut,by+bh);X.lineTo(bx+cut,by+bh);X.lineTo(bx,by+bh*.5);X.closePath();};
+  // 填充
+  hex();X.fillStyle=bg;X.fill();
+  // 边框 — 同一路径直接stroke
+  hex();X.save();X.globalAlpha=.5;X.strokeStyle='#b04838';X.lineWidth=k*2.3;X.stroke();X.restore();
+  // 装饰带 — clip限制在六角形内
+  X.save();hex();X.clip();
+  contourBar(bx+cut*.3,barTop,bx+bw-cut*.3,barTop+barH,bloodGold(bx,barTop,bx,barTop+barH),.9);
+  contourBar(bx+cut*.3,barBot,bx+bw-cut*.3,barBot+barH,bloodGold(bx,barBot,bx,barBot+barH),.9);
   X.restore();
-  // ═══ 血月 ═══
+  // 四角血金铆钉
+  for(const[rx,ry]of[[bx+cut*.5,by+bh*.06],[bx+bw-cut*.5,by+bh*.06],[bx+cut*.5,by+bh-bh*.06],[bx+bw-cut*.5,by+bh-bh*.06]])rivet(rx,ry,bh*.028,'#d86048');
+  // 血月
   const mx=cx,my=by+bh*.44,mr=bh*.12;
   const halo=mkRadial(mx,my,0,mx,my,mr*1.2,[0,'rgba(255,40,20,.18)',.5,'rgba(180,10,0,.06)',1,'rgba(0,0,0,0)']);
   X.fillStyle=halo;X.beginPath();X.arc(mx,my,mr*1.2,0,Math.PI*2);X.fill();
   const mg=mkRadial(mx-mr*.08,my-mr*.08,0,mx,my,mr,[0,'#ff3020',.15,'#d01810',.45,'#800808',.72,'#300202',.9,'#100101',1,'#040000']);
   X.fillStyle=mg;X.beginPath();X.arc(mx,my,mr,0,Math.PI*2);X.fill();
-  X.strokeStyle='rgba(255,100,80,.25)';X.lineWidth=k*.5;X.beginPath();X.arc(mx,my,mr,0,Math.PI*2);X.stroke();
   X.save();X.globalCompositeOperation='destination-out';
   X.fillStyle='#000';X.beginPath();X.arc(mx+mr*.35,my-mr*.35,mr*.55,0,Math.PI*2);X.fill();X.restore();
-  X.beginPath();X.arc(mx,my,mr,0,Math.PI*2);X.strokeStyle='rgba(255,100,80,.25)';X.lineWidth=k*.5;X.stroke();
-  for(let s=0;s<3;s++){
-    const sx=mx+mr*(.2+s*.18),sy=my+mr*(.1+s*.2);
-    X.strokeStyle='rgba(255,60,40,'+(.25-s*.06)+')';X.lineWidth=k*.4;
-    X.beginPath();X.moveTo(sx-mr*.12,sy-mr*.12);X.lineTo(sx+mr*.12,sy+mr*.12);X.stroke();
-  }
-  const cg=mkRadial(mx,my,0,mx,my,mr*.1,[0,'rgba(255,200,180,.5)',.5,'rgba(255,80,60,.15)',1,'rgba(0,0,0,0)']);
-  X.fillStyle=cg;X.beginPath();X.arc(mx,my,mr*.1,0,Math.PI*2);X.fill();
+  X.strokeStyle='rgba(255,100,80,.25)';X.lineWidth=k*.5;X.beginPath();X.arc(mx,my,mr,0,Math.PI*2);X.stroke();
   base(cx,by+bh,bw,'#140a0a','rgba(200,80,40,.1)');
 }
 function lid3(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.42,cut=lw*.1;
-  // 尖顶三角形盖子
-  X.beginPath();
-  X.moveTo(lx+cut,ly+lh);X.lineTo(lx+cut,lt-lh*.02);
-  X.lineTo(lx+lw/2,lt-lh*.35);X.lineTo(lx+lw-cut,lt-lh*.02);
-  X.lineTo(lx+lw-cut,ly+lh);X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#200c08',.4,'#381410',.7,'#100604',1,'#060201']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.08)';X.lineWidth=k*.4;X.stroke();
-  // 血金边框
-  X.beginPath();
-  X.moveTo(lx+cut-k*3,ly+lh);X.lineTo(lx+cut-k*3,lt);
-  X.lineTo(lx+lw/2,lt-lh*.33);X.lineTo(lx+lw-cut+k*3,lt);
-  X.lineTo(lx+lw-cut+k*3,ly+lh);
-  X.lineWidth=k*2.4;X.strokeStyle='#b04838';X.stroke();
-  X.lineWidth=k*.5;X.strokeStyle='rgba(255,140,120,.16)';X.stroke();
+  // 尖顶三角形盖子路径
+  const dome=()=>{X.beginPath();X.moveTo(lx+cut,ly+lh);X.lineTo(lx+cut,lt-lh*.02);X.lineTo(lx+lw/2,lt-lh*.35);X.lineTo(lx+lw-cut,lt-lh*.02);X.lineTo(lx+lw-cut,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt-lh*.16,0,'#200c08',.4,'#381410',.7,'#100604',1,'#060201']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke
+  dome();X.save();X.globalAlpha=.75;X.strokeStyle='#b04838';X.lineWidth=k*3.5;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.15;X.strokeStyle='#ffa090';X.lineWidth=k*.7;X.stroke();X.restore();
   // 尖顶脊
-  X.beginPath();X.moveTo(lx+lw/2,lt-lh*.33);X.lineTo(lx+lw/2,ly+lh);
-  X.lineWidth=k*1.5;X.strokeStyle='#c85840';X.stroke();
+  X.beginPath();X.moveTo(lx+lw/2,lt-lh*.35);X.lineTo(lx+lw/2,ly+lh);
+  X.lineWidth=k*1.8;X.strokeStyle='#c85840';X.stroke();
   // 中央血金钮
   const fx=lx+lw/2,fy=ly+lh*.35,fr=lh*.032;
   const fg=mkRadial(fx,fy,0,fx,fy,fr,[0,'#ffc0a0',.3,'#d85040',.65,'#801810',1,'#300604']);
   X.fillStyle=fg;X.beginPath();X.arc(fx,fy,fr,0,Math.PI*2);X.fill();
-  X.strokeStyle='rgba(255,160,120,.2)';X.lineWidth=k*.16;X.beginPath();X.arc(fx,fy,fr,0,Math.PI*2);X.stroke();
   X.restore();
 }
 
-// ════════════════ SKIN 4: 霜寒玄冰宝箱 ════════════════
-// 八角菱形箱体 + 冰晶雪花徽记 + 多层冰晶盖子 + 霜花点缀
+// ════════════════ SKIN 4: 霜寒玄冰 — 菱形六边 ════════════════
 function body4(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2,cut=bw*.06;
+  const barH=bh*.055, barTop=by+bh*.02, barBot=by+bh-barH-bh*.02;
   shadow(cx,by,bw,bh);
   const bg=mkGrad([bx,by,bx+bw,by,0,'#162432',.3,'#1e3040',.55,'#101e28',.8,'#0a141c',1,'#04080c']);
-  X.fillStyle=bg;
-  // 八边形菱形（八角 + 内凹腰线）
-  X.beginPath();
-  X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);
-  X.lineTo(bx+bw,by+bh*.3);X.lineTo(bx+bw-cut,by+bh);
-  X.lineTo(bx+cut,by+bh);X.lineTo(bx,by+bh*.3);
-  X.closePath();X.fill();
-  X.strokeStyle='rgba(180,220,255,.12)';X.lineWidth=k*.3;X.stroke();
-  // 银白横条
-  const barH=bh*.055;
-  for(const yo of[by+bh*.02,by+bh-barH-bh*.02]){
-    X.fillStyle=silver(bx,yo,bx,yo+barH);X.fillRect(bx-k*4,yo,bw+k*8,barH);
-    X.strokeStyle='rgba(220,245,255,.2)';X.lineWidth=k*.2;X.strokeRect(bx-k*4,yo,bw+k*8,barH);
-  }
+  // 内凹六边形路径
+  const hex=()=>{X.beginPath();X.moveTo(bx+cut,by);X.lineTo(bx+bw-cut,by);X.lineTo(bx+bw,by+bh*.3);X.lineTo(bx+bw-cut,by+bh);X.lineTo(bx+cut,by+bh);X.lineTo(bx,by+bh*.3);X.closePath();};
+  // 填充
+  hex();X.fillStyle=bg;X.fill();
+  // 边框 — 同一路径直接stroke
+  hex();X.save();X.globalAlpha=.45;X.strokeStyle='#a8c8d8';X.lineWidth=k*2.1;X.stroke();X.restore();
+  // 装饰带 — clip限制在六边形内
+  X.save();hex();X.clip();
+  contourBar(bx+cut*.5,barTop,bx+bw-cut*.5,barTop+barH,silver(bx,barTop,bx,barTop+barH),.9);
+  contourBar(bx+cut*.5,barBot,bx+bw-cut*.5,barBot+barH,silver(bx,barBot,bx,barBot+barH),.9);
+  X.restore();
   // 四角冰锥
   const icH=bh*.14;
-  for(const[ix2,iy2,dir] of[[bx+bh*.04,by+bh*.04,-1],[bx+bw-bh*.04,by+bh*.04,-1],[bx+bh*.04,by+bh-bh*.04,1],[bx+bw-bh*.04,by+bh-bh*.04,1]]){
+  for(const[ix2,iy2,dir]of[[bx+bh*.04,by+bh*.04,-1],[bx+bw-bh*.04,by+bh*.04,-1],[bx+bh*.04,by+bh-bh*.04,1],[bx+bw-bh*.04,by+bh-bh*.04,1]]){
     const iceG=mkGrad([ix2,iy2,ix2,iy2-icH*dir,0,'rgba(220,248,255,.55)',.4,'rgba(140,200,240,.28)',.8,'rgba(60,140,210,.06)',1,'rgba(20,80,140,0)']);
     X.fillStyle=iceG;X.beginPath();X.moveTo(ix2-k*3.5,iy2);X.lineTo(ix2+k*3.5,iy2);X.lineTo(ix2,iy2+icH*dir);X.closePath();X.fill();
   }
-  // ═══ 冰晶雪花 ═══
+  // 冰晶雪花
   const sx4=cx,sy4=by+bh*.44,sr2=bh*.115;
   const halo2=mkRadial(sx4,sy4,0,sx4,sy4,sr2*1.35,[0,'rgba(180,230,255,.2)',.45,'rgba(80,160,220,.06)',1,'rgba(0,0,0,0)']);
   X.fillStyle=halo2;X.beginPath();X.arc(sx4,sy4,sr2*1.35,0,Math.PI*2);X.fill();
@@ -405,43 +339,31 @@ function body4(bx,by,bw,bh){
     for(let v2=0;v2<6;v2++){const va2=v2*Math.PI/3,pr2=k*2.2;v2===0?X.moveTo(scx+Math.cos(va2)*pr2,scy+Math.sin(va2)*pr2):X.lineTo(scx+Math.cos(va2)*pr2,scy+Math.sin(va2)*pr2);}
     X.closePath();X.fill();
   }
-  const cg=mkRadial(sx4,sy4,0,sx4,sy4,sr2*.22,[0,'#ffffff',.3,'rgba(240,250,255,.7)',.6,'rgba(180,220,255,.2)',1,'rgba(100,180,240,0)']);
-  X.fillStyle=cg;X.beginPath();X.arc(sx4,sy4,sr2*.22,0,Math.PI*2);X.fill();
   base(cx,by+bh,bw,'#0e1822','rgba(120,170,200,.08)');
 }
 function lid4(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.44;
-  // 多层冰晶穹顶
-  X.beginPath();
-  X.moveTo(lx+k*4,ly+lh);X.quadraticCurveTo(lx+k*4,lt-lh*.04,lx+lw*.1,lt-lh*.26);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.4,lx+lw*.9,lt-lh*.26);
-  X.quadraticCurveTo(lx+lw-k*4,lt-lh*.04,lx+lw-k*4,ly+lh);
-  X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt-lh*.2,0,'#162636',.45,'#243448',.7,'#0c141c',1,'#04080c']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.06)';X.lineWidth=k*.4;X.stroke();
-  // 三层冰晶叠加
+  // 冰晶穹顶路径
+  const dome=()=>{X.beginPath();X.moveTo(lx+k*4,ly+lh);X.quadraticCurveTo(lx+k*4,lt-lh*.04,lx+lw*.1,lt-lh*.26);X.quadraticCurveTo(lx+lw/2,lt-lh*.4,lx+lw*.9,lt-lh*.26);X.quadraticCurveTo(lx+lw-k*4,lt-lh*.04,lx+lw-k*4,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt-lh*.2,0,'#162636',.45,'#243448',.7,'#0c141c',1,'#04080c']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke
+  dome();X.save();X.globalAlpha=.7;X.strokeStyle='#a8c8d8';X.lineWidth=k*3;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.25;X.strokeStyle='#e8f8ff';X.lineWidth=k*.6;X.stroke();X.restore();
+  // 三层冰晶叠加 — clip限制在主穹顶内
+  X.save();dome();X.clip();
   for(let layer=0;layer<3;layer++){
     const loff=lh*(.03+layer*.035);
     X.save();X.globalAlpha=.15+layer*.04;
-    X.beginPath();
-    X.moveTo(lx+k*7,ly+lh-loff);X.quadraticCurveTo(lx+k*7,lt-lh*.02,lx+lw*.12,lt-lh*.22);
-    X.quadraticCurveTo(lx+lw/2,lt-lh*.36,lx+lw*.88,lt-lh*.22);
-    X.quadraticCurveTo(lx+lw-k*7,lt-lh*.02,lx+lw-k*7,ly+lh-loff);
-    X.closePath();
+    X.beginPath();X.moveTo(lx+k*7,ly+lh-loff);X.quadraticCurveTo(lx+k*7,lt-lh*.02,lx+lw*.12,lt-lh*.22);X.quadraticCurveTo(lx+lw/2,lt-lh*.36,lx+lw*.88,lt-lh*.22);X.quadraticCurveTo(lx+lw-k*7,lt-lh*.02,lx+lw-k*7,ly+lh-loff);X.closePath();
     const iceG=mkGrad([lx,lt,lx,ly+lh,0,'rgba(220,248,255,.6)',.4,'rgba(130,200,230,.25)',.8,'rgba(50,110,180,.05)',1,'rgba(10,40,80,0)']);
     X.fillStyle=iceG;X.fill();X.restore();
   }
-  // 银白框
-  X.beginPath();
-  X.moveTo(lx+k*5,ly+lh);X.quadraticCurveTo(lx+k*5,lt-lh*.02,lx+lw*.1,lt-lh*.22);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.36,lx+lw*.9,lt-lh*.22);
-  X.quadraticCurveTo(lx+lw-k*5,lt-lh*.02,lx+lw-k*5,ly+lh);
-  X.lineWidth=k*2.4;X.strokeStyle='#a8c8d8';X.stroke();
-  X.lineWidth=k*.5;X.strokeStyle='rgba(220,240,255,.2)';X.stroke();
   // 顶脊银线
-  X.beginPath();X.moveTo(lx+k*8,lt-lh*.14);X.quadraticCurveTo(lx+lw/2,lt-lh*.38,lx+lw-k*8,lt-lh*.14);
+  X.beginPath();X.moveTo(lx+k*4,lt-lh*.04);X.quadraticCurveTo(lx+k*4,lt-lh*.04,lx+lw*.1,lt-lh*.26);X.quadraticCurveTo(lx+lw/2,lt-lh*.4,lx+lw*.9,lt-lh*.26);X.quadraticCurveTo(lx+lw-k*4,lt-lh*.04,lx+lw-k*4,lt-lh*.04);
   X.lineWidth=k*1.8;X.strokeStyle='#c8dce8';X.stroke();
+  X.restore();
   // 霜花
   for(let f=0;f<5;f++){
     const fx2=lx+lw*(.15+f*.175),fy2=lt-lh*.08;
@@ -450,51 +372,34 @@ function lid4(lx,ly,lw,lh,rot){
     for(let p2=0;p2<6;p2++){const pa2=p2*Math.PI/3,pr3=lh*.024;p2===0?X.moveTo(fx2+Math.cos(pa2)*pr3,fy2+Math.sin(pa2)*pr3):X.lineTo(fx2+Math.cos(pa2)*pr3,fy2+Math.sin(pa2)*pr3);}
     X.closePath();X.fill();
   }
-  // 顶部冰晶核心
-  const fx3=lx+lw/2,fy3=lt-lh*.29;
-  const fg=mkRadial(fx3,fy3,0,fx3,fy3,lh*.035,[0,'rgba(255,255,255,.75)',.3,'rgba(200,240,255,.45)',.65,'rgba(100,160,220,.12)',1,'rgba(40,80,140,0)']);
-  X.fillStyle=fg;X.beginPath();X.arc(fx3,fy3,lh*.035,0,Math.PI*2);X.fill();
   X.restore();
 }
 
-// ════════════════ SKIN 5: 聚雷玄铁宝箱 ════════════════
-// 方形箱体 + 雷电球徽记（不动） + 弧形盖子 + 暗金钉
+// ════════════════ SKIN 5: 聚雷玄铁 — 方形 ════════════════
 function body5(bx,by,bw,bh){
   const k=K(),cx=bx+bw/2;
+  const barH=bh*.06, barTop=by+bh*.02, barBot=by+bh-barH-bh*.02;
   shadow(cx,by,bw,bh);
+  // 方形填充
   X.fillStyle=obsidian(bx,by,bx+bw,by);X.fillRect(bx,by,bw,bh);
-  const barH=bh*.06;
-  for(const yo of[by+bh*.02,by+bh-barH-bh*.02]){
-    X.fillStyle=darkGold(bx,yo,bx,yo+barH);X.fillRect(bx-k*3,yo,bw+k*6,barH);
-    X.strokeStyle='rgba(220,200,140,.18)';X.lineWidth=k*.22;X.strokeRect(bx-k*3,yo,bw+k*6,barH);
-  }
-  const vw=bh*.05;
-  for(let s of[bx,bx+bw-vw]){
-    X.fillStyle=darkGold(s,by,s+vw,by);X.fillRect(s-k*3,by-k*1,vw,bh+k*2);
-    X.strokeStyle='rgba(200,180,120,.13)';X.lineWidth=k*.18;X.strokeRect(s-k*3,by-k*1,vw,bh+k*2);
-  }
+  // 紧贴方形轮廓暗金边框
+  X.strokeStyle='#a08030';X.lineWidth=k*2.5;X.strokeRect(bx,by,bw,bh);
+  X.strokeStyle='rgba(220,200,140,.18)';X.lineWidth=k*.4;X.strokeRect(bx,by,bw,bh);
+  // 装饰带 — 严格限制在 bw 内
+  X.fillStyle=darkGold(bx,barTop,bx,barTop+barH);X.fillRect(bx,barTop,bw,barH);
+  X.strokeStyle='rgba(220,200,140,.18)';X.lineWidth=k*.22;X.strokeRect(bx,barTop,bw,barH);
+  X.fillStyle=darkGold(bx,barBot,bx,barBot+barH);X.fillRect(bx,barBot,bw,barH);
+  X.strokeStyle='rgba(220,200,140,.18)';X.lineWidth=k*.22;X.strokeRect(bx,barBot,bw,barH);
+  // 四角暗金方块
   const cs=bh*.048;
-  for(const[cx3,cy3] of[[bx+bh*.035,by+bh*.035],[bx+bw-bh*.035,by+bh*.035],[bx+bh*.035,by+bh-bh*.035],[bx+bw-bh*.035,by+bh-bh*.035]]){
+  for(const[cx3,cy3]of[[bx+bh*.035,by+bh*.035],[bx+bw-bh*.035,by+bh*.035],[bx+bh*.035,by+bh-bh*.035],[bx+bw-bh*.035,by+bh-bh*.035]]){
     X.fillStyle=darkGold(cx3-cs,cy3-cs,cx3+cs,cy3+cs);X.fillRect(cx3-cs,cy3-cs,cs*2,cs*2);
-    X.strokeStyle='rgba(255,220,160,.15)';X.lineWidth=k*.12;X.strokeRect(cx3-cs,cy3-cs,cs*2,cs*2);
   }
-  // ═══ 雷电球徽记（不动） ═══
+  // 雷电球徽记
   const ox2=cx,oy2=by+bh*.43,or2=bh*.105;
   const orbG=mkRadial(ox2,oy2,0,ox2,oy2,or2,[0,'#ffffff',.06,'#e8d8ff',.2,'#a060e8',.45,'#5020a0',.75,'#1c0c48',1,'#080418']);
   X.fillStyle=orbG;X.beginPath();X.arc(ox2,oy2,or2,0,Math.PI*2);X.fill();
   X.strokeStyle='rgba(200,150,255,.3)';X.lineWidth=k*.55;X.beginPath();X.arc(ox2,oy2,or2,0,Math.PI*2);X.stroke();
-  for(let l=0;l<4;l++){
-    const la=l*Math.PI/2+Math.PI/4;
-    X.save();X.globalAlpha=.4;X.strokeStyle='#d8c0ff';X.lineWidth=k*.5;
-    X.beginPath();
-    const startX=ox2+Math.cos(la)*or2*.65,startY=oy2+Math.sin(la)*or2*.65;
-    X.moveTo(startX,startY);
-    const mx2=startX+Math.cos(la)*or2*.3,my2=startY+Math.sin(la)*or2*.3;
-    X.lineTo(mx2,my2);
-    const ex2=mx2+Math.cos(la+Math.PI/5)*or2*.22,ey2=my2+Math.sin(la+Math.PI/5)*or2*.22;
-    X.lineTo(ex2,ey2);
-    X.stroke();X.restore();
-  }
   for(let p=0;p<8;p++){
     const pa3=p*Math.PI/4+T*.25,pr4=or2*1.12+Math.sin(T*6+p)*or2*.1,px4=ox2+Math.cos(pa3)*pr4,py4=oy2+Math.sin(pa3)*pr4;
     X.fillStyle='rgba(180,130,240,.5)';X.beginPath();X.arc(px4,py4,k*1.2,0,Math.PI*2);X.fill();
@@ -504,28 +409,20 @@ function body5(bx,by,bw,bh){
 function lid5(lx,ly,lw,lh,rot){
   X.save();X.translate(lx+lw/2,ly+lh/2);X.rotate(rot);X.translate(-lx-lw/2,-ly-lh/2);
   const k=K(),lt=ly-lh*.36;
-  X.beginPath();
-  X.moveTo(lx-k*3,ly+lh);X.quadraticCurveTo(lx-k*3,lt-lh*.06,lx,lt-lh*.14);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.2,lx+lw+k*3,lt-lh*.06);
-  X.quadraticCurveTo(lx+lw+k*3,lt-lh*.06,lx+lw+k*3,ly+lh);X.closePath();
-  const lg=mkGrad([lx,ly,lx,lt,0,'#1a1028',.4,'#281840',.7,'#0c0818',1,'#040210']);
-  X.fillStyle=lg;X.fill();X.strokeStyle='rgba(0,0,0,.08)';X.lineWidth=k*.4;X.stroke();
-  X.beginPath();
-  X.moveTo(lx-k*4,ly+lh);X.quadraticCurveTo(lx-k*4,lt-lh*.04,lx,lt-lh*.11);
-  X.quadraticCurveTo(lx+lw/2,lt-lh*.17,lx+lw+k*4,lt-lh*.04);
-  X.quadraticCurveTo(lx+lw+k*4,lt-lh*.04,lx+lw+k*4,ly+lh);
-  X.lineWidth=k*2.8;X.strokeStyle='#a08030';X.stroke();
-  X.lineWidth=k*.5;X.strokeStyle='rgba(220,200,140,.16)';X.stroke();
-  X.beginPath();X.moveTo(lx-k*2,lt-lh*.02);X.quadraticCurveTo(lx+lw/2,lt-lh*.22,lx+lw+k*2,lt-lh*.02);
-  X.lineWidth=k*2;X.strokeStyle='#c0a040';X.stroke();
-  X.lineWidth=k*.4;X.strokeStyle='rgba(240,220,160,.14)';X.stroke();
-  const fx4=lx+lw/2,fy4=lt-lh*.08,fr=lh*.036;
+  // 弧形盖子路径
+  const dome=()=>{X.beginPath();X.moveTo(lx,ly+lh);X.quadraticCurveTo(lx,lt-lh*.06,lx+lw*.12,lt-lh*.18);X.quadraticCurveTo(lx+lw/2,lt-lh*.24,lx+lw*.88,lt-lh*.18);X.quadraticCurveTo(lx+lw,lt-lh*.06,lx+lw,ly+lh);X.closePath();};
+  // 填充
+  dome();const lg=mkGrad([lx,ly,lx,lt,0,'#1a1028',.4,'#281840',.7,'#0c0818',1,'#040210']);X.fillStyle=lg;X.fill();
+  // 边框 — 同一路径直接stroke
+  dome();X.save();X.globalAlpha=.75;X.strokeStyle='#a08030';X.lineWidth=k*3.2;X.stroke();X.restore();
+  dome();X.save();X.globalAlpha=.15;X.strokeStyle='#d8c0a0';X.lineWidth=k*.6;X.stroke();X.restore();
+  // 中央金钮
+  const fx4=lx+lw/2,fy4=lt-lh*.1,fr=lh*.036;
   const fg=mkRadial(fx4,fy4-fr*.08,0,fx4,fy4,fr,[0,'#fffce0',.3,'#e8c040',.6,'#a07018',.85,'#503008',1,'#200800']);
   X.fillStyle=fg;X.beginPath();X.arc(fx4,fy4,fr,0,Math.PI*2);X.fill();
-  X.strokeStyle='rgba(255,240,180,.25)';X.lineWidth=k*.2;X.beginPath();X.arc(fx4,fy4,fr,0,Math.PI*2);X.stroke();
   for(let i=-1;i<=1;i+=2){
-    rivet(fx4+i*lw*.18,lt-lh*.04,lh*.016,'#b08830');
-    rivet(fx4+i*lw*.3,lt-lh*.01,lh*.013,'#b08830');
+    rivet(fx4+i*lw*.18,lt-lh*.02,lh*.016,'#b08830');
+    rivet(fx4+i*lw*.3,lt, lh*.013,'#b08830');
   }
   X.restore();
 }
@@ -571,8 +468,7 @@ function coin0(x,y,r,rt,color,letter){
 function trash0(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
   X.fillStyle='#9a8a70';
-  X.beginPath();X.moveTo(-r*.7,-r*.4);X.lineTo(r*.3,-r*.8);X.lineTo(r*.85,-r*.15);
-  X.lineTo(r*.5,r*.65);X.lineTo(-r*.35,r*.7);X.lineTo(-r*.8,r*.15);X.closePath();X.fill();
+  X.beginPath();X.moveTo(-r*.7,-r*.4);X.lineTo(r*.3,-r*.8);X.lineTo(r*.85,-r*.15);X.lineTo(r*.5,r*.65);X.lineTo(-r*.35,r*.7);X.lineTo(-r*.8,r*.15);X.closePath();X.fill();
   X.strokeStyle='rgba(0,0,0,.15)';X.lineWidth=r*.05;X.stroke();
   X.strokeStyle='#6a5a40';X.lineWidth=r*.03;X.beginPath();X.moveTo(-r*.3,-r*.5);X.lineTo(r*.1,r*.3);X.stroke();
   X.beginPath();X.moveTo(r*.4,-r*.15);X.lineTo(-r*.35,r*.45);X.stroke();
@@ -596,8 +492,7 @@ function gem0(x,y,r,rt,hue,hue2){
 function stone1(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
   X.fillStyle='#8a8590';
-  X.beginPath();X.moveTo(-r*.65,-r*.35);X.lineTo(r*.2,-r*.78);X.lineTo(r*.82,-r*.08);
-  X.lineTo(r*.45,r*.62);X.lineTo(-r*.3,r*.72);X.lineTo(-r*.78,r*.12);X.closePath();X.fill();
+  X.beginPath();X.moveTo(-r*.65,-r*.35);X.lineTo(r*.2,-r*.78);X.lineTo(r*.82,-r*.08);X.lineTo(r*.45,r*.62);X.lineTo(-r*.3,r*.72);X.lineTo(-r*.78,r*.12);X.closePath();X.fill();
   X.strokeStyle='rgba(255,255,255,.06)';X.lineWidth=r*.05;X.stroke();
   X.fillStyle='#6a6570';X.beginPath();X.moveTo(-r*.65,-r*.35);X.lineTo(r*.2,-r*.78);X.lineTo(r*.08,-r*.25);X.lineTo(-r*.25,-r*.08);X.closePath();X.fill();
   X.restore();
@@ -643,9 +538,7 @@ function jade1(x,y,r,rt){
   X.beginPath();X.moveTo(0,-r);X.lineTo(r*.72,0);X.lineTo(0,r*.72);X.lineTo(-r*.72,0);X.closePath();X.fill();
   X.strokeStyle='rgba(255,255,255,.1)';X.lineWidth=r*.05;X.stroke();
   X.save();X.globalAlpha=.1;X.strokeStyle='#a0ffc0';X.lineWidth=r*.025;
-  for(let f=0;f<3;f++){
-    X.beginPath();X.moveTo(-r*.2+f*r*.2,-r*.15+f*r*.15);X.quadraticCurveTo(0,f*r*.1,r*.2+f*r*.1,r*.1+f*r*.05);X.stroke();
-  }
+  for(let f=0;f<3;f++){X.beginPath();X.moveTo(-r*.2+f*r*.2,-r*.15+f*r*.15);X.quadraticCurveTo(0,f*r*.1,r*.2+f*r*.1,r*.1+f*r*.05);X.stroke();}
   X.restore();
   X.fillStyle='rgba(255,255,255,.12)';X.beginPath();X.moveTo(0,-r);X.lineTo(0,0);X.lineTo(-r*.16,-r*.22);X.closePath();X.fill();
   X.restore();
@@ -671,43 +564,24 @@ function diamond1(x,y,r,rt,fire1,fire2){
   X.beginPath();X.moveTo(0,r*1.05);X.lineTo(0,r*-.05);X.stroke();
   X.beginPath();X.moveTo(0,r*1.05);X.lineTo(-r*.5,r*-.05);X.stroke();
   X.beginPath();X.moveTo(0,r*1.05);X.lineTo(r*.5,r*-.05);X.stroke();X.restore();
-  X.strokeStyle='rgba(255,255,255,.35)';X.lineWidth=K2;X.beginPath();X.moveTo(-r*.95,r*-.05);X.lineTo(r*.95,r*-.05);X.stroke();
   const crownH=r*.55;
   X.beginPath();X.moveTo(-r*.95,r*-.05);X.lineTo(-r*.52,r*-.05-crownH);X.lineTo(r*.52,r*-.05-crownH);X.lineTo(r*.95,r*-.05);X.closePath();
   const cr=X.createLinearGradient(0,r*-.05-crownH,0,r*-.05);
   cr.addColorStop(0,'#e0f0ff');cr.addColorStop(.25,'#c8e8f8');cr.addColorStop(.6,'#90c8e0');cr.addColorStop(1,'#60a0c0');
   X.fillStyle=cr;X.fill();X.strokeStyle='rgba(255,255,255,.2)';X.lineWidth=K2*.7;X.stroke();
-  X.save();X.globalAlpha=.2;X.strokeStyle='#fff';X.lineWidth=K2*.18;
-  X.beginPath();X.moveTo(0,r*-.05);X.lineTo(0,r*-.05-crownH);X.stroke();
-  X.beginPath();X.moveTo(-r*.52,r*-.05-crownH);X.lineTo(-r*.7,r*-.05);X.stroke();
-  X.beginPath();X.moveTo(r*.52,r*-.05-crownH);X.lineTo(r*.7,r*-.05);X.stroke();X.restore();
   X.fillStyle=f1;
   X.beginPath();X.moveTo(0,r*-.05-crownH*.7);X.lineTo(-r*.52,r*-.05-crownH);X.lineTo(-r*.7,r*-.05);X.lineTo(-r*.3,r*-.05);X.closePath();X.fill();
   X.fillStyle=f2;
   X.beginPath();X.moveTo(0,r*-.05-crownH*.7);X.lineTo(r*.52,r*-.05-crownH);X.lineTo(r*.7,r*-.05);X.lineTo(r*.3,r*-.05);X.closePath();X.fill();
-  X.beginPath();X.moveTo(-r*.52,r*-.05-crownH);X.lineTo(r*.52,r*-.05-crownH);
-  X.lineTo(r*.32,r*-.05-crownH-r*.08);X.lineTo(-r*.32,r*-.05-crownH-r*.08);X.closePath();
-  const tg=X.createLinearGradient(0,r*-.05-crownH-r*.08,0,r*-.05-crownH);
-  tg.addColorStop(0,'#ffffff');tg.addColorStop(.5,'#f0f6ff');tg.addColorStop(1,'#d8e8f4');
-  X.fillStyle=tg;X.fill();X.strokeStyle='rgba(255,255,255,.4)';X.lineWidth=K2*.4;X.stroke();
-  X.fillStyle='rgba(255,255,255,.3)';X.beginPath();X.ellipse(-r*.05,r*-.05-crownH*.8,r*.08,r*.04,-.2,0,Math.PI*2);X.fill();
-  X.save();X.globalAlpha=.22;
-  for(let j=0;j<3;j++){const sa=-Math.PI/2+j*Math.PI/2;X.fillStyle='rgba(255,255,255,.6)';X.beginPath();X.moveTo(0,r*-.05-crownH*.5);X.lineTo(Math.cos(sa)*r*.35,Math.sin(sa)*r*.13+r*-.05-crownH*.3);X.lineTo(Math.cos(sa+.15)*r*.13,Math.sin(sa+.15)*r*.07+r*-.05-crownH*.3);X.closePath();X.fill();}
-  X.restore();
-  for(let j=0;j<4;j++){const sxX=((j%2===0)?-1:1)*r*(.28+j*.07);const syX=r*-.05-crownH*(.28+j*.11);const hues=[200,215,235,270][j];X.fillStyle='hsla('+hues+',80%,75%,.3)';X.beginPath();X.arc(sxX,syX,K2*.65,0,Math.PI*2);X.fill();}
   X.restore();
 }
-function hslFire(){
-  const h=[198,202,208,215,222,235,255,270,290,330,350,360][Math.floor(Math.random()*12)];
-  return 'hsla('+h+','+(55+Math.random()*35)+'%,'+(50+Math.random()*40)+'%,'+(.45+Math.random()*.3)+')';
-}
+function hslFire(){const h=[198,202,208,215,222,235,255,270,290,330,350,360][Math.floor(Math.random()*12)];return 'hsla('+h+','+(55+Math.random()*35)+'%,'+(50+Math.random()*40)+'%,'+(.45+Math.random()*.3)+')';}
 
 // ════════════════ REWARD 2: 灵石奇珍 ════════════════
 function crystalShard(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
   X.fillStyle='#787080';
-  X.beginPath();X.moveTo(-r*.65,-r*.45);X.lineTo(r*.18,-r*.8);X.lineTo(r*.75,-r*.18);
-  X.lineTo(r*.55,r*.52);X.lineTo(-r*.08,r*.68);X.lineTo(-r*.7,r*.22);X.closePath();X.fill();
+  X.beginPath();X.moveTo(-r*.65,-r*.45);X.lineTo(r*.18,-r*.8);X.lineTo(r*.75,-r*.18);X.lineTo(r*.55,r*.52);X.lineTo(-r*.08,r*.68);X.lineTo(-r*.7,r*.22);X.closePath();X.fill();
   X.strokeStyle='rgba(200,200,220,.15)';X.lineWidth=r*.04;X.stroke();
   X.fillStyle='rgba(180,180,220,.1)';X.beginPath();X.moveTo(-r*.65,-r*.45);X.lineTo(r*.18,-r*.8);X.lineTo(r*.1,-r*.28);X.lineTo(-r*.28,-r*.08);X.closePath();X.fill();
   X.restore();
@@ -729,21 +603,13 @@ function spiritMarrow(x,y,r,rt){
 }
 function bloodJade(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
-  X.beginPath();X.moveTo(0,-r*1.05);
-  X.quadraticCurveTo(r*.68,-r*.32,r*.62,r*.3);
-  X.quadraticCurveTo(r*.52,r*.82,0,r*.88);
-  X.quadraticCurveTo(-r*.52,r*.82,-r*.62,r*.3);
-  X.quadraticCurveTo(-r*.68,-r*.32,0,-r*1.05);
-  X.closePath();
+  X.beginPath();X.moveTo(0,-r*1.05);X.quadraticCurveTo(r*.68,-r*.32,r*.62,r*.3);X.quadraticCurveTo(r*.52,r*.82,0,r*.88);X.quadraticCurveTo(-r*.52,r*.82,-r*.62,r*.3);X.quadraticCurveTo(-r*.68,-r*.32,0,-r*1.05);X.closePath();
   const g=X.createRadialGradient(-r*.08,-r*.12,0,0,0,r);
-  g.addColorStop(0,'#ff5858');g.addColorStop(.18,'#e02030');g.addColorStop(.48,'#801020');
-  g.addColorStop(.75,'#400810');g.addColorStop(1,'#180208');
+  g.addColorStop(0,'#ff5858');g.addColorStop(.18,'#e02030');g.addColorStop(.48,'#801020');g.addColorStop(.75,'#400810');g.addColorStop(1,'#180208');
   X.fillStyle=g;X.fill();
   X.strokeStyle='rgba(255,180,180,.1)';X.lineWidth=r*.04;X.stroke();
   X.save();X.globalAlpha=.12;X.strokeStyle='#800020';X.lineWidth=r*.025;
-  for(let v=0;v<3;v++){
-    X.beginPath();X.moveTo(-r*.35,-r*.4+v*r*.35);X.quadraticCurveTo(0,-r*.3+v*r*.4,r*.35,-r*.35+v*r*.3);X.stroke();
-  }
+  for(let v=0;v<3;v++){X.beginPath();X.moveTo(-r*.35,-r*.4+v*r*.35);X.quadraticCurveTo(0,-r*.3+v*r*.4,r*.35,-r*.35+v*r*.3);X.stroke();}
   X.restore();
   X.fillStyle='rgba(255,255,255,.12)';X.beginPath();X.ellipse(-r*.08,-r*.32,r*.16,r*.25,-.18,0,Math.PI*2);X.fill();
   X.restore();
@@ -752,20 +618,15 @@ function soulCore(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt+T*.6);
   const sr=r*.75;
   for(let ring=0;ring<3;ring++){
-    const rr=sr*(.48+ring*.24);
-    const ringRot=T*(1.8+ring*1.3)*(-1+ring%2*2);
+    const rr=sr*(.48+ring*.24);const ringRot=T*(1.8+ring*1.3)*(-1+ring%2*2);
     X.save();X.rotate(ringRot);
-    const ringAlpha=.22+ring*.06;
-    X.strokeStyle='hsla('+(240+ring*35)+',75%,'+(48+ring*12)+'%,'+ringAlpha+')';
+    X.strokeStyle='hsla('+(240+ring*35)+',75%,'+(48+ring*12)+'%,'+(.22+ring*.06)+')';
     X.lineWidth=r*.05*(1+ring*.2);X.setLineDash([r*.12,r*.06+ring*.03]);
-    X.beginPath();X.arc(0,0,rr,0,Math.PI*2);X.stroke();
-    X.setLineDash([]);
+    X.beginPath();X.arc(0,0,rr,0,Math.PI*2);X.stroke();X.setLineDash([]);
     X.restore();
   }
   const coreG=X.createRadialGradient(0,0,0,0,0,sr*.35);
-  coreG.addColorStop(0,'#ffffff');coreG.addColorStop(.1,'#e0d0ff');
-  coreG.addColorStop(.3,'#8040e0');coreG.addColorStop(.6,'#3018a0');
-  coreG.addColorStop(.82,'#100840');coreG.addColorStop(1,'#040210');
+  coreG.addColorStop(0,'#ffffff');coreG.addColorStop(.1,'#e0d0ff');coreG.addColorStop(.3,'#8040e0');coreG.addColorStop(.6,'#3018a0');coreG.addColorStop(.82,'#100840');coreG.addColorStop(1,'#040210');
   X.fillStyle=coreG;X.beginPath();X.arc(0,0,sr*.35,0,Math.PI*2);X.fill();
   const glowG=X.createRadialGradient(0,0,sr*.15,0,0,sr*.65);
   glowG.addColorStop(0,'rgba(180,140,255,.2)');glowG.addColorStop(1,'rgba(0,0,0,0)');
@@ -775,33 +636,19 @@ function soulCore(x,y,r,rt){
 function holyStone(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
   const or3=r*.6;
-  for(let i=0;i<16;i++){
-    const ra=i*Math.PI*2/16;const rayLen=or3*(.75+(i%3)*.18);
-    X.fillStyle='rgba(255,220,100,'+(.12+(i%3)*.08)+')';
-    X.beginPath();X.moveTo(0,0);X.lineTo(Math.cos(ra-or3*.05)*rayLen,Math.sin(ra-or3*.05)*rayLen);X.lineTo(Math.cos(ra+or3*.05)*rayLen,Math.sin(ra+or3*.05)*rayLen);X.closePath();X.fill();
-  }
+  for(let i=0;i<16;i++){const ra=i*Math.PI*2/16;const rayLen=or3*(.75+(i%3)*.18);X.fillStyle='rgba(255,220,100,'+(.12+(i%3)*.08)+')';X.beginPath();X.moveTo(0,0);X.lineTo(Math.cos(ra-or3*.05)*rayLen,Math.sin(ra-or3*.05)*rayLen);X.lineTo(Math.cos(ra+or3*.05)*rayLen,Math.sin(ra+or3*.05)*rayLen);X.closePath();X.fill();}
   X.beginPath();
-  for(let p=0;p<16;p++){
-    const pa4=p*Math.PI/8-Math.PI/2,pr5=p%2===0?or3:or3*.48;
-    p===0?X.moveTo(Math.cos(pa4)*pr5,Math.sin(pa4)*pr5):X.lineTo(Math.cos(pa4)*pr5,Math.sin(pa4)*pr5);
-  }
+  for(let p=0;p<16;p++){const pa4=p*Math.PI/8-Math.PI/2,pr5=p%2===0?or3:or3*.48;p===0?X.moveTo(Math.cos(pa4)*pr5,Math.sin(pa4)*pr5):X.lineTo(Math.cos(pa4)*pr5,Math.sin(pa4)*pr5);}
   X.closePath();
   const sg=X.createRadialGradient(0,-or3*.08,0,0,0,or3);
   sg.addColorStop(0,'#ffffff');sg.addColorStop('.06','#fff8d0');sg.addColorStop('.22','#e0c040');
   sg.addColorStop('.48','#a08020');sg.addColorStop('.72','#604810');sg.addColorStop(1,'#201808');
   X.fillStyle=sg;X.fill();X.strokeStyle='rgba(255,240,180,.25)';X.lineWidth=r*.035;X.stroke();
-  const cg=X.createRadialGradient(0,0,0,0,0,or3*.22);
-  cg.addColorStop(0,'#ffffff');cg.addColorStop('.25','#fff8e0');cg.addColorStop('.6','#e0c040');cg.addColorStop(1,'rgba(160,120,30,0)');
-  X.fillStyle=cg;X.beginPath();X.arc(0,0,or3*.22,0,Math.PI*2);X.fill();
-  for(let d=0;d<8;d++){
-    const da=d*Math.PI/4;
-    X.fillStyle='rgba(255,240,180,.35)';X.beginPath();X.arc(Math.cos(da)*or3*.95,Math.sin(da)*or3*.95,r*.04,0,Math.PI*2);X.fill();
-  }
   X.restore();
 }
 
 // ════════════════ 开/关 ════════════════
-function doOpen(t){items.length=0;sparks.length=0;radiance.length=0;open=true;lidPhase='flying';lidFV=-9;lidRV=(Math.random()-.5)*3.5;glowA=1;lidFY=0;lidFR=0;const b=cb(),chestTop=b.y+b.h*.12;if(t>=4){const hue=rewardSkin===0?40:rewardSkin===1?200:140;for(let i=0;i<30;i++){const a=-Math.PI/2+(Math.random()-.5)*.7;radiance.push({x:b.x+b.w/2+(Math.random()-.5)*b.w*.3,y:chestTop,vx:Math.cos(a)*(1+Math.random()*4),vy:-2-Math.random()*5,r:3+Math.random()*7,life:.6+Math.random()*1.2,hue:hue+Math.random()*25});}}const counts=[0,7,10,12,15,20];const n=counts[t]||10;for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*1.3;const it={x:b.x+b.w/2+(Math.random()-.5)*25,y:chestTop,vx:Math.cos(a)*(3+Math.random()*5),vy:Math.sin(a)*(3+Math.random()*5)-2.5,r:5+Math.random()*6,rt:Math.random()*6,rv:(Math.random()-.5)*8,life:2.5+Math.random()*2,g:.12,shiny:false};if(rewardSkin===0){if(t===1){it.type='trash';it.fn=trash0;}else if(t===2){it.type='coin';it.fn=coin0;it.color=[240,190,130];it.letter='¢';}else if(t===3){it.type='coin';it.fn=coin0;it.color=[210,215,230];it.letter='S';}else if(t===4){it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}else if(t===5){if(i<n*.35){it.type='gem';it.fn=gem0;it.hue=[200,300,30][i%3];it.r=5+Math.random()*5;it.shiny=true;}else{it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}}}else if(rewardSkin===1){if(t===1){it.type='stone';it.fn=stone1;it.r=3+Math.random()*4;}else if(t===2){it.type='agate';it.fn=agate1;it.r=5+Math.random()*5;}else if(t===3){it.type='pearl';it.fn=pearl1;it.r=5+Math.random()*5;it.shiny=true;it.pearlType=Math.random()<.5?0:1;}else if(t===4){if(Math.random()<.5){it.type='jade';it.fn=jade1;}else{it.type='ruby';it.fn=ruby1;}it.r=5+Math.random()*5;it.shiny=true;}else if(t===5){it.type='gem';it.fn=diamond1;it.r=6+Math.random()*5;it.shiny=true;it.fire1=hslFire();it.fire2=hslFire();}}else{if(t===1){it.type='crystal';it.fn=crystalShard;it.r=3+Math.random()*4;}else if(t===2){it.type='marrow';it.fn=spiritMarrow;it.r=5+Math.random()*5;it.shiny=true;}else if(t===3){it.type='bloodJade';it.fn=bloodJade;it.r=5+Math.random()*4;it.shiny=true;}else if(t===4){it.type='soulCore';it.fn=soulCore;it.r=6+Math.random()*4;it.shiny=true;}else if(t===5){it.type='holy';it.fn=holyStone;it.r=6+Math.random()*5;it.shiny=true;}}items.push(it);}for(let i=0;i<18+t*5;i++)sparks.push({x:b.x+b.w/2+(Math.random()-.5)*100,y:b.y-8,vx:(Math.random()-.5)*6,vy:-Math.random()*7-2,r:1+Math.random()*2.5,life:.4+Math.random()*.8});}
+function doOpen(t){items.length=0;sparks.length=0;radiance.length=0;open=true;lidPhase='flying';lidFV=-9;lidRV=(Math.random()-.5)*3.5;glowA=1;lidFY=-cb().h*.28;lidFR=0;const b=cb(),chestTop=b.y+b.h*.12;if(t>=4){const hue=rewardSkin===0?40:rewardSkin===1?200:140;for(let i=0;i<30;i++){const a=-Math.PI/2+(Math.random()-.5)*.7;radiance.push({x:b.x+b.w/2+(Math.random()-.5)*b.w*.3,y:chestTop,vx:Math.cos(a)*(1+Math.random()*4),vy:-2-Math.random()*5,r:3+Math.random()*7,life:.6+Math.random()*1.2,hue:hue+Math.random()*25});}}const counts=[0,7,10,12,15,20];const n=counts[t]||10;for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*1.3;const it={x:b.x+b.w/2+(Math.random()-.5)*25,y:chestTop,vx:Math.cos(a)*(3+Math.random()*5),vy:Math.sin(a)*(3+Math.random()*5)-2.5,r:5+Math.random()*6,rt:Math.random()*6,rv:(Math.random()-.5)*8,life:2.5+Math.random()*2,g:.12,shiny:false};if(rewardSkin===0){if(t===1){it.type='trash';it.fn=trash0;}else if(t===2){it.type='coin';it.fn=coin0;it.color=[240,190,130];it.letter='¢';}else if(t===3){it.type='coin';it.fn=coin0;it.color=[210,215,230];it.letter='S';}else if(t===4){it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}else if(t===5){if(i<n*.35){it.type='gem';it.fn=gem0;it.hue=[200,300,30][i%3];it.r=5+Math.random()*5;it.shiny=true;}else{it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}}}else if(rewardSkin===1){if(t===1){it.type='stone';it.fn=stone1;it.r=3+Math.random()*4;}else if(t===2){it.type='agate';it.fn=agate1;it.r=5+Math.random()*5;}else if(t===3){it.type='pearl';it.fn=pearl1;it.r=5+Math.random()*5;it.shiny=true;it.pearlType=Math.random()<.5?0:1;}else if(t===4){if(Math.random()<.5){it.type='jade';it.fn=jade1;}else{it.type='ruby';it.fn=ruby1;}it.r=5+Math.random()*5;it.shiny=true;}else if(t===5){it.type='gem';it.fn=diamond1;it.r=6+Math.random()*5;it.shiny=true;it.fire1=hslFire();it.fire2=hslFire();}}else{if(t===1){it.type='crystal';it.fn=crystalShard;it.r=3+Math.random()*4;}else if(t===2){it.type='marrow';it.fn=spiritMarrow;it.r=5+Math.random()*5;it.shiny=true;}else if(t===3){it.type='bloodJade';it.fn=bloodJade;it.r=5+Math.random()*4;it.shiny=true;}else if(t===4){it.type='soulCore';it.fn=soulCore;it.r=6+Math.random()*4;it.shiny=true;}else if(t===5){it.type='holy';it.fn=holyStone;it.r=6+Math.random()*5;it.shiny=true;}}items.push(it);}for(let i=0;i<18+t*5;i++)sparks.push({x:b.x+b.w/2+(Math.random()-.5)*100,y:b.y-8,vx:(Math.random()-.5)*6,vy:-Math.random()*7-2,r:1+Math.random()*2.5,life:.4+Math.random()*.8});}
 function doClose(){if(!open)return;open=false;lidPhase='closing';lidCloseStart=lidFY;lidCloseTarget=-cb().h*.28;lidCloseProgress=0;lidCloseDuration=.5;}
 
 // ════════════════ 主循环 ════════════════
