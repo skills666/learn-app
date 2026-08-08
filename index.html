@@ -2101,9 +2101,16 @@ function applyTheme(name){
     });
   } else {
     document.body.style.backgroundImage='';
-    // 根据主题色生成 body 静态渐变，提供层次感
-    document.body.style.background = `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
-    // 清除 img-bg 的文字颜色覆盖
+    // 各主题不同的 body 静态渐变背景（只覆盖需要增强的主题，其余走默认）
+    const bgMap = {
+      gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
+      void:     `radial-gradient(1000px 600px at 50% 45%, #c084fc25 0%, transparent 55%), radial-gradient(800px 450px at 50% 48%, #a855f718 0%, transparent 50%), var(--bg)`,
+      shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
+      night:    `radial-gradient(1000px 500px at 75% 15%, rgba(40,50,90,.35) 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, rgba(20,50,15,.18) 0%, transparent 55%), var(--bg)`,
+      ziliang:  `radial-gradient(1200px 600px at 50% 25%, #b8b8d01f 0%, transparent 55%), radial-gradient(1000px 500px at 50% 65%, #8888b012 0%, transparent 55%), var(--bg)`,
+      zirong:   `radial-gradient(1400px 800px at 20% 10%, rgba(30,180,70,.15) 0%, transparent 50%), radial-gradient(1200px 700px at 85% 5%, rgba(200,40,50,.12) 0%, transparent 50%), radial-gradient(1000px 500px at 50% 80%, rgba(240,160,100,.12) 0%, transparent 55%), var(--bg)`,
+    };
+    document.body.style.background = bgMap[name] || `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
     if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
   }
   themeVars.textContent = cssVars + (FX[name]||'');
