@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="面试题">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230e1018' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='45'>📚</text></svg>">
 <link rel="manifest" href="manifest.json">
+
 <meta name="theme-color" content="#0e1018">
 <title>面试题学习台</title>
 <style>
@@ -22,15 +23,13 @@
     --shadow:0 8px 30px rgba(0,0,0,.45);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
+  html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg)}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(1200px 700px at 12% -8%, #1b2340 0%, transparent 55%),
-               radial-gradient(1000px 600px at 100% 0%, #241b3d 0%, transparent 50%),
-               var(--bg);
+    background:var(--bg);
     color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px;
   }
-  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden;isolation:isolate}
 
   /* ---------- Topbar (导航标签) ---------- */
   .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
@@ -57,7 +56,7 @@
   .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-  .content{flex:1;overflow-y:auto;padding:24px 28px 40px;max-width:1200px;margin:0 auto;width:100%;animation:fadeIn .2s ease}
+  .content{flex:1;overflow-y:scroll;padding:24px 28px 40px;max-width:1200px;margin:0 auto;width:100%;animation:fadeIn .2s ease}
   .content::-webkit-scrollbar{width:10px}
   .content::-webkit-scrollbar-thumb{background:#2a3050;border-radius:8px}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -249,7 +248,7 @@
   .mock-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .mock-card .ptag{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .mock-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:.2s}
+  .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
   .memory-card:hover{border-color:var(--accent2)}
   .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
@@ -302,7 +301,7 @@
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
-  .theme-popup{display:none;position:fixed;top:52px;right:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(5,1fr);gap:5px;max-width:340px}
+  .theme-popup{display:none;position:fixed;top:52px;right:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px}
   .theme-popup.show{display:grid;animation:scaleIn .15s ease}
   .theme-popup.hiding{animation:scaleOut .1s ease forwards}
   .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative}
@@ -363,7 +362,7 @@
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
-  .theme-popup{right:4px;max-width:300px;padding:8px;gap:4px;grid-template-columns:repeat(5,1fr)}
+  .theme-popup{right:4px;max-width:260px;padding:8px;gap:4px;grid-template-columns:repeat(4,1fr)}
   .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
     .ref-answer{font-size:13px;padding:10px 12px}
@@ -406,6 +405,10 @@
     <button class="btn ghost" id="dataBtn">⚙️ 设置</button>
     <button class="btn ghost" id="themeBtn" title="切换主题">🎨</button>
     <button class="btn ghost" id="skinBtn" title="皮肤">🎭</button>
+    <button class="btn ghost" id="chestBtn" title="手动开箱">📦</button>
+    <select id="chestTier" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:2px 4px;font-size:12px;cursor:pointer;align-self:center">
+      <option value="5">T5</option><option value="4">T4</option><option value="3">T3</option><option value="2">T2</option><option value="1">T1</option>
+    </select>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
   <div class="content" id="content"></div>
@@ -433,15 +436,16 @@
 <!-- 皮肤选择弹窗 -->
 <div class="theme-popup" id="skinPopup" style="width:260px">
   <div class="theme-sep" style="grid-column:1/-1">📦 宝箱皮肤</div>
-  <div class="theme-dot" data-skin-cat="chest" data-skin="default" style="background:linear-gradient(135deg,#986030,#D4B048)">默认</div>
-  <div class="theme-dot" data-skin-cat="chest" data-skin="ice" style="background:linear-gradient(135deg,#a8d8ea,#88ccff)">冰霜</div>
-  <div class="theme-dot" data-skin-cat="chest" data-skin="shadow" style="background:linear-gradient(135deg,#3a1a5e,#1a0a2e)">暗影</div>
-  <div class="theme-dot" data-skin-cat="chest" data-skin="gold" style="background:linear-gradient(135deg,#FFD700,#D4B048)">黄金</div>
-  <div class="theme-sep" style="grid-column:1/-1">💎 物品皮肤</div>
-  <div class="theme-dot" data-skin-cat="item" data-skin="default" style="background:linear-gradient(135deg,#FFD700,#C8C8D0)">默认</div>
-  <div class="theme-dot" data-skin-cat="item" data-skin="gems" style="background:linear-gradient(135deg,#ff69b4,#00ffff)">宝石</div>
-  <div class="theme-dot" data-skin-cat="item" data-skin="pixel" style="background:linear-gradient(135deg,#4a4,#0a0)">像素</div>
-  <div class="theme-dot" data-skin-cat="item" data-skin="candy" style="background:linear-gradient(135deg,#ff6b9d,#c44569)">糖果</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="0" style="background:linear-gradient(135deg,#D4B048,#6a2020)">鎏金蟠龙</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="1" style="background:linear-gradient(135deg,#a060e0,#100818)">暗影邪魔</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="2" style="background:linear-gradient(135deg,#80c860,#1a2a10)">青铜莲华</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="3" style="background:linear-gradient(135deg,#d84838,#180a0a)">血月修罗</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="4" style="background:linear-gradient(135deg,#80b8e0,#1a2030)">霜寒玄冰</div>
+  <div class="theme-dot" data-skin-cat="chest" data-skin="5" style="background:linear-gradient(135deg,#c080e0,#1a1028)">聚雷玄铁</div>
+  <div class="theme-sep" style="grid-column:1/-1">💎 奖励皮肤</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="0" style="background:linear-gradient(135deg,#FFD700,#D4B048)">金银财宝</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="1" style="background:linear-gradient(135deg,#ff69b4,#00e5ff)">珠宝奇珍</div>
+  <div class="theme-dot" data-skin-cat="item" data-skin="2" style="background:linear-gradient(135deg,#7c3aed,#06b6d4)">魂玉灵器</div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -742,13 +746,14 @@ async function checkStorageLimit(newDataSize){
 }
 function totalSeen(){ return Object.values(PROGRESS).filter(p=>p.practiced||p.seen).length; }
 function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).length; }
-// 通用模态框关闭（带过渡动画）
+// 通用模态框关闭（带过渡动画 + 超时兜底，防止 animationend 未触发导致 class 残留）
 function hideModal(el){
+  if(!el.classList.contains('show')) return;
   el.classList.add('hiding');
-  el.addEventListener('animationend', function h(){
-    el.classList.remove('show','hiding');
-    el.removeEventListener('animationend', h);
-  }, {once:true});
+  let done = false;
+  const cleanup = () => { if(done) return; done = true; el.classList.remove('show','hiding'); };
+  el.addEventListener('animationend', cleanup, {once:true});
+  setTimeout(cleanup, 300);
 }
 function confirmDialog(msg){ return new Promise(resolve=>{
   const ov=document.createElement('div');
@@ -1002,6 +1007,7 @@ function renderDocs(c){
 
 /* ---------- 浏览视图（含插入/删除题目） ---------- */
 function renderBrowse(c){
+  highlightQid = null; // 每次进入文档清掉残留的搜索跳转
   const d = docById(currentDocId);
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
   const seen=docSeen(d), tot=d.questions.length, dp=tot?Math.round(seen/tot*100):0;
@@ -1314,8 +1320,8 @@ function renderPractice(c){
       <div class="pcard">
         <div class="ptag">题目</div>
         <div class="ptitle">${esc(q.title)}</div>
-        ${revealed ? `<div class="panswer"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>`
-                 : `<div class="reveal-hint">点击「显示答案」查看解析</div>`}
+        <div class="panswer" id="pAnswerArea" style="${revealed?'':'display:none'}"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>
+      <div class="reveal-hint" id="pRevealHint" style="${revealed?'display:none':''}">点击「显示答案」查看解析</div>
       </div>
       <div class="pcontrols">
         <button class="btn" id="prevBtn">← 上一题</button>
@@ -1381,7 +1387,7 @@ function renderDone(c){
 }
 function toggleMasterP(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); } saveProgress();
+  p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); window.openChest&&window.openChest(5); } saveProgress();
   renderAll();
 }
 // 刷题里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
@@ -1396,7 +1402,14 @@ function toggleRevealP(qid){
   if(!practice.revealed) practice.revealed = new Set();
   if(practice.revealed.has(qid)) practice.revealed.delete(qid);
   else practice.revealed.add(qid);
-  renderAll();
+  // 局部切换 DOM，不触发整页动画
+  const revealed = practice.revealed.has(qid);
+  const answerEl = $('#pAnswerArea');
+  const hintEl = $('#pRevealHint');
+  const btnEl = $('#revealBtn');
+  if(answerEl) answerEl.style.display = revealed ? '' : 'none';
+  if(hintEl) hintEl.style.display = revealed ? 'none' : '';
+  if(btnEl){ btnEl.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
 }
 
 /* =========================================================
@@ -1419,7 +1432,7 @@ function renderMock(c){
         <div class="ptitle">${esc(q.title)}</div>
         <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答（可后交给 AI 阅卷）</label>
         <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…（作答完成后点击「显示答案」核对）">${esc(a.answer)}</textarea>
-        ${mock.revealed ? `<div class="ref-answer"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>` : ''}
+        <div class="ref-answer" id="mockRefAnswer" style="${mock.revealed?'':'display:none'}"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>
       </div>
       <div class="grade-row">
         <button class="grade-btn g-good ${a.selfRate==='good'?'sel':''}" data-rate="good">✅ 熟练</button>
@@ -1444,7 +1457,11 @@ function renderMock(c){
   c.querySelectorAll('.grade-btn').forEach(b=>b.onclick=()=>mockGrade(qid, b.dataset.rate));
   $('#mockReveal').onclick = () => {
     mock.revealed = !mock.revealed;
-    renderAll();
+    // 局部切换 DOM，不触发整页动画
+    const refEl = $('#mockRefAnswer');
+    const btnEl = $('#mockReveal');
+    if(refEl) refEl.style.display = mock.revealed ? '' : 'none';
+    if(btnEl) btnEl.textContent = mock.revealed ? '🙈 隐藏答案' : '👁 显示答案';
   };
   $('#mockAIBtn').onclick = () => { askAI(qid); };
   $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
@@ -1511,7 +1528,9 @@ function mockGrade(qid, rate){
   a.selfRate = rate;
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.selfRate = rate; p.lastPracticed = Date.now();
-  if(rate==='good'){ p.seen = true; p.mastered = true; }
+  if(rate==='good'){ p.seen = true; p.mastered = true; window.openChest&&window.openChest(5); }
+  else if(rate==='mid'){ window.openChest&&window.openChest(3); }
+  else{ window.openChest&&window.openChest(1); }
   saveProgress();
   renderAll();
 }
@@ -1602,16 +1621,16 @@ function renderMemory(c){
       <div class="memory-card">
         <div class="ptag">题目</div>
         <div class="ptitle">${esc(q.title)}</div>
-        ${memory.flipped ? `<div class="memory-answer"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>`
-          : `<div class="reveal-hint">👆 点击卡片翻转查看答案，也可用键盘 Enter / 空格</div>`}
-        <div class="grade-row" style="${memory.flipped?'':'display:none'}">
+        <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>
+        <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片翻转查看答案，也可用键盘 Enter / 空格</div>
+        <div class="grade-row" id="memGradeRow" style="${memory.flipped?'':'display:none'}">
           <div class="grade-btn" data-rate="1" style="border-color:var(--bad);color:var(--bad)">😰 完全忘了</div>
           <div class="grade-btn" data-rate="2" style="border-color:#e09040;color:#e09040">🤔 记得一点</div>
           <div class="grade-btn" data-rate="3" style="border-color:var(--warn);color:var(--warn)">😐 差不多</div>
           <div class="grade-btn" data-rate="4" style="border-color:var(--accent);color:var(--accent)">😊 基本记住</div>
           <div class="grade-btn" data-rate="5" style="border-color:var(--good);color:var(--good);background:rgba(79,208,138,.08)">😎 倒背如流</div>
         </div>
-        <div class="pcontrols" style="margin-top:14px;${memory.flipped?'':'display:none'}">
+        <div class="pcontrols" id="memControls" style="margin-top:14px;${memory.flipped?'':'display:none'}">
           <button class="btn sm" id="flashSkip">⏭ 跳过</button>
           ${memory.index>0 ? `<button class="btn sm" id="flashUndo">↩ 撤销</button>` : ''}
         </div>
@@ -1619,10 +1638,20 @@ function renderMemory(c){
       <div class="pstatus">键盘快捷键：Enter / 空格 翻转卡片，数字键 1-5 评分</div>
     </div>
   `;
+  // 翻转卡片：局部更新 DOM，不触发整页动画
   const card = c.querySelector('.memory-card');
+  const memAnswer = $('#memAnswer');
+  const memHint = $('#memHint');
+  const memGradeRow = $('#memGradeRow');
+  const memControls = $('#memControls');
   card.onclick = (e) => {
     if(e.target.closest('.grade-btn,.btn,button')) return;
-    memory.flipped = !memory.flipped; renderAll();
+    memory.flipped = !memory.flipped;
+    const show = memory.flipped;
+    memAnswer.style.display = show ? '' : 'none';
+    memHint.style.display = show ? 'none' : '';
+    memGradeRow.style.display = show ? '' : 'none';
+    memControls.style.display = show ? '' : 'none';
   };
   c.querySelectorAll('.grade-btn[data-rate]').forEach(r=>r.onclick=(e)=>{
     e.stopPropagation();
@@ -1643,6 +1672,8 @@ function renderMemory(c){
     saveProgress();
     markDirty();
     memory.index++; memory.flipped=false;
+    const chestTier = rate>=5 ? 5 : rate>=4 ? 4 : rate>=3 ? 3 : rate>=2 ? 2 : 1;
+    window.openChest&&window.openChest(chestTier);
     renderAll();
   });
   const skipBtn = $('#flashSkip'); if(skipBtn) skipBtn.onclick = (e) => { e.stopPropagation();
@@ -1659,7 +1690,7 @@ function renderMemory(c){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
       const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = $('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
-      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; renderAll(); }
+      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const ma=$('#memAnswer'),mh=$('#memHint'),mr=$('#memGradeRow'),mc=$('#memControls'); const s=memory.flipped; if(ma)ma.style.display=s?'':'none'; if(mh)mh.style.display=s?'none':''; if(mr)mr.style.display=s?'':'none'; if(mc)mc.style.display=s?'':'none'; }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
@@ -1996,8 +2027,7 @@ function renderSearch(c){
 /* =========================================================
    顶层渲染
    ========================================================= */
-function renderAll(){ sessionStorage.setItem('lastView', view); renderStatsBar(); renderContent(); // 触发过渡动画：移除再添加 content
-  const c=$('.content'); if(c){ c.style.animation='none'; c.offsetHeight; c.style.animation=''; } }
+function renderAll(){ sessionStorage.setItem('lastView', view); renderStatsBar(); renderContent(); const c=$('.content'); if(c){ c.scrollTop=0; c.style.animation='none'; c.offsetHeight; c.style.animation=''; } }
 
 /* =========================================================
    事件绑定
@@ -2054,7 +2084,7 @@ function applyTheme(name){
     ripple:`@keyframes rRip{0%{transform:translate(-50%,-50%) scale(0);opacity:.45}100%{transform:translate(-50%,-50%) scale(4);opacity:0}}body::before{content:'';position:fixed;top:35%;left:30%;pointer-events:none;z-index:0;width:180px;height:180px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite}body::after{content:'';position:fixed;top:60%;left:65%;pointer-events:none;z-index:0;width:140px;height:140px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 1.5s}.app::before{content:'';position:fixed;top:25%;left:68%;pointer-events:none;z-index:0;width:160px;height:160px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite 3s}.app::after{content:'';position:fixed;top:68%;left:28%;pointer-events:none;z-index:0;width:120px;height:120px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 4s}`,
     particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
     ziliang:``,
-    songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1.5%{opacity:1}8%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}14%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}20%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1.5%{opacity:1}7%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}12%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}18%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1.5%{opacity:.9}9%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}15%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}22%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1.5%{opacity:.85}8%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}13%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}20%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 8s linear infinite 1.5s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 10s linear infinite 5s}.content::before{content:'';position:fixed;top:2%;left:95%;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot1 7s linear infinite}.content::after{content:'';position:fixed;top:10%;left:95%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot2 9s linear infinite 2.5s}`,
+    songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
     shuangren:``,
     night:``,
     zirong:``,
@@ -2071,6 +2101,8 @@ function applyTheme(name){
     });
   } else {
     document.body.style.backgroundImage='';
+    // 根据主题色生成 body 静态渐变，提供层次感
+    document.body.style.background = `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
     // 清除 img-bg 的文字颜色覆盖
     if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
   }
@@ -2090,36 +2122,49 @@ function applyTheme(name){
     }
   }, 50);
 }
-$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
-$('#skinBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
+let _popupIgnoreClick = false;
+$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); _popupIgnoreClick=true; $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
+$('#skinBtn').onclick = (e)=>{ e.stopPropagation(); _popupIgnoreClick=true; $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
+$('#chestBtn').onclick = (e)=>{
+  e.stopPropagation();
+  const tier = +($('#chestTier').value||5);
+  if(window.openChest) window.openChest(tier);
+};
 document.querySelectorAll('.theme-dot').forEach(d=>{
-  if(d.dataset.theme) d.onclick=()=>{applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
+  if(d.dataset.theme) d.onclick=()=>{_popupIgnoreClick=true;applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
   else if(d.dataset.skinCat){
     d.onclick=(e)=>{
-      e.stopPropagation();
-      // 高亮选中
+      e.stopPropagation(); _popupIgnoreClick=true;
       const cat=d.dataset.skinCat;
-      document.querySelectorAll(`.theme-dot[data-skin-cat="${cat}"]`).forEach(b=>b.style.outline='');
-      d.style.outline='2px solid var(--accent)';
-      // 保存皮肤
+      const skin=+d.dataset.skin;
+      // 同步到 chest.js
+      if(cat==='chest'&&window.setChestSkin)window.setChestSkin(skin);
+      else if(cat==='item'&&window.setRewardSkin)window.setRewardSkin(skin);
+      // 也保留 localStorage 持久化（chest.js 内部也会写，双重保险）
       const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
-      skins[cat]=d.dataset.skin;
+      skins[cat]=String(skin);
       localStorage.setItem('learnAppSkins', JSON.stringify(skins));
     };
   }
 });
-document.addEventListener('mousedown',(e)=>{
-  if(e.target.closest('#themePopup,#skinPopup,#themeBtn,#skinBtn')) return;
+document.addEventListener('click',(e)=>{
+  if(_popupIgnoreClick){ _popupIgnoreClick=false; return; }
+  if(e.target.closest('#themePopup,#skinPopup')) return;
   hideModal($('#themePopup')); hideModal($('#skinPopup'));
 });
 
-// 初始化皮肤高亮
+// 初始化皮肤高亮 & 同步到 chest.js
 (function(){
   const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
   Object.entries(skins).forEach(([cat,skin])=>{
     const el = document.querySelector(`.theme-dot[data-skin-cat="${cat}"][data-skin="${skin}"]`);
     if(el) el.style.outline='2px solid var(--accent)';
   });
+  // 延迟同步到 chest.js（等它加载完）
+  setTimeout(()=>{
+    if(skins.chest!==undefined&&window.setChestSkin)window.setChestSkin(+skins.chest);
+    if(skins.item!==undefined&&window.setRewardSkin)window.setRewardSkin(+skins.item);
+  },200);
 })();
 
 // ===== IndexedDB 图片存储 =====
@@ -2276,8 +2321,8 @@ function toggleSetPanel(head){
   if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='flex';}
 }
 // 数据弹窗
-$('#closeModalX').onclick = () => hideModal($('#dataModal'));
-$('#dataModal').onclick = e => { if(e.target.id==='dataModal') hideModal($('#dataModal')); };
+$('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
+$('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
 
 // AI API 配置
 const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'}};
@@ -2444,7 +2489,7 @@ $('#exportBlankBtn').onclick = exportBlankApp;
 function loadGiteeCfg(){const t=localStorage.getItem('giteeToken')||'',g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
 function saveGiteeCfg(){localStorage.setItem('giteeToken',$('#giteeToken').value.trim());localStorage.setItem('giteeGistId',$('#giteeGistId').value.trim());}
 $('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
-$('#dataBtn').onclick = async () => { $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
+$('#dataBtn').onclick = (e) => { e.stopPropagation(); _popupIgnoreClick=true; $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
 async function updateStorageUsage(){
   const el = $('#storageUsage'); if(!el) return;
   try{
@@ -2998,5 +3043,6 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   })();
 }
 </script>
+<script src="chest.js"></script>
 </body>
 </html>
