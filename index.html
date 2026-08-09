@@ -57,7 +57,7 @@
   .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-  .content{flex:1;overflow-y:scroll;padding:24px 28px 40px;max-width:1200px;margin:0 auto;width:100%}
+  .content{flex:1;overflow-y:scroll;padding:24px 28px calc(40px + env(safe-area-inset-bottom, 0px));max-width:1200px;margin:0 auto;width:100%}
   .content.in{animation:viewIn .22s cubic-bezier(.22,.61,.36,1)}
   .content.out{animation:viewOut .15s ease forwards}
   .content::-webkit-scrollbar{width:10px}
@@ -367,7 +367,7 @@
     .btn{font-size:11px;padding:5px 8px}
     .btn.sm{padding:3px 6px;font-size:10px}
     .stats-bar{font-size:10px;gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
-    .content{padding:14px 12px 30px;max-width:100%}
+    .content{padding:14px 12px calc(30px + env(safe-area-inset-bottom, 60px));max-width:100%}
     .ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}
     .ov-card{padding:12px 8px}
     .ov-card .n{font-size:22px}
@@ -711,6 +711,10 @@ let grill = { resume:'', messages:[], started:false, loading:false, mode:'', end
 // 评分5→EF+0.1, 4→EF不变, 3→EF-0.15, 2→EF-0.3, 1→EF-0.2(重置间隔)
 const SM2_INIT_EF = 2.5, SM2_MIN_EF = 1.3, SM2_MAX_INTERVAL = 7;
 function sm2Next(ef, interval, rate) {
+  // 参数保护：防止 NaN/undefined 导致 toFixed 崩溃
+  if(typeof ef !== 'number' || isNaN(ef)) ef = SM2_INIT_EF;
+  if(typeof interval !== 'number' || isNaN(interval)) interval = 1;
+  if(typeof rate !== 'number' || isNaN(rate)) rate = 3;
   if (rate >= 5) { ef += 0.1; interval = Math.round((interval || 1) * ef); }
   else if (rate >= 4) { interval = Math.round((interval || 1) * ef); }
   else if (rate >= 3) { ef -= 0.15; interval = Math.round((interval || 1) * ef); }
@@ -740,8 +744,18 @@ function buildIndex(){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function md2html(s){
   let h = esc(s);
+  // 标题
+  h = h.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  h = h.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  // 加粗和行内代码
   h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
+  // 无序列表
+  h = h.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+  // 有序列表
+  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // 换行
   h = h.replace(/\n/g, '<br>');
   return h;
 }
@@ -1130,8 +1144,8 @@ function renderBrowse(c){
     }).join('');
   }
   c.innerHTML = html;
-  c.querySelector('[data-prac]') && (c.querySelector('[data-prac]').onclick=()=>startPractice(d.id));
-  c.querySelector('#addQBtn') && (c.querySelector('#addQBtn').onclick=()=>openAddModal(d.id));
+  const pracBtn = c.querySelector('[data-prac]'); if(pracBtn) pracBtn.onclick = () => startPractice(d.id);
+  const addBtn = c.querySelector('#addQBtn'); if(addBtn) addBtn.onclick = () => openAddModal(d.id);
   const delDir = c.querySelector('[data-deldir]'); if(delDir) delDir.onclick = () => deleteDocument(d.id);
   c.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=e=>{
     if(e.target.closest('[data-master]')||e.target.closest('[data-eye]')||e.target.closest('[data-del]')||e.target.closest('[data-edit]')) return;
@@ -1501,7 +1515,7 @@ function toggleRevealP(qid){
 function renderMock(c){
   if(mock.done) return renderMockResult(c);
   if(!mock.queue.length) return renderMockConfig(c);
-  if(!mock.queue.length || mock.index>=mock.queue.length){ view=Views.OVERVIEW; return renderContent(); }
+  if(mock.index>=mock.queue.length){ view=Views.OVERVIEW; return renderContent(); }
   const qid = mock.queue[mock.index];
   const q = questionById(qid);
   const idx = mock.index+1, tot = mock.queue.length;
@@ -1786,8 +1800,8 @@ function renderMemory(c){
   if(!window._memoryKeyHandler){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
-      const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = $('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
-      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const ma=$('#memAnswer'),mh=$('#memHint'),mr=$('#memGradeRow'),mc=$('#memControls'); const s=memory.flipped; if(ma)ma.style.display=s?'':'none'; if(mh)mh.style.display=s?'none':''; if(mr)mr.style.display=s?'':'none'; if(mc)mc.style.display=s?'':'none'; }
+      const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = document.querySelector('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
+      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mh=document.getElementById('memHint'); if(mh)mh.style.display=s?'none':''; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
@@ -2931,7 +2945,7 @@ function saveGiteeCfg(){localStorage.setItem('giteeToken',_safe.encode($('#gitee
   // 保存后立即迁移：如果 Token 还是明文，下次读取会自动识别
 }
 $('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
-$('#dataBtn').onclick = (e) => { e.stopPropagation(); _popupIgnoreClick=true; $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
+$('#dataBtn').onclick = (e) => { e.stopPropagation(); $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
 async function updateStorageUsage(){
   const el = $('#storageUsage'); if(!el) return;
   try{
@@ -2940,52 +2954,54 @@ async function updateStorageUsage(){
     el.textContent = `已用 ${formatSize(size)} / 500MB（${pct}%）`;
   }catch(_){ el.textContent = '无法获取存储用量'; }
 }
-async function cloudPush(){
-  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=$('#giteeGistId').value.trim();
-  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
-  $('#cloudStatus').textContent='推送中…';
+// 公共推送函数，cloudPush 和 autoPush 共用
+async function doPushToGist(token, gistId, onSuccess, onError){
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
   window._pushContentStr = contentStr;
-  console.log('[push] 待推送数据:', {docs:DOCS.length, qTotal:DOCS.reduce((s,d)=>s+d.questions.length,0), progressKeys:Object.keys(PROGRESS).length, size:contentStr.length, updatedAt:data.updatedAt});
   try{
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`,{
       method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}})
     });
-    console.log('[push] 响应:', resp.status, resp.statusText);
-    const respBody = await resp.text();
-    console.log('[push] 响应体:', respBody.substring(0, 500));
     if(resp.ok){
       _autoSyncDirty=false;
       localStorage.setItem('lastPushTime', data.updatedAt || '');
-      try{ const rj=JSON.parse(respBody); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} console.log('[push] 数据 updatedAt:', data.updatedAt, '服务器 updated_at:', rj.updated_at); }catch(_){}
+      try{ const rj=await resp.json(); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
+      if(onSuccess) onSuccess(data, contentStr, token, gistId);
+      return true;
+    } else {
+      let errMsg = '推送失败';
+      try{ const e=JSON.parse(await resp.text()); errMsg=e.message||errMsg; }catch(_){}
+      if(onError) onError(errMsg);
+      return false;
+    }
+  }catch(e){ if(onError) onError('网络错误'); return false; }
+}
+
+async function cloudPush(){
+  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=$('#giteeGistId').value.trim();
+  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
+  $('#cloudStatus').textContent='推送中…';
+  await doPushToGist(token, gistId,
+    (data, contentStr, t, gid) => {
       $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
-      // 推送后 2 秒验证：重新 GET 看云端的 updatedAt 是否已更新
+      // 推送后 2 秒验证
       setTimeout(async()=>{
         try{
-          const vResp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+          const vResp=await fetch(`https://gitee.com/api/v5/gists/${gid}?access_token=${encodeURIComponent(t)}`);
           const vGist=await vResp.json();
-          console.log('[push验证] 云端 updated_at:', vGist.updated_at, '文件数:', Object.keys(vGist.files||{}).length);
           const vFile=vGist.files['learn-data.json'];
           if(vFile&&vFile.content){
-            const same = vFile.content === window._pushContentStr;
-            console.log('[push验证] 内容一致:', same, '云端大小:', vFile.content.length, '本地大小:', (window._pushContentStr||'').length);
-            if(!same){
-              console.warn('[push验证] ⚠️ 推送内容与云端不一致！可能 Token 无写入权限');
+            if(vFile.content !== window._pushContentStr){
               $('#cloudStatus').textContent='⚠️ 推送可能失败：Token 无写入权限或 Gist 不属于你';
             }
           }
         }catch(_){}
       }, 2000);
-    }
-    else{
-      let errMsg = '推送失败';
-      try{ const e=JSON.parse(respBody); errMsg=e.message||errMsg; }catch(_){}
-      console.error('[push] 失败:', errMsg, respBody);
-      $('#cloudStatus').textContent='❌ '+errMsg;
-    }
-  }catch(e){$('#cloudStatus').textContent='❌ 网络错误';console.error('[push] 异常:', e);}
+    },
+    (errMsg) => { $('#cloudStatus').textContent='❌ '+errMsg; }
+  );
 }
 async function cloudPull(){
   console.log('[pull] 按钮被点击');
@@ -3037,21 +3053,10 @@ async function autoPush(){
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
   const gistId = $('#giteeGistId').value.trim();
   if(!token || !gistId || !_autoSyncDirty) return;
-  // 检查是否在线
   if(!navigator.onLine) return;
-  const data = {documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
-  try{
-    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`,{
-      method:'PATCH',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:JSON.stringify(data)}}})
-    });
-    if(resp.ok){
-      _autoSyncDirty = false;
-      localStorage.setItem('lastPushTime', data.updatedAt || '');
-      try{ const rj=await resp.json(); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
-      const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString();
-    }
-  }catch(_){}
+  await doPushToGist(token, gistId,
+    () => { const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString(); }
+  );
 }
 function startAutoSyncTimer(){
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
@@ -3688,6 +3693,7 @@ function drawGold(ctx,W,H){
 // ── void/晨光: 光线划动 + 浮尘 ──
 function drawVoid(ctx,W,H){
   const t=_uTime;
+  ctx.save();
   ctx.fillStyle='rgba(248,244,238,0.06)'; ctx.fillRect(0,0,W,H);
   // 浮尘：大号极淡暖斑
   for(let p of _uParticles){
@@ -3719,7 +3725,7 @@ function drawVoid(ctx,W,H){
     ctx.globalAlpha=alpha*0.25;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2); ctx.fill();
   }
-  ctx.globalAlpha=1;
+  ctx.restore();
 }
 function drawZiliang(ctx,W,H){
   const bgGrad=ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
