@@ -500,7 +500,7 @@
         <div class="set-head" onclick="toggleSetPanel(this)">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
         <div class="set-body" style="display:none">
           <div class="set-hint">以下操作不可撤销，请确认后再执行。</div>
-          <div class="set-btns"><button class="btn danger" id="resetBtn">🗑️ 仅清除学习进度</button> <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button> <button class="btn" id="exportBlankBtn">📦 导出空白应用</button></div>
+          <div class="set-btns"><button class="btn danger" id="resetBtn">🗑️ 仅清除学习进度</button> <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button></div>
         </div>
       </div>
     </div>
@@ -700,6 +700,8 @@ const $ = s => document.querySelector(s);
 const content = () => $('#content');
 
 /* ---------- 索引：消除 O(n) 遍历 ---------- */
+// CSS.escape polyfill for older browsers
+if(!CSS.escape){CSS.escape=function(v){v=String(v);var l=v.length;var r='';for(var i=0;i<l;i++){var c=v.charCodeAt(i);if(c===0){r+='\uFFFD'}else if((c>=0x0001&&c<=0x001f)||c===0x007f||(c>=0x0030&&c<=0x0039&&(i===0||(i===1&&v.charCodeAt(0)===0x002d)))){r+='\\'+c.toString(16)+' '}else if(c>=0x0080||c===0x002d||c===0x005f||(c>=0x0030&&c<=0x0039)||(c>=0x0041&&c<=0x005a)||(c>=0x0061&&c<=0x007a)){r+=v[i]}else{r+='\\'+v[i]}}return r};}
 let QINDEX = new Map();   // qid -> question
 let DINDEX = new Map();   // docId -> doc
 let QDOC = new Map();     // qid -> docId（反向查文档）
@@ -727,8 +729,8 @@ function renderAIBlock(qid){
 }
 function docById(id){ return DINDEX.get(id); }
 function questionById(qid){ return QINDEX.get(qid); }
-function docSeen(d){ return d.questions.filter(q => { const p=PROGRESS[q.id]; return p && (p.practiced || p.seen); }).length; }
-function docMastered(d){ return d.questions.filter(q => PROGRESS[q.id] && PROGRESS[q.id].mastered).length; }
+function docSeen(d){ return (d.questions||[]).filter(q => { const p=PROGRESS[q.id]; return p && (p.practiced || p.seen); }).length; }
+function docMastered(d){ return (d.questions||[]).filter(q => PROGRESS[q.id] && PROGRESS[q.id].mastered).length; }
 function docClears(id){ return CLEARS[id] || 0; }
 function totalQuestions(){ return DOCS.reduce((a,d)=>a+d.questions.length,0); }
 // ===== 存储容量限制（500MB）=====
@@ -822,7 +824,7 @@ function confirmDialog(msg){ return new Promise(resolve=>{
   noBtn.onclick=()=>{ov.remove();resolve(false)};
   ov.onclick=e=>{if(e.target===ov){ov.remove();resolve(false)}};
 });}
-function totalClears(){ return Object.values(CLEARS).reduce((a,b)=>a+(b||0),0); }
+function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
 function toast(msg){
@@ -1198,7 +1200,9 @@ function openEditModal(docId, qid){
   $('#editModal').dataset.docid = docId;
   $('#editModal').dataset.qid = qid;
   $('#editDocName').textContent = d.title;
+  $('#eqTitle').disabled = false;
   $('#eqTitle').value = q.title || '';
+  $('#eqTags').disabled = false;
   $('#eqAnswer').value = q.answer || '';
   $('#eqTags').value = (q.tags||[]).join(', ');
   $('#editModal').classList.add('show');
@@ -1639,11 +1643,13 @@ function buildMemoryQueue(){
   DOCS.forEach(d=>d.questions.forEach((q,i)=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
-      if(!p.lastPracticed) return;
-      const nextDate=new Date(p.lastPracticed);nextDate.setHours(0,0,0,0);
-      const masteredDays=Math.floor((today0-nextDate.getTime())/86400000);
-      if(masteredDays<SM2_MAX_INTERVAL) return;  // 掌握后7天内不复习
-      queue.push({q,d,level:-1,overdue:masteredDays-SM2_MAX_INTERVAL,mastered:true,docOrder:i});
+      // 已掌握：用 srNext 判断是否到期（和普通题一致），但最小间隔 7 天
+      if(!p.srNext) return;  // 无复习计划，跳过
+      const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
+      const effectiveNext = Math.max(p.srNext, minNext);
+      if(now < effectiveNext) return;  // 未到期
+      const masteredDays=Math.floor((today0 - effectiveNext)/86400000);
+      queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,docOrder:i});
       return;
     }
     const level=p.srLevel||0;
@@ -1777,7 +1783,7 @@ function renderGrill(c){
       </div>
     </div>`;
   const chat = $('#grillChat');
-  if(chat) chat.scrollTop = chat.scrollHeight;
+  if(chat) chat.scrollTo({top: chat.scrollHeight, behavior: 'smooth'});
   const input = $('#grillInput');
   const send = () => {
     const text = input.value.trim(); if(!text || grill.loading) return;
@@ -1927,8 +1933,10 @@ function memoryDueCount(){
   DOCS.forEach(d=>d.questions.forEach(q=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
-      const nextDate=new Date(p.lastPracticed||0);nextDate.setHours(0,0,0,0);
-      if(Math.floor((today0-nextDate.getTime())/86400000)>=SM2_MAX_INTERVAL) cnt++;
+      if(!p.srNext) return;
+      const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
+      const effectiveNext = Math.max(p.srNext, minNext);
+      if(now >= effectiveNext) cnt++;
     } else {
       if(!p.srNext||now>=p.srNext) cnt++;
     }
@@ -2605,21 +2613,7 @@ async function clearAllDocs(){
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
   view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
-function exportBlankApp(){
-  const S='<scr'+'ipt>'; const E='</scr'+'ipt>';
-  let html=document.documentElement.outerHTML;
-  const blankSeed={version:1,source:'',blank:true,documents:[]};
-  const block=S+'\nwindow.SEED='+JSON.stringify(blankSeed)+';\n'+E;
-  const mi=html.indexOf('window.SEED');
-  const s=html.lastIndexOf(S,mi); const e=html.indexOf(E,mi);
-  if(s===-1||e===-1){ toast('导出失败'); return; }
-  html=html.slice(0,s)+block+html.slice(e+E.length);
-  const blob=new Blob([html],{type:'text/html'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='learn-app-blank.html';a.click();
-  URL.revokeObjectURL(url);hideModal($('#dataModal')); toast('已导出空白应用');
-}
 $('#clearAllBtn').onclick = clearAllDocs;
-$('#exportBlankBtn').onclick = exportBlankApp;
 
 // Gitee 云同步
 function loadGiteeCfg(){const t=_safe.decode(localStorage.getItem('giteeToken')||''),g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
@@ -2654,8 +2648,8 @@ async function cloudPush(){
     console.log('[push] 响应体:', respBody.substring(0, 500));
     if(resp.ok){
       _autoSyncDirty=false;
-      localStorage.setItem('lastPushTime', payload.updatedAt || '');
-      try{ const rj=JSON.parse(respBody); const rt=payload.updatedAt?new Date(payload.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} console.log('[push] 数据 updatedAt:', payload.updatedAt, '服务器 updated_at:', rj.updated_at); }catch(_){}
+      localStorage.setItem('lastPushTime', data.updatedAt || '');
+      try{ const rj=JSON.parse(respBody); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} console.log('[push] 数据 updatedAt:', data.updatedAt, '服务器 updated_at:', rj.updated_at); }catch(_){}
       $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
       // 推送后 2 秒验证：重新 GET 看云端的 updatedAt 是否已更新
       setTimeout(async()=>{
@@ -3004,7 +2998,9 @@ function initThemeParticles(theme){
   }
   if(theme==='zirong'){
     _uParticles = [];
-    for(let i=0;i<500;i++){
+    const isZirongMobile = W < 768;
+    const zirongCount = isZirongMobile ? 200 : 500;
+    for(let i=0;i<zirongCount;i++){
       const green=Math.random()<0.25;
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
