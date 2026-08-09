@@ -2013,9 +2013,11 @@ async function gradeInterview(){
   for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]);const a=mock.answers[mock.queue[i]]||{};
     p+=`## 第${i+1}题\n**题目：** ${q.title}\n**我的回答：** ${a.answer||'(未填)'}\n**自评：** ${rm[a.selfRate]||'无'}\n\n`; }
   const r=await callAI([{role:'system',content:'你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。'},{role:'user',content:p}],(full)=>{
-    aiGrading='<div class="ai-review">'+formatAI(full)+'</div>'; renderAll(); });
+    aiGrading='<div class="ai-review">'+formatAI(full)+'</div>';
+    const el=$('.ai-grading');if(el)el.innerHTML=aiGrading;
+  });
   aiGradingLoading=false; if(r) aiGrading='<div class="ai-review">'+formatAI(r)+'</div>';
-  renderAll();
+  const el=$('.ai-grading');if(el){el.innerHTML=aiGrading||'';}else{renderAll();}
 }
 async function askAI(qid, mode){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
