@@ -3740,11 +3740,11 @@ function drawZiliang(ctx,W,H){
   ctx.fillStyle=bg2;ctx.fillRect(0,0,W,H);
   for(let d of _uParticles){
     d.y+=d.speed;
-    if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.x=Math.random()*W;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;d.hue=210+Math.random()*30;}
+    if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.x=Math.random()*W;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;d.hue=190+Math.random()*70;}
     const hue=d.hue||220;
-    ctx.fillStyle=`hsla(${hue},15%,88%,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=`hsla(${hue},25%,88%,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
     const grad=ctx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
-    grad.addColorStop(0,`hsla(${hue},15%,85%,0)`);grad.addColorStop(0.6,`hsla(${hue},12%,82%,${d.alpha*0.5})`);grad.addColorStop(1,`hsla(${hue},10%,88%,${d.alpha*1.8})`);
+    grad.addColorStop(0,`hsla(${hue},20%,85%,0)`);grad.addColorStop(0.6,`hsla(${hue},18%,82%,${d.alpha*0.5})`);grad.addColorStop(1,`hsla(${hue},15%,88%,${d.alpha*1.8})`);
     ctx.strokeStyle=grad;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(d.x,d.y-d.len);ctx.lineTo(d.x,d.y);ctx.stroke();
   }
 }
