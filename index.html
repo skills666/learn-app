@@ -3740,7 +3740,6 @@ function drawZiliang(ctx,W,H){
   ctx.fillStyle=bg2;ctx.fillRect(0,0,W,H);
   for(let d of _uParticles){
     d.y+=d.speed;
-    d.x+=Math.sin(t*0.6+d.x*0.015)*0.25;
     if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.x=Math.random()*W;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;d.hue=210+Math.random()*30;}
     const hue=d.hue||220;
     ctx.fillStyle=`hsla(${hue},15%,88%,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
