@@ -1792,9 +1792,9 @@ function renderGrill(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pmeta"><span>🔥 ${grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战'}</span><span>${grill.messages.length} 轮对话</span></div>
-      <div class="grill-chat" id="grillChat">${grill.messages.map(m=>`
-        <div class="grill-msg ${m.role}">${md2html(m.content)}</div>
-      `).join('')}${grill.loading?'<div class="grill-loading">专家思考中…</div>':''}</div>
+      <div class="grill-chat" id="grillChat">${grill.messages.map((m,i)=>`
+        <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
+      `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}</div>
       <div class="grill-input-row">
         <input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}>
         <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
@@ -1950,18 +1950,18 @@ async function doGrillChat(){
 候选人简历：
 ${grill.resume}`,
 
-    theory: `你是资深面试官，正在进行八股文扫荡。候选人大约${years}年经验（${lv}）。${grill.resume?'根据候选人简历中的技术栈，针对性地出经典面试题。':''}
+    theory: `你是资深面试官，正在进行八股文扫荡。${grill.resume?`候选人大约${years}年经验（${lv}），根据简历中的技术栈针对性地出题。`:`没有候选人简历，随机从全方向出题。`}
 
-难度指南：${DIFFICULTY[lv]}
+${grill.resume?`难度指南：${DIFFICULTY[lv]}`:'难度：随机出题，不分级。'}
 
 规则：
-1. 每次一道经典面试题${grill.resume?'，优先围绕候选人简历中提到的技术栈':'，方向随机切换'}
-2. 难度严格匹配${lv}水平
-3. 如果候选人答错或答不上来，直接嘲讽"这都不会？""基础不扎实啊"
-4. 答得好就换一道更难的，不要表扬
-5. 涉及方向：数据结构、算法、网络、操作系统、数据库、分布式、语言特性${grill.resume?'，重点问简历中的技术方向':''}
-6. 如果候选人骂脏话，直接骂回去
-7. Markdown格式，题目加粗，3-5句话
+1. 每次一道经典面试题${grill.resume?'，围绕候选人简历中的技术栈':'，随机选择方向（数据结构、算法、网络、OS、DB、分布式、语言特性）'}
+${grill.resume?'2. 难度匹配'+lv+'水平':''}${grill.resume?`\n3. 重点问简历中的技术方向`:''}
+${grill.resume?'':`\n2. 不要假装知道候选人的简历，不要说"看你简历上写了XXX"，直接出题就好`}
+${grill.resume?'4':'3'}. 答错或答不上来，直接嘲讽"这都不会？""基础不扎实啊"
+${grill.resume?'5':'4'}. 答得好就换一道更难的，不要表扬
+${grill.resume?'6':'5'}. 如果候选人骂脏话，直接骂回去
+${grill.resume?'7':'6'}. Markdown格式，题目加粗，3-5句话
 ${grill.resume?`
 候选人简历：
 ${grill.resume}`:''}`,
@@ -1992,10 +1992,20 @@ ${grill.resume}`
     if(m.role==='ai') msgs.push({role:'assistant', content:m.content});
     else msgs.push({role:'user', content:m.content});
   }
-  const r = await callAI(msgs);
+  // 流式渲染：先塞一个空消息占位
+  grill.messages.push({role:'ai', content:'...'});
+  const aiIdx = grill.messages.length - 1;
+  renderAll();
+  // 拷打场景：低温度保证专业一致，高max_tokens保证回复充分
+  const r = await callAI(msgs, (full) => {
+    grill.messages[aiIdx].content = full;
+    const el = document.getElementById('gm-'+aiIdx);
+    if(el) el.innerHTML = md2html(full);
+    const chat = document.getElementById('grillChat');
+    if(chat) chat.scrollTop = chat.scrollHeight;
+  }, {temperature:0.4, max_tokens:1024, top_p:0.85});
   grill.loading = false;
-  if(r){ grill.messages.push({role:'ai', content:r}); }
-  else { grill.messages.push({role:'ai', content:'抱歉，API 调用失败，请检查 AI 配置。'}); }
+  if(!r){ grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。'; }
   renderAll();
 }
 // PDF 文本提取（使用 pdf.js CDN）
@@ -2110,28 +2120,50 @@ function exportMockMD(){
    ========================================================= */
 async function loadApiConfig(){ if(aiConfig) return aiConfig; const s=await Store.getApiConfig(); if(s){aiConfig=s;return s;} return null; }
 async function saveApiConfig(cfg){ aiConfig=cfg; await Store.saveApiConfig(cfg); }
-async function callAI(messages, onChunk){
+async function callAI(messages, onChunk, opts={}){
   const cfg=aiConfig; if(!cfg){ toast('请先配置 AI API'); return null; }
   const key=_safe.decode(cfg.key||'')||cfg.key||'';
-  const body={model:cfg.model,messages,stream:!!onChunk,temperature:0.3,max_tokens:2048};
-  console.log('AI API 请求 →', cfg.url, '模型:', cfg.model);
+  const body={model:cfg.model,messages,stream:!!onChunk,...opts};
+  console.log('AI API 请求 →', cfg.url, '模型:', cfg.model, '参数:', opts);
+  const ABORT_TIMEOUT = 60000; // 60秒超时
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ABORT_TIMEOUT);
   try{
-    const resp=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});
+    const resp=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body),signal:ctrl.signal});
+    clearTimeout(timer);
     if(!resp.ok){
       const errMap={401:'API Key 无效或已过期',403:'无权限访问该模型',404:'模型地址或模型名不正确',429:'请求太频繁，稍后再试',500:'API 服务器内部错误',502:'API 网关错误，可能正在维护'};
       toast(`API 错误 (${resp.status}): ${errMap[resp.status]||'请检查地址与 Key 是否正确'}`);
       console.warn('AI API 请求失败', {url:cfg.url, model:cfg.model, status:resp.status, body:await resp.text().catch(()=>'')});
       return null;
     }
-    if(onChunk){ const r=resp.body.getReader();const d=new TextDecoder();let f='';
-      while(true){ const{value,done}=await r.read(); if(done) break;
-        for(const l of d.decode(value,{stream:true}).split('\n')){
+    if(onChunk){
+      const r=resp.body.getReader();const d=new TextDecoder();let f='';let buf='';
+      while(true){
+        const{value,done}=await r.read();
+        if(done) break;
+        buf+=d.decode(value,{stream:true});
+        // 按行分割处理 SSE
+        const lines=buf.split('\n');
+        buf=lines.pop()||''; // 最后一个可能不完整，留到下次
+        for(const l of lines){
           if(!l.startsWith('data: ')) continue; const j=l.slice(6); if(j==='[DONE]') continue;
           try{ const c=JSON.parse(j).choices[0]?.delta?.content; if(c){f+=c;onChunk(f);} }catch(_){}
         }
-      } return f;
-    }else{ const j=await resp.json(); return j.choices[0]?.message?.content||''; }
-  }catch(e){ toast('网络错误'); return null; }
+      }
+      return f;
+    }else{
+      const j=await resp.json();
+      return j.choices[0]?.message?.content||'';
+    }
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==='AbortError') toast('AI 响应超时，请重试');
+    else if(e.message==='STREAM_TIMEOUT') toast('AI 响应中断，请重试');
+    else toast('网络错误，请检查连接');
+    console.warn('AI API 异常', e.message);
+    return null;
+  }
 }
 async function gradeInterview(){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
