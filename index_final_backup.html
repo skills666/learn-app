@@ -679,7 +679,7 @@ function buildIndex(){
 }
 
 /* ---------- 工具 ---------- */
-function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function renderAnswer(t){
   if(!t) return '';
   let s = esc(t);
@@ -1252,11 +1252,11 @@ function renderCampaign(c){
   c.querySelectorAll('[data-down]').forEach(el=>el.onclick=()=>reorderLevel(parseInt(el.dataset.down), +1));
 }
 
-async function reorderLevel(i, dir){
+function reorderLevel(i, dir){
   const j = i + dir;
   if(j<0 || j>=ORDER.length) return;
   const tmp = ORDER[i]; ORDER[i] = ORDER[j]; ORDER[j] = tmp;
-  await Store.saveOrder(ORDER); await Store.saveOrderCustom(true);
+  Store.saveOrder(ORDER); Store.saveOrderCustom(true);
   renderContent();
 }
 
@@ -1288,7 +1288,7 @@ function startPractice(scope){
     for(let i=order.length-1; i>=0; i--){
       if((PROGRESS[order[i]]||{}).practiced){ startIdx = i+1; break; }
     }
-    if(startIdx >= order.length) startIdx = 0; // 全部刷完从头开始
+    startIdx = Math.min(startIdx, order.length-1);
   }
   practice = { order, index:startIdx, scope, done:false, practiced:new Set(), revealed:new Set() };
   // 标记已掌握的题不再出现在刷题列表
@@ -2039,9 +2039,8 @@ function renderSearch(c){
     c.innerHTML = `<div class="empty"><div class="big">🔍</div>没有匹配"${esc(searchTerm)}"的题目</div>`;
     return;
   }
-  const showResults = results.slice(0, 200); // 最多显示200条防卡顿
-  c.innerHTML = `<div class="doc-head"><div><h2>找到 ${results.length} 道相关题目${results.length>200?'（显示前200条）':''}</h2></div></div>` +
-    showResults.map(({doc,q})=>{
+  c.innerHTML = `<div class="doc-head"><div><h2>找到 ${results.length} 道相关题目</h2></div></div>` +
+    results.map(({doc,q})=>{
       const snip = (q.answer||'').replace(/\n/g,' ').slice(0,90);
       return `<div class="sr-item">
         <div class="src">${esc(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
@@ -2362,9 +2361,7 @@ $('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) re
 
 $('#exportBtn').onclick = () => {
   const data = { version:1, source:'learnApp export', exportedAt:new Date().toISOString(),
-                 documents:DOCS, progress:PROGRESS, order:ORDER, clears:CLEARS,
-                 theme:localStorage.getItem('learnAppTheme')||'aurora',
-                 skins:JSON.parse(localStorage.getItem('learnAppSkins')||'{}') };
+                 documents:DOCS, progress:PROGRESS, order:ORDER, clears:CLEARS };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href=url; a.download=`learn-data-${dateStr()}.json`; a.click();
