@@ -329,6 +329,16 @@
   .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
   .theme-sep{grid-column:1/-1;font-size:10px;color:var(--faint);font-weight:700;letter-spacing:1px;padding:2px 0;text-align:center}
   /* 项目拷打 */
+  .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
+  .grill-mode-card{flex:1;min-width:140px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 12px;cursor:pointer;transition:.18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(90,209,201,.08),rgba(139,124,246,.08));box-shadow:0 0 0 3px rgba(90,209,201,.12)}
+  .gm-icon{font-size:28px}
+  .gm-title{font-size:14px;font-weight:700;color:var(--text)}
+  .gm-desc{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
+  .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
+  .grill-dur-btn.sel{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.3)}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .grill-resume:focus{border-color:var(--accent2)}
@@ -687,7 +697,7 @@ let practice = { order: [], index: 0, scope: null, done: false, practiced: new S
 let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
 let memory = { queue:[], index:0, flipped:false };
-let grill = { resume:'', messages:[], started:false, loading:false };
+let grill = { resume:'', messages:[], started:false, loading:false, mode:'' };
 
 // SM-2 算法：动态间隔复习
 // EF（难易因子）初始2.5，根据评分调整，最小1.3
@@ -1774,7 +1784,7 @@ function renderGrill(c){
   if(!grill.started) return renderGrillConfig(c);
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 项目拷打</span><span>${grill.messages.length} 轮对话</span></div>
+      <div class="pmeta"><span>🔥 ${grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战'}</span><span>${grill.messages.length} 轮对话</span></div>
       <div class="grill-chat" id="grillChat">${grill.messages.map(m=>`
         <div class="grill-msg ${m.role}">${esc(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading">专家思考中…</div>':''}</div>
@@ -1795,32 +1805,83 @@ function renderGrill(c){
   $('#grillSend').onclick = send;
   input.onkeydown = e => { if(e.key==='Enter') send(); };
   input.focus();
-  $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false}; renderAll(); };
+  $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:''}; renderAll(); };
 }
 function renderGrillConfig(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
-        <h2>🔥 项目拷打</h2>
-        <div class="desc">粘贴你的简历，AI 将以十年老技术专家身份，根据你写的项目经历和技术栈逐层深挖提问。模拟真实面试中面试官对项目的追问场景。</div>
-        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容</label>
+        <h2>🔥 面试拷打</h2>
+        <div class="desc">选择一种模式，AI 将以资深面试官身份对你进行高压面试。</div>
+        <div class="grill-mode-row" id="grillModeRow">
+          <div class="grill-mode-card" data-mode="project">
+            <div class="gm-icon">📂</div>
+            <div class="gm-title">项目深挖</div>
+            <div class="gm-desc">根据简历中的项目经历，逐层追问技术选型、架构决策、踩坑细节</div>
+          </div>
+          <div class="grill-mode-card" data-mode="theory">
+            <div class="gm-icon">📚</div>
+            <div class="gm-title">八股扫荡</div>
+            <div class="gm-desc">根据技术栈随机出经典面试题，覆盖基础、原理、场景题</div>
+          </div>
+          <div class="grill-mode-card" data-mode="real">
+            <div class="gm-icon">🎯</div>
+            <div class="gm-title">高压实战</div>
+            <div class="gm-desc">真实面试模拟：项目追问 + 八股穿插，限时压力，结束前会告知"面试到这里"</div>
+          </div>
+        </div>
+        <div id="grillDurRow" style="display:none;margin:8px 0 4px">
+          <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:10px">⏱ 面试时长</span>
+          <span class="grill-dur-btn" data-dur="quick">快速 (10轮)</span>
+          <span class="grill-dur-btn sel" data-dur="standard">标准 (20轮)</span>
+          <span class="grill-dur-btn" data-dur="deep">深度 (30轮)</span>
+        </div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
         <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性"></textarea>
         <div style="margin-top:14px">
-          <button class="btn primary" id="grillStart">🔥 开始拷打</button>
+          <button class="btn primary" id="grillStart" disabled>🔥 开始拷打</button>
           <button class="btn ghost" id="grillUpload">📎 上传简历（txt/md/pdf）</button>
           <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
       </div>
-      <div class="empty-feature" style="padding:0">
-        <div style="font-size:13px;color:var(--text);opacity:.85;line-height:1.7;text-align:left;background:var(--card);padding:14px 18px;border-radius:10px">
-          💡 提示：简历越详细拷打越深入。AI 会针对你的<b style="color:var(--text)">技术选型、架构决策、踩坑经历</b>逐层追问，模拟真实面试场景。</div>
-      </div>
     </div>`;
+  // 模式选择
+  let selectedMode = '';
+  let selectedDuration = 'standard';
+  document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(card=>{
+    card.onclick = ()=>{
+      document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>c.classList.remove('sel'));
+      card.classList.add('sel');
+      selectedMode = card.dataset.mode;
+      $('#grillStart').disabled = false;
+      // 高压实战才显示时长选项
+      const durRow = $('#grillDurRow');
+      if(durRow) durRow.style.display = selectedMode==='real' ? '' : 'none';
+    };
+  });
+  // 时长选择
+  document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      selectedDuration = btn.dataset.dur;
+    };
+  });
   $('#grillStart').onclick = () => {
+    if(!selectedMode){ toast('请先选择一种拷打模式'); return; }
     const resume = $('#grillResume').value.trim();
-    if(!resume){ toast('请先粘贴简历内容'); return; }
+    if(selectedMode!=='theory' && !resume){ toast('项目深挖和高压实战需要填写简历'); return; }
+    grill.mode = selectedMode;
+    grill.duration = selectedDuration;
     grill.resume = resume; grill.messages = []; grill.started = true;
-    grill.messages.push({role:'ai', content:'你好！我已经仔细看了你的简历。准备好接受项目拷打了吗？我会从你最核心的项目开始，逐层深入追问技术细节。请先简单介绍一下你最拿手的那个项目吧。'});
+    const DUR_MAP = {quick:'约15分钟',standard:'约30分钟',deep:'约45分钟'};
+    const greetings = {
+      project: '简历已收到。我是今天的面试官，下面开始对你的项目经历进行深挖。准备好了吗？请先简单介绍一下你最核心的项目。',
+      theory: '不废话，直接开始八股。准备好挨打了吗？第一题：',
+      real: `你好，我是今天的面试官。本次面试预计${DUR_MAP[selectedDuration]}，我会围绕你的项目经历和技术栈进行提问，过程中会穿插一些基础知识的考察。准备好了吗？先简单介绍一下你自己吧。`
+    };
+    grill.messages.push({role:'ai', content: greetings[selectedMode]});
     renderAll();
   };
   $('#grillUpload').onclick = () => $('#grillFileInput').click();
@@ -1841,34 +1902,78 @@ function renderGrillConfig(c){
 }
 async function doGrillChat(){
   if(!aiConfig){ toast('请先配置 AI API'); grill.loading=false; renderAll(); return; }
-  // 根据简历推断工作年限
-  const years = estimateYears(grill.resume);
-  const depth = years<=1 ? '基础' : years<=3 ? '中等' : years<=5 ? '深入' : '专家';
-  const depthGuide = {
-    '基础': '只问项目做了什么、用到什么技术，不追问底层原理，语气鼓励为主',
-    '中等': '追问技术选型原因和基本设计思路，适度追问一两个"为什么"',
-    '深入': '追问架构设计、性能优化、踩坑经历，追问两三层深度',
-    '专家': '追问底层原理、源码实现、分布式一致性、极端场景容灾，像剥洋葱层层深入'
+  const years = estimateYears(grill.resume)||3;
+  const lv = years<=1 ? '初级' : years<=3 ? '中级' : years<=5 ? '高级' : '资深';
+  const DEPTH = {
+    '初级': '问基础用法和项目做了什么，不要追问底层原理，语气温和鼓励为主',
+    '中级': '追问技术选型原因和基本设计思路，适度追问一两层"为什么"',
+    '高级': '追问架构设计、性能优化、踩坑经历，追问两三层深度',
+    '资深': '追问底层原理、源码实现、分布式一致性、极端场景容灾，像剥洋葱层层深入'
   };
-  const msgs = [
-    {role:'system', content:`你是十年老技术专家，正在进行高压项目面试。根据候选人的工作年限和简历内容，调整拷打难度。
+  const DIFFICULTY = {
+    '初级': '出基础题，如HashMap原理、TCP三次握手、索引类型等',
+    '中级': '出中等难度题，如JVM内存模型、MySQL锁机制、Redis数据结构等',
+    '高级': '出困难题，如分布式事务、CAP理论实践、JVM调优、内核参数等',
+    '资深': '出极难题，如Paxos算法、CPU缓存一致性、零拷贝原理、内核源码等'
+  };
 
-候选人大约 **${years}年** 经验，拷打深度：**${depth}级**。
-${depthGuide[depth]}
+  // 三种模式的 system prompt
+  const PROMPTS = {
+    project: `你是资深面试官，正在进行项目深挖面试。候选人大约${years}年经验（${lv}）。
+
+难度指南：${DEPTH[lv]}
 
 规则：
-1. 直接根据简历内容提问，不要寒暄、不要说"请介绍一下你的项目"，上来就问
-2. 每次只问一个问题，聚焦一个技术点，像剥洋葱一样层层追问
-3. 难度严格匹配工作年限，不要超出候选人能力范围
-4. 追问时引用简历中的具体内容
-5. 语气严厉、犀利，你是面试官不是客服，求职者应该敬畏你
-6. 如果候选人答得敷衍、模糊、避重就轻，直接批评"你到底做过没有？""这都说不清楚？"
-7. 如果候选人骂脏话，直接骂回去，他骂你什么你就骂他什么，不用客气
-8. 用 Markdown 格式，重点加粗，不要用标题
-9. 回答控制在3-5句话
+1. 根据简历中的项目经历，逐层追问技术细节
+2. 每次只问一个问题，聚焦一个技术点，像剥洋葱层层深入
+3. 追问技术选型原因、架构设计、性能优化、踩坑经历
+4. 引用简历中的具体内容提问
+5. 难度严格匹配${lv}水平，不要超出能力范围
+6. 语气犀利但专业
+7. 答得敷衍就批评"你到底做过没有？"
+8. 如果候选人骂脏话，直接骂回去
+9. Markdown格式，3-5句话
 
 候选人简历：
-${grill.resume}`}
+${grill.resume}`,
+
+    theory: `你是资深面试官，正在进行八股文扫荡。候选人大约${years}年经验（${lv}）。${grill.resume?'根据候选人简历中的技术栈，针对性地出经典面试题。':''}
+
+难度指南：${DIFFICULTY[lv]}
+
+规则：
+1. 每次一道经典面试题${grill.resume?'，优先围绕候选人简历中提到的技术栈':'，方向随机切换'}
+2. 难度严格匹配${lv}水平
+3. 如果候选人答错或答不上来，直接嘲讽"这都不会？""基础不扎实啊"
+4. 答得好就换一道更难的，不要表扬
+5. 涉及方向：数据结构、算法、网络、操作系统、数据库、分布式、语言特性${grill.resume?'，重点问简历中的技术方向':''}
+6. 如果候选人骂脏话，直接骂回去
+7. Markdown格式，题目加粗，3-5句话
+${grill.resume?`
+候选人简历：
+${grill.resume}`:''}`,
+
+    real: `你是资深面试官，正在进行真实面试模拟。候选人大约${years}年经验（${lv}）。
+
+难度指南：${DEPTH[lv]}
+八股穿插难度：${DIFFICULTY[lv]}
+
+规则：
+1. 面试流程：项目深挖 → 穿插八股 → 算法/场景题 → 反问环节
+2. 项目阶段：根据简历逐层追问，每个项目3-5个问题
+3. 八股穿插：在项目追问间隙随机插入基础题
+4. 面试进行${grill.duration==='quick'?'8-12':grill.duration==='deep'?'25-32':'15-22'}轮对话后，选一个合适的时机说"好的，面试就到这里，你有什么想问我的吗？"
+5. 语气专业、客观，像真实面试官
+6. 难度严格匹配${lv}水平
+7. 如果候选人骂脏话，直接骂回去
+8. Markdown格式，3-5句话
+
+候选人简历：
+${grill.resume}`
+  };
+
+  const msgs = [
+    {role:'system', content: PROMPTS[grill.mode] || PROMPTS.project}
   ];
   for(const m of grill.messages){
     if(m.role==='ai') msgs.push({role:'assistant', content:m.content});
