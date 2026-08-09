@@ -1,31 +1,25 @@
-const CACHE = 'learn-v10';
-const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js'];
+const CACHE = 'learn-v11';
+
+// chest.js 也用 Network First，确保更新后能及时获取新版本
+const PRE_CACHE = ['index.html', 'manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(() => {})));
   self.skipWaiting();
 });
 
-// HTML 使用 Network First，其他资源 Cache First
+// 统一策略：所有资源 Network First（先网络，失败回退缓存）
 self.addEventListener('fetch', e => {
-  const isNav = e.request.mode === 'navigate';
-  if (isNav) {
-    e.respondWith(
-      fetch(e.request).then(resp => {
+  e.respondWith(
+    fetch(e.request).then(resp => {
+      // 只缓存成功响应
+      if (resp.ok) {
         const copy = resp.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
-        return resp;
-      }).catch(() => caches.match(e.request))
-    );
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-        return resp;
-      }))
-    );
-  }
+      }
+      return resp;
+    }).catch(() => caches.match(e.request))
+  );
 });
 
 self.addEventListener('activate', e => {
