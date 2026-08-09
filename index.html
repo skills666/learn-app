@@ -3421,8 +3421,8 @@ function initThemeParticles(theme){
   }
   // ── ziliang: 雨丝（子良特效）──
   else if(theme==='ziliang'){
-    const cols = Math.floor(W/14);
-    for(let i=0;i<cols;i++) _uParticles.push({x:i*14+Math.random()*8, y:Math.random()*H*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
+    const n = isMobile?60:100;
+    for(let i=0;i<n;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
   }
   // ── shuangren: 雪花冰晶 ──
   else if(theme==='shuangren'){
