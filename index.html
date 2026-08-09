@@ -722,8 +722,8 @@ function renderAnswer(t){
 }
 function renderAIBlock(qid){
   if(!aiAnswer[qid]) return '';
-  if(aiAnswer[qid]==='loading') return '<div class="ai-loading">AI 思考中…</div>';
-  return '<div class="ai-answer"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">🤖 AI 回复</div>'+formatAI(aiAnswer[qid])+'</div>';
+  if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+qid+'"><div class="ai-loading">AI 思考中…</div></div>';
+  return '<div class="ai-answer" data-qid="'+qid+'"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">🤖 AI 回复</div>'+formatAI(aiAnswer[qid])+'</div>';
 }
 function docById(id){ return DINDEX.get(id); }
 function questionById(qid){ return QINDEX.get(qid); }
@@ -2059,9 +2059,17 @@ async function askAI(qid){
 【题目】${q.title}
 【参考答案】${q.answer||'暂无参考答案'}`;
 
-  const r=await callAI([{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;renderAll();});
+  const r=await callAI([{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;updateAIOutput(qid);});
   if(!r&&aiAnswer[qid]==='loading') aiAnswer[qid]=null;
-  renderAll();
+  updateAIOutput(qid);
+}
+// 流式更新 AI 输出，只更新 DOM 不触发页面动画
+function updateAIOutput(qid){
+  const el=$('.ai-answer[data-qid="'+qid+'"]');
+  if(!el) return;
+  const text=aiAnswer[qid]||'';
+  if(text==='loading'){el.innerHTML='<div class="ai-loading">AI 思考中<span class="dots">...</span></div>';return;}
+  el.innerHTML=formatAI(text);
 }
 function formatAI(text){
   if(!text) return '';
