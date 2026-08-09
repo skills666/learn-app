@@ -1,5 +1,5 @@
 const CACHE = 'learn-v10';
-const PRE_CACHE = ['index.html', 'manifest.json'];
+const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(() => {})));
