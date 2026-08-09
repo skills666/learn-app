@@ -697,7 +697,7 @@ let practice = { order: [], index: 0, scope: null, done: false, practiced: new S
 let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
 let memory = { queue:[], index:0, flipped:false };
-let grill = { resume:'', messages:[], started:false, loading:false, mode:'' };
+let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false };
 
 // SM-2 算法：动态间隔复习
 // EF（难易因子）初始2.5，根据评分调整，最小1.3
@@ -1796,9 +1796,10 @@ function renderGrill(c){
         <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}</div>
       <div class="grill-input-row">
-        <input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}>
-        <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
-        <button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>
+        ${grill.ended
+          ? `<div style="flex:1;text-align:center;color:var(--accent);font-weight:700;font-size:14px;padding:8px">🎉 面试已结束</div><button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>`
+          : `<input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}><button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button><button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>`
+        }
       </div>
     </div>`;
   const chat = $('#grillChat');
@@ -1812,7 +1813,7 @@ function renderGrill(c){
   $('#grillSend').onclick = send;
   input.onkeydown = e => { if(e.key==='Enter') send(); };
   input.focus();
-  $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:''}; renderAll(); };
+  $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false}; renderAll(); };
 }
 function renderGrillConfig(c){
   c.innerHTML = `
@@ -1931,6 +1932,8 @@ async function doGrillChat(){
   };
 
   // 三种模式的 system prompt
+  const END_RULE = `\n\n【结束面试】如果候选人连续3轮以上答得很差、明显不具备${lv}水平，或者候选人主动要求结束，立即用"[面试结束]"四个字开头回复，然后给出总结反馈（优点、不足、学习建议）。不要等面试官指令，你自行判断。`;
+
   const PROMPTS = {
     project: `你是资深面试官，正在进行项目深挖面试。候选人大约${years}年经验（${lv}）。
 
@@ -1946,6 +1949,7 @@ async function doGrillChat(){
 7. 答得敷衍就批评"你到底做过没有？"
 8. 如果候选人骂脏话，直接骂回去
 9. Markdown格式，3-5句话
+10. 当简历中所有项目的核心技术点都已被深挖完毕，用"[面试结束]"四个字开头，给出本次面试的总结反馈：亮点、薄弱点、后续学习方向建议。不要提前结束，确保每个项目的关键点都覆盖到。${END_RULE}
 
 候选人简历：
 ${grill.resume}`,
@@ -1962,6 +1966,7 @@ ${grill.resume?'4':'3'}. 答错或答不上来时，先指出正确答案，然�
 ${grill.resume?'5':'4'}. 答得好就肯定一下再出下一道，语气温和专业
 ${grill.resume?'6':'5'}. 如果候选人骂脏话，直接骂回去
 ${grill.resume?'7':'6'}. Markdown格式，题目加粗，3-5句话
+${grill.resume?'8':'7'}. 如果发现候选人连续多题表现不佳、明显跟不上当前难度，主动降低难度出更基础的题。如果降低难度后仍然答不上来，用"[面试结束]"四个字开头回复，给出总结反馈：擅长的方向、薄弱的方向、建议复习的模块。如果表现一直很好就继续出题，不要主动结束。
 ${grill.resume?`
 候选人简历：
 ${grill.resume}`:''}`,
@@ -1975,11 +1980,11 @@ ${grill.resume}`:''}`,
 1. 面试流程：项目深挖 → 穿插八股 → 算法/场景题 → 反问环节
 2. 项目阶段：根据简历逐层追问，每个项目3-5个问题
 3. 八股穿插：在项目追问间隙随机插入基础题
-4. 面试进行${grill.duration==='quick'?'8-12':grill.duration==='deep'?'25-32':'15-22'}轮对话后，选一个合适的时机说"好的，面试就到这里，你有什么想问我的吗？"
+4. 面试进行${grill.duration==='quick'?'8-12':grill.duration==='deep'?'25-32':'15-22'}轮对话后，用"[面试结束]"四个字开头回复，直接给出面试评价总结（技术深度、广度、沟通表现、建议），不要再问"你有什么想问的"
 5. 语气专业、客观，像真实面试官
 6. 难度严格匹配${lv}水平
 7. 如果候选人骂脏话，直接骂回去
-8. Markdown格式，3-5句话
+8. Markdown格式，3-5句话${END_RULE}
 
 候选人简历：
 ${grill.resume}`
@@ -2006,6 +2011,12 @@ ${grill.resume}`
   }, {temperature:0.4, max_tokens:1024, top_p:0.85});
   grill.loading = false;
   if(!r){ grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。'; }
+  // 检测面试结束标记，去掉标记文字并锁定输入
+  const lastMsg = grill.messages[aiIdx].content;
+  if(lastMsg.startsWith('[面试结束]')){
+    grill.messages[aiIdx].content = lastMsg.replace('[面试结束]','').trim();
+    grill.ended = true;
+  }
   renderAll();
 }
 // PDF 文本提取（使用 pdf.js CDN）
@@ -2139,18 +2150,21 @@ async function callAI(messages, onChunk, opts={}){
     }
     if(onChunk){
       const r=resp.body.getReader();const d=new TextDecoder();let f='';let buf='';
+      const t0=performance.now();
       while(true){
         const{value,done}=await r.read();
+        const t1=performance.now();
+        console.log('[stream] chunk read:', (t1-t0).toFixed(0)+'ms, done:', done, 'bytes:', value?.length||0);
         if(done) break;
         buf+=d.decode(value,{stream:true});
-        // 按行分割处理 SSE
         const lines=buf.split('\n');
-        buf=lines.pop()||''; // 最后一个可能不完整，留到下次
+        buf=lines.pop()||'';
         for(const l of lines){
           if(!l.startsWith('data: ')) continue; const j=l.slice(6); if(j==='[DONE]') continue;
           try{ const c=JSON.parse(j).choices[0]?.delta?.content; if(c){f+=c;onChunk(f);} }catch(_){}
         }
       }
+      console.log('[stream] total time:', (performance.now()-t0).toFixed(0)+'ms, chars:', f.length);
       return f;
     }else{
       const j=await resp.json();
