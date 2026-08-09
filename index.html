@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0e1018">
-<meta http-equiv="Content-Security-Policy" id="cspMeta" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://gitee.com https://api.siliconflow.cn https://dashscope.aliyuncs.com https://*.siliconflow.cn https://*.aliyuncs.com; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com;">
+<meta http-equiv="Content-Security-Policy" id="cspMeta" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://gitee.com https://api.siliconflow.cn https://dashscope.aliyuncs.com https://api.deepseek.com https://*.siliconflow.cn https://*.aliyuncs.com https://*.deepseek.com; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com;">
 <title>面试题学习台</title>
 <style>
   :root{
@@ -508,7 +508,7 @@
         <div class="set-head" onclick="toggleSetPanel(this)">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
         <div class="set-body" id="aiConfigPanel" style="display:none">
           <div class="set-hint">配置大模型 API 以启用 AI 阅卷、AI 问答、项目拷打等功能。Key 仅存储在你的浏览器本地，不会上传。</div>
-          <div class="set-row2"><div class="set-field" style="flex:1"><label>预设</label><select id="aiPreset"><option value="">自定义</option><option value="silicon">硅基流动</option><option value="aliyun">阿里云百炼</option></select></div><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl"></div></div>
+          <div class="set-row2"><div class="set-field" style="flex:1"><label>预设</label><select id="aiPreset"><option value="">自定义</option><option value="silicon">硅基流动</option><option value="aliyun">阿里云百炼</option><option value="deepseek">DeepSeek</option></select></div><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl"></div></div>
           <div class="set-row2"><div class="set-field" style="flex:1"><label>API Key</label><input placeholder="sk-..." id="aiKey" type="password"></div><div class="set-field" style="flex:1"><label>模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel"></div></div>
         </div>
       </div>
@@ -732,6 +732,13 @@ function buildIndex(){
 
 /* ---------- 工具 ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function md2html(s){
+  let h = esc(s);
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
+  h = h.replace(/\n/g, '<br>');
+  return h;
+}
 function renderAnswer(t){
   if(!t) return '';
   let s = esc(t);
@@ -1786,7 +1793,7 @@ function renderGrill(c){
     <div class="feature-wrap">
       <div class="pmeta"><span>🔥 ${grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战'}</span><span>${grill.messages.length} 轮对话</span></div>
       <div class="grill-chat" id="grillChat">${grill.messages.map(m=>`
-        <div class="grill-msg ${m.role}">${esc(m.content)}</div>
+        <div class="grill-msg ${m.role}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading">专家思考中…</div>':''}</div>
       <div class="grill-input-row">
         <input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}>
@@ -1877,12 +1884,18 @@ function renderGrillConfig(c){
     grill.resume = resume; grill.messages = []; grill.started = true;
     const DUR_MAP = {quick:'约15分钟',standard:'约30分钟',deep:'约45分钟'};
     const greetings = {
-      project: '简历已收到。我是今天的面试官，下面开始对你的项目经历进行深挖。准备好了吗？请先简单介绍一下你最核心的项目。',
-      theory: '不废话，直接开始八股。准备好挨打了吗？第一题：',
+      project: '简历已收到，直接开始。',
+      theory: '', // 八股不废话，直接调API出题
       real: `你好，我是今天的面试官。本次面试预计${DUR_MAP[selectedDuration]}，我会围绕你的项目经历和技术栈进行提问，过程中会穿插一些基础知识的考察。准备好了吗？先简单介绍一下你自己吧。`
     };
-    grill.messages.push({role:'ai', content: greetings[selectedMode]});
+    if(greetings[selectedMode]){
+      grill.messages.push({role:'ai', content: greetings[selectedMode]});
+    }
     renderAll();
+    // 项目深挖和八股扫荡直接调API开始
+    if(selectedMode==='project' || selectedMode==='theory'){
+      setTimeout(()=>doGrillChat(''), 300);
+    }
   };
   $('#grillUpload').onclick = () => $('#grillFileInput').click();
   $('#grillFileInput').onchange = async e => {
@@ -2663,7 +2676,7 @@ $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModa
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
 
 // AI API 配置
-const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'}};
+const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'},deepseek:{url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'}};
 async function loadApiCfgUI(){ const c=await loadApiConfig()||{}; $('#aiUrl').value=c.url||'';$('#aiKey').value=_safe.decode(c.key||'')||'';$('#aiModel').value=c.model||''; }
 $('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) return; $('#aiUrl').value=p.url;$('#aiModel').value=p.model; };
 // 动态更新 CSP，允许用户自定义的 AI API 地址
