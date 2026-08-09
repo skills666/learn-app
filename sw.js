@@ -1,7 +1,7 @@
 const CACHE = 'learn-v11';
 
 // chest.js 也用 Network First，确保更新后能及时获取新版本
-const PRE_CACHE = ['index.html', 'manifest.json'];
+const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(() => {})));
@@ -24,9 +24,8 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // 通知客户端有新版本可用
