@@ -786,8 +786,9 @@ async function checkStorageLimit(newDataSize){
 }
 function totalSeen(){ return Object.values(PROGRESS).filter(p=>p.practiced||p.seen).length; }
 function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).length; }
-// 模态框关闭
+// 模态框关闭（直接 display:none，避免 class 切换延迟）
 function hideModal(el){
+  el.style.display = 'none';
   el.classList.remove('show','hiding');
 }
 function confirmDialog(msg){ return new Promise(resolve=>{
