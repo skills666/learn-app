@@ -1517,7 +1517,7 @@ function renderMock(c){
     if(refEl) refEl.style.display = mock.revealed ? '' : 'none';
     if(btnEl) btnEl.textContent = mock.revealed ? '🙈 隐藏答案' : '👁 显示答案';
   };
-  $('#mockAIBtn').onclick = () => { askAI(qid); };
+  $('#mockAIBtn').onclick = () => { askAI(qid, 'mock'); };
   $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
   $('#mockNext').onclick = () => {
     if(mock.index < tot-1){ mock.index++; mock.revealed=false; renderAll(); }
@@ -2017,11 +2017,36 @@ async function gradeInterview(){
   aiGradingLoading=false; if(r) aiGrading='<div class="ai-review">'+formatAI(r)+'</div>';
   renderAll();
 }
-async function askAI(qid){
+async function askAI(qid, mode){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   const q=questionById(qid); if(!q) return;
   aiAnswer[qid]='loading'; renderAll();
-  const prompt = `你是一位资深技术面试官，负责对我提交的答题结果进行诊断。
+  let prompt, systemPrompt;
+  if(mode==='mock'){
+    // 模拟面试：真实面试官角色
+    systemPrompt = '你是一位真实的大厂技术面试官，正在对候选人进行模拟面试。你的风格是：冷静、追问、不废话。用 Markdown 格式输出，标题用 ##，重点用 **加粗**，不要输出 HTML。';
+    prompt = `你正在进行一场真实的技术面试模拟。候选人正在回答以下问题。
+
+【题目】${q.title}
+【参考答案（供你参考）】${q.answer||'暂无参考答案'}
+
+请以面试官身份，完成以下评估：
+
+1. 【评分】给出一个分数（0-10分），并简要说明理由
+2. 【追问】提出 1-2 个面试中你可能会追问的深度问题（基于本题的核心概念延伸）
+3. 【点评】用面试官的口吻直接评价：哪里回答得好，哪里不够，面试中应该注意什么
+4. 【如果答错/不会】简单指出核心概念错误，并给出正确方向
+
+要求：
+- 用面试官的视角和语气，就像在真实面试现场
+- 不要像改作业的老师，要像筛选候选人的面试官
+- 不解释基础概念，不重复题目
+- 不堆砌无关知识
+- 语气干脆、专业、有压迫感`;
+  } else {
+    // 闯关诊断：诊断答题结果
+    systemPrompt = '你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。';
+    prompt = `你是一位资深技术面试官，负责对我提交的答题结果进行诊断。
 
 请严格遵守以下规则：
 
@@ -2058,8 +2083,9 @@ async function askAI(qid){
 
 【题目】${q.title}
 【参考答案】${q.answer||'暂无参考答案'}`;
+  }
 
-  const r=await callAI([{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;updateAIOutput(qid);});
+  const r=await callAI([{role:'system',content:systemPrompt},{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;updateAIOutput(qid);});
   if(!r&&aiAnswer[qid]==='loading') aiAnswer[qid]=null;
   updateAIOutput(qid);
 }
