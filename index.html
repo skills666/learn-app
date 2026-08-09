@@ -744,8 +744,8 @@ function sm2Next(ef, interval, rate) {
   else if (rate >= 4) { interval = Math.round((interval || 1) * ef); }
   else if (rate >= 3) { ef -= 0.15; interval = Math.round((interval || 1) * ef); }
   else if (rate >= 2) { interval = 1; }
-  else { ef -= 0.2; interval = 1; }
-  return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(1, interval)) };
+  else { ef -= 0.2; interval = 0.5; }
+  return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(0.5, interval)) };
 }
 
 const $ = s => document.querySelector(s);
@@ -1764,9 +1764,8 @@ function renderMemory(c){
       <div class="pmeta">
         <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
-          <span style="font-weight:700;color:var(--accent)">已复习 ${memory.index}</span> / ${tot}
-          <span style="margin-left:8px;color:var(--muted)">· 剩余 <b style="color:var(--text)">${Math.max(0, tot-memory.index)}</b> 题</span>
-          ${lastInterval===0?` · <span style="color:var(--accent2)">🆕 第一次刷</span>`:` · 📅 距上次 ${lastInterval} 天`}
+          <span style="font-weight:700;color:var(--accent)">${memory.index}</span>/<span style="color:var(--text)">${tot}</span>
+          ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${lastInterval} 天`}
           ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
         </span>
       </div>
