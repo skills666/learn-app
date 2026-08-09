@@ -67,8 +67,6 @@
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95)}}
-  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
   .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
   .doc-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:.5px}
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
@@ -140,6 +138,7 @@
   .salary-card .salary-sub b{color:var(--accent3)}
   .salary-card .salary-bar{height:8px;border-radius:6px;background:var(--bg);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
   .salary-card .salary-bar>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent3),var(--accent));transition:width .6s}
+  .mini i{display:block}
 
   /* search results */
   .sr-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px}
@@ -260,6 +259,7 @@
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
   .memory-answer{border-top:1px dashed var(--line2);padding-top:16px;color:var(--muted);line-height:1.8;font-size:15px}
   .memory-answer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
+
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .memory-answer strong{color:var(--text)}
@@ -680,6 +680,29 @@ const Store = (() => {
     saveAutoSync: v => set('autoSync', !!v),
     getSyncInterval: () => get('syncInterval').then(v => v || 5),
     saveSyncInterval: v => set('syncInterval', v),
+    getBg: () => {
+      return new Promise(resolve => {
+        if(!db){ resolve(null); return; }
+        try{
+          if(!db.objectStoreNames.contains('bg')){ resolve(null); return; }
+          const tx = db.transaction('bg','readonly');
+          const req = tx.objectStore('bg').get('custom');
+          req.onsuccess = function(){ resolve(req.result||null); };
+          req.onerror = () => resolve(null);
+        }catch(_){ resolve(null); }
+      });
+    },
+    saveBg: blob => {
+      return new Promise(resolve => {
+        if(!db){ resolve(false); return; }
+        try{
+          const tx = db.transaction('bg','readwrite');
+          tx.objectStore('bg').put(blob,'custom');
+          tx.oncomplete = function(){ resolve(true); };
+          tx.onerror = () => { toast('保存失败'); resolve(false); };
+        }catch(e){ toast('保存失败'); resolve(false); }
+      });
+    },
   };
 })();
 
@@ -704,7 +727,7 @@ let highlightQid = null;   // 搜索跳转时高亮指定题目
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
 let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
-let memory = { queue:[], index:0, flipped:false };
+let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'' };
 
 // SM-2 算法：动态间隔复习
@@ -720,7 +743,7 @@ function sm2Next(ef, interval, rate) {
   if (rate >= 5) { ef += 0.1; interval = Math.round((interval || 1) * ef); }
   else if (rate >= 4) { interval = Math.round((interval || 1) * ef); }
   else if (rate >= 3) { ef -= 0.15; interval = Math.round((interval || 1) * ef); }
-  else if (rate >= 2) { ef -= 0.3; interval = 1; }
+  else if (rate >= 2) { interval = 1; }
   else { ef -= 0.2; interval = 1; }
   return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(1, interval)) };
 }
@@ -744,6 +767,12 @@ function buildIndex(){
 
 /* ---------- 工具 ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function renderTitle(s){ return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+// 剥离 Markdown 标记（**粗体**、`行内代码`、# 标题、***分隔线），保留内部文字
+function stripMarkdown(s){
+  if(!s) return s;
+  return String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+?)`/g, '$1').replace(/^#{1,6}\s+/gm, '').replace(/\n?\*{3,}\s*$/g, '').replace(/\n?\-{3,}\s*$/g, '').replace(/\n?_{3,}\s*$/g, '');
+}
 function md2html(s){
   let h = esc(s);
   // 标题
@@ -757,7 +786,10 @@ function md2html(s){
   h = h.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
   // 有序列表
   h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-  // 换行
+  // 包裹连续的 <li> 为 <ul>
+  h = h.replace(/((?:<li>.*?<\/li>[\n\r]*)+)/g, '<ul>$1</ul>');
+  // 双换行=段落分隔，单换行=<br>
+  h = h.replace(/\n{2,}/g, '<br><br>');
   h = h.replace(/\n/g, '<br>');
   return h;
 }
@@ -802,17 +834,8 @@ async function estimateTotalStorage(){
   if(order && order.length) size += estimateDataSize(order);
   // 背景图
   try{
-    const bgSize = await new Promise(resolve => {
-      openBgDB(function(db){
-        try{
-          if(!db.objectStoreNames.contains('bg')){ resolve(0); return; }
-          const tx = db.transaction('bg','readonly');
-          const req = tx.objectStore('bg').get('custom');
-          req.onsuccess = function(){ resolve(req.result?.size || 0); };
-          req.onerror = () => resolve(0);
-        }catch(_){ resolve(0); }
-      });
-    });
+    const bgBlob = await Store.getBg();
+    const bgSize = bgBlob ? (bgBlob.size || 0) : 0;
     size += bgSize;
   }catch(_){}
   return size;
@@ -838,7 +861,11 @@ function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).l
 function hideModal(el){
   el.classList.remove('show','hiding');
 }
+let _confirmOpen = false;
 function confirmDialog(msg){ return new Promise(resolve=>{
+  if(_confirmOpen){ resolve(false); return; }
+  _confirmOpen = true;
+  const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); };
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
   const dlg=document.createElement('div');
@@ -861,9 +888,9 @@ function confirmDialog(msg){ return new Promise(resolve=>{
   dlg.appendChild(btns);
   ov.appendChild(dlg);
   document.body.appendChild(ov);
-  yesBtn.onclick=()=>{ov.remove();resolve(true)};
-  noBtn.onclick=()=>{ov.remove();resolve(false)};
-  ov.onclick=e=>{if(e.target===ov){ov.remove();resolve(false)}};
+  yesBtn.onclick=()=>cleanup(true);
+  noBtn.onclick=()=>cleanup(false);
+  ov.onclick=e=>{if(e.target===ov)cleanup(false)};
 });}
 function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
@@ -884,7 +911,7 @@ function setupErrorHandler(){
     const r = e.reason?.message || e.reason;
     if(/ServiceWorker|origin 'null'/.test(String(r))) return;
     console.error('[learn-app unhandledrejection]', e.reason);
-    toast('操作失败：' + r);
+    toast('操作失败：' + (r || '未知错误'));
   });
 }
 function isUnlocked(i){
@@ -901,10 +928,14 @@ function renderStatsBar(){
   const seenPct = tq ? Math.round(ts/tq*100) : 0;
   const masteredPct = tq ? Math.round(tm/tq*100) : 0;
   const due = memoryDueCount();
+  const streak = getStreakDays();
+  const todayDone = getTodayReviewed();
   $('#statsBar').innerHTML = `
     <span>总进度 <b>${seenPct}%</b></span>
     <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:var(--good)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent2)"></i></div>
     <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
+    ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
+    ${todayDone>0?`<span>今日已刷 <b>${todayDone}</b> 题</span>`:''}
     ${due>0?`<span class="urg">🧠 记忆 <b>${due}</b> 题待复习</span>`:''}
   `;
   // Tab 激活态
@@ -1033,12 +1064,14 @@ function drawChart(days, mode){
     const areaGrad = ctx.createLinearGradient(0,padT,0,padT+chartH);
     // 把十六进制转成 rgba
     function hexToRgba(hex, alpha){
+      if(!hex||!hex.startsWith('#')) return `rgba(0,0,0,${alpha})`;
       const r = parseInt(hex.slice(1,3),16);
       const g = parseInt(hex.slice(3,5),16);
       const b = parseInt(hex.slice(5,7),16);
+      if(isNaN(r)||isNaN(g)||isNaN(b)) return `rgba(0,0,0,${alpha})`;
       return `rgba(${r},${g},${b},${alpha})`;
     }
-    const accentRgba = accent.startsWith('rgb') ? accent.replace(')',',0.3)').replace('rgb','rgba') : hexToRgba(accent, 0.3);
+    const accentRgba = accent.startsWith('#') ? hexToRgba(accent, 0.3) : accent.replace(/rgba?\(([^)]+)\)/,'rgba($1,0.3)');
     areaGrad.addColorStop(0, accentRgba);
     areaGrad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = areaGrad;
@@ -1083,13 +1116,13 @@ function renderDocs(c){
   c.innerHTML = DOCS.map(d => {
     if(!d.questions.length){
       return `<div class="q" style="opacity:.4;cursor:not-allowed">
-        <div class="qhead"><div class="qnum">—</div><div class="qtitle">${esc(d.title)} <span style="font-size:11px;color:var(--warn)">（待导入）</span></div></div></div>`;
+        <div class="qhead"><div class="qnum">—</div><div class="qtitle">${renderTitle(d.title)} <span style="font-size:11px;color:var(--warn)">（待导入）</span></div></div></div>`;
     }
     const seen=docSeen(d),tot=d.questions.length,dp=tot?Math.round(seen/tot*100):0;
     const m=docMastered(d),cl=docClears(d.id);
     return `<div class="q" data-godoc="${esc(d.id)}" style="cursor:pointer">
       <div class="qhead"><div class="qnum">${tot}</div>
-      <div class="qtitle">${esc(d.title)} ${cl?`<span style="font-size:11px;color:var(--accent)">刷过 ${cl} 次</span>`:''}</div>
+      <div class="qtitle">${renderTitle(d.title)} ${cl?`<span style="font-size:11px;color:var(--accent)">刷过 ${cl} 次</span>`:''}</div>
       <div class="qacts"><button class="btn sm" data-goprac="${esc(d.id)}">🎯 刷题</button></div></div>
       <div class="mini" style="margin-top:10px"><i style="width:${dp}%;height:5px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
       <div class="pct" style="font-size:11px;color:var(--muted);margin-top:4px">${dp}% 已看（${seen}/${tot}）${m?` · ${m} 掌握`:' · 已开干'}</div>
@@ -1111,7 +1144,7 @@ function renderBrowse(c){
   let html = `
     <div class="doc-head">
       <div>
-        <h2>${esc(d.title)}</h2>
+        <h2>${renderTitle(d.title)}</h2>
         <div class="meta">共 ${tot} 题 · 已看 ${seen} 题（${dp}%）${
           docMastered(d)?` · 掌握 ${docMastered(d)} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'ima 知识库')}</div>
         <div class="bigbar"><i style="width:${dp}%"></i></div>
@@ -1131,7 +1164,7 @@ function renderBrowse(c){
       return `<div class="q" data-qid="${esc(q.id)}">
         <div class="qhead" data-toggle="${esc(q.id)}">
           <div class="qnum">${i+1}</div>
-          <div class="qtitle">${esc(q.title)}</div>
+          <div class="qtitle">${renderTitle(q.title)}</div>
           <div class="qacts">
             <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记已掌握">★</button>
             <button class="iconbtn ${open?'on':''}" data-eye="${esc(q.id)}" title="显示/隐藏答案">${open?'🙈':'👁'}</button>
@@ -1304,7 +1337,7 @@ function renderCampaign(c){
       <div class="${lvlClass}" data-level="${i}">
         <div class="lnum">${i+1}</div>
         <div class="lbody">
-          <div class="lname">${esc(d.title)} ${isDragon?'<span style="font-size:11px;color:var(--accent3)">· 尖刀班</span>':''}</div>
+          <div class="lname">${renderTitle(d.title)} ${isDragon?'<span style="font-size:11px;color:var(--accent3)">· 尖刀班</span>':''}</div>
           <div class="lmeta">
             <span>${tot} 题</span>
             <span>${dp}% 已看</span>
@@ -1404,7 +1437,8 @@ function renderPractice(c){
   const q = pQuestion();
   const tot = practice.order.length, idx = practice.index+1;
   const p = PROGRESS[q.id]||{};
-  const doc = DOCS.find(d=>d.questions.some(x=>x.id===q.id));
+  const docId = QDOC.get(q.id);
+  const doc = docId ? DINDEX.get(docId) : null;
   const atLast = practice.index === tot-1;
   const revealed = practice.revealed && practice.revealed.has(q.id);
   // 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
@@ -1415,10 +1449,10 @@ function renderPractice(c){
   c.innerHTML = `
     <div class="practice-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>${esc(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}</span><span>${idx} / ${tot}</span></div>
+      <div class="pmeta"><span>${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}</span><span>${idx} / ${tot}</span></div>
       <div class="pcard">
         <div class="ptag">题目</div>
-        <div class="ptitle">${esc(q.title)}</div>
+        <div class="ptitle">${renderTitle(q.title)}</div>
         <div class="panswer" id="pAnswerArea" style="${revealed?'':'display:none'}"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>
       <div class="reveal-hint" id="pRevealHint" style="${revealed?'display:none':''}">点击「显示答案」查看解析</div>
       </div>
@@ -1447,7 +1481,8 @@ function renderPractice(c){
   $('#aiAskBtn').onclick = () => { askAI(q.id); };
   $('#editAnswerBtn').onclick = () => {
     // 找到题目所在的文档
-    const doc = DOCS.find(d=>d.questions.some(x=>x.id===q.id));
+    const docId = QDOC.get(q.id);
+    const doc = docId ? DINDEX.get(docId) : null;
     if(!doc) return;
     // 复用编辑弹窗，只显示答案
     $('#editDocName').textContent = doc.title;
@@ -1528,7 +1563,7 @@ function renderMock(c){
       <div class="pmeta"><span>🎤 模拟面试 · 第 ${idx}/${tot} 题</span></div>
       <div class="mock-card">
         <div class="ptag">题目</div>
-        <div class="ptitle">${esc(q.title)}</div>
+        <div class="ptitle">${renderTitle(q.title)}</div>
         <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答（可后交给 AI 阅卷）</label>
         <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…（作答完成后点击「显示答案」核对）">${esc(a.answer)}</textarea>
         <div class="ref-answer" id="mockRefAnswer" style="${mock.revealed?'':'display:none'}"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>
@@ -1572,7 +1607,7 @@ function renderMock(c){
 function renderMockConfig(c){
   const docs = DOCS.filter(d=>d.questions.length);
   const opts = [`<option value="all">全部题目（${totalQuestions()}）</option>`]
-    .concat(docs.map(d=>`<option value="${esc(d.id)}">${esc(d.title)}（${d.questions.length}）</option>`))
+    .concat(docs.map(d=>`<option value="${esc(d.id)}">${renderTitle(d.title)}（${d.questions.length}）</option>`))
     .join('');
   c.innerHTML = `
     <div class="feature-wrap">
@@ -1616,7 +1651,8 @@ function startMock(){
 }
 // 难度梯度排名：SEED_ORDER 越靠前（越基础）排名越小
 function difficultyRank(qid){
-  const d = DOCS.find(dd=>dd.questions.some(x=>x.id===qid));
+  const docId = QDOC.get(qid);
+  const d = docId ? DINDEX.get(docId) : null;
   const di = SEED_ORDER.indexOf(d ? d.id : null);
   const qi = d ? d.questions.findIndex(x=>x.id===qid) : 0;
   return (di<0?99999:di)*100000 + (qi<0?0:qi);
@@ -1666,7 +1702,7 @@ function renderMockResult(c){
         ${mock.queue.map((id,i)=>{
           const q = questionById(id); const a = mock.answers[id]||{};
           const rm = {good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'}[a.selfRate]||'（未自评）';
-          return `<div class="q-summary"><div class="qt">${i+1}. ${esc(q.title)} <span style="color:var(--muted);font-weight:500;font-size:12px">${rm}</span></div>
+          return `<div class="q-summary"><div class="qt">${i+1}. ${renderTitle(q.title)} <span style="color:var(--muted);font-weight:500;font-size:12px">${rm}</span></div>
             <div class="qa"><b>我的回答：</b>${esc(a.answer&&a.answer.trim()?a.answer.trim():'（未填写）')}</div></div>`;
         }).join('')}
       </div>
@@ -1707,8 +1743,11 @@ function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
     memory.queue = buildMemoryQueue();
     memory.index = 0; memory.flipped = false;
+    memory._history = [];
     if(!memory.queue.length){
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div></div>`;
+      const streak = getStreakDays();
+      const todayDone = getTodayReviewed();
+      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}</div>`;
       return;
     }
   }
@@ -1722,12 +1761,23 @@ function renderMemory(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${esc(d.title)}</span><span>${lastInterval===0?'🆕 第一次刷':`📅 距上次 ${lastInterval} 天`}${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''} · ${idx}/${tot}</span></div>
+      <div class="pmeta">
+        <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
+        <span>
+          <span style="font-weight:700;color:var(--accent)">已复习 ${memory.index}</span> / ${tot}
+          <span style="margin-left:8px;color:var(--muted)">· 剩余 <b style="color:var(--text)">${Math.max(0, tot-memory.index)}</b> 题</span>
+          ${lastInterval===0?` · <span style="color:var(--accent2)">🆕 第一次刷</span>`:` · 📅 距上次 ${lastInterval} 天`}
+          ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
+        </span>
+      </div>
       <div class="memory-card">
         <div class="ptag">题目</div>
-        <div class="ptitle">${esc(q.title)}</div>
-        <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>
-        <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片翻转查看答案，也可用键盘 Enter / 空格</div>
+        <div class="ptitle">${renderTitle(q.title)}</div>
+        <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}">
+          <div class="label">📝 答案</div>
+          ${renderAnswer(q.answer)}
+        </div>
+        <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片查看答案，也可用键盘 Enter / 空格</div>
         <div class="grade-row" id="memGradeRow" style="${memory.flipped?'':'display:none'}">
           <div class="grade-btn" data-rate="1" style="border-color:var(--bad);color:var(--bad)">😰 完全忘了</div>
           <div class="grade-btn" data-rate="2" style="border-color:#e09040;color:#e09040">🤔 记得一点</div>
@@ -1736,14 +1786,13 @@ function renderMemory(c){
           <div class="grade-btn" data-rate="5" style="border-color:var(--good);color:var(--good);background:rgba(79,208,138,.08)">😎 倒背如流</div>
         </div>
         <div class="pcontrols" id="memControls" style="margin-top:14px;${memory.flipped?'':'display:none'}">
-          <button class="btn sm" id="flashSkip">⏭ 跳过</button>
-          ${memory.index>0 ? `<button class="btn sm" id="flashUndo">↩ 撤销</button>` : ''}
+          ${memory._history&&memory._history.length>0 ? `<button class="btn sm" id="flashUndo">↩ 撤销</button>` : ''}
         </div>
       </div>
-      <div class="pstatus">键盘快捷键：Enter / 空格 翻转卡片，数字键 1-5 评分</div>
+      <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-5 评分</div>
     </div>
   `;
-  // 翻转卡片：局部更新 DOM，不触发整页动画
+  // 翻转卡片：点击卡片翻转，答案区域选中文字时不触发
   const card = c.querySelector('.memory-card');
   const memAnswer = $('#memAnswer');
   const memHint = $('#memHint');
@@ -1751,6 +1800,8 @@ function renderMemory(c){
   const memControls = $('#memControls');
   card.onclick = (e) => {
     if(e.target.closest('.grade-btn,.btn,button')) return;
+    // 答案已展开时，在答案区域内点击不做翻转（允许选中复制文字）
+    if(memory.flipped && e.target.closest('.memory-answer')) return;
     memory.flipped = !memory.flipped;
     const show = memory.flipped;
     memAnswer.style.display = show ? '' : 'none';
@@ -1767,43 +1818,39 @@ function renderMemory(c){
     const prevEf = pr.ef || SM2_INIT_EF;
     const prevInterval = pr.interval || 0;
     const r2 = sm2Next(prevEf, prevInterval, rate);
-    // 保存旧数据用于撤销
+    // 多步撤销栈：保存旧数据
     const oldProgress = {...pr};
+    if(!memory._history) memory._history = [];
+    memory._history.push({qid: q.id, oldProgress});
     const curLvl = pr.srLevel || 0;
     const newLvl = rate>=4 ? Math.min(5, curLvl+1) : rate>=3 ? curLvl : 0;
-    PROGRESS[q.id]={...pr, ef:r2.ef, interval:r2.interval, srLevel:newLvl, srNext:now+r2.interval*86400000, lastPracticed:now, seen:true, mastered:rate>=5?true:(pr.mastered||false)};
+    // 评分≤2 说明忘了，清除已掌握标记；评分5 标记掌握
+    const newMastered = rate>=5 ? true : (rate<=2 ? false : (pr.mastered||false));
+    PROGRESS[q.id]={...pr, ef:r2.ef, interval:r2.interval, srLevel:newLvl, srNext:now+r2.interval*86400000, lastPracticed:now, seen:true, mastered:newMastered};
     saveProgress();
     markDirty();
-    memory._lastQid = q.id; memory._lastOldProgress = oldProgress;
     memory.index++; memory.flipped=false;
     const chestTier = rate>=5 ? 5 : rate>=4 ? 4 : rate>=3 ? 3 : rate>=2 ? 2 : 1;
     window.openChest&&window.openChest(chestTier);
     renderAll();
   });
-  const skipBtn = $('#flashSkip'); if(skipBtn) skipBtn.onclick = (e) => { e.stopPropagation();
-    const pr = PROGRESS[q.id] || {};
-    const oldProgress = {...pr};
-    PROGRESS[q.id] = {...pr, srNext: Date.now()+3*86400000, lastPracticed: Date.now()};
-    saveProgress();
-    markDirty();
-    memory._lastQid = q.id; memory._lastOldProgress = oldProgress;
-    memory.index++; memory.flipped=false; renderAll();
-  };
   const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation();
-    memory.index=Math.max(0,memory.index-1); memory.flipped=false;
-    if(memory._lastQid && memory._lastOldProgress){
-      PROGRESS[memory._lastQid] = memory._lastOldProgress;
-      saveProgress(); markDirty();
-      memory._lastQid = null; memory._lastOldProgress = null;
-    }
+    if(!memory._history || !memory._history.length) return;
+    const last = memory._history.pop();
+    PROGRESS[last.qid] = last.oldProgress;
+    saveProgress(); markDirty();
+    memory.index = Math.max(0, memory.index - 1);
+    memory.flipped = false;
+    memory.queue = buildMemoryQueue();
+    if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
     renderAll();
   };
-  // 键盘快捷键: 1-5 评分, Enter 翻转, Space 翻转（统一用一个全局 handler 避免重复绑定）
+  // 键盘快捷键: 1-5 评分, Enter 展开/收起, Space 展开/收起（统一用一个全局 handler 避免重复绑定）
   if(!window._memoryKeyHandler){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
       const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = document.querySelector('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
-      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mh=document.getElementById('memHint'); if(mh)mh.style.display=s?'none':''; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
+      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; const tb=document.getElementById('memToggleBtn'); if(tb)tb.textContent=s?'🙈 收起答案':'👁 展开答案'; }catch(_){} }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
@@ -1992,12 +2039,12 @@ async function doGrillChat(){
 候选人简历：
 ${grill.resume}`,
 
-    theory: `你是资深面试官，正在进行八股文扫荡。${grill.resume?`候选人大约${years}年经验（${lv}），根据简历中的技术栈针对性地出题。`:`没有候选人简历，随机从全方向出题。`}
+    theory: `你是资深面试官，正在进行八股文扫荡。${grill.resume?`候选人大约${years}年经验（${lv}），根据简历中的技术栈针对性地出题。`:`没有候选人简历，随机从后端方向出题（默认不涉及前端/客户端/UI方向，除非简历明确包含）。`}
 
 ${grill.resume?`难度指南：${DIFFICULTY[lv]}`:'难度：随机出题，不分级。'}
 
 规则：
-每次出一道经典面试题${grill.resume?'，围绕简历中的技术栈提问':'，随机选方向'}。${grill.resume?`初始难度匹配${lv}水平。`:''}${grill.resume?'':`不要假装知道简历，不要说"看你简历上写了XXX"。`}
+每次出一道经典面试题${grill.resume?'，围绕简历中的技术栈提问':'，优先选择后端方向（Java、Go、Python、数据库、中间件、操作系统、网络、分布式、Linux等），默认不要问前端（HTML/CSS/JS/React/Vue/小程序）相关题目'}。${grill.resume?`初始难度匹配${lv}水平。`:''}${grill.resume?'':`不要假装知道简历，不要说"看你简历上写了XXX"。`}
 答错时指出正确答案并鼓励安慰，答得好就肯定并立刻出下一题。
 动态调难度：答不上来时降一档出更简单的题；答上了不要升难度，保持当前难度继续。
 Markdown格式，题目加粗，简洁不啰嗦。
@@ -2020,7 +2067,7 @@ ${grill.resume}`:''}`,
 规则：
 1. 面试流程：项目深挖 → 穿插八股 → 算法/场景题 → 反问环节
 2. 项目阶段：根据简历逐层追问，每个项目3-5个问题
-3. 八股穿插：在项目追问间隙随机插入基础题
+3. 八股穿插：在项目追问间隙随机插入基础题。优先围绕简历中的技术栈出题，默认不涉及前端方向（HTML/CSS/JS/React/Vue/小程序等），除非简历明确包含前端技术栈
 4. 语气专业、客观，像真实面试官
 5. 难度严格匹配${lv}水平
 6. Markdown格式，3-5句话
@@ -2127,6 +2174,21 @@ function estimateYears(resume){
   // 默认中等
   return 3;
 }
+function getTodayReviewed(){
+  const today=new Date();today.setHours(0,0,0,0);const today0=today.getTime();
+  let cnt=0;
+  DOCS.forEach(d=>d.questions.forEach(q=>{const p=PROGRESS[q.id];if(p&&p.lastPracticed&&p.lastPracticed>=today0)cnt++;}));
+  return cnt;
+}
+function getStreakDays(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const reviewed=new Set();
+  Object.values(PROGRESS).forEach(p=>{if(p.lastPracticed){const d=new Date(p.lastPracticed);d.setHours(0,0,0,0);reviewed.add(d.getTime());}});
+  let streak=0;const check=new Date(today);
+  if(!reviewed.has(check.getTime())){check.setDate(check.getDate()-1);if(!reviewed.has(check.getTime()))return 0;}
+  for(let i=0;i<365;i++){if(reviewed.has(check.getTime())){streak++;check.setDate(check.getDate()-1);}else break;}
+  return streak;
+}
 function memoryDueCount(){
   const now=Date.now(); let cnt=0;
   const today=new Date(now);today.setHours(0,0,0,0);const today0=today.getTime();
@@ -2138,7 +2200,7 @@ function memoryDueCount(){
       const effectiveNext = Math.max(p.srNext, minNext);
       if(now >= effectiveNext) cnt++;
     } else {
-      if(!p.srNext||now>=p.srNext) cnt++;
+      if(p.srLevel!==undefined && (!p.srNext||now>=p.srNext)) cnt++;
     }
   }));
   return cnt;
@@ -2359,8 +2421,8 @@ function renderSearch(c){
     showResults.map(({doc,q})=>{
       const snip = (q.answer||'').replace(/\n/g,' ').slice(0,90);
       return `<div class="sr-item">
-        <div class="src">${esc(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
-        <div class="qt" data-jump="${esc(q.id)}">${esc(q.title)}</div>
+        <div class="src">${renderTitle(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
+        <div class="qt" data-jump="${esc(q.id)}">${renderTitle(q.title)}</div>
         <div class="snip">${esc(snip)}${snip.length>=90?'…':''}</div>
       </div>`;
     }).join('');
@@ -2385,7 +2447,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if(v===Views.CAMPAIGN){ view=Views.CAMPAIGN; renderAll(); }
     else if(v===Views.DOCS){ view=Views.DOCS; renderAll(); }
     else if(v===Views.MOCK){ view=Views.MOCK; renderAll(); }
-    else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false}; view=Views.MEMORY; renderAll(); }
+    else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:[]}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
@@ -2618,34 +2680,14 @@ document.addEventListener('click',(e)=>{
   },200);
 })();
 
-// ===== IndexedDB 图片存储 =====
-function openBgDB(callback){
-  const req = indexedDB.open('learnAppDB', 3);
-  req.onsuccess = function(e){ callback(e.target.result); };
-  req.onerror = function(){ toast('数据库打开失败'); };
+// ===== IndexedDB 图片存储（复用 Store 连接，避免重复 openDB） =====
+async function saveBgToDB(blob, callback){
+  const ok = await Store.saveBg(blob);
+  if(ok && callback) callback();
 }
-function saveBgToDB(blob, callback){
-  openBgDB(function(db){
-    try{
-      const tx = db.transaction('bg','readwrite');
-      tx.objectStore('bg').put(blob, 'custom');
-      tx.oncomplete = function(){ if(callback) callback(); };
-      tx.onerror = function(){ toast('保存失败'); };
-    }catch(e){ toast('保存失败'); }
-  });
-}
-function loadBgFromDB(callback){
-  openBgDB(function(db){
-    try{
-      if(!db.objectStoreNames.contains('bg')){ callback(null); return; }
-      const tx = db.transaction('bg','readonly');
-      const req = tx.objectStore('bg').get('custom');
-      req.onsuccess = function(){
-        callback(req.result ? URL.createObjectURL(req.result) : null);
-      };
-      req.onerror = function(){ callback(null); };
-    }catch(e){ callback(null); }
-  });
+async function loadBgFromDB(callback){
+  const blob = await Store.getBg();
+  callback(blob ? URL.createObjectURL(blob) : null);
 }
 
 // 检测图片主色调和亮度，计算最佳文字颜色
@@ -2907,9 +2949,9 @@ function parseMarkdownToDoc(text, fallbackTitle){
   const questions = qHeads.map((h,idx)=>{
     const next = qHeads[idx+1] ? qHeads[idx+1].start : lines.length;
     const body = lines.slice(h.start+1, next).join('\n').trim();
-    return { title:h.title, answer:body };
+    return { title:stripMarkdown(h.title), answer:stripMarkdown(body) };
   }).map((q,i)=>({ id:`${docTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[docTitle] }));
-  return { title: docTitle, questions };
+  return { title: stripMarkdown(docTitle), questions };
 }
 
 $('#resetBtn').onclick = async () => {
@@ -3209,6 +3251,20 @@ function buildOrderFromSeed(){
   }
   if(!seedOff){ const merged = mergeSeed(); if(merged) await saveDocs(); }
   buildIndex();
+
+  // 一次性清理：剥离已导入题目中的 Markdown ** 粗体标记
+  if(!localStorage.getItem('learnAppStripMd_v2')){
+    let cleaned = 0;
+    DOCS.forEach(d => {
+      if(stripMarkdown(d.title) !== d.title){ d.title = stripMarkdown(d.title); cleaned++; }
+      (d.questions || []).forEach(q => {
+        if(stripMarkdown(q.title) !== q.title){ q.title = stripMarkdown(q.title); cleaned++; }
+        if(stripMarkdown(q.answer) !== q.answer){ q.answer = stripMarkdown(q.answer); cleaned++; }
+      });
+    });
+    if(cleaned > 0){ await saveDocs(); }
+    localStorage.setItem('learnAppStripMd_v2', '1');
+  }
 
   PROGRESS = await Store.getProgress() || {};
   // 清理孤立进度：删除对应题目已不存在的进度条目
