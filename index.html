@@ -3730,15 +3730,22 @@ function drawVoid(ctx,W,H){
   ctx.restore();
 }
 function drawZiliang(ctx,W,H){
-  const bgGrad=ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  bgGrad.addColorStop(0,'rgba(210,210,220,0.03)');bgGrad.addColorStop(1,'rgba(8,8,12,0)');
-  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
+  const t=_uTime;
+  // 多层底色辉光
+  const bg1=ctx.createRadialGradient(W*0.35,H*0.3,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
+  bg1.addColorStop(0,'rgba(195,200,215,0.08)');bg1.addColorStop(0.5,'rgba(170,175,195,0.03)');bg1.addColorStop(1,'rgba(8,8,12,0)');
+  ctx.fillStyle=bg1;ctx.fillRect(0,0,W,H);
+  const bg2=ctx.createRadialGradient(W*0.65,H*0.55,0,W*0.5,H*0.5,Math.max(W,H)*0.6);
+  bg2.addColorStop(0,'rgba(200,205,225,0.05)');bg2.addColorStop(1,'rgba(8,8,12,0)');
+  ctx.fillStyle=bg2;ctx.fillRect(0,0,W,H);
   for(let d of _uParticles){
     d.y+=d.speed;
-    if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;}
-    ctx.fillStyle=`rgba(220,220,235,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
+    d.x+=Math.sin(t*0.6+d.x*0.015)*0.25;
+    if(d.y-d.len>H){d.y=Math.random()*H*-0.3;d.x=Math.random()*W;d.speed=0.6+Math.random()*1.8;d.len=10+Math.random()*40;d.alpha=0.08+Math.random()*0.15;d.hue=210+Math.random()*30;}
+    const hue=d.hue||220;
+    ctx.fillStyle=`hsla(${hue},15%,88%,${d.alpha*3})`;ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);ctx.fill();
     const grad=ctx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
-    grad.addColorStop(0,'rgba(210,210,220,0)');grad.addColorStop(0.6,`rgba(210,210,220,${d.alpha*0.5})`);grad.addColorStop(1,`rgba(220,220,235,${d.alpha*1.8})`);
+    grad.addColorStop(0,`hsla(${hue},15%,85%,0)`);grad.addColorStop(0.6,`hsla(${hue},12%,82%,${d.alpha*0.5})`);grad.addColorStop(1,`hsla(${hue},10%,88%,${d.alpha*1.8})`);
     ctx.strokeStyle=grad;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(d.x,d.y-d.len);ctx.lineTo(d.x,d.y);ctx.stroke();
   }
 }
