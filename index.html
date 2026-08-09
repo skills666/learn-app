@@ -183,8 +183,8 @@
 
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.85);
-            display:none;place-items:center;z-index:50;animation:fadeIn .15s ease}
-  .modal-bg.show{display:grid}
+            display:grid;place-items:center;z-index:50;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
+  .modal-bg.show{visibility:visible;opacity:1}
   .modal-bg.show .modal{animation:scaleIn .2s ease}
   .modal{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:24px;width:min(520px,92vw);
          box-shadow:var(--shadow);max-height:90vh;overflow-y:auto}
@@ -307,7 +307,8 @@
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
-  .theme-popup{display:none;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px}
+  .theme-popup{display:grid;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
+  .theme-popup.show{visibility:visible;opacity:1}
   #themePopup{top:52px !important;right:130px !important}
   #skinPopup{top:52px !important;right:80px !important}
   .theme-popup.show{display:grid;animation:scaleIn .15s ease}
