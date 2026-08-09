@@ -2445,7 +2445,7 @@ const THEME_CONFIG = {
 // CSS 特效（keyframe 动画，通过 ::before/::after 伪元素实现）
 const CSS_FX = {
   aurora:``,
-  midnight:`@keyframes mTw1{0%,100%{opacity:.15}50%{opacity:.9}}@keyframes mTw2{0%,100%{opacity:.45}30%{opacity:.95}65%{opacity:.2}}@keyframes mTw3{0%,100%{opacity:.2}50%{opacity:.7}}@keyframes mNeb{0%,100%{opacity:.6}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1000px 700px at 25% 20%,rgba(99,102,241,.16),transparent 60%),radial-gradient(ellipse 900px 650px at 75% 70%,rgba(129,140,248,.12),transparent 60%);animation:mNeb 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent2);top:10%;left:8%;box-shadow:18vw 22vh 0 1px var(--accent),40vw 6vh 0 1px var(--accent2),64vw 38vh 0 1px var(--accent),10vw 55vh 0 1px var(--accent2),50vw 18vh 0 2px var(--accent),82vw 8vh 0 1px var(--accent2),28vw 65vh 0 var(--accent),75vw 55vh 0 1px var(--accent2);animation:mTw1 3.5s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent);top:28%;left:28%;box-shadow:22vw 32vh 0 1px var(--accent2),52vw 5vh 0 var(--accent),75vw 42vh 0 1px var(--accent2),8vw 12vh 0 var(--accent),60vw 50vh 0 1px var(--accent),35vw 58vh 0 1px var(--accent2),88vw 48vh 0 var(--accent);animation:mTw2 4.5s ease-in-out infinite}.app::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:#c7cbff;top:5%;left:52%;box-shadow:12vw 48vh 0 var(--accent2),28vw 20vh 0 1px var(--accent),45vw 62vh 0 var(--accent2),68vw 28vh 0 1px var(--accent),85vw 55vh 0 var(--accent2),18vw 78vh 0 1px var(--accent),55vw 82vh 0 var(--accent2),78vw 75vh 0 1px var(--accent);animation:mTw3 5.8s ease-in-out infinite}`,
+  midnight:``,
   sunset:`@keyframes sTop{0%,100%{opacity:.4;transform:translateX(-50%) scale(1)}50%{opacity:.7;transform:translateX(-48%) scale(1.08)}}@keyframes sBot{0%,100%{opacity:.15;transform:translateX(-50%) scale(1)}50%{opacity:.35;transform:translateX(-52%) scale(1.06)}}body::before{content:'';position:fixed;top:-12%;left:50%;pointer-events:none;z-index:0;width:800px;height:380px;border-radius:50%;background:radial-gradient(ellipse,rgba(249,115,22,.65),rgba(239,68,68,.3),transparent 70%);animation:sTop 3.8s ease-in-out infinite}body::after{content:'';position:fixed;bottom:-18%;left:50%;pointer-events:none;z-index:0;width:900px;height:320px;border-radius:50%;background:radial-gradient(ellipse,rgba(251,191,36,.35),rgba(249,115,22,.15),transparent 70%);animation:sBot 5s ease-in-out infinite}`,
   ripple:``,
   particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
@@ -3545,10 +3545,15 @@ function drawAurora(ctx,W,H){
 // ── midnight: 流星雨 + 星云旋转 ──
 function drawMidnight(ctx,W,H){
   const t=_uTime;
-  // 星云底色：大范围靛蓝辉光
-  const neb=ctx.createRadialGradient(W*0.45,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  neb.addColorStop(0,'rgba(30,40,100,0.06)'); neb.addColorStop(0.4,'rgba(15,20,60,0.03)'); neb.addColorStop(1,'transparent');
-  ctx.fillStyle=neb; ctx.fillRect(0,0,W,H);
+  // 两层大光斑，呼吸交替
+  const nebA=ctx.createRadialGradient(W*0.25,H*0.2,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
+  const nebAlphaA=0.10+0.06*Math.sin(t*0.15);
+  nebA.addColorStop(0,`rgba(99,102,241,${nebAlphaA})`); nebA.addColorStop(0.4,`rgba(80,84,210,${nebAlphaA*0.4})`); nebA.addColorStop(0.75,`rgba(50,54,160,${nebAlphaA*0.08})`); nebA.addColorStop(1,'transparent');
+  ctx.fillStyle=nebA; ctx.fillRect(0,0,W,H);
+  const nebB=ctx.createRadialGradient(W*0.75,H*0.7,0,W*0.5,H*0.5,Math.max(W,H)*0.75);
+  const nebAlphaB=0.08+0.04*Math.cos(t*0.12+1.5);
+  nebB.addColorStop(0,`rgba(129,140,248,${nebAlphaB})`); nebB.addColorStop(0.4,`rgba(100,115,220,${nebAlphaB*0.35})`); nebB.addColorStop(0.75,`rgba(60,70,170,${nebAlphaB*0.06})`); nebB.addColorStop(1,'transparent');
+  ctx.fillStyle=nebB; ctx.fillRect(0,0,W,H);
   // 背景星点：固定位置，呼吸闪烁
   for(let p of _uParticles){
     if(p.type!=='star') continue;
