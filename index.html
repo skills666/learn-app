@@ -182,7 +182,7 @@
             color:var(--accent3);font-weight:700;text-align:center}
 
   /* modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.7);backdrop-filter:blur(4px);
+  .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.85);
             display:none;place-items:center;z-index:50;animation:fadeIn .15s ease}
   .modal-bg.show{display:grid}
   .modal-bg.show .modal{animation:scaleIn .2s ease}
@@ -786,9 +786,8 @@ async function checkStorageLimit(newDataSize){
 }
 function totalSeen(){ return Object.values(PROGRESS).filter(p=>p.practiced||p.seen).length; }
 function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).length; }
-// 模态框关闭（直接 display:none，避免 class 切换延迟）
+// 模态框关闭
 function hideModal(el){
-  el.style.display = 'none';
   el.classList.remove('show','hiding');
 }
 function confirmDialog(msg){ return new Promise(resolve=>{
