@@ -307,12 +307,23 @@
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
-  .theme-popup{display:grid;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5);grid-template-columns:repeat(4,1fr);gap:5px;max-width:280px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
+  .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
   .theme-popup.show{visibility:visible;opacity:1}
-  #themePopup{top:52px !important;right:130px !important}
-  #skinPopup{top:52px !important;right:80px !important}
-  .theme-popup.show{display:grid;animation:scaleIn .15s ease}
+  #skinPopup{display:grid!important;flex-direction:unset;top:52px !important;right:80px !important;width:260px;grid-template-columns:repeat(4,1fr);gap:5px}
+  .theme-popup.show{display:flex;animation:scaleIn .15s ease}
   .theme-popup.hiding{animation:scaleOut .1s ease forwards}
+  .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
+  .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
+  .theme-tab:hover{color:var(--text);background:var(--panel)}
+  .theme-tab.active{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.25)}
+  .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:11px;cursor:pointer;border:2px solid transparent;transition:.18s;position:relative;background:var(--bg2)}
+  .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+  .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,209,201,.15)}
+  .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .theme-card .tc-swatch{width:42px;height:30px;border-radius:7px;position:relative;overflow:hidden;flex:none}
+  .theme-card .tc-swatch::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+  .theme-card .tc-name{font-size:10.5px;font-weight:600;color:var(--text);line-height:1}
   .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative}
   .theme-dot:hover{transform:scale(1.08);border-color:var(--accent2)}
   .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
@@ -371,7 +382,10 @@
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
-  .theme-popup{max-width:260px;padding:8px;gap:4px}
+  .theme-popup{max-width:300px;padding:8px;gap:4px}
+  #themePopup{right:6px!important}
+  .theme-card .tc-swatch{width:36px;height:26px}
+  .theme-card .tc-name{font-size:9px}
   .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
     .ref-answer{font-size:13px;padding:10px 12px}
@@ -393,6 +407,8 @@
     .btn{font-size:10px;padding:4px 6px;gap:3px}
     .salary-card .salary-num{font-size:24px}
     .theme-dot{width:40px;height:32px;font-size:8px}
+    .theme-card .tc-swatch{width:30px;height:22px}
+    .theme-card .tc-name{font-size:8px}
   }
 </style>
 </head>
@@ -421,22 +437,14 @@
 </div>
 
 <!-- THEME POPUP -->
-<div class="theme-popup" id="themePopup" style="right:20px;top:44px">
-  <div class="theme-dot" data-theme="aurora" style="background:linear-gradient(135deg,#8b7cf6,#5ad1c9)">星云</div>
-  <div class="theme-dot" data-theme="gold" style="background:linear-gradient(135deg,#f5c542,#e09020)">流光</div>
-  <div class="theme-dot" data-theme="midnight" style="background:linear-gradient(135deg,#6366f1,#818cf8)">子夜</div>
-  <div class="theme-dot" data-theme="sunset" style="background:linear-gradient(135deg,#f97316,#ef4444)">日落</div>
-  <div class="theme-dot" data-theme="void" style="background:linear-gradient(135deg,#c084fc,#a855f7)">虚空</div>
-  <div class="theme-dot" data-theme="ripple" style="background:linear-gradient(135deg,#22d3ee,#6366f1)">水波</div>
-  <div class="theme-dot" data-theme="particle" style="background:linear-gradient(135deg,#f472b6,#22d3ee)">粒子</div>
-  <div class="theme-dot" data-theme="shuangren" style="background:linear-gradient(135deg,#60c0f0,#88d8ff)">霜刃</div>
-  <div class="theme-dot" data-theme="night" style="background:linear-gradient(135deg,#1a1a3e,#2d2d5e)">夜萤</div>
-  <div class="theme-dot" data-theme="img-bg" style="background:linear-gradient(135deg,#666,#444)">自定义</div>
-  <div class="theme-sep">💎 定制</div>
-  <div class="theme-dot" data-theme="ziliang" style="background:linear-gradient(135deg,#7eb8da,#a0a0b8)">子良</div>
-  <div class="theme-dot" data-theme="songxing" style="background:linear-gradient(135deg,#a78bfa,#d4a854)">松星</div>
-  <div class="theme-dot" data-theme="zirong" style="background:linear-gradient(135deg,#00FF88,#E03A3A)">子荣</div>
-  <button class="btn sm" id="uploadBgBtn" style="grid-column:1/-1;justify-self:center;font-size:11px;padding:4px 12px;margin-top:2px">📤 上传背景图</button>
+<div class="theme-popup" id="themePopup" style="right:12px;top:48px">
+  <div class="theme-tabs" id="themeTabs">
+    <div class="theme-tab active" data-tab="canvas">✨ 动态</div>
+    <div class="theme-tab" data-tab="custom">💎 定制</div>
+  </div>
+  <div class="theme-grid" id="themeGrid"></div>
+  <div class="theme-grid" id="themeBgRow" style="border-top:1px solid var(--line);padding-top:6px;margin-top:2px"></div>
+  <button class="btn sm" id="uploadBgBtn" style="width:100%;justify-content:center;font-size:11px;padding:6px;margin-top:4px">📤 上传背景图</button>
 </div>
 
 <!-- 皮肤选择弹窗 -->
@@ -2176,15 +2184,15 @@ searchInput.oninput = () => {
 };
 
 /* =========================================================
-   主题切换
+  主题切换 — 配置驱动引擎
    ========================================================= */
 const THEMES = {
   aurora:{bg:'#0e1018',bg2:'#141826',panel:'#171b2b',card:'#1a1f31',line:'#272d44',line2:'#323a5a',text:'#e7eaf3',muted:'#9aa3c0',faint:'#6b7494',accent:'#5ad1c9',accent2:'#8b7cf6',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#f6a85b',good:'#4fd08a',warn:'#f5c542',bad:'#f06a6a'},
   midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#6366f1',accent2:'#818cf8',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#fbbf24',good:'#10b981',warn:'#fbbf24',bad:'#ef4444'},
-  void:  {bg:'#020204',bg2:'#06060a',panel:'#0a0a10',card:'#0e0e16',line:'#181820',line2:'#222230',text:'#c0c0d0',muted:'#707090',faint:'#404060',accent:'#c084fc',accent2:'#a855f7',accent3:'#f6a85b',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
-  ripple:{bg:'#08140c',bg2:'#0c1a10',panel:'#101e14',card:'#14221a',line:'#1e3228',line2:'#284638',text:'#d0f0d8',muted:'#70b080',faint:'#408050',accent:'#22c55e',accent2:'#f472b6',accent3:'#fbbf24',good:'#22c55e',warn:'#fbbf24',bad:'#f06a6a'},
+  void:  {bg:'#f4f0eb',bg2:'#ede8e2',panel:'#faf7f4',card:'#fffefc',line:'#e0d8cf',line2:'#d0c6b8',text:'#2a2018',muted:'#6b5d4f',faint:'#9a8a78',accent:'#d4a050',accent2:'#c08040',accent3:'#e8c870',good:'#5a9a48',warn:'#c89040',bad:'#c84040'},
+  ripple:{bg:'#e8edf0',bg2:'#dfe5e9',panel:'#f2f5f7',card:'#fafcfd',line:'#cdd6dc',line2:'#bcc7cf',text:'#1a2228',muted:'#556670',faint:'#8899a4',accent:'#3b82c4',accent2:'#6090b8',accent3:'#e89840',good:'#4a9a58',warn:'#d89830',bad:'#c84040'},
   particle:{bg:'#060810',bg2:'#0a0c18',panel:'#0e1020',card:'#121428',line:'#1c1e38',line2:'#282a48',text:'#c0c8e0',muted:'#7888b0',faint:'#485878',accent:'#f472b6',accent2:'#22d3ee',accent3:'#c084fc',good:'#4fd08a',warn:'#f6a85b',bad:'#f06a6a'},
   songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
   shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#a0e0ff',good:'#50c0a0',warn:'#80d0e0',bad:'#e06070'},
@@ -2193,27 +2201,60 @@ const THEMES = {
   ziliang: {bg:'#08080c',bg2:'#0e0e14',panel:'#12121a',card:'#161620',line:'#222230',line2:'#303042',text:'#e8e8f0',muted:'#8888a0',faint:'#585870',accent:'#b8b8d0',accent2:'#8888b0',accent3:'#d0c8a0',good:'#78c8a0',warn:'#d0c8a0',bad:'#e07068'},
   zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#e84050',accent2:'#c8202e',accent3:'#f0a838',good:'#4a9a58',warn:'#c0a040',bad:'#c8202e'}
 };
+
+// ======== 主题配置表（元数据驱动） ========
+const THEME_CONFIG = {
+  // ── 动态组：全部带Canvas粒子特效 ──
+  aurora:  {group:'canvas', name:'星云',   canvas:'aurora',   gradient:'#8b7cf6,#5ad1c9'},
+  midnight:{group:'canvas', name:'子夜',   canvas:'midnight', gradient:'#6366f1,#818cf8'},
+  sunset:  {group:'canvas', name:'日落',   canvas:'sunset',   gradient:'#f97316,#ef4444'},
+  ripple:  {group:'canvas', name:'水波',   canvas:'ripple',   gradient:'#3b82c4,#6090b8'},
+  particle:{group:'canvas', name:'粒子',   canvas:'particle', gradient:'#f472b6,#22d3ee'},
+  gold:    {group:'canvas', name:'流光',   canvas:'gold',     gradient:'#f5c542,#e09020'},
+  void:    {group:'canvas', name:'虚空',   canvas:'void',     gradient:'#d4a050,#c08040'},
+  shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#60c0f0,#88d8ff'},
+  night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#1a1a3e,#2d2d5e'},
+  // ── 定制组：子良/松星/子荣 ──
+  ziliang: {group:'custom', name:'子良',   canvas:'ziliang',  gradient:'#7eb8da,#a0a0b8'},
+  songxing:{group:'custom', name:'松星',   canvas:'songxing', gradient:'#a78bfa,#d4a854'},
+  zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#00FF88,#E03A3A'},
+  // ── 自定义组：上传背景图 ──
+  'img-bg':{group:'bg',    name:'自定义',  canvas:'none',     gradient:'#666,#444'},
+};
+
+// CSS 特效（keyframe 动画，通过 ::before/::after 伪元素实现）
+const CSS_FX = {
+  aurora:`@keyframes a1{0%{transform:rotate(0deg) translate(45vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(45vw,0) rotate(-360deg)}}@keyframes a2{0%{transform:rotate(0deg) translate(28vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(28vw,0) rotate(-360deg)}}@keyframes a3{0%{transform:rotate(0deg) translate(12vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(12vw,0) rotate(-360deg)}}@keyframes a4{0%{transform:rotate(120deg) translate(42vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(42vw,0) rotate(-480deg)}}@keyframes a5{0%{transform:rotate(120deg) translate(25vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(25vw,0) rotate(-480deg)}}@keyframes a6{0%{transform:rotate(240deg) translate(38vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(38vw,0) rotate(-600deg)}}@keyframes a7{0%{transform:rotate(240deg) translate(20vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(20vw,0) rotate(-600deg)}}body::before{content:'';position:fixed;top:40%;left:50%;width:200px;height:120px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.2),transparent 65%);animation:a1 22s linear infinite}body::after{content:'';position:fixed;top:40%;left:50%;width:150px;height:90px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.15),transparent 65%);animation:a2 18s linear infinite}.app::before{content:'';position:fixed;top:40%;left:50%;width:100px;height:60px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.1),transparent 65%);animation:a3 14s linear infinite}.app::after{content:'';position:fixed;top:40%;left:50%;width:180px;height:110px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.16),transparent 65%);animation:a4 24s linear infinite}.main::before{content:'';position:fixed;top:40%;left:50%;width:130px;height:80px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.12),transparent 65%);animation:a5 20s linear infinite}.main::after{content:'';position:fixed;top:40%;left:50%;width:160px;height:100px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.12),transparent 65%);animation:a6 26s linear infinite}.content::before{content:'';position:fixed;top:40%;left:50%;width:110px;height:70px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.08),transparent 65%);animation:a7 16s linear infinite}`,
+  midnight:`@keyframes mTw1{0%,100%{opacity:.15}50%{opacity:.9}}@keyframes mTw2{0%,100%{opacity:.45}30%{opacity:.95}65%{opacity:.2}}@keyframes mTw3{0%,100%{opacity:.2}50%{opacity:.7}}@keyframes mNeb{0%,100%{opacity:.6}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1000px 700px at 25% 20%,rgba(99,102,241,.16),transparent 60%),radial-gradient(ellipse 900px 650px at 75% 70%,rgba(129,140,248,.12),transparent 60%);animation:mNeb 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent2);top:10%;left:8%;box-shadow:18vw 22vh 0 1px var(--accent),40vw 6vh 0 1px var(--accent2),64vw 38vh 0 1px var(--accent),10vw 55vh 0 1px var(--accent2),50vw 18vh 0 2px var(--accent),82vw 8vh 0 1px var(--accent2),28vw 65vh 0 var(--accent),75vw 55vh 0 1px var(--accent2);animation:mTw1 3.5s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent);top:28%;left:28%;box-shadow:22vw 32vh 0 1px var(--accent2),52vw 5vh 0 var(--accent),75vw 42vh 0 1px var(--accent2),8vw 12vh 0 var(--accent),60vw 50vh 0 1px var(--accent),35vw 58vh 0 1px var(--accent2),88vw 48vh 0 var(--accent);animation:mTw2 4.5s ease-in-out infinite}.app::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:#c7cbff;top:5%;left:52%;box-shadow:12vw 48vh 0 var(--accent2),28vw 20vh 0 1px var(--accent),45vw 62vh 0 var(--accent2),68vw 28vh 0 1px var(--accent),85vw 55vh 0 var(--accent2),18vw 78vh 0 1px var(--accent),55vw 82vh 0 var(--accent2),78vw 75vh 0 1px var(--accent);animation:mTw3 5.8s ease-in-out infinite}`,
+  sunset:`@keyframes sTop{0%,100%{opacity:.4;transform:translateX(-50%) scale(1)}50%{opacity:.7;transform:translateX(-48%) scale(1.08)}}@keyframes sBot{0%,100%{opacity:.15;transform:translateX(-50%) scale(1)}50%{opacity:.35;transform:translateX(-52%) scale(1.06)}}body::before{content:'';position:fixed;top:-12%;left:50%;pointer-events:none;z-index:0;width:800px;height:380px;border-radius:50%;background:radial-gradient(ellipse,rgba(249,115,22,.65),rgba(239,68,68,.3),transparent 70%);animation:sTop 3.8s ease-in-out infinite}body::after{content:'';position:fixed;bottom:-18%;left:50%;pointer-events:none;z-index:0;width:900px;height:320px;border-radius:50%;background:radial-gradient(ellipse,rgba(251,191,36,.35),rgba(249,115,22,.15),transparent 70%);animation:sBot 5s ease-in-out infinite}`,
+  ripple:``,
+  particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
+  songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
+};
+
+// 背景渐变映射表
+const BODY_BG_MAP = {
+  gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
+  void:     `radial-gradient(1200px 700px at 30% 15%, #e8d8c01f 0%, transparent 55%), radial-gradient(1000px 600px at 70% 25%, #d4c0a018 0%, transparent 55%), var(--bg)`,
+  shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
+  night:    `radial-gradient(1000px 500px at 75% 15%, rgba(40,50,90,.35) 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, rgba(20,50,15,.18) 0%, transparent 55%), var(--bg)`,
+  ziliang:  `radial-gradient(1200px 600px at 50% 25%, #b8b8d01f 0%, transparent 55%), radial-gradient(1000px 500px at 50% 65%, #8888b012 0%, transparent 55%), var(--bg)`,
+  zirong:   `radial-gradient(1400px 800px at 20% 10%, rgba(30,180,70,.15) 0%, transparent 50%), radial-gradient(1200px 700px at 85% 5%, rgba(200,40,50,.12) 0%, transparent 50%), radial-gradient(1000px 500px at 50% 80%, rgba(240,160,100,.12) 0%, transparent 55%), var(--bg)`,
+};
+
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
+
+// ======== applyTheme：从配置表驱动 ========
 function applyTheme(name){
-  currentTheme = name; const t = THEMES[name]||THEMES.aurora;
-  const FX = {
-    aurora:`@keyframes a1{0%{transform:rotate(0deg) translate(45vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(45vw,0) rotate(-360deg)}}@keyframes a2{0%{transform:rotate(0deg) translate(28vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(28vw,0) rotate(-360deg)}}@keyframes a3{0%{transform:rotate(0deg) translate(12vw,0) rotate(0deg)}100%{transform:rotate(360deg) translate(12vw,0) rotate(-360deg)}}@keyframes a4{0%{transform:rotate(120deg) translate(42vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(42vw,0) rotate(-480deg)}}@keyframes a5{0%{transform:rotate(120deg) translate(25vw,0) rotate(-120deg)}100%{transform:rotate(480deg) translate(25vw,0) rotate(-480deg)}}@keyframes a6{0%{transform:rotate(240deg) translate(38vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(38vw,0) rotate(-600deg)}}@keyframes a7{0%{transform:rotate(240deg) translate(20vw,0) rotate(-240deg)}100%{transform:rotate(600deg) translate(20vw,0) rotate(-600deg)}}body::before{content:'';position:fixed;top:40%;left:50%;width:200px;height:120px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.2),transparent 65%);animation:a1 22s linear infinite}body::after{content:'';position:fixed;top:40%;left:50%;width:150px;height:90px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.15),transparent 65%);animation:a2 18s linear infinite}.app::before{content:'';position:fixed;top:40%;left:50%;width:100px;height:60px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(139,124,246,.1),transparent 65%);animation:a3 14s linear infinite}.app::after{content:'';position:fixed;top:40%;left:50%;width:180px;height:110px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.16),transparent 65%);animation:a4 24s linear infinite}.main::before{content:'';position:fixed;top:40%;left:50%;width:130px;height:80px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(90,209,201,.12),transparent 65%);animation:a5 20s linear infinite}.main::after{content:'';position:fixed;top:40%;left:50%;width:160px;height:100px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.12),transparent 65%);animation:a6 26s linear infinite}.content::before{content:'';position:fixed;top:40%;left:50%;width:110px;height:70px;pointer-events:none;z-index:0;border-radius:50%;background:radial-gradient(ellipse,rgba(246,168,91,.08),transparent 65%);animation:a7 16s linear infinite}`,
-    gold:``,
-    midnight:`@keyframes mTw1{0%,100%{opacity:.15}50%{opacity:.9}}@keyframes mTw2{0%,100%{opacity:.45}30%{opacity:.95}65%{opacity:.2}}@keyframes mTw3{0%,100%{opacity:.2}50%{opacity:.7}}@keyframes mNeb{0%,100%{opacity:.6}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1000px 700px at 25% 20%,rgba(99,102,241,.16),transparent 60%),radial-gradient(ellipse 900px 650px at 75% 70%,rgba(129,140,248,.12),transparent 60%);animation:mNeb 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent2);top:10%;left:8%;box-shadow:18vw 22vh 0 1px var(--accent),40vw 6vh 0 1px var(--accent2),64vw 38vh 0 1px var(--accent),10vw 55vh 0 1px var(--accent2),50vw 18vh 0 2px var(--accent),82vw 8vh 0 1px var(--accent2),28vw 65vh 0 var(--accent),75vw 55vh 0 1px var(--accent2);animation:mTw1 3.5s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent);top:28%;left:28%;box-shadow:22vw 32vh 0 1px var(--accent2),52vw 5vh 0 var(--accent),75vw 42vh 0 1px var(--accent2),8vw 12vh 0 var(--accent),60vw 50vh 0 1px var(--accent),35vw 58vh 0 1px var(--accent2),88vw 48vh 0 var(--accent);animation:mTw2 4.5s ease-in-out infinite}.app::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:#c7cbff;top:5%;left:52%;box-shadow:12vw 48vh 0 var(--accent2),28vw 20vh 0 1px var(--accent),45vw 62vh 0 var(--accent2),68vw 28vh 0 1px var(--accent),85vw 55vh 0 var(--accent2),18vw 78vh 0 1px var(--accent),55vw 82vh 0 var(--accent2),78vw 75vh 0 1px var(--accent);animation:mTw3 5.8s ease-in-out infinite}`,
-    sunset:`@keyframes sTop{0%,100%{opacity:.4;transform:translateX(-50%) scale(1)}50%{opacity:.7;transform:translateX(-48%) scale(1.08)}}@keyframes sBot{0%,100%{opacity:.15;transform:translateX(-50%) scale(1)}50%{opacity:.35;transform:translateX(-52%) scale(1.06)}}body::before{content:'';position:fixed;top:-12%;left:50%;pointer-events:none;z-index:0;width:800px;height:380px;border-radius:50%;background:radial-gradient(ellipse,rgba(249,115,22,.65),rgba(239,68,68,.3),transparent 70%);animation:sTop 3.8s ease-in-out infinite}body::after{content:'';position:fixed;bottom:-18%;left:50%;pointer-events:none;z-index:0;width:900px;height:320px;border-radius:50%;background:radial-gradient(ellipse,rgba(251,191,36,.35),rgba(249,115,22,.15),transparent 70%);animation:sBot 5s ease-in-out infinite}`,
-    void:``,
-    ripple:`@keyframes rRip{0%{transform:translate(-50%,-50%) scale(0);opacity:.45}100%{transform:translate(-50%,-50%) scale(4);opacity:0}}body::before{content:'';position:fixed;top:35%;left:30%;pointer-events:none;z-index:0;width:180px;height:180px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite}body::after{content:'';position:fixed;top:60%;left:65%;pointer-events:none;z-index:0;width:140px;height:140px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 1.5s}.app::before{content:'';position:fixed;top:25%;left:68%;pointer-events:none;z-index:0;width:160px;height:160px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:rRip 5.5s ease-out infinite 3s}.app::after{content:'';position:fixed;top:68%;left:28%;pointer-events:none;z-index:0;width:120px;height:120px;border-radius:50%;border:2px solid var(--accent2);opacity:0;animation:rRip 5.5s ease-out infinite 4s}`,
-    particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
-    ziliang:``,
-    songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-    shuangren:``,
-    night:``,
-    zirong:``,
-    'img-bg':``,
-  };
+  currentTheme = name;
+  const t = THEMES[name]||THEMES.aurora;
+  const cfg = THEME_CONFIG[name]||{};
+
+  // 1. CSS 变量
   let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}';
-  // 图片背景主题
+
+  // 2. 图片背景主题
   if(name==='img-bg'){
     document.body.style.backgroundSize='cover';
     document.body.style.backgroundPosition='center';
@@ -2223,39 +2264,108 @@ function applyTheme(name){
     });
   } else {
     document.body.style.backgroundImage='';
-    // 各主题不同的 body 静态渐变背景（只覆盖需要增强的主题，其余走默认）
-    const bgMap = {
-      gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
-      void:     `radial-gradient(1000px 600px at 50% 45%, #c084fc25 0%, transparent 55%), radial-gradient(800px 450px at 50% 48%, #a855f718 0%, transparent 50%), var(--bg)`,
-      shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
-      night:    `radial-gradient(1000px 500px at 75% 15%, rgba(40,50,90,.35) 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, rgba(20,50,15,.18) 0%, transparent 55%), var(--bg)`,
-      ziliang:  `radial-gradient(1200px 600px at 50% 25%, #b8b8d01f 0%, transparent 55%), radial-gradient(1000px 500px at 50% 65%, #8888b012 0%, transparent 55%), var(--bg)`,
-      zirong:   `radial-gradient(1400px 800px at 20% 10%, rgba(30,180,70,.15) 0%, transparent 50%), radial-gradient(1200px 700px at 85% 5%, rgba(200,40,50,.12) 0%, transparent 50%), radial-gradient(1000px 500px at 50% 80%, rgba(240,160,100,.12) 0%, transparent 55%), var(--bg)`,
-    };
-    document.body.style.background = bgMap[name] || `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
+    document.body.style.background = BODY_BG_MAP[name] || `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
     if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
   }
-  themeVars.textContent = cssVars + (FX[name]||'');
-  // themeVars 设置完后，再根据图片亮度覆盖文字颜色
+
+  // 3. CSS 特效 + 写入
+  themeVars.textContent = cssVars + (CSS_FX[name]||'');
   if(name==='img-bg'){
     try{ applyBgTextMode(); }catch(_){}
   }
   try{localStorage.setItem('learnAppTheme',name)}catch(_){}
+
+  // 4. 更新主题选择器 UI
+  document.querySelectorAll('#themeGrid .theme-card, #themeBgRow .theme-card').forEach(c=>c.classList.toggle('sel',c.dataset.theme===name));
+  // 同步高亮旧的 theme-dot（皮肤弹窗里还保留）
   document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('sel',d.dataset.theme===name));
-  // 所有动态主题统一 Canvas 驱动
+
+  // 5. Canvas 粒子引擎（配置驱动）
   startUnifiedCanvas(name);
-  // 重绘刷题趋势图（颜色跟随主题变化）
+
+  // 6. 重绘趋势图
   setTimeout(() => {
     if(view === Views.OVERVIEW && typeof drawChart === 'function'){
       drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
     }
   }, 50);
 }
-$('#themeBtn').onclick = (e)=>{ e.stopPropagation(); $('#skinPopup').classList.remove('show'); $('#themePopup').classList.toggle('show'); };
+
+// ======== 主题选择器 UI 构建 ========
+function buildThemeGrid(filterGroup){
+  const grid = $('#themeGrid');
+  const bgRow = $('#themeBgRow');
+  const uploadBtn = $('#uploadBgBtn');
+  if(!grid) return;
+  grid.innerHTML = '';
+  if(bgRow) bgRow.innerHTML = '';
+
+  // 定制标签下隐藏自定义行和上传按钮
+  if(filterGroup==='custom'){
+    if(bgRow) bgRow.style.display='none';
+    if(uploadBtn) uploadBtn.style.display='none';
+  } else {
+    if(bgRow) bgRow.style.display='';
+    if(uploadBtn) uploadBtn.style.display='';
+  }
+
+  Object.entries(THEME_CONFIG).forEach(([id,cfg])=>{
+    // bg 组（自定义背景图）始终显示在底部单独行
+    if(cfg.group==='bg'){
+      if(!bgRow || filterGroup==='custom') return;
+      const card = document.createElement('div');
+      card.className = 'theme-card';
+      card.dataset.theme = id;
+      const label = localStorage.getItem('customBgLabel') || cfg.name;
+      card.innerHTML = `<div class="tc-swatch" style="background:linear-gradient(135deg,${cfg.gradient})"></div><span class="tc-name">${label}</span>`;
+      card.onclick = ()=>{ applyTheme(id); hideModal($('#themePopup')); };
+      if(id===currentTheme) card.classList.add('sel');
+      bgRow.appendChild(card);
+      return;
+    }
+    // 其他组按 filterGroup 过滤
+    if(filterGroup && cfg.group !== filterGroup) return;
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.dataset.theme = id;
+    card.innerHTML = `<div class="tc-swatch" style="background:linear-gradient(135deg,${cfg.gradient})"></div><span class="tc-name">${cfg.name}</span>`;
+    card.onclick = ()=>{ applyTheme(id); hideModal($('#themePopup')); };
+    if(id===currentTheme) card.classList.add('sel');
+    grid.appendChild(card);
+  });
+}
+
+// 初始化主题卡片（默认显示动态组）
+buildThemeGrid('canvas');
+
+// 标签切换
+document.querySelectorAll('#themeTabs .theme-tab').forEach(tab=>{
+  tab.onclick = (e)=>{
+    e.stopPropagation();
+    document.querySelectorAll('#themeTabs .theme-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const group = tab.dataset.tab;
+    buildThemeGrid(group==='all'?null:group);
+  };
+});
+
+$('#themeBtn').onclick = (e)=>{
+  e.stopPropagation();
+  $('#skinPopup').classList.remove('show');
+  const popup = $('#themePopup');
+  popup.classList.toggle('show');
+  if(popup.classList.contains('show')){
+    // 根据当前激活的标签重新渲染
+    const activeTab = document.querySelector('#themeTabs .theme-tab.active');
+    const group = activeTab ? activeTab.dataset.tab : 'canvas';
+    buildThemeGrid(group==='all'?null:group);
+  }
+};
 $('#skinBtn').onclick = (e)=>{ e.stopPropagation(); $('#themePopup').classList.remove('show'); $('#skinPopup').classList.toggle('show'); };
+
+// 皮肤弹窗中的 theme-dot 点击事件
 document.querySelectorAll('.theme-dot').forEach(d=>{
-  if(d.dataset.theme) d.onclick=()=>{applyTheme(d.dataset.theme);hideModal($('#themePopup'));};
-  else if(d.dataset.skinCat){
+  if(d.dataset.skinCat){
     d.onclick=(e)=>{
       e.stopPropagation();
       const cat=d.dataset.skinCat;
@@ -2269,6 +2379,7 @@ document.querySelectorAll('.theme-dot').forEach(d=>{
     };
   }
 });
+
 document.addEventListener('click',(e)=>{
   if(e.target.closest('#themePopup,#skinPopup,#themeBtn,#skinBtn')) return;
   hideModal($('#themePopup')); hideModal($('#skinPopup'));
@@ -2281,7 +2392,6 @@ document.addEventListener('click',(e)=>{
     const el = document.querySelector(`.theme-dot[data-skin-cat="${cat}"][data-skin="${skin}"]`);
     if(el) el.style.outline='2px solid var(--accent)';
   });
-  // 延迟同步到 chest.js（等它加载完）
   setTimeout(()=>{
     if(skins.chest!==undefined&&window.setChestSkin)window.setChestSkin(+skins.chest);
     if(skins.item!==undefined&&window.setRewardSkin)window.setRewardSkin(+skins.item);
@@ -2394,7 +2504,9 @@ if(uploadBgBtn){
             const name = file.name.replace(/\.[^.]+$/, '');
             const label = name.length > 6 ? name.slice(0,6)+'…' : name;
             localStorage.setItem('customBgLabel', label);
-            document.querySelector('.theme-dot[data-theme="img-bg"]').textContent = label;
+            // 更新主题选择器卡片名称
+            const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
+            if(card) card.textContent = label;
             const mb = (file.size / 1024 / 1024).toFixed(1);
             toast('背景图已保存（'+mb+'MB）');
             if(currentTheme === 'img-bg') applyTheme('img-bg');
@@ -2411,8 +2523,8 @@ if(uploadBgBtn){
 (function(){
   const label = localStorage.getItem('customBgLabel');
   if(label){
-    const dot = document.querySelector('.theme-dot[data-theme="img-bg"]');
-    if(dot) dot.textContent = label;
+    const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
+    if(card) card.textContent = label;
   }
 })();
 
@@ -2931,7 +3043,7 @@ let _uTheme = '';
 let _uParticles = [];
 
 function startUnifiedCanvas(theme){
-  const canvasThemes = ['gold','void','ziliang','shuangren','songxing','night','zirong'];
+  const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','ziliang','songxing','zirong'];
   if(!canvasThemes.includes(theme)){
     // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
@@ -2969,39 +3081,186 @@ function resizeUnified(){
 function initThemeParticles(theme){
   _uParticles = [];
   const W = _uCanvas.width, H = _uCanvas.height;
-  // 移动端减少粒子数量以优化性能
   const isMobile = W < 768;
-  const count = {gold:isMobile?25:50, void:0, ziliang:isMobile?50:100, shuangren:isMobile?25:50, songxing:isMobile?60:120, night:isMobile?4:8, zirong:isMobile?200:400}[theme] || 0;
-  for(let i=0;i<count;i++){
-    _uParticles.push({
-      x: Math.random()*W, y: Math.random()*H,
-      vx: (Math.random()-0.5)*1, vy: (Math.random()-0.5)*1,
-      life: Math.random(), maxLife: 1+Math.random()*3,
-      size: 0.5+Math.random()*2,
-      seed: Math.random()*9999
-    });
+
+  // ── aurora: 紫青极光飘带 ──
+  if(theme==='aurora'){
+    const n = isMobile?25:50;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H*0.7,
+        vx:(Math.random()-0.5)*0.6, vy:(Math.random()-0.5)*0.3,
+        size:1+Math.random()*3, alpha:0.1+Math.random()*0.3,
+        phase:Math.random()*Math.PI*2, speed:0.2+Math.random()*1,
+        hue:Math.random()<0.5?260:170, // 紫或青
+        band:Math.floor(Math.random()*4)
+      });
+    }
   }
-  if(theme==='ziliang'){
-    _uParticles = [];
+  // ── midnight: 靛蓝星云 + 流星 ──
+  else if(theme==='midnight'){
+    // 星云粒子
+    const n = isMobile?40:80;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.2, vy:(Math.random()-0.5)*0.2,
+        size:0.5+Math.random()*3, alpha:0.05+Math.random()*0.25,
+        phase:Math.random()*Math.PI*2, speed:0.2+Math.random()*0.8,
+        hue:230+Math.random()*40, meteor:false
+      });
+    }
+    // 流星
+    const mCount = isMobile?2:5;
+    for(let i=0;i<mCount;i++){
+      _uParticles.push({
+        x:Math.random()*W*0.3, y:Math.random()*H*-0.2,
+        vx:2+Math.random()*4, vy:1+Math.random()*2,
+        size:1.5+Math.random()*2, alpha:0.6+Math.random()*0.4,
+        phase:Math.random()*Math.PI*2, speed:0.8+Math.random()*1.2,
+        hue:200+Math.random()*60, meteor:true,
+        len:60+Math.random()*100, lifeLeft:3+Math.random()*8
+      });
+    }
+  }
+  // ── sunset: 暖橙光斑浮尘 ──
+  else if(theme==='sunset'){
+    const n = isMobile?30:60;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.5, vy:-(0.2+Math.random()*0.6),
+        size:1+Math.random()*4, alpha:0.08+Math.random()*0.35,
+        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5,
+        hue:15+Math.random()*30 // 橙-红
+      });
+    }
+  }
+  // ── ripple: 雨后水洼倒影（亮色主题）──
+  else if(theme==='ripple'){
+    const n = isMobile?30:60;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3,
+        size:8+Math.random()*40, alpha:0.06+Math.random()*0.14,
+        phase:Math.random()*Math.PI*2, speed:0.2+Math.random()*0.6,
+        hue:195+Math.random()*30, // 蓝灰色调
+        distort:Math.random()*0.5
+      });
+    }
+  }
+  // ── particle: 七彩荧光漂浮 ──
+  else if(theme==='particle'){
+    const n = isMobile?35:70;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.7, vy:(Math.random()-0.5)*0.7,
+        size:1+Math.random()*3.5, alpha:0.15+Math.random()*0.4,
+        phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*2,
+        hue:Math.random()*360
+      });
+    }
+  }
+  // ── gold: 金色尘埃粒子 + 闪光 ──
+  else if(theme==='gold'){
+    const n = isMobile?30:60;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.4, vy:-(0.1+Math.random()*0.5),
+        size:0.8+Math.random()*2.2, alpha:0.1+Math.random()*0.4,
+        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5,
+        sparkle:Math.random()<0.2
+      });
+    }
+  }
+  // ── void: 晨曦薄雾光柱（亮色主题）──
+  else if(theme==='void'){
+    // 浮尘微粒
+    const n = isMobile?25:50;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.2, vy:-(0.05+Math.random()*0.3),
+        size:1+Math.random()*3, alpha:0.05+Math.random()*0.2,
+        phase:Math.random()*Math.PI*2, speed:0.2+Math.random()*1,
+        hue:30+Math.random()*20, // 暖金色浮尘
+        beam:false
+      });
+    }
+    // 光柱
+    const bCount = isMobile?3:6;
+    for(let i=0;i<bCount;i++){
+      _uParticles.push({
+        x:W*(0.1+Math.random()*0.8), y:0,
+        vx:0, vy:0,
+        size:60+Math.random()*120, alpha:0.03+Math.random()*0.06,
+        phase:Math.random()*Math.PI*2, speed:0.05+Math.random()*0.15,
+        hue:35+Math.random()*20,
+        beam:true, tilt:(Math.random()-0.5)*0.15
+      });
+    }
+  }
+  // ── ziliang: 雨丝（子良特效）──
+  else if(theme==='ziliang'){
     const cols = Math.floor(W/14);
     for(let i=0;i<cols;i++) _uParticles.push({x:i*14+Math.random()*8, y:Math.random()*H*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15});
   }
-  if(theme==='shuangren'){
-    _uParticles = [];
-    for(let i=0;i<50;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, vy:0.2+Math.random()*0.6, vx:(Math.random()-0.5)*0.3, size:0.5+Math.random()*2.5, alpha:0.2+Math.random()*0.5, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.02});
+  // ── shuangren: 雪花冰晶 ──
+  else if(theme==='shuangren'){
+    const n = isMobile?35:70;
+    for(let i=0;i<n;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, vy:0.15+Math.random()*0.8, vx:(Math.random()-0.5)*0.4, size:0.5+Math.random()*3, alpha:0.15+Math.random()*0.5, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.025});
   }
-  if(theme==='zirong'){
-    _uParticles = [];
-    const isZirongMobile = W < 768;
-    const zirongCount = isZirongMobile ? 200 : 500;
-    for(let i=0;i<zirongCount;i++){
-      const green=Math.random()<0.25;
+  // ── songxing: 星点飘动（松星特效）──
+  else if(theme==='songxing'){
+    const n = isMobile?60:120;
+    for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.2, vy:-0.1-Math.random()*0.3,
-        size:0.5+Math.random()*3, alpha:0.08+Math.random()*0.25,
-        green, glowR:green?3+Math.random()*5:2+Math.random()*4,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5
+        vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
+        life:Math.random(), maxLife:1+Math.random()*3,
+        size:0.5+Math.random()*2,
+        seed:Math.random()*9999
+      });
+    }
+  }
+  // ── night: 萤火虫 ──
+  else if(theme==='night'){
+    const n = isMobile?5:10;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        seed:Math.random()*9999,
+        size:1.2+Math.random()*3
+      });
+    }
+  }
+  // ── zirong: 墨韵水彩晕染（亮色背景优化）──
+  else if(theme==='zirong'){
+    const n = isMobile?15:30;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.15, vy:(Math.random()-0.5)*0.15,
+        size:40+Math.random()*120, alpha:0.03+Math.random()*0.06,
+        phase:Math.random()*Math.PI*2, speed:0.1+Math.random()*0.3,
+        hue:[0,120,30,340,200][i%5], // 红/绿/橙/粉/蓝
+        pulse:Math.random()*3
+      });
+    }
+  }
+  // ── 默认通用粒子 ──
+  else {
+    const count = isMobile?30:60;
+    for(let i=0;i<count;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
+        life:Math.random(), maxLife:1+Math.random()*3,
+        size:0.5+Math.random()*2,
+        seed:Math.random()*9999
       });
     }
   }
@@ -3016,20 +3275,180 @@ function tickUnified(ts){
   const ctx = _uCtx, W = _uCanvas.width, H = _uCanvas.height;
   ctx.clearRect(0, 0, W, H);
   switch(_uTheme){
+    case 'aurora': drawAurora(ctx,W,H); break;
+    case 'midnight': drawMidnight(ctx,W,H); break;
+    case 'sunset': drawSunset(ctx,W,H); break;
+    case 'ripple': drawRipple(ctx,W,H); break;
+    case 'particle': drawParticle(ctx,W,H); break;
     case 'gold': drawGold(ctx,W,H); break;
     case 'void': drawVoid(ctx,W,H); break;
-    case 'ziliang': drawZiliang(ctx,W,H); break;
     case 'shuangren': drawShuangren(ctx,W,H); break;
-
-    case 'songxing': drawSongxing(ctx,W,H); break;
     case 'night': drawNight(ctx,W,H); break;
+    case 'ziliang': drawZiliang(ctx,W,H); break;
+    case 'songxing': drawSongxing(ctx,W,H); break;
     case 'zirong': drawZirong(ctx,W,H); break;
-
     default: break;
   }
 }
+// ======== 新 Canvas 特效 ========
+
+// ── aurora: 紫青极光飘带 ──
+function drawAurora(ctx,W,H){
+  const t = _uTime;
+  // 底部暗色衬底
+  ctx.fillStyle='rgba(5,5,12,0.15)'; ctx.fillRect(0,0,W,H);
+  // 极光飘带层
+  for(let band=0;band<4;band++){
+    const by=H*(0.1+band*0.22);
+    const bx=W*0.5+Math.sin(t*0.3+band)*W*0.3;
+    const grad=ctx.createRadialGradient(bx,by,0,bx,by,H*0.55);
+    const hue=band%2===0?260:170;
+    grad.addColorStop(0,`hsla(${hue},70%,55%,0.12)`);
+    grad.addColorStop(0.3,`hsla(${hue},60%,40%,0.06)`);
+    grad.addColorStop(0.6,`hsla(${hue},50%,30%,0.02)`);
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  }
+  // 光点粒子
+  for(let p of _uParticles){
+    p.x+=p.vx+Math.sin(t*p.speed+p.phase)*0.3;
+    p.y+=p.vy+Math.cos(t*p.speed+p.phase)*0.2;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    const pulse=Math.sin(t*1.5+p.phase);
+    const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
+    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
+    glow.addColorStop(0,`hsla(${p.hue},70%,70%,${alpha})`);
+    glow.addColorStop(0.5,`hsla(${p.hue},60%,50%,${alpha*0.2})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${p.hue},50%,85%,${alpha*1.2})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── midnight: 靛蓝星云 + 流星 ──
+function drawMidnight(ctx,W,H){
+  const t = _uTime;
+  // 星云底色
+  const nebGrad=ctx.createRadialGradient(W*0.3,H*0.35,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
+  nebGrad.addColorStop(0,'rgba(40,50,120,0.08)'); nebGrad.addColorStop(0.4,'rgba(20,25,80,0.04)'); nebGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=nebGrad; ctx.fillRect(0,0,W,H);
+  // 星云粒子
+  for(let p of _uParticles){
+    if(p.meteor) continue;
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    const pulse=Math.sin(t*p.speed+p.phase);
+    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
+    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2);
+    glow.addColorStop(0,`hsla(${p.hue},70%,60%,${alpha})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2,0,Math.PI*2); ctx.fill();
+  }
+  // 流星
+  for(let p of _uParticles){
+    if(!p.meteor) continue;
+    p.lifeLeft-=0.016;
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.lifeLeft<=0||p.x>W+50||p.y>H+50){
+      p.x=Math.random()*W*0.3; p.y=Math.random()*H*-0.15;
+      p.vx=2+Math.random()*4; p.vy=1+Math.random()*2;
+      p.lifeLeft=3+Math.random()*8; p.alpha=0.6+Math.random()*0.4;
+    }
+    const tailGrad=ctx.createLinearGradient(p.x,p.y,p.x-p.vx*p.len*0.016,p.y-p.vy*p.len*0.016);
+    tailGrad.addColorStop(0,`hsla(${p.hue},80%,70%,${p.alpha})`);
+    tailGrad.addColorStop(1,'transparent');
+    ctx.strokeStyle=tailGrad; ctx.lineWidth=p.size*0.8;
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-p.vx*3,p.y-p.vy*3); ctx.stroke();
+    ctx.fillStyle=`hsla(${p.hue},60%,90%,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── sunset: 暖橙光斑浮尘 ──
+function drawSunset(ctx,W,H){
+  const t = _uTime;
+  // 暖色底光
+  const warmGrad=ctx.createRadialGradient(W*0.5,H*0.7,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
+  warmGrad.addColorStop(0,'rgba(255,100,40,0.06)'); warmGrad.addColorStop(0.5,'rgba(200,60,20,0.03)'); warmGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=warmGrad; ctx.fillRect(0,0,W,H);
+  // 浮尘粒子
+  for(let p of _uParticles){
+    p.x+=p.vx+Math.sin(t*0.5+p.phase)*0.2;
+    p.y+=p.vy;
+    if(p.y<-20){p.y=H+20; p.x=Math.random()*W;}
+    if(p.x<-20)p.x=W+20; if(p.x>W+20)p.x=-20;
+    const pulse=Math.sin(t*p.speed+p.phase);
+    const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
+    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
+    glow.addColorStop(0,`hsla(${p.hue},80%,65%,${alpha})`);
+    glow.addColorStop(0.4,`hsla(${p.hue},70%,45%,${alpha*0.3})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${p.hue},60%,80%,${alpha*0.8})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.4,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── ripple: 雨后水洼倒影（亮色主题）──
+function drawRipple(ctx,W,H){
+  const t=_uTime;
+  ctx.fillStyle='rgba(230,238,243,0.12)'; ctx.fillRect(0,0,W,H);
+  for(let p of _uParticles){
+    p.x+=p.vx+Math.sin(t*0.3+p.phase)*0.15;
+    p.y+=p.vy+Math.cos(t*0.25+p.phase)*0.15;
+    if(p.x<-p.size){p.x=W+p.size; p.y=Math.random()*H;}
+    if(p.x>W+p.size){p.x=-p.size; p.y=Math.random()*H;}
+    if(p.y<-p.size){p.y=H+p.size; p.x=Math.random()*W;}
+    if(p.y>H+p.size){p.y=-p.size; p.x=Math.random()*W;}
+    const breath=0.6+0.4*Math.sin(t*0.5+p.speed*3);
+    const alpha=p.alpha*breath;
+    const r=p.size;
+    // 水渍晕染效果：不规则椭圆 + 轻微变形
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.distort*Math.sin(t*0.3+p.phase));
+    ctx.scale(1,0.55+0.45*Math.abs(Math.cos(t*0.2+p.phase)));
+    // 外层淡晕
+    ctx.globalAlpha=alpha*0.5;
+    ctx.fillStyle=`hsla(${p.hue},25%,70%,1)`;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+    // 中层
+    ctx.globalAlpha=alpha*0.8;
+    ctx.fillStyle=`hsla(${p.hue},30%,60%,1)`;
+    ctx.beginPath(); ctx.arc(0,0,r*0.6,0,Math.PI*2); ctx.fill();
+    // 核心
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=`hsla(${p.hue},35%,45%,1)`;
+    ctx.beginPath(); ctx.arc(0,0,r*0.25,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
+}
+
+// ── particle: 七彩荧光漂浮 ──
+function drawParticle(ctx,W,H){
+  const t = _uTime;
+  ctx.fillStyle='rgba(3,4,8,0.25)'; ctx.fillRect(0,0,W,H);
+  for(let p of _uParticles){
+    p.x+=p.vx+Math.sin(t*0.8+p.phase)*0.3;
+    p.y+=p.vy+Math.cos(t*0.6+p.phase)*0.3;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    const pulse=Math.sin(t*p.speed+p.phase);
+    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
+    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3);
+    glow.addColorStop(0,`hsla(${p.hue},80%,65%,${alpha})`);
+    glow.addColorStop(0.3,`hsla(${p.hue},70%,50%,${alpha*0.4})`);
+    glow.addColorStop(0.7,`hsla(${p.hue},60%,35%,${alpha*0.1})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${p.hue},40%,90%,${alpha*1.3})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
 function drawGold(ctx,W,H){
   const t = _uTime;
+  // 流光河层
   const rivers = [
     {y:0.15, color:[255,200,120,0.12], speed:0.08, width:0.4},
     {y:0.35, color:[255,160,60,0.1], speed:-0.06, width:0.35},
@@ -3045,58 +3464,62 @@ function drawGold(ctx,W,H){
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
   }
+  // 金色尘埃粒子层
+  for(let p of _uParticles){
+    p.y+=p.vy; p.x+=p.vx;
+    if(p.y<-10){p.y=H+10; p.x=Math.random()*W;}
+    if(p.x<-10)p.x=W+10; if(p.x>W+10)p.x=-10;
+    const pulse=Math.sin(t*p.speed+p.phase);
+    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
+    const c=p.sparkle?'255,240,180':'220,180,100';
+    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
+    glow.addColorStop(0,`rgba(${c},${alpha})`);
+    glow.addColorStop(0.5,`rgba(${c},${alpha*0.2})`);
+    glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`rgba(${c},${alpha*1.1})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
 }
 function drawVoid(ctx,W,H){
-  const t = _uTime;
-  const cx = W*0.5, cy = H*0.48;
-  const maxR = Math.max(W,H);
-
-  // 外层星场：更多更密更随机
-  for(let i=0;i<120;i++){
-    const px = ((i*137.5 + t*2.5) % W + W) % W;
-    const py = ((i*251.3 + t*1.8) % H + H) % H;
-    const a = 0.04 + Math.sin(t*1.5 + i)*0.03;
-    ctx.fillStyle = `rgba(140,120,200,${a})`;
-    ctx.beginPath(); ctx.arc(px, py, 0.8, 0, Math.PI*2); ctx.fill();
+  const t=_uTime;
+  // 晨曦薄雾光柱效果
+  ctx.fillStyle='rgba(245,242,237,0.08)'; ctx.fillRect(0,0,W,H);
+  // 浮尘微粒
+  for(let p of _uParticles){
+    if(p.beam) continue;
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.y<-10){p.y=H+10; p.x=Math.random()*W;}
+    if(p.x<-10)p.x=W+10; if(p.x>W+10)p.x=-10;
+    const pulse=Math.sin(t*p.speed+p.phase);
+    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=`hsla(${p.hue},50%,60%,1)`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.4,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.25;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*1.5,0,Math.PI*2); ctx.fill();
   }
-
-  // 朦胧吸积盘：多层径向渐变叠加，不用椭圆边框
-  for(let ring=0;ring<6;ring++){
-    const ringR = 60 + ring*maxR*0.18;
-    const alpha = 0.1 - ring*0.015;
-    const grad = ctx.createRadialGradient(cx, cy, ringR*0.2, cx, cy, ringR);
-    grad.addColorStop(0, `rgba(60,20,120,${alpha})`);
-    grad.addColorStop(0.3, `rgba(80,30,140,${alpha*0.7})`);
-    grad.addColorStop(0.6, `rgba(50,15,90,${alpha*0.4})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+  // 光柱：从顶部倾斜射下的光束
+  for(let p of _uParticles){
+    if(!p.beam) continue;
+    const breath=0.5+0.5*Math.sin(t*0.3+p.phase);
+    const alpha=p.alpha*breath;
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    const grad=ctx.createLinearGradient(p.x,0,p.x+p.tilt*H,H);
+    grad.addColorStop(0,`hsla(${p.hue},70%,85%,0)`);
+    grad.addColorStop(0.2,`hsla(${p.hue},60%,75%,0.6)`);
+    grad.addColorStop(0.5,`hsla(${p.hue},55%,70%,0.4)`);
+    grad.addColorStop(1,`hsla(${p.hue},50%,65%,0)`);
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(p.x-p.size*0.3,0);
+    ctx.lineTo(p.x+p.size*0.3,0);
+    ctx.lineTo(p.x+p.tilt*H+p.size*0.5,H);
+    ctx.lineTo(p.x+p.tilt*H-p.size*0.5,H);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
-
-  // 朦胧粒子云：用大量小粒子 + 径向渐变模拟气体感
-  for(let i=0;i<200;i++){
-    const angle = t*0.2 + i*0.18;
-    const r = 20 + (i*2.5) % (maxR*0.65);
-    const spread = Math.sin(t*0.4 + i*0.1)*15;
-    const px = cx + Math.cos(angle)*(r+spread);
-    const py = cy + Math.sin(angle)*(r+spread)*0.55;
-    const distFromCenter = Math.sqrt((px-cx)**2 + ((py-cy)/0.55)**2);
-    const alpha = Math.max(0, 0.06 + (1 - distFromCenter/(maxR*0.7))*0.1);
-    if(px>0 && px<W && py>0 && py<H){
-      const col = i%3===0?'rgba(180,130,240,':i%3===1?'rgba(150,100,220,':'rgba(200,160,250,';
-      ctx.fillStyle = col + alpha + ')';
-      ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI*2); ctx.fill();
-    }
-  }
-
-  // 中心暗核：柔和的径向渐变，不是硬圆
-  const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
-  coreGrad.addColorStop(0, 'rgba(8,3,20,0.95)');
-  coreGrad.addColorStop(0.3, 'rgba(20,8,50,0.6)');
-  coreGrad.addColorStop(0.6, 'rgba(40,15,80,0.2)');
-  coreGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = coreGrad;
-  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha=1;
 }
 function drawZiliang(ctx,W,H){
   const bgGrad=ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
@@ -3174,43 +3597,28 @@ function drawNight(ctx,W,H){
 }
 function drawZirong(ctx,W,H){
   const t=_uTime;
-  ctx.fillStyle='rgba(245,240,237,0.35)';
-  ctx.fillRect(0,0,W,H);
-
-  // 底部暖色光晕
-  const botGlow=ctx.createRadialGradient(W*0.5,H*0.85,0,W*0.5,H*0.85,H*0.5);
-  botGlow.addColorStop(0,'rgba(255,180,160,0.06)');
-  botGlow.addColorStop(1,'transparent');
-  ctx.fillStyle=botGlow;ctx.fillRect(0,0,W,H);
-
-  // 顶部绿调光晕
-  const topGlow=ctx.createRadialGradient(W*0.5,H*0.15,0,W*0.5,H*0.15,H*0.4);
-  topGlow.addColorStop(0,'rgba(160,220,180,0.05)');
-  topGlow.addColorStop(1,'transparent');
-  ctx.fillStyle=topGlow;ctx.fillRect(0,0,W,H);
-
-  // 全屏粒子（亮色版：红/绿荧光，高对比度）
-  ctx.globalCompositeOperation='multiply';
+  // 水墨水彩晕染效果：大圆斑缓慢漂移 + 呼吸透明度
   for(let p of _uParticles){
-    p.x+=p.vx;p.y+=p.vy;
-    if(p.y<-10){p.y=H+10;p.x=Math.random()*W;}
-    if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;
-    const alpha=p.alpha*(0.5+0.5*Math.sin(t*p.speed+p.phase));
-    const col=p.green?'30,180,70':'200,40,50';
-    const grad=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*1.5);
-    grad.addColorStop(0,`rgba(${col},${alpha})`);
-    grad.addColorStop(0.3,`rgba(${col},${alpha*0.3})`);
-    grad.addColorStop(1,'transparent');
-    ctx.fillStyle=grad;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size*1.5,0,Math.PI*2);ctx.fill();
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<-p.size){p.x=W+p.size; p.y=Math.random()*H;}
+    if(p.x>W+p.size){p.x=-p.size; p.y=Math.random()*H;}
+    if(p.y<-p.size){p.y=H+p.size; p.x=Math.random()*W;}
+    if(p.y>H+p.size){p.y=-p.size; p.x=Math.random()*W;}
+    const breath=0.5+0.5*Math.sin(t*0.4+p.pulse);
+    const alpha=p.alpha*breath;
+    // 用多层 arc 模拟水彩晕染，不建渐变
+    const r=p.size;
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=`hsla(${p.hue},60%,55%,1)`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.3,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.6;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.55,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.25;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.8,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.08;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
   }
-  ctx.globalCompositeOperation='source-over';
-
-  // 暗角（更轻）
-  const vignette=ctx.createRadialGradient(W*0.5,H*0.5,Math.min(W,H)*0.3,W*0.5,H*0.5,Math.max(W,H)*0.75);
-  vignette.addColorStop(0,'transparent');
-  vignette.addColorStop(1,'rgba(240,225,220,0.3)');
-  ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=1;
 }
 
 </script>
