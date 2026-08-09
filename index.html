@@ -3347,23 +3347,23 @@ function initThemeParticles(theme){
   }
   // ── ripple/雨隙: 雨滴 + 涟漪 ──
   else if(theme==='ripple'){
-    // 涟漪环：更多、更大、更亮
-    const rCount = isMobile?8:15;
+    // 涟漪环
+    const rCount = isMobile?3:6;
     for(let i=0;i<rCount;i++){
       _uParticles.push({
         cx:W*(0.1+Math.random()*0.8), cy:H*(0.15+Math.random()*0.7),
-        r:Math.random()*60, maxR:60+Math.random()*120,
-        alpha:0.3+Math.random()*0.4, speed:0.5+Math.random()*1.2,
-        delay:Math.random()*3, type:'ring'
+        r:0, maxR:40+Math.random()*80,
+        alpha:0.25+Math.random()*0.25, speed:0.4+Math.random()*0.8,
+        delay:Math.random()*4, type:'ring'
       });
     }
-    // 雨滴：更多、更密
-    const dCount = isMobile?20:50;
+    // 雨滴：细长竖线快速下落
+    const dCount = isMobile?10:25;
     for(let i=0;i<dCount;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H*-0.5,
-        vy:2.5+Math.random()*5, vx:0,
-        len:6+Math.random()*12, alpha:0.2+Math.random()*0.4,
+        vy:2+Math.random()*4, vx:0,
+        len:4+Math.random()*8, alpha:0.15+Math.random()*0.3,
         type:'drop'
       });
     }
@@ -3397,25 +3397,25 @@ function initThemeParticles(theme){
   // ── void/晨光: 光线粒子 + 浮尘 ──
   else if(theme==='void'){
     // 光点：亮金小点，快速划动
-    const n = isMobile?40:80;
+    const n = isMobile?30:60;
     for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.8, vy:-0.4-Math.random()*2,
-        size:0.8+Math.random()*1.6, alpha:0.2+Math.random()*0.6,
-        phase:Math.random()*Math.PI*2, speed:1.2+Math.random()*3.5,
-        hue:38+Math.random()*20, trail:5+Math.random()*10
+        vx:(Math.random()-0.5)*0.6, vy:-0.3-Math.random()*1.5,
+        size:0.6+Math.random()*1.2, alpha:0.15+Math.random()*0.5,
+        phase:Math.random()*Math.PI*2, speed:1+Math.random()*3,
+        hue:40+Math.random()*15, trail:3+Math.random()*6
       });
     }
-    // 浮尘：大号暖斑，更亮更明显
-    const d = isMobile?10:20;
+    // 浮尘：大号极淡暖斑
+    const d = isMobile?8:15;
     for(let i=0;i<d;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.1, vy:(Math.random()-0.5)*0.1,
-        size:60+Math.random()*180, alpha:0.03+Math.random()*0.06,
-        phase:Math.random()*Math.PI*2, speed:0.08+Math.random()*0.25,
-        hue:32+Math.random()*25, dust:true
+        vx:(Math.random()-0.5)*0.08, vy:(Math.random()-0.5)*0.08,
+        size:50+Math.random()*150, alpha:0.015+Math.random()*0.03,
+        phase:Math.random()*Math.PI*2, speed:0.05+Math.random()*0.2,
+        hue:35+Math.random()*20, dust:true
       });
     }
   }
@@ -3455,13 +3455,13 @@ function initThemeParticles(theme){
   }
   // ── zirong: 墨韵水彩晕染（亮色背景优化）──
   else if(theme==='zirong'){
-    const n = isMobile?12:25;
+    const n = isMobile?15:30;
     for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.4,
-        size:80+Math.random()*180, alpha:0.08+Math.random()*0.15,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*0.8,
+        vx:(Math.random()-0.5)*0.15, vy:(Math.random()-0.5)*0.15,
+        size:40+Math.random()*120, alpha:0.03+Math.random()*0.06,
+        phase:Math.random()*Math.PI*2, speed:0.1+Math.random()*0.3,
         hue:[0,120,30,340,200][i%5], // 红/绿/橙/粉/蓝
         pulse:Math.random()*3
       });
@@ -3612,10 +3612,7 @@ function drawSunset(ctx,W,H){
 // ── ripple/雨隙: 雨滴下落 + 涟漪扩散 ──
 function drawRipple(ctx,W,H){
   const t=_uTime;
-  // 底色：冷蓝灰基调
-  const bg=ctx.createRadialGradient(W*0.5,H*0.35,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  bg.addColorStop(0,'rgba(180,200,220,0.10)'); bg.addColorStop(0.5,'rgba(150,170,195,0.04)'); bg.addColorStop(1,'rgba(220,230,240,0)');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(230,238,243,0.08)'; ctx.fillRect(0,0,W,H);
   for(let p of _uParticles){
     if(p.type==='ring'){
       // 涟漪环：从中心扩散
@@ -3625,23 +3622,23 @@ function drawRipple(ctx,W,H){
       const progress=r/p.maxR;
       const alpha=p.alpha*(1-progress);
       ctx.strokeStyle=`rgba(80,130,170,${alpha})`;
-      ctx.lineWidth=2*(1-progress*0.6);
+      ctx.lineWidth=1.5*(1-progress*0.7);
       ctx.beginPath(); ctx.arc(p.cx,p.cy,r,0,Math.PI*2); ctx.stroke();
       // 内圈淡晕
-      ctx.strokeStyle=`rgba(110,170,210,${alpha*0.5})`;
-      ctx.lineWidth=4*(1-progress);
+      ctx.strokeStyle=`rgba(100,160,200,${alpha*0.4})`;
+      ctx.lineWidth=3*(1-progress);
       ctx.beginPath(); ctx.arc(p.cx,p.cy,r,0,Math.PI*2); ctx.stroke();
     } else {
       // 雨滴：竖线快速下落
       p.y+=p.vy;
-      if(p.y>H+10){p.y=-10; p.x=Math.random()*W; p.vy=2.5+Math.random()*5;}
+      if(p.y>H+10){p.y=-10; p.x=Math.random()*W; p.vy=2+Math.random()*4;}
       const headY=p.y-p.len;
       const grad=ctx.createLinearGradient(p.x,headY,p.x,p.y);
-      grad.addColorStop(0,'rgba(130,180,220,0)');
-      grad.addColorStop(0.5,`rgba(150,190,230,${p.alpha*0.6})`);
-      grad.addColorStop(1,`rgba(170,210,250,${p.alpha})`);
+      grad.addColorStop(0,'rgba(120,170,210,0)');
+      grad.addColorStop(0.6,`rgba(140,180,220,${p.alpha*0.5})`);
+      grad.addColorStop(1,`rgba(160,200,240,${p.alpha})`);
       ctx.strokeStyle=grad;
-      ctx.lineWidth=1.2;
+      ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(p.x,headY); ctx.lineTo(p.x,p.y); ctx.stroke();
     }
   }
@@ -3706,14 +3703,8 @@ function drawGold(ctx,W,H){
 function drawVoid(ctx,W,H){
   const t=_uTime;
   ctx.save();
-  // 底色：暖米白基调，两层辉光
-  const bg1=ctx.createRadialGradient(W*0.5,H*0.3,0,W*0.5,H*0.5,Math.max(W,H)*0.9);
-  bg1.addColorStop(0,'rgba(252,248,240,0.15)'); bg1.addColorStop(0.5,'rgba(248,240,228,0.06)'); bg1.addColorStop(1,'rgba(240,230,215,0)');
-  ctx.fillStyle=bg1; ctx.fillRect(0,0,W,H);
-  const bg2=ctx.createRadialGradient(W*0.35,H*0.6,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
-  bg2.addColorStop(0,'rgba(250,235,210,0.10)'); bg2.addColorStop(1,'rgba(240,225,200,0)');
-  ctx.fillStyle=bg2; ctx.fillRect(0,0,W,H);
-  // 浮尘：大号暖斑
+  ctx.fillStyle='rgba(248,244,238,0.06)'; ctx.fillRect(0,0,W,H);
+  // 浮尘：大号极淡暖斑
   for(let p of _uParticles){
     if(!p.dust) continue;
     p.x+=p.vx; p.y+=p.vy;
@@ -3721,27 +3712,27 @@ function drawVoid(ctx,W,H){
     if(p.x>W+p.size){p.x=-p.size; p.y=Math.random()*H;}
     if(p.y<-p.size){p.y=H+p.size; p.x=Math.random()*W;}
     if(p.y>H+p.size){p.y=-p.size; p.x=Math.random()*W;}
-    const breath=0.5+0.5*Math.sin(t*0.2+p.phase);
+    const breath=0.6+0.4*Math.sin(t*0.15+p.phase);
     ctx.globalAlpha=p.alpha*breath;
-    ctx.fillStyle=`hsla(${p.hue},45%,75%,1)`;
+    ctx.fillStyle=`hsla(${p.hue},40%,70%,1)`;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
   }
-  // 光点：上升 + 拖尾
+  // 光点：快速上升 + 拖尾短线
   for(let p of _uParticles){
     if(p.dust) continue;
-    p.x+=p.vx+Math.sin(t*2+p.phase)*0.15;
+    p.x+=p.vx+Math.sin(t*2+p.phase)*0.1;
     p.y+=p.vy;
-    if(p.y<-20||p.x<-20||p.x>W+20){p.y=H+20; p.x=Math.random()*W; p.vy=-0.4-Math.random()*2;}
+    if(p.y<-20||p.x<-20||p.x>W+20){p.y=H+20; p.x=Math.random()*W; p.vy=-0.3-Math.random()*1.5;}
     const pulse=Math.sin(t*p.speed+p.phase);
-    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
-    ctx.strokeStyle=`hsla(${p.hue},80%,75%,${alpha*0.5})`;
-    ctx.lineWidth=p.size*0.7;
+    const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
+    ctx.strokeStyle=`hsla(${p.hue},80%,70%,${alpha*0.4})`;
+    ctx.lineWidth=p.size*0.5;
     ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x,p.y-p.trail); ctx.stroke();
     ctx.globalAlpha=alpha;
-    ctx.fillStyle=`hsla(${p.hue},50%,90%,1)`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.8,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=alpha*0.3;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${p.hue},60%,85%,1)`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.25;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
@@ -3827,32 +3818,28 @@ function drawNight(ctx,W,H){
 }
 function drawZirong(ctx,W,H){
   const t=_uTime;
-  // 底色：暖灰纸纹理感
-  const bg=ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
-  bg.addColorStop(0,'rgba(250,242,235,0.12)'); bg.addColorStop(0.5,'rgba(240,228,218,0.05)'); bg.addColorStop(1,'rgba(220,210,200,0)');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  ctx.save();
-  // 水墨水彩晕染效果：大圆斑漂移 + 呼吸
+  // 水墨水彩晕染效果：大圆斑缓慢漂移 + 呼吸透明度
   for(let p of _uParticles){
     p.x+=p.vx; p.y+=p.vy;
     if(p.x<-p.size){p.x=W+p.size; p.y=Math.random()*H;}
     if(p.x>W+p.size){p.x=-p.size; p.y=Math.random()*H;}
     if(p.y<-p.size){p.y=H+p.size; p.x=Math.random()*W;}
     if(p.y>H+p.size){p.y=-p.size; p.x=Math.random()*W;}
-    const breath=0.4+0.6*Math.sin(t*0.5+p.pulse);
+    const breath=0.5+0.5*Math.sin(t*0.4+p.pulse);
     const alpha=p.alpha*breath;
+    // 用多层 arc 模拟水彩晕染，不建渐变
     const r=p.size;
     ctx.globalAlpha=alpha;
-    ctx.fillStyle=`hsla(${p.hue},65%,55%,1)`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.25,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=alpha*0.65;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.5,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=alpha*0.3;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.75,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=alpha*0.1;
+    ctx.fillStyle=`hsla(${p.hue},60%,55%,1)`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.3,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.6;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.55,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.25;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.8,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=alpha*0.08;
     ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
   }
-  ctx.restore();
+  ctx.globalAlpha=1;
 }
 
 </script>
