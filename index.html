@@ -793,9 +793,14 @@ function hideModal(el){
   if(!el.classList.contains('show')) return;
   el.classList.add('hiding');
   let done = false;
-  const cleanup = () => { if(done) return; done = true; el.classList.remove('show','hiding'); };
+  const cleanup = () => {
+    if(done) return; done = true;
+    el.classList.remove('hiding');
+    // 延迟一帧再移除 show，确保 display:none 在动画结束后生效
+    requestAnimationFrame(() => el.classList.remove('show'));
+  };
   el.addEventListener('animationend', cleanup, {once:true});
-  setTimeout(cleanup, 300);
+  setTimeout(cleanup, 350);
 }
 function confirmDialog(msg){ return new Promise(resolve=>{
   const ov=document.createElement('div');
