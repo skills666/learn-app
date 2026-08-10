@@ -25,12 +25,6 @@ function shadow(cx,by,bw,bh){X.fillStyle='rgba(0,0,0,.4)';X.beginPath();X.ellips
 function base(cx,by,bw,fill,border){const py=by+2;X.fillStyle='rgba(0,0,0,.25)';X.beginPath();X.ellipse(cx,py+12,bw*.46,bw*.48*.09,0,0,Math.PI*2);X.fill();X.fillStyle=fill||'#1c1830';X.beginPath();X.roundRect(cx-bw*.55,py,bw*1.1,12,6);X.fill();X.strokeStyle=border||'rgba(120,100,180,.12)';X.lineWidth=1;X.beginPath();X.roundRect(cx-bw*.55,py,bw*1.1,12,6);X.stroke();}
 function drawGem(x,y,r,hue){const g=mkRadial(x-r*.1,y-r*.1,r*.02,x,y,r,[0,'hsl('+hue+',90%,70%)',.2,'hsl('+hue+',80%,45%)',.5,'hsl('+hue+',70%,22%)',.8,'hsl('+hue+',60%,8%)',1,'hsl('+hue+',50%,3%)']);X.fillStyle=g;X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.fill();X.strokeStyle='rgba(255,255,255,'+(hue>200?.25:.2)+')';X.lineWidth=r*.12;X.beginPath();X.arc(x,y,r,0,Math.PI*2);X.stroke();X.fillStyle='rgba(255,255,255,.2)';X.beginPath();X.arc(x-r*.2,y-r*.25,r*.22,0,Math.PI*2);X.fill();}
 
-// ════════════════ 工具：紧贴轮廓框线 + 装饰带 ════════════════
-// 在已绘制的 body path 上叠加一条紧贴轮廓的描边
-function tightBorder(color,alpha,width){
-  if(alpha===undefined)alpha=1;
-  X.save();X.globalAlpha=alpha;X.strokeStyle=color;X.lineWidth=width;X.stroke();X.restore();
-}
 // 紧贴轮廓的底部/顶部装饰带 — 用 clip+rect 切割
 function contourBar(x1,y1,x2,y2,barGrad,barAlpha){
   X.save();
@@ -473,19 +467,6 @@ function trash0(x,y,r,rt){
   X.fillStyle='rgba(80,60,0,.15)';X.beginPath();X.arc(r*.15,-r*.1,r*.12,0,Math.PI*2);X.fill();
   X.restore();
 }
-function gem0(x,y,r,rt,hue,hue2){
-  X.save();X.translate(x,y);X.rotate(rt);
-  const h=hue||200;
-  const g=X.createRadialGradient(-r*.12,-r*.12,0,0,0,r);
-  g.addColorStop(0,'hsl('+h+',80%,55%)');g.addColorStop(.3,'hsl('+h+',70%,40%)');
-  g.addColorStop(.6,'hsl('+h+',60%,18%)');g.addColorStop(1,'hsl('+h+',50%,5%)');
-  X.fillStyle=g;
-  X.beginPath();X.moveTo(0,-r);X.lineTo(r*.7,0);X.lineTo(0,r*.7);X.lineTo(-r*.7,0);X.closePath();X.fill();
-  X.strokeStyle='rgba(255,255,255,.15)';X.lineWidth=r*.07;X.stroke();
-  X.fillStyle='rgba(255,255,255,.15)';X.beginPath();X.moveTo(0,-r);X.lineTo(0,0);X.lineTo(-r*.18,-r*.22);X.closePath();X.fill();
-  X.restore();
-}
-
 // ════════════════ REWARD 1: 珠宝奇珍 ════════════════
 function stone1(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
