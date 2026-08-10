@@ -240,7 +240,7 @@
   .app-loader .spinner{width:40px;height:40px;border:3px solid var(--line2);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
   .app-loader .text{color:var(--muted);font-size:14px}
 
-  /* ---------- 模拟面试 ---------- */
+  /* ---------- 八股练习 ---------- */
   .feature-wrap{max-width:880px;margin:0 auto}
   .cfg-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .cfg-card h2{margin:0 0 4px;font-size:20px}
@@ -263,6 +263,8 @@
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .memory-answer strong{color:var(--text)}
+  #memAIBlock{margin-top:16px}
+  .memory-card .ai-answer{margin-top:0;margin-bottom:0}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -439,7 +441,7 @@
       <div class="tab active" data-view="overview"><span class="ic">📊</span> 总览</div>
       <div class="tab" data-view="docs"><span class="ic">📁</span> 文档</div>
       <div class="tab" data-view="campaign"><span class="ic">🗡️</span> 闯关</div>
-      <div class="tab" data-view="mock"><span class="ic">🎤</span> 面试</div>
+      <div class="tab" data-view="mock"><span class="ic">📝</span> 八股</div>
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
       <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
     </div>
@@ -507,8 +509,8 @@
       <div class="set-section">
         <div class="set-head" onclick="toggleSetPanel(this)">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
         <div class="set-body" style="display:none">
-          <div class="set-hint">所有数据存储在浏览器本地（上限 500MB），导出 JSON 用于备份或迁移到其他设备。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
-          <div class="set-btns"><button class="btn primary" id="exportBtn">⬇️ 导出全部数据（JSON 备份）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
+          <div class="set-hint">所有数据存储在浏览器本地（上限 500MB），导出 Markdown 格式的完整题库，方便备份或交给 AI 阅读。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
+          <div class="set-btns"><button class="btn primary" id="exportMDBtn">📄 导出全部题库（Markdown）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
         </div>
       </div>
       <!-- 3. AI 设置 -->
@@ -1137,7 +1139,6 @@ function renderDocs(c){
 
 /* ---------- 浏览视图（含插入/删除题目） ---------- */
 function renderBrowse(c){
-  highlightQid = null; // 每次进入文档清掉残留的搜索跳转
   const d = docById(currentDocId);
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
   const seen=docSeen(d), tot=d.questions.length, dp=tot?Math.round(seen/tot*100):0;
@@ -1160,7 +1161,7 @@ function renderBrowse(c){
   } else {
     html += d.questions.map((q,i)=>{
       const p = PROGRESS[q.id]||{};
-      const open = p.seen;
+      const open = false;
       return `<div class="q" data-qid="${esc(q.id)}">
         <div class="qhead" data-toggle="${esc(q.id)}">
           <div class="qnum">${i+1}</div>
@@ -1547,7 +1548,7 @@ function toggleRevealP(qid){
 }
 
 /* =========================================================
-   模拟面试：随机抽题 + 自评 + 导出复盘 MD
+   八股练习：随机抽题 + 自评 + 导出复盘 MD
    ========================================================= */
 function renderMock(c){
   if(mock.done) return renderMockResult(c);
@@ -1560,7 +1561,7 @@ function renderMock(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>🎤 模拟面试 · 第 ${idx}/${tot} 题</span></div>
+      <div class="pmeta"><span>🎤 八股练习 · 第 ${idx}/${tot} 题</span></div>
       <div class="mock-card">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
@@ -1598,7 +1599,7 @@ function renderMock(c){
     if(btnEl) btnEl.textContent = mock.revealed ? '🙈 隐藏答案' : '👁 显示答案';
   };
   $('#mockAIBtn').onclick = () => { askAI(qid, 'mock'); };
-  $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出模拟面试？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
+  $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出八股练习？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
   $('#mockNext').onclick = () => {
     if(mock.index < tot-1){ mock.index++; mock.revealed=false; renderAll(); }
     else { mock.done = true; renderAll(); }
@@ -1612,8 +1613,8 @@ function renderMockConfig(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
-        <h2>🎤 模拟面试</h2>
-        <div class="desc">随机抽取题目进行模拟面试：自由作答，完成后手动显示答案并自评掌握度。交卷后自动生成一份复盘 MD 文档，可直接交给 AI 阅卷评分。</div>
+        <h2>🎤 八股练习</h2>
+        <div class="desc">随机抽取题目进行八股练习：自由作答，完成后手动显示答案并自评掌握度。交卷后自动生成一份复盘 MD 文档，可直接交给 AI 阅卷评分。</div>
         <div class="cfg-grid">
           <div class="cfg-field"><label>题目数量</label><input type="number" id="mockCount" min="1" max="50" value="${mock.cfg.count}"></div>
           <div class="cfg-field"><label>题目范围</label><select id="mockScope">${opts}</select></div>
@@ -1622,7 +1623,7 @@ function renderMockConfig(c){
             <option value="difficulty">按难度梯度（由易到难）</option>
           </select></div>
         </div>
-        <button class="btn primary" id="mockStart">🚀 开始模拟面试</button>
+        <button class="btn primary" id="mockStart">🚀 开始八股练习</button>
       </div>
       <div class="empty-feature" style="padding:0">
         <div style="font-size:13px;color:var(--text);opacity:.85;line-height:1.7;text-align:left;background:var(--card);padding:14px 18px;border-radius:10px">
@@ -1679,7 +1680,7 @@ function renderMockResult(c){
     <div class="feature-wrap">
       <div class="mock-result">
         <div class="big">🏁</div>
-        <h2>模拟面试完成！</h2>
+        <h2>八股练习完成！</h2>
         <div class="sub">范围：${esc(mock.scopeName)} · 共 ${tot} 题</div>
         <div class="score-summary">
           <div class="si"><div class="n" style="color:var(--good)">${good}</div><div class="t">✅ 熟练</div></div>
@@ -1769,7 +1770,7 @@ function renderMemory(c){
           ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
         </span>
       </div>
-      <div class="memory-card">
+      <div class="memory-card" id="memCard">
         <div class="ptag" style="display:flex;align-items:center;justify-content:space-between">
           <span>题目</span>
           <button class="btn sm" id="flashEdit">✏️ 编辑</button>
@@ -1853,7 +1854,7 @@ function renderMemory(c){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
       const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = document.querySelector('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
-      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; const tb=document.getElementById('memToggleBtn'); if(tb)tb.textContent=s?'🙈 收起答案':'👁 展开答案'; }catch(_){} }
+      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
@@ -2211,7 +2212,7 @@ function memoryDueCount(){
 function exportMockMD(){
   const rateMap = {good:'✅ 熟练', mid:'🟡 模糊', bad:'❌ 不会'};
   const L = [];
-  L.push('# 模拟面试复盘（AI 阅卷版）');
+  L.push('# 八股练习复盘（AI 阅卷版）');
   L.push('');
   L.push('> 本文件由「面试题学习台」自动生成，请依据「参考答案」评估「我的回答」的准确性与完整性，给出每题得分与改进建议，并做整体评价。');
   L.push('');
@@ -2245,7 +2246,7 @@ function exportMockMD(){
   L.push('3. 最后给出整体评价、薄弱知识点与复习建议。');
   const blob = new Blob([L.join('\n')], {type:'text/markdown;charset=utf-8'});
   const url = URL.createObjectURL(blob);
-  const aEl = document.createElement('a'); aEl.href=url; aEl.download=`模拟面试复盘-${dateStr()}.md`; aEl.click();
+  const aEl = document.createElement('a'); aEl.href=url; aEl.download=`八股练习复盘-${dateStr()}.md`; aEl.click();
   URL.revokeObjectURL(url);
   toast('已导出复盘 MD，交给 AI 阅卷即可');
 }
@@ -2304,7 +2305,7 @@ async function gradeInterview(){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   aiGradingLoading=true; aiGrading=null; renderAll();
   const rm={good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'};
-  let p='你是资深技术面试官，请对以下模拟面试作答进行客观阅卷。\n\n**要求：**\n- 逐题评分（满分100），给出：你的标准答案（精简）、得分、优点（1-2句）、不足（1-2句）、遗漏的关键点\n- 最后汇总：总分（所有题平均分）、整体评价（2-3句）、针对性备考建议（2-3条）\n- 评分标准：准确度40分 + 完整度30分 + 深度20分 + 表达10分\n- 严格但不苛刻，考生自评仅供参考\n\n';
+  let p='你是资深技术面试官，请对以下八股练习作答进行客观阅卷。\n\n**要求：**\n- 逐题评分（满分100），给出：你的标准答案（精简）、得分、优点（1-2句）、不足（1-2句）、遗漏的关键点\n- 最后汇总：总分（所有题平均分）、整体评价（2-3句）、针对性备考建议（2-3条）\n- 评分标准：准确度40分 + 完整度30分 + 深度20分 + 表达10分\n- 严格但不苛刻，考生自评仅供参考\n\n';
   for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]);const a=mock.answers[mock.queue[i]]||{};
     p+=`## 第${i+1}题\n**题目：** ${q.title}\n**我的回答：** ${a.answer||'(未填)'}\n**自评：** ${rm[a.selfRate]||'无'}\n\n`; }
   const r=await callAI([{role:'system',content:'你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。'},{role:'user',content:p}],(full)=>{
@@ -2320,9 +2321,9 @@ async function askAI(qid, mode){
   aiAnswer[qid]='loading'; renderAll();
   let prompt, systemPrompt;
   if(mode==='mock'){
-    // 模拟面试：真实面试官角色
+    // 八股练习：真实面试官角色
     const userAnswer = mock.answers[qid]?.answer?.trim() || '';
-    systemPrompt = '你是一位真实的大厂技术面试官，正在对候选人进行模拟面试。你的风格是：冷静、追问、不废话。用 Markdown 格式输出，标题用 ##，重点用 **加粗**，不要输出 HTML。';
+    systemPrompt = '你是一位真实的大厂技术面试官，正在对候选人进行八股练习。你的风格是：冷静、追问、不废话。用 Markdown 格式输出，标题用 ##，重点用 **加粗**，不要输出 HTML。';
     prompt = `你正在进行一场真实的技术面试模拟。候选人正在回答以下问题。
 
 【题目】${q.title}
@@ -2843,17 +2844,28 @@ function updateCSP(url){
 }
 ['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; if(aiConfig){ Store.saveApiConfig(aiConfig); updateCSP(aiConfig.url); } }});
 
-$('#exportBtn').onclick = () => {
-  const data = { version:1, source:'learnApp export', exportedAt:new Date().toISOString(),
-                 documents:DOCS, progress:PROGRESS, order:ORDER, clears:CLEARS,
-                 theme:localStorage.getItem('learnAppTheme')||'aurora',
-                 skins:JSON.parse(localStorage.getItem('learnAppSkins')||'{}') };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+$('#exportMDBtn').onclick = () => {
+  const L = [];
+  L.push('# 题库导出');
+  L.push('');
+  L.push(`> 导出时间：${new Date().toLocaleString()}  ·  总题数：${totalQuestions()}`);
+  L.push('');
+  DOCS.forEach(d => {
+    L.push(`## ${d.title}`);
+    L.push('');
+    (d.questions||[]).forEach((q,i) => {
+      L.push(`### ${i+1}. ${q.title}`);
+      L.push('');
+      L.push(q.answer||'');
+      L.push('');
+    });
+  });
+  const blob = new Blob([L.join('\n')], {type:'text/markdown;charset=utf-8'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download=`learn-data-${dateStr()}.json`; a.click();
+  const a = document.createElement('a'); a.href=url; a.download=`题库导出-${dateStr()}.md`; a.click();
   URL.revokeObjectURL(url);
   hideModal($('#dataModal'));
-  toast('已导出全部数据');
+  toast('已导出 Markdown 题库');
 };
 
 $('#importBtn').onclick = () => { $('#fileInput').value=''; $('#fileInput').click(); };
