@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="面试题">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230e1018' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='45'>📚</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230e1018' width='100' height='100' rx='20'/><g transform='translate(18,15)'><rect fill='%235ad1c9' width='22' height='62' rx='3'/><rect fill='%238b7cf6' width='22' height='62' x='26' rx='3'/><rect fill='%23f6a85b' width='22' height='62' x='52' rx='3'/></g></svg>">
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0e1018">
@@ -310,9 +310,8 @@
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
   .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
-  .theme-popup.show{visibility:visible;opacity:1}
-  #skinPopup{display:grid!important;flex-direction:unset;top:52px !important;right:80px !important;width:260px;grid-template-columns:repeat(4,1fr);gap:5px}
-  .theme-popup.show{display:flex;animation:scaleIn .15s ease}
+  .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn .15s ease}
+  #skinPopup{display:grid!important;top:52px !important;right:80px !important;width:260px;grid-template-columns:repeat(4,1fr);gap:5px}
   .theme-popup.hiding{animation:scaleOut .1s ease forwards}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
@@ -400,11 +399,11 @@
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
-  .theme-popup{max-width:300px;padding:8px;gap:4px}
-  #themePopup{right:6px!important}
-  .theme-card .tc-swatch{width:36px;height:26px}
-  .theme-card .tc-name{font-size:9px}
-  .theme-dot{width:48px;height:38px;font-size:9px}
+    .theme-popup{max-width:300px;padding:8px;gap:4px}
+    #themePopup{right:6px!important}
+    .theme-card .tc-swatch{width:36px;height:26px}
+    .theme-card .tc-name{font-size:9px}
+    .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
     .ref-answer{font-size:13px;padding:10px 12px}
     .grade-btn{padding:8px;font-size:12px;min-width:80px}
@@ -731,6 +730,8 @@ let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, ans
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'' };
+// 宝箱动画封装（chest.js 动态加载，可能不存在）
+function tryOpenChest(tier){ if(window.openChest) window.openChest(tier); }
 
 // SM-2 算法：动态间隔复习
 // EF（难易因子）初始2.5，根据评分调整，最小1.3
@@ -1200,8 +1201,8 @@ function renderBrowse(c){
   if(highlightQid && d.questions.some(q=>q.id===highlightQid)){
     const targetQid = highlightQid;
     highlightQid = null;  // 消费掉，避免下次浏览还自动展开
-    // 先展开答案（如果还没展开）
-    if(!(PROGRESS[targetQid]||{}).seen){ toggleAnswer(targetQid); }
+    // 展开答案（toggleAnswer 会自动判断当前状态）
+    toggleAnswer(targetQid);
     // 滚动到目标题目
     setTimeout(()=>{
       const card = c.querySelector(`[data-qid="${CSS.escape(targetQid)}"]`);
@@ -1532,7 +1533,7 @@ function renderDone(c){
 }
 function toggleMasterP(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); window.openChest&&window.openChest(5); } saveProgress();
+  p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); tryOpenChest(5); } saveProgress();
   renderAll();
 }
 // 刷题里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
@@ -1674,9 +1675,9 @@ function mockGrade(qid, rate){
   a.selfRate = rate;
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.selfRate = rate; p.lastPracticed = Date.now();
-  if(rate==='good'){ p.seen = true; p.mastered = true; window.openChest&&window.openChest(5); }
-  else if(rate==='mid'){ window.openChest&&window.openChest(3); }
-  else{ window.openChest&&window.openChest(1); }
+  if(rate==='good'){ p.seen = true; p.mastered = true; tryOpenChest(5); }
+  else if(rate==='mid'){ tryOpenChest(3); }
+  else{ tryOpenChest(1); }
   saveProgress();
   renderAll();
 }
@@ -1844,7 +1845,7 @@ function renderMemory(c){
     markDirty();
     memory.index++; memory.flipped=false;
     const chestTier = rate>=5 ? 5 : rate>=4 ? 4 : rate>=3 ? 3 : rate>=2 ? 2 : 1;
-    window.openChest&&window.openChest(chestTier);
+    tryOpenChest(chestTier);
     renderAll();
   });
   const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation();
@@ -2548,7 +2549,7 @@ function applyTheme(name){
   const cfg = THEME_CONFIG[name]||{};
 
   // 1. CSS 变量
-  let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+'}';
+  let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+';}';
 
   // 2. 图片背景主题
   if(name==='img-bg'){
@@ -2695,13 +2696,16 @@ document.addEventListener('click',(e)=>{
 })();
 
 // ===== IndexedDB 图片存储（复用 Store 连接，避免重复 openDB） =====
+let _bgBlobUrl = null;
 async function saveBgToDB(blob, callback){
   const ok = await Store.saveBg(blob);
   if(ok && callback) callback();
 }
 async function loadBgFromDB(callback){
   const blob = await Store.getBg();
-  callback(blob ? URL.createObjectURL(blob) : null);
+  if(_bgBlobUrl){ URL.revokeObjectURL(_bgBlobUrl); _bgBlobUrl = null; }
+  _bgBlobUrl = blob ? URL.createObjectURL(blob) : null;
+  callback(_bgBlobUrl);
 }
 
 // 检测图片主色调和亮度，计算最佳文字颜色
@@ -2710,23 +2714,22 @@ function detectImageColors(img, callback){
   const size = 50;
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d');
+  if(!ctx){ callback({accent:'#a8c8f0',accent2:'#c0a8e8',isBright:false}); return; }
   ctx.drawImage(img, 0, 0, size, size);
   const data = ctx.getImageData(0, 0, size, size).data;
-  let totalR = 0, totalG = 0, totalB = 0, totalLum = 0, topLum = 0;
+  let totalR = 0, totalB = 0, topLum = 0;
   const count = size * size;
   const halfCount = count / 2;
   let idx = 0;
   for(let y = 0; y < size; y++){
     for(let x = 0; x < size; x++){
-      totalR += data[idx]; totalG += data[idx+1]; totalB += data[idx+2];
+      totalR += data[idx]; totalB += data[idx+2];
       const lum = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
-      totalLum += lum;
       if(y < size / 2) topLum += lum; // 只算上半部分
       idx += 4;
     }
   }
-  const avgR = totalR / count, avgG = totalG / count, avgB = totalB / count;
-  const avgLum = totalLum / count;
+  const avgR = totalR / count, avgB = totalB / count;
   const avgTopLum = topLum / halfCount;
   const warmth = avgR - avgB;
   // 上半部分亮就用深色文字，更贴合内容区域
@@ -3110,7 +3113,7 @@ async function cloudPull(){
     if(!await confirmDialog(`云端数据更新时间：${timeLabel}\n\n（Gist 服务器时间：${new Date(gist.updated_at).toLocaleString()}）\n\n拉取将覆盖本地数据，确定？`))return;
     DOCS=data.documents||[];PROGRESS=data.progress||{};ORDER=data.order||[];CLEARS=data.clears||{};
     // 清理孤立进度
-    {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));let c=false;Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];c=true;}});}
+    {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
     // 用数据内容中的时间戳（更可靠），回退到 Gist 文件时间
@@ -3749,7 +3752,7 @@ function drawGold(ctx,W,H){
     {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
   ];
   for(let r of rivers){
-    const offset = ((t*r.speed) % 2 - 1) * W;
+    const offset = (((t*r.speed) % 2 + 2) % 2 - 1) * W;
     const grad = ctx.createRadialGradient(W*0.5+offset, r.y*H, 0, W*0.5+offset, r.y*H, H*r.width);
     grad.addColorStop(0, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]})`);
     grad.addColorStop(0.5, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]*0.3})`);
@@ -3917,6 +3920,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg => {
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
+        if(!newWorker) return;
         newWorker.addEventListener('statechange', () => {
           if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
             if(confirm('有新版本可用，是否立即刷新？')){ newWorker.postMessage('skipWaiting'); location.reload(); }
