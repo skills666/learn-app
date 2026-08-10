@@ -1770,7 +1770,10 @@ function renderMemory(c){
         </span>
       </div>
       <div class="memory-card">
-        <div class="ptag">题目</div>
+        <div class="ptag" style="display:flex;align-items:center;justify-content:space-between">
+          <span>题目</span>
+          <button class="btn sm" id="flashEdit">✏️ 编辑</button>
+        </div>
         <div class="ptitle">${renderTitle(q.title)}</div>
         <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}">
           <div class="label">📝 答案</div>
@@ -1844,6 +1847,7 @@ function renderMemory(c){
     if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
     renderAll();
   };
+  const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
   // 键盘快捷键: 1-5 评分, Enter 展开/收起, Space 展开/收起（统一用一个全局 handler 避免重复绑定）
   if(!window._memoryKeyHandler){
     window._memoryKeyHandler = (e) => {
@@ -3200,7 +3204,6 @@ $('#addSubmit').onclick = submitAddQuestion;
 
 // 编辑题目弹窗
 $('#editCancel').onclick = () => hideModal($('#editModal'));
-$('#editModal').onclick = e => { if(e.target.id==='editModal') hideModal($('#editModal')); };
 $('#editSubmit').onclick = submitEditQuestion;
 
 // 键盘快捷键（刷题模式）
