@@ -1,19 +1,33 @@
-const CACHE = 'learn-v11';
+const CACHE = 'learn-v12';
 
-// chest.js 也用 Network First，确保更新后能及时获取新版本
+// 预缓存静态资源，确保离线可用
 const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(() => {})));
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(err => {
+      console.warn('[SW] 预缓存部分资源失败:', err);
+    }))
+  );
   self.skipWaiting();
 });
 
-// 统一策略：所有资源 Network First（先网络，失败回退缓存）
+// 策略：
+// - 同源静态资源：Network First（先网络，失败回退缓存），仅缓存 GET 请求
+// - 第三方 API 请求：Network Only，不缓存（避免缓存敏感数据或过期响应）
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // 第三方请求（Gitee API、AI API 等）：仅走网络，不缓存
+  if (url.origin !== location.origin) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // 同源请求：Network First，仅缓存成功的 GET 响应
   e.respondWith(
     fetch(e.request).then(resp => {
-      // 只缓存成功响应
-      if (resp.ok) {
+      if (resp.ok && e.request.method === 'GET') {
         const copy = resp.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
       }

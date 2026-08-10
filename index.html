@@ -867,32 +867,37 @@ let _confirmOpen = false;
 function confirmDialog(msg){ return new Promise(resolve=>{
   if(_confirmOpen){ resolve(false); return; }
   _confirmOpen = true;
-  const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); };
-  const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
-  const dlg=document.createElement('div');
-  dlg.style.cssText='background:var(--card);color:var(--text);padding:24px 28px;border-radius:14px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid var(--line2);text-align:center';
-  const msgP=document.createElement('p');
-  msgP.style.cssText='margin:0 0 20px;font-size:15px;line-height:1.6;white-space:pre-wrap';
-  msgP.textContent=msg;
-  dlg.appendChild(msgP);
-  const btns=document.createElement('div');
-  btns.style.cssText='display:flex;gap:12px;justify-content:center';
-  const yesBtn=document.createElement('button');
-  yesBtn.className='btn-confirm-yes';
-  yesBtn.style.cssText='padding:8px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:14px';
-  yesBtn.textContent='确定';
-  const noBtn=document.createElement('button');
-  noBtn.className='btn-confirm-no';
-  noBtn.style.cssText='padding:8px 24px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px';
-  noBtn.textContent='取消';
-  btns.appendChild(yesBtn);btns.appendChild(noBtn);
-  dlg.appendChild(btns);
-  ov.appendChild(dlg);
-  document.body.appendChild(ov);
-  yesBtn.onclick=()=>cleanup(true);
-  noBtn.onclick=()=>cleanup(false);
-  ov.onclick=e=>{if(e.target===ov)cleanup(false)};
+  try {
+    const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); };
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    const dlg=document.createElement('div');
+    dlg.style.cssText='background:var(--card);color:var(--text);padding:24px 28px;border-radius:14px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid var(--line2);text-align:center';
+    const msgP=document.createElement('p');
+    msgP.style.cssText='margin:0 0 20px;font-size:15px;line-height:1.6;white-space:pre-wrap';
+    msgP.textContent=msg;
+    dlg.appendChild(msgP);
+    const btns=document.createElement('div');
+    btns.style.cssText='display:flex;gap:12px;justify-content:center';
+    const yesBtn=document.createElement('button');
+    yesBtn.className='btn-confirm-yes';
+    yesBtn.style.cssText='padding:8px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:14px';
+    yesBtn.textContent='确定';
+    const noBtn=document.createElement('button');
+    noBtn.className='btn-confirm-no';
+    noBtn.style.cssText='padding:8px 24px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px';
+    noBtn.textContent='取消';
+    btns.appendChild(yesBtn);btns.appendChild(noBtn);
+    dlg.appendChild(btns);
+    ov.appendChild(dlg);
+    document.body.appendChild(ov);
+    yesBtn.onclick=()=>cleanup(true);
+    noBtn.onclick=()=>cleanup(false);
+    ov.onclick=e=>{if(e.target===ov)cleanup(false)};
+  } catch(e) {
+    _confirmOpen = false;
+    resolve(false);
+  }
 });}
 function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
@@ -1210,15 +1215,20 @@ function renderBrowse(c){
 }
 
 function toggleAnswer(qid){
-  const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.seen = !p.seen;
-  if(p.seen) p.lastPracticed = Date.now();
-  saveProgress();
   const ans = content().querySelector(`[data-ans="${CSS.escape(qid)}"]`);
   const eye = content().querySelector(`[data-eye="${CSS.escape(qid)}"]`);
-  if(ans) ans.classList.toggle('show', p.seen);
-  if(eye){ eye.classList.toggle('on', p.seen); eye.textContent = p.seen?'🙈':'👁'; }
-  renderStatsBar();
+  const wasOpen = ans ? ans.classList.contains('show') : false;
+  const nowOpen = !wasOpen;
+  if(ans) ans.classList.toggle('show', nowOpen);
+  if(eye){ eye.classList.toggle('on', nowOpen); eye.textContent = nowOpen?'🙈':'👁'; }
+  // 浏览模式下展开答案不记进度（可能是在查资料或编辑内容）
+  if(view !== Views.BROWSE){
+    const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
+    p.seen = nowOpen;
+    if(nowOpen) p.lastPracticed = Date.now();
+    saveProgress();
+    renderStatsBar();
+  }
 }
 function toggleMaster(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
@@ -2765,6 +2775,7 @@ if(uploadBgBtn){
       saveBgToDB(file, function(){
         const img = new Image();
         img.onload = function(){
+          URL.revokeObjectURL(img.src);
           detectImageColors(img, function(colors){
             localStorage.setItem('customBgColors', JSON.stringify(colors));
             const name = file.name.replace(/\.[^.]+$/, '');
@@ -2842,7 +2853,7 @@ function updateCSP(url){
     }
   }catch(_){}
 }
-['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; if(aiConfig){ Store.saveApiConfig(aiConfig); updateCSP(aiConfig.url); } }});
+['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; Store.saveApiConfig(aiConfig); if(aiConfig) updateCSP(aiConfig.url); }});
 
 $('#exportMDBtn').onclick = () => {
   const L = [];
@@ -3248,6 +3259,7 @@ document.addEventListener('keydown', e => {
 // 不会覆盖用户已有内容的文档，避免误删手动编辑。
 function mergeSeed(){
   if(!window.SEED || !Array.isArray(window.SEED.documents)) return false;
+  const seedSource = (window.SEED && window.SEED.source) || '内置题库';
   const seedById = new Map(window.SEED.documents.map(d=>[d.id, d]));
   const curById = new Map(DOCS.map(d=>[d.id, d]));
   let changed = false;
@@ -3255,10 +3267,10 @@ function mergeSeed(){
     const cur = curById.get(id);
     if(!cur){
       // 种子里有、本地没有 → 新增
-      curById.set(id, {...sd, source: window.SEED.source}); changed = true;
+      curById.set(id, {...sd, source: seedSource}); changed = true;
     } else if((!cur.questions || cur.questions.length===0) && sd.questions && sd.questions.length){
       // 本地是"待导入"(空) 但种子有内容 → 升级为已导入
-      curById.set(id, {...sd, source: window.SEED.source}); changed = true;
+      curById.set(id, {...sd, source: seedSource}); changed = true;
     }
   });
   if(changed) DOCS = [...curById.values()];
@@ -3282,7 +3294,8 @@ function buildOrderFromSeed(){
   if(seedOff){ DOCS = Array.isArray(saved)?saved:[]; }
   else if(Array.isArray(saved)&&saved.length){ DOCS = saved; }
   else if(window.SEED && Array.isArray(window.SEED.documents)){
-    DOCS = window.SEED.documents.map(d => ({...d, source: window.SEED.source}));
+    const seedSource = (window.SEED && window.SEED.source) || '内置题库';
+    DOCS = window.SEED.documents.map(d => ({...d, source: seedSource}));
   }
   if(!seedOff){ const merged = mergeSeed(); if(merged) await saveDocs(); }
   buildIndex();
@@ -3891,7 +3904,7 @@ function drawZirong(ctx,W,H){
 
 </script>
 <script>
-const SW_VERSION = '11';
+const SW_VERSION = '12';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
