@@ -20,7 +20,7 @@ self.addEventListener('fetch', e => {
 
   // 第三方请求（Gitee API、AI API 等）：仅走网络，不缓存
   if (url.origin !== location.origin) {
-    e.respondWith(fetch(e.request).catch(() => Response.error()));
+    e.respondWith(fetch(e.request).catch(() => new Response(null, {status: 503, statusText: 'Service Unavailable'})));
     return;
   }
 

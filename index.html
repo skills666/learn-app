@@ -24,11 +24,11 @@
     --shadow:0 8px 30px rgba(0,0,0,.45);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg)}
+  html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg);transition:background .5s ease}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
     background:var(--bg);
-    color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px;
+    color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px;transition:background .5s ease;
   }
   .app{display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden;isolation:isolate}
 
@@ -224,8 +224,6 @@
   .set-col{display:flex;flex-direction:column;gap:18px}
   .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
   .set-status{font-size:12px;color:var(--muted);margin-top:2px;width:100%;text-align:center}
-  .btn{padding:11px 18px}
-  .btn.sm{padding:9px 14px;font-size:12px}
 
   .seg{display:flex;gap:0;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:6px}
   .seg button{flex:1;background:var(--panel);border:none;color:var(--muted);padding:9px;cursor:pointer;font-size:13px;font-weight:600}
@@ -746,7 +744,7 @@ function sm2Next(ef, interval, rate) {
   if (rate >= 5) { ef += 0.1; interval = Math.round((interval || 1) * ef); }
   else if (rate >= 4) { interval = Math.round((interval || 1) * ef); }
   else if (rate >= 3) { ef -= 0.15; interval = Math.round((interval || 1) * ef); }
-  else if (rate >= 2) { interval = 1; }
+  else if (rate >= 2) { ef -= 0.15; interval = 1; }
   else { ef -= 0.2; interval = 0.5; }
   return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(0.5, interval)) };
 }
@@ -756,7 +754,7 @@ const content = () => $('#content');
 
 /* ---------- 索引：消除 O(n) 遍历 ---------- */
 // CSS.escape polyfill for older browsers
-if(!CSS.escape){CSS.escape=function(v){v=String(v);var l=v.length;var r='';for(var i=0;i<l;i++){var c=v.charCodeAt(i);if(c===0){r+='\uFFFD'}else if((c>=0x0001&&c<=0x001f)||c===0x007f||(c>=0x0030&&c<=0x0039&&(i===0||(i===1&&v.charCodeAt(0)===0x002d)))){r+='\\'+c.toString(16)+' '}else if(c>=0x0080||c===0x002d||c===0x005f||(c>=0x0030&&c<=0x0039)||(c>=0x0041&&c<=0x005a)||(c>=0x0061&&c<=0x007a)){r+=v[i]}else{r+='\\'+v[i]}}return r};}
+if(!CSS.escape){CSS.escape=function(s){s=String(s);var r='';for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(c===0){r+='\uFFFD'}else if((c>=0x0001&&c<=0x001f)||c===0x007f||(c>=0x0030&&c<=0x0039&&(i===0||(i===1&&s.charCodeAt(0)===0x002d)))){r+='\\'+c.toString(16)+' '}else if(c>=0x0080||c===0x002d||c===0x005f||(c>=0x0030&&c<=0x0039)||(c>=0x0041&&c<=0x005a)||(c>=0x0061&&c<=0x007a)){r+=s.charAt(i)}else{r+='\\'+s.charAt(i)}}return r};}
 let QINDEX = new Map();   // qid -> question
 let DINDEX = new Map();   // docId -> doc
 let QDOC = new Map();     // qid -> docId（反向查文档）
@@ -865,11 +863,15 @@ function hideModal(el){
   el.classList.remove('show','hiding');
 }
 let _confirmOpen = false;
+let _confirmQueue = [];
 function confirmDialog(msg){ return new Promise(resolve=>{
-  if(_confirmOpen){ resolve(false); return; }
+  if(_confirmOpen){
+    _confirmQueue.push(resolve);
+    return;
+  }
   _confirmOpen = true;
   try {
-    const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); };
+    const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); next(false); } }, 100); };
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
     const dlg=document.createElement('div');
@@ -1249,7 +1251,7 @@ async function deleteQuestion(docId, qid){
   toast('已删除题目');
   renderAll();
 }
-function saveProgress(){ Store.saveProgress(PROGRESS); markDirty(); }
+function saveProgress(){ Store.saveProgress(PROGRESS); markDirty(); invalidateMemQueue(); }
 // 保存文档后自动重建索引
 async function saveDocs(){ await Store.saveDocs(DOCS); buildIndex(); markDirty(); }
 
@@ -1724,8 +1726,13 @@ function renderMockResult(c){
   $('#mockExit').onclick = () => { view=Views.OVERVIEW; renderAll(); };
   $('#mockAIGrade').onclick = () => gradeInterview();
 }
+// 记忆队列缓存，避免每次进入记忆模式全量遍历
+let _memQueueCache = null;
+let _memQueueDirty = true;
+function invalidateMemQueue(){ _memQueueDirty = true; _dueCountCache = null; }
 // SM-2 记忆队列：获取今日待复习题目
-function buildMemoryQueue(){
+function buildMemoryQueue(useCache){
+  if(useCache && !_memQueueDirty && _memQueueCache) return _memQueueCache;
   const now=Date.now();
   const today=new Date(now);today.setHours(0,0,0,0);const today0=today.getTime();
   const queue=[];
@@ -1736,8 +1743,9 @@ function buildMemoryQueue(){
       if(!p.srNext) return;  // 无复习计划，跳过
       const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
       const effectiveNext = Math.max(p.srNext, minNext);
+      if(isNaN(effectiveNext)) return;
       if(now < effectiveNext) return;  // 未到期
-      const masteredDays=Math.floor((today0 - effectiveNext)/86400000);
+      const masteredDays=Math.max(0, Math.floor((now - effectiveNext)/86400000));
       queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,docOrder:i});
       return;
     }
@@ -1749,11 +1757,13 @@ function buildMemoryQueue(){
     if(next===0||now>=next) queue.push({q,d,level,overdue:days,mastered:false,isNew,docOrder:i});
   }));
   queue.sort((a,b)=>(b.isNew-a.isNew)||a.level-b.level||b.overdue-a.overdue||a.docOrder-b.docOrder);
+  _memQueueCache = queue;
+  _memQueueDirty = false;
   return queue;
 }
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
-    memory.queue = buildMemoryQueue();
+    memory.queue = buildMemoryQueue(true);
     memory.index = 0; memory.flipped = false;
     memory._history = [];
     if(!memory.queue.length){
@@ -1855,7 +1865,7 @@ function renderMemory(c){
     saveProgress(); markDirty();
     memory.index = Math.max(0, memory.index - 1);
     memory.flipped = false;
-    memory.queue = buildMemoryQueue();
+    memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
     if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
     renderAll();
   };
@@ -2125,8 +2135,12 @@ ${grill.resume}`
     if(chat) chat.scrollTop = chat.scrollHeight;
   }, {temperature:0.4, max_tokens:1024, top_p:0.85});
   grill.loading = false;
-  if(!r){ grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。'; }
-  else {
+  if(!r){
+    // 如果流式过程中已经渲染了部分内容，只追加错误提示，不全量覆盖
+    const existing = grill.messages[aiIdx].content;
+    if(!existing || existing==='...') grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。';
+    else grill.messages[aiIdx].content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
+  } else {
     // 检测 AI 是否主动结束了面试（回复中包含 [FEEDBACK] 标记）
     const fbIdx = r.indexOf('[FEEDBACK]');
     if(fbIdx !== -1){
@@ -2174,12 +2188,21 @@ function estimateYears(resume){
   if(m1) return parseInt(m1[1]);
   const m2 = t.match(/(\d+)\s*year/);
   if(m2) return parseInt(m2[1]);
-  // 匹配毕业年份推算
-  const m3 = t.match(/(20\d{2})\s*年?\s*毕业/);
-  if(m3){ const gradYear = parseInt(m3[1]); const now = new Date().getFullYear(); return Math.max(0, now - gradYear); }
-  // 匹配学校 + 毕业时间
-  const m4 = t.match(/本科.*?(20\d{2})|硕士.*?(20\d{2})|(\d{4})届/);
-  if(m4){ const y = parseInt(m4[1]||m4[2]||m4[3]||'0'); if(y>2000) return Math.max(0, new Date().getFullYear() - y); }
+  // 匹配毕业年份推算（毕业年份一般是简历中最靠后的年份）
+  const gradMatches = [...t.matchAll(/(20\d{2})\s*年?\s*毕业/g)];
+  if(gradMatches.length){
+    const gradYear = Math.max(...gradMatches.map(m=>parseInt(m[1])));
+    if(gradYear>2000) return Math.max(0, new Date().getFullYear() - gradYear);
+  }
+  // 匹配"本科/硕士 + 年份"，取最大值（最后的时间更可能是毕业时间）
+  const eduMatches = [...t.matchAll(/(?:本科|硕士|博士).*?(20\d{2})/g)];
+  if(eduMatches.length){
+    const eduYear = Math.max(...eduMatches.map(m=>parseInt(m[1])));
+    if(eduYear>2000) return Math.max(0, new Date().getFullYear() - eduYear);
+  }
+  // 匹配 \d{4}届
+  const cohortMatch = t.match(/(\d{4})届/);
+  if(cohortMatch){ const y = parseInt(cohortMatch[1]); if(y>2000) return Math.max(0, new Date().getFullYear() - y); }
   // 匹配"应届"/"实习"/"校招"
   if(/应届|校招|实习/.test(t)) return 0;
   // 匹配初级/高级
@@ -2204,20 +2227,26 @@ function getStreakDays(){
   for(let i=0;i<365;i++){if(reviewed.has(check.getTime())){streak++;check.setDate(check.getDate()-1);}else break;}
   return streak;
 }
+let _dueCountCache = null;
 function memoryDueCount(){
+  if(_dueCountCache !== null && !_memQueueDirty) return _dueCountCache;
+  if(_memQueueCache && !_memQueueDirty){ _dueCountCache = _memQueueCache.length; return _dueCountCache; }
   const now=Date.now(); let cnt=0;
   const today=new Date(now);today.setHours(0,0,0,0);const today0=today.getTime();
   DOCS.forEach(d=>d.questions.forEach(q=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
       if(!p.srNext) return;
-      const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
+      const lastPrac = p.lastPracticed || 0;
+      const minNext = lastPrac + SM2_MAX_INTERVAL*86400000;
       const effectiveNext = Math.max(p.srNext, minNext);
+      if(isNaN(effectiveNext)) return;
       if(now >= effectiveNext) cnt++;
     } else {
       if(p.srLevel!==undefined && (!p.srNext||now>=p.srNext)) cnt++;
     }
   }));
+  _dueCountCache = cnt;
   return cnt;
 }
 function exportMockMD(){
@@ -2272,7 +2301,7 @@ async function callAI(messages, onChunk, opts={}){
   const key=_safe.decode(cfg.key||'')||cfg.key||'';
   const body={model:cfg.model,messages,stream:!!onChunk,...opts};
   console.log('AI API 请求 →', cfg.url, '模型:', cfg.model, '参数:', opts, '消息数:', messages.length);
-  const ABORT_TIMEOUT = 60000; // 60秒超时
+  const ABORT_TIMEOUT = onChunk ? 180000 : 60000; // 流式请求3分钟超时，非流式60秒
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ABORT_TIMEOUT);
   try{
@@ -2531,6 +2560,12 @@ const CSS_FX = {
 
 // 背景渐变映射表
 const BODY_BG_MAP = {
+  aurora:   `radial-gradient(1200px 700px at 12% -8%, #8b7cf618 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, #5ad1c915 0%, transparent 50%), var(--bg)`,
+  midnight: `radial-gradient(1200px 700px at 25% -5%, #6366f122 0%, transparent 50%), radial-gradient(1000px 600px at 80% 10%, #818cf814 0%, transparent 50%), var(--bg)`,
+  sunset:   `radial-gradient(1400px 700px at 20% 0%, #f973161e 0%, transparent 50%), radial-gradient(1100px 600px at 75% 5%, #ef444415 0%, transparent 50%), var(--bg)`,
+  ripple:   `radial-gradient(1200px 700px at 30% 10%, rgba(107,140,164,0.15) 0%, transparent 50%), radial-gradient(1000px 600px at 70% 20%, rgba(74,109,140,0.12) 0%, transparent 50%), var(--bg)`,
+  particle: `radial-gradient(1200px 700px at 15% 10%, #f472b61a 0%, transparent 50%), radial-gradient(1000px 600px at 85% 5%, #22d3ee14 0%, transparent 50%), var(--bg)`,
+  songxing: `radial-gradient(1200px 700px at 25% 10%, #a78bfa1a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #d4a85412 0%, transparent 50%), var(--bg)`,
   gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
   void:     `radial-gradient(1200px 700px at 30% 15%, #e8d8c01f 0%, transparent 55%), radial-gradient(1000px 600px at 70% 25%, #d4c0a018 0%, transparent 55%), var(--bg)`,
   shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
@@ -2927,8 +2962,15 @@ function importJsonDocs(text){
   if(data.progress && typeof data.progress==='object'){ PROGRESS = Object.assign({}, PROGRESS, data.progress); }
   if(data.clears && typeof data.clears==='object'){ CLEARS = Object.assign({}, CLEARS, data.clears); }
   const ids = new Set(DOCS.map(d=>d.id));
-  if(data.order && Array.isArray(data.order)){ ORDER = data.order.filter(id=>ids.has(id)); }
-  else { ORDER = (ORDER||[]).filter(id=>ids.has(id)); }
+  // 如果导入数据自带顺序且和本地不同，询问是否采用；否则保持本地顺序
+  if(data.order && Array.isArray(data.order)){
+    const importOrder = data.order.filter(id=>ids.has(id));
+    const extras = ORDER.filter(id=>ids.has(id)&&!importOrder.includes(id));
+    ORDER = [...importOrder, ...extras];
+  } else {
+    ORDER = (ORDER||[]).filter(id=>ids.has(id));
+  }
+  // 本地 ORDER 中不存在的新文档追加到末尾
   DOCS.forEach(d=>{ if(!ORDER.includes(d.id)) ORDER.push(d.id); });
   saveDocs(); Store.saveProgress(PROGRESS); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
   toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇，现共 ${totalQuestions()} 题`);
@@ -3359,6 +3401,7 @@ function buildOrderFromSeed(){
 let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0;
 let _uTheme = '';
 let _uParticles = [];
+let _uFadeIn = 1;
 
 function startUnifiedCanvas(theme){
   const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','ziliang','songxing','zirong'];
@@ -3388,13 +3431,19 @@ function startUnifiedCanvas(theme){
   _uTheme = theme;
   _uParticles = [];
   _uTime = 0;
+  _uFadeIn = 0; // 切换主题时淡入：0→1
   initThemeParticles(theme);
   if(!_uRaf) _uRaf = requestAnimationFrame(tickUnified);
 }
 function resizeUnified(){
   if(!_uCanvas) return;
-  _uCanvas.width = window.innerWidth;
-  _uCanvas.height = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  _uCanvas.width = window.innerWidth * dpr;
+  _uCanvas.height = window.innerHeight * dpr;
+  _uCanvas.style.width = window.innerWidth + 'px';
+  _uCanvas.style.height = window.innerHeight + 'px';
+  // 存在 ctx 时同步缩放，让所有绘制坐标保持逻辑像素
+  if(_uCtx) _uCtx.setTransform(dpr,0,0,dpr,0,0);
 }
 function initThemeParticles(theme){
   _uParticles = [];
@@ -3577,8 +3626,11 @@ function tickUnified(ts){
   _uRaf = requestAnimationFrame(tickUnified);
   if(_uHidden) return;
   _uTime += 0.016;
+  // 主题切换淡入
+  if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + 0.03); }
   const ctx = _uCtx, W = _uCanvas.width, H = _uCanvas.height;
   ctx.clearRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = _uFadeIn;
   switch(_uTheme){
     case 'aurora': drawAurora(ctx,W,H); break;
     case 'midnight': drawMidnight(ctx,W,H); break;
@@ -3594,6 +3646,7 @@ function tickUnified(ts){
     case 'zirong': drawZirong(ctx,W,H); break;
     default: break;
   }
+  ctx.restore();
 }
 // ======== 新 Canvas 特效 ========
 

@@ -636,7 +636,7 @@ let _loopPaused=false;document.addEventListener('visibilitychange',function(){_l
 // ════════════════ API ════════════════
 window.openChest=function(tier){if(minimized){minimized=false;C.style.transform='';C.style.opacity='1';}doOpen(tier||3);};
 window.doCloseChest=function(){doClose();};
-window.setChestSkin=function(skin){chestSkin=skin;try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');s.chest=String(skin);localStorage.setItem('learnAppSkins',JSON.stringify(s));}catch(_){}syncSkinUI();};
+window.setChestSkin=function(skin){chestSkin=Math.min(Math.max(+skin||0,0),5);try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');s.chest=String(chestSkin);localStorage.setItem('learnAppSkins',JSON.stringify(s));}catch(_){}syncSkinUI();};
 window.setRewardSkin=function(skin){rewardSkin=Math.min(Math.max(+skin||0,0),2);try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');s.item=String(rewardSkin);localStorage.setItem('learnAppSkins',JSON.stringify(s));}catch(_){}syncSkinUI();};
 window.getChestSkin=function(){return chestSkin;};window.getRewardSkin=function(){return rewardSkin;};
 function syncSkinUI(){try{const p=document.getElementById('skinPopup');if(!p)return;p.querySelectorAll('.theme-dot').forEach(d=>{const cat=d.getAttribute('data-skin-cat');if(cat==='chest')d.style.outline=+d.getAttribute('data-skin')===chestSkin?'2px solid var(--accent)':'';if(cat==='item')d.style.outline=+d.getAttribute('data-skin')===rewardSkin?'2px solid var(--accent)':'';});}catch(_){}}
