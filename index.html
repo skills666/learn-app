@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="面试题">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230e1018' width='100' height='100' rx='20'/><g transform='translate(18,15)'><rect fill='%235ad1c9' width='22' height='62' rx='3'/><rect fill='%238b7cf6' width='22' height='62' x='26' rx='3'/><rect fill='%23f6a85b' width='22' height='62' x='52' rx='3'/></g></svg>">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0e1018">
@@ -637,8 +638,19 @@ const Store = (() => {
     catch(_){ return mem; }
   }
   function saveLS(o){
-    try{ localStorage.setItem(LS_KEY, JSON.stringify(o)); mem = o; }
-    catch(_){ mem = o; }
+    try{
+      const str = JSON.stringify(o);
+      // 检查序列化后是否接近 localStorage 5MB 上限
+      if(str.length > 4500000){ toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
+      localStorage.setItem(LS_KEY, str);
+      mem = o;
+    }
+    catch(_){
+      // localStorage 满或不可用时的兜底保护
+      mem = o;
+      toast('⚠️ 存储空间不足，数据未保存到本地！请导出备份并清理浏览器存储');
+      console.error('[Store] localStorage 写入失败，数据仅保留在内存中');
+    }
   }
   function get(k){
     if(useLS){ return Promise.resolve(loadLS()[k]); }
@@ -908,6 +920,11 @@ function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
 function toast(msg){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+// 安全的 localStorage 写入：捕获溢出等异常并提示
+function safeLocalSet(key, val){
+  try{ localStorage.setItem(key, val); return true; }
+  catch(_){ console.warn('[storage] localStorage.setItem 失败，key='+key); return false; }
 }
 // 全局错误处理
 function setupErrorHandler(){
@@ -2323,7 +2340,7 @@ async function callAI(messages, onChunk, opts={}){
         const lines=buf.split('\n');
         buf=lines.pop()||''; // 最后一个可能不完整，留到下次
         for(const l of lines){
-          if(!l.startsWith('data: ')) continue; const j=l.slice(6); if(j==='[DONE]') continue;
+          if(!l.startsWith('data:')) continue; const j=l.slice(5).trimStart(); if(j==='[DONE]') continue;
           try{ const c=JSON.parse(j).choices[0]?.delta?.content; if(c){f+=c;onChunk(f);} }catch(_){}
         }
       }
@@ -2357,6 +2374,12 @@ async function gradeInterview(){
 }
 async function askAI(qid, mode){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
+  // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
+  const now = Date.now();
+  if(askAI._lastCall && now - askAI._lastCall < 3000 && askAI._lastQid === qid){
+    toast('请稍等片刻再请求 AI（3秒冷却）'); return;
+  }
+  askAI._lastCall = now; askAI._lastQid = qid;
   const q=questionById(qid); if(!q) return;
   aiAnswer[qid]='loading'; renderAll();
   let prompt, systemPrompt;
@@ -2460,8 +2483,10 @@ function renderSearch(c){
     c.innerHTML = `<div class="empty"><div class="big">🔍</div>没有匹配"${esc(searchTerm)}"的题目</div>`;
     return;
   }
-  const showResults = results.slice(0, 200); // 最多显示200条防卡顿
-  c.innerHTML = `<div class="doc-head"><div><h2>找到 ${results.length} 道相关题目${results.length>200?'（显示前200条）':''}</h2></div></div>` +
+  const MAX_RESULTS = 200;
+  const showResults = results.slice(0, MAX_RESULTS); // 最多显示200条防卡顿
+  const truncInfo = results.length>MAX_RESULTS ? `（仅显示前${MAX_RESULTS}条，建议输入更精确的关键词）` : '';
+  c.innerHTML = `<div class="doc-head"><div><h2>找到 ${results.length} 道相关题目</h2><div class="meta" style="margin-top:4px;color:var(--warn)">${truncInfo}</div></div></div>` +
     showResults.map(({doc,q})=>{
       const snip = (q.answer||'').replace(/\n/g,' ').slice(0,90);
       return `<div class="sr-item">
@@ -2605,7 +2630,7 @@ function applyTheme(name){
   if(name==='img-bg'){
     try{ applyBgTextMode(); }catch(_){}
   }
-  try{localStorage.setItem('learnAppTheme',name)}catch(_){}
+  safeLocalSet('learnAppTheme', name);
 
   // 4. 更新主题选择器 UI
   document.querySelectorAll('#themeGrid .theme-card, #themeBgRow .theme-card').forEach(c=>c.classList.toggle('sel',c.dataset.theme===name));
@@ -2850,7 +2875,7 @@ if(uploadBgBtn){
     if(saved === 'img-bg'){
       loadBgFromDB(function(bgUrl){
         if(!bgUrl){
-          localStorage.setItem('learnAppTheme', 'aurora');
+          safeLocalSet('learnAppTheme', 'aurora');
           saved = 'aurora';
         }
         if(saved && THEMES[saved]) applyTheme(saved);
@@ -3081,7 +3106,7 @@ async function doPushToGist(token, gistId, onSuccess, onError){
     });
     if(resp.ok){
       _autoSyncDirty=false;
-      localStorage.setItem('lastPushTime', data.updatedAt || '');
+      safeLocalSet('lastPushTime', data.updatedAt || '');
       try{ const rj=await resp.json(); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
       if(onSuccess) onSuccess(data, contentStr, token, gistId);
       return true;
@@ -3112,7 +3137,7 @@ async function cloudPush(){
               $('#cloudStatus').textContent='⚠️ 推送可能失败：Token 无写入权限或 Gist 不属于你';
             }
           }
-        }catch(_){}
+        }catch(_){console.warn('[push] 推送验证请求失败，网络可能不稳定');}
       }, 2000);
     },
     (errMsg) => { $('#cloudStatus').textContent='❌ '+errMsg; }
@@ -3132,11 +3157,16 @@ async function cloudPull(){
     const file=gist.files['learn-data.json'];
     if(!file){$('#cloudStatus').textContent='❌ 云端无 learn-data.json';toast('云端无 learn-data.json，请确认 Gist ID 是否正确');return;}
     let rawContent=file.content||'';
-    if(rawContent.length>500000&&file.size&&file.size>rawContent.length){
+    // Gitee API content字段最多返回1MB，截断时尝试从raw_url获取完整内容
+    const CONTENT_TRUNCATE_THRESHOLD = 900000;
+    if(rawContent.length>CONTENT_TRUNCATE_THRESHOLD&&file.size&&file.size>rawContent.length){
       try{
         const rawResp=await fetch(file.raw_url);
         if(rawResp.ok){rawContent=await rawResp.text();}
-      }catch(_){}
+      }catch(_){console.warn('[pull] 从raw_url获取完整数据失败');}
+      if(rawContent.length<=CONTENT_TRUNCATE_THRESHOLD&&file.size>rawContent.length){
+        toast('⚠️ 数据量较大，拉取可能不完整。建议清理部分题目后重新推送');
+      }
     }
     if(!rawContent){$('#cloudStatus').textContent='❌ 云端数据为空';toast('云端 learn-data.json 内容为空');return;}
     let data;
@@ -3199,8 +3229,8 @@ function startAutoSyncTimer(){
   const gistId = localStorage.getItem('giteeGistId')||'';
   if(!token || !gistId) return;
   if(_autoSyncTimer) clearInterval(_autoSyncTimer);
-  // 每 10 分钟检查一次，在线且有脏数据就推
-  _autoSyncTimer = setInterval(() => autoPush(), 10 * 60 * 1000);
+  // 每 10 分钟检查一次，在线且有脏数据就推（页面隐藏时跳过，节省资源）
+  _autoSyncTimer = setInterval(() => { if(!document.hidden) autoPush(); }, 10 * 60 * 1000);
 }
 // 页面加载时静默检查云端时间戳，只有云端更新了才弹窗询问
 let _lastKnownRemoteTime = 0; // 本地记录的云端最后更新时间
@@ -3244,7 +3274,7 @@ async function askPullOnStart(){
     if(remoteTime <= _lastKnownRemoteTime){console.log('[askPull] 云端未更新，跳过');return;}
     if(!await confirmDialog(`云端有更新的数据（${timeLabel}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)){
       // 用户点取消：记录云端时间，下次不再弹同一个版本
-      if(remoteTime){_lastKnownRemoteTime=remoteTime;localStorage.setItem('lastRemoteTime',String(remoteTime));}
+      if(remoteTime){_lastKnownRemoteTime=remoteTime;safeLocalSet('lastRemoteTime',String(remoteTime));}
       return;
     }
     // 拉取完整数据
@@ -3276,7 +3306,8 @@ $('#editSubmit').onclick = submitEditQuestion;
 
 // 键盘快捷键（刷题模式）
 document.addEventListener('keydown', e => {
-  if(e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') return;
+  // 忽略输入框和中文输入法组合输入（避免选字时误触）
+  if(e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.isComposing) return;
   if(view===Views.MOCK && !mock.done && mock.queue.length){
     if(e.code==='Space'){ e.preventDefault(); if(!mock.revealed && $('#mockReveal')) $('#mockReveal').click(); }
     return;
@@ -3398,7 +3429,7 @@ function buildOrderFromSeed(){
 })();
 
 // ======== 统一 Canvas 2D 引擎（所有动态主题） ========
-let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0;
+let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
 let _uTheme = '';
 let _uParticles = [];
 let _uFadeIn = 1;
@@ -3430,7 +3461,7 @@ function startUnifiedCanvas(theme){
   }
   _uTheme = theme;
   _uParticles = [];
-  _uTime = 0;
+  _uTime = 0; _uLastTs = 0;
   _uFadeIn = 0; // 切换主题时淡入：0→1
   initThemeParticles(theme);
   if(!_uRaf) _uRaf = requestAnimationFrame(tickUnified);
@@ -3625,7 +3656,9 @@ function tickUnified(ts){
   if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
   _uRaf = requestAnimationFrame(tickUnified);
   if(_uHidden) return;
-  _uTime += 0.016;
+  const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
+  _uLastTs = ts;
+  _uTime += dt;
   // 主题切换淡入
   if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + 0.03); }
   const ctx = _uCtx, W = _uCanvas.width, H = _uCanvas.height;
@@ -3960,7 +3993,7 @@ function drawZirong(ctx,W,H){
 
 </script>
 <script>
-const SW_VERSION = '12';
+const SW_VERSION = '13';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');

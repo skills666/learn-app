@@ -5,7 +5,7 @@ document.body.appendChild(C);
 const X=C.getContext('2d');
 let W,H,flr,chestSkin=0,rewardSkin=0,minimized=false;
 try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');if(s.chest!==undefined)chestSkin=+s.chest;if(s.item!==undefined)rewardSkin=+s.item;}catch(_){}
-function R(){const m=window.matchMedia('(max-width:768px)').matches;W=m?120:340;H=m?150:400;flr=H*.76;const d=Math.min(devicePixelRatio||1,2);C.width=W*d;C.height=H*d;C.style.width=W+'px';C.style.height=H+'px';C.style.right=m?'30px':'-40px';C.style.bottom=m?'0px':'-40px';X.setTransform(d,0,0,d,0,0);}
+function R(){const m=window.matchMedia('(max-width:768px)').matches;W=m?120:340;H=m?150:400;flr=H*.76;const d=Math.min(devicePixelRatio||1,2);C.width=W*d;C.height=H*d;C.style.width=W+'px';C.style.height=H+'px';C.style.right=m?'30px':'-40px';C.style.bottom=m?'env(safe-area-inset-bottom, 0px)':'-40px';X.setTransform(d,0,0,d,0,0);}
 R();window.addEventListener('resize',R);
 const K=()=>220/520;
 const CX=()=>W/2, CY=()=>H*.66;
@@ -465,6 +465,30 @@ function trash0(x,y,r,rt){
   X.strokeStyle='#6a5a40';X.lineWidth=r*.03;X.beginPath();X.moveTo(-r*.3,-r*.5);X.lineTo(r*.1,r*.3);X.stroke();
   X.beginPath();X.moveTo(r*.4,-r*.15);X.lineTo(-r*.35,r*.45);X.stroke();
   X.fillStyle='rgba(80,60,0,.15)';X.beginPath();X.arc(r*.15,-r*.1,r*.12,0,Math.PI*2);X.fill();
+  X.restore();
+}
+// 多色宝石（金银财宝 5 级宝箱用）
+function gem0(x,y,r,rt,hue,fire2){
+  X.save();X.translate(x,y);X.rotate(rt);
+  const g=X.createRadialGradient(-r*.12,-r*.14,0,0,0,r);
+  const h=hue||40;
+  g.addColorStop(0,'hsl('+h+',85%,78%)');
+  g.addColorStop(.12,'hsl('+h+',80%,62%)');
+  g.addColorStop(.35,'hsl('+h+',65%,42%)');
+  g.addColorStop(.62,'hsl('+h+',55%,22%)');
+  g.addColorStop(.85,'hsl('+h+',45%,10%)');
+  g.addColorStop(1,'hsl('+h+',30%,3%)');
+  X.fillStyle=g;
+  X.beginPath();
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4-Math.PI/2,px=Math.cos(a)*r,py=Math.sin(a)*r;
+    const sa=i*Math.PI/4-Math.PI/2+Math.PI/8,cx=Math.cos(sa)*r*.45,cy=Math.sin(sa)*r*.45;
+    i===0?X.moveTo(px,py):X.lineTo(px,py);X.lineTo(cx,cy);
+  }
+  X.closePath();X.fill();
+  X.strokeStyle='rgba(255,255,255,.22)';X.lineWidth=r*.07;X.stroke();
+  X.fillStyle='rgba(255,255,255,.28)';X.beginPath();X.arc(-r*.12,-r*.22,r*.2,0,Math.PI*2);X.fill();
+  X.fillStyle='rgba(0,0,0,.12)';X.beginPath();X.arc(r*.08,r*.12,r*.1,0,Math.PI*2);X.fill();
   X.restore();
 }
 // ════════════════ REWARD 1: 珠宝奇珍 ════════════════

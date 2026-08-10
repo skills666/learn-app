@@ -8,8 +8,8 @@
   "background_color": "#0e1018",
   "theme_color": "#0e1018",
   "icons": [{
-    "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230e1018' width='192' height='192' rx='36'/%3E%3Cg transform='translate(46,38)'%3E%3Crect fill='%235ad1c9' width='44' height='108' rx='4'/%3E%3Crect fill='%238b7cf6' width='44' height='108' x='52' rx='4'/%3E%3Crect fill='%23f6a85b' width='44' height='108' x='104' rx='4'/%3E%3C/g%3E%3C/svg%3E",
-    "sizes": "192x192",
+    "src": "icon.svg",
+    "sizes": "512x512",
     "type": "image/svg+xml",
     "purpose": "any maskable"
   }]

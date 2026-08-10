@@ -1,7 +1,7 @@
-const CACHE = 'learn-v12';
+const CACHE = 'learn-v13';
 
 // 预缓存静态资源，确保离线可用
-const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js'];
+const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
