@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e2338"/>
+      <stop offset="100%" stop-color="#0e1018"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#7df0e8"/>
+      <stop offset="40%" stop-color="#5ad1c9"/>
+      <stop offset="100%" stop-color="#2d8a84"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="50%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b8a8ff"/>
+      <stop offset="35%" stop-color="#8b7cf6"/>
+      <stop offset="100%" stop-color="#4a3db8"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fcc88a"/>
+      <stop offset="35%" stop-color="#f6a85b"/>
+      <stop offset="100%" stop-color="#b87028"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="48%" r="30%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Rounded background -->
+  <rect fill="url(#bg)" width="512" height="512" rx="108"/>
+
+  <!-- Outer decorative ring -->
+  <circle cx="256" cy="252" r="178" fill="none" stroke="rgba(90,209,201,0.05)" stroke-width="2"/>
+  <circle cx="256" cy="252" r="162" fill="none" stroke="rgba(139,124,246,0.04)" stroke-width="1.5"/>
+
+  <!-- Central glow aura -->
+  <circle cx="256" cy="248" r="160" fill="url(#glow)"/>
+
+  <!-- === Faceted Crystal Gem === -->
+  <!-- Top facet (Teal) -->
+  <polygon points="256,88 428,260 256,260 84,260" fill="url(#teal)" opacity="0.93"/>
+
+  <!-- Bottom-left facet (Purple) -->
+  <polygon points="84,260 256,260 256,428" fill="url(#purple)" opacity="0.90"/>
+
+  <!-- Bottom-right facet (Orange) -->
+  <polygon points="256,260 428,260 256,428" fill="url(#orange)" opacity="0.90"/>
+
+  <!-- Facet dividing edges (subtle highlight) -->
+  <line x1="84" y1="260" x2="428" y2="260" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+  <line x1="256" y1="88" x2="256" y2="428" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="84" y1="260" x2="256" y2="428" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <line x1="428" y1="260" x2="256" y2="428" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Outer crystal edge highlight -->
+  <polygon points="256,88 428,260 256,428 84,260" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+
+  <!-- Center bright convergence point -->
+  <circle cx="256" cy="256" r="14" fill="rgba(255,255,255,0.85)"/>
+  <circle cx="256" cy="256" r="28" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="256" cy="256" r="44" fill="rgba(255,255,255,0.03)"/>
+
+  <!-- Corner accent sparkles -->
+  <circle cx="175" cy="195" r="4" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="340" cy="190" r="3.5" fill="rgba(255,255,255,0.15)"/>
+  <circle cx="200" cy="355" r="3" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="320" cy="370" r="3.5" fill="rgba(255,255,255,0.1)"/>
+</svg>
