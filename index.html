@@ -102,6 +102,11 @@
   .practice-wrap{max-width:820px;margin:0 auto}
   .pbar{height:10px;border-radius:8px;background:#0c0f1a;overflow:hidden;margin:6px 0 4px}
   .pbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}
+  .pbar-seg{display:flex;gap:2px;margin:6px 0 4px;flex-wrap:nowrap;overflow:hidden;border-radius:6px}
+  .pbar-seg .pb-dot{flex:1 1 0;min-width:4px;height:10px;border-radius:2px;transition:transform .15s,box-shadow .15s}
+  .pb-dot.lv-1{background:#d04040}.pb-dot.lv0{background:#3a3f55}.pb-dot.lv1{background:#e07030}
+  .pb-dot.lv2{background:#d09030}.pb-dot.lv3{background:#90b040}.pb-dot.lv4{background:#40a860}
+  .pb-dot.lv5{background:#30b8a0}.pb-dot.cur{transform:scaleY(1.7);box-shadow:0 0 6px rgba(150,200,255,.5);z-index:1}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
   .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
@@ -1797,9 +1802,14 @@ function renderMemory(c){
   const lastInterval = p.interval || 0;
   const tot = memory.queue.length, idx = memory.index+1;
   const maxOverdue = memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
+  // 等级分段进度条：每道题一个色块
+  const segBar = memory.queue.map((it,i)=>{
+    const lv = it.mastered ? -1 : it.level || 0;
+    return `<span class="pb-dot lv${lv<0?'-1':lv}${i===memory.index?' cur':''}" title="Lv${lv<0?'M':lv}"></span>`;
+  }).join('');
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
+      <div class="pbar-seg">${segBar}</div>
       <div class="pmeta">
         <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
