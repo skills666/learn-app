@@ -1878,11 +1878,14 @@ function renderMemory(c){
   const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation();
     if(!memory._history || !memory._history.length) return;
     const last = memory._history.pop();
-    PROGRESS[last.qid] = last.oldProgress;
+    const undoneQid = last.qid;
+    PROGRESS[undoneQid] = last.oldProgress;
     saveProgress(); markDirty();
-    memory.index = Math.max(0, memory.index - 1);
     memory.flipped = false;
     memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
+    // 撤销后定位到被撤销的那道题
+    const targetIdx = memory.queue.findIndex(item => item.id === undoneQid);
+    memory.index = targetIdx >= 0 ? targetIdx : Math.max(0, memory.index - 2);
     if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
     renderAll();
   };
