@@ -1802,10 +1802,12 @@ function renderMemory(c){
   const lastInterval = p.interval || 0;
   const tot = memory.queue.length, idx = memory.index+1;
   const maxOverdue = memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
-  // 等级分段进度条：每道题一个色块
-  const segBar = memory.queue.map((it,i)=>{
-    const lv = it.mastered ? -1 : it.level || 0;
-    return `<span class="pb-dot lv${lv<0?'-1':lv}${i===memory.index?' cur':''}" title="Lv${lv<0?'M':lv}"></span>`;
+  // 等级分段进度条：显示当前文档全部题目的等级
+  const segBar = (d.questions||[]).map((dq,i)=>{
+    const pp = PROGRESS[dq.id]||{};
+    const lv = pp.mastered ? -1 : pp.srLevel || 0;
+    const isCur = dq.id === q.id;
+    return `<span class="pb-dot lv${lv<0?'-1':lv}${isCur?' cur':''}" title="第${i+1}题 · Lv${lv<0?'M':lv}">`;
   }).join('');
   c.innerHTML = `
     <div class="feature-wrap">
