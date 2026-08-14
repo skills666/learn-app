@@ -104,8 +104,12 @@
   .pbar > i{display:block;height:100%;min-width:2px;transition:width .3s}
   .pbar > i.lv0{background:#3a3f55}.pbar > i.lv1{background:#d0b030}
   .pbar > i.lv2{background:#50a050}.pbar > i.lv3{background:#30a0a0}
-  .pbar > i.lv4{background:#4068c0}.pbar > i.lv5{background:#8050b8}
-  .pbar > i.lvM{background:#d04040}
+  .pbar > i.lv4{background:#4068c0}
+  .pbar > i.lv5{background:linear-gradient(90deg,#a78bfa,#7c3aed,#c084fc,#f0abfc,#a78bfa);background-size:300% 100%;position:relative;overflow:hidden;animation:lv5-flow 2.4s linear infinite;box-shadow:0 0 8px rgba(167,139,250,.75),0 0 18px rgba(124,58,237,.45)}
+  .pbar > i.lv5::after{content:'';position:absolute;top:0;left:-70%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:lv5-shimmer 1.6s ease-in-out infinite}
+  .pbar > i.lvM{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
+  @keyframes lv5-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+  @keyframes lv5-shimmer{0%{left:-70%}60%,100%{left:120%}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
   .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
@@ -963,7 +967,7 @@ function renderStatsBar(){
   const todayDone = getTodayReviewed();
   $('#statsBar').innerHTML = `
     <span>总进度 <b>${seenPct}%</b></span>
-    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:var(--good)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent2)"></i></div>
+    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent)"></i></div>
     <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
     ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span>今日已刷 <b>${todayDone}</b> 题</span>`:''}
@@ -1767,7 +1771,7 @@ function buildMemoryQueue(useCache){
       if(isNaN(effectiveNext)) return;
       if(now < effectiveNext) return;  // 未到期
       const masteredDays=Math.max(0, Math.floor((now - effectiveNext)/86400000));
-      queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,docOrder:i});
+      queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,isNew:false,docOrder:i});
       return;
     }
     const level=p.srLevel||0;
@@ -1821,7 +1825,7 @@ function renderMemory(c){
       <div class="pmeta">
         <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
-          <span style="font-weight:700;color:var(--accent)">${memory.index}</span>/<span style="color:var(--text)">${tot}</span>
+          <span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
           ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${lastInterval} 天`}
           ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
         </span>
@@ -1902,7 +1906,7 @@ function renderMemory(c){
     memory.flipped = false;
     memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
     // 撤销后定位到被撤销的那道题
-    const targetIdx = memory.queue.findIndex(item => item.id === undoneQid);
+    const targetIdx = memory.queue.findIndex(item => item.q.id === undoneQid);
     memory.index = targetIdx >= 0 ? targetIdx : Math.max(0, memory.index - 2);
     if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
     renderAll();
@@ -1913,7 +1917,7 @@ function renderMemory(c){
     window._memoryKeyHandler = (e) => {
       if(view!==Views.MEMORY||e.target.closest('input,textarea,select')) return;
       const r = parseInt(e.key); if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = document.querySelector('.grade-btn[data-rate=\"'+r+'\"]'); if(btn) btn.click(); }
-      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
+      else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mh=document.getElementById('memHint'); if(mh)mh.style.display=s?'none':''; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
     };
     document.addEventListener('keydown', window._memoryKeyHandler);
   }
@@ -2281,7 +2285,7 @@ function memoryDueCount(){
       if(isNaN(effectiveNext)) return;
       if(now >= effectiveNext) cnt++;
     } else {
-      if(p.srLevel!==undefined && (!p.srNext||now>=p.srNext)) cnt++;
+      if(!p.srNext||now>=p.srNext) cnt++;
     }
   }));
   _dueCountCache = cnt;
