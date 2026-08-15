@@ -1947,7 +1947,7 @@ function renderGrill(c){
       </div>`}
     </div>`;
   const chat = $('#grillChat');
-  if(chat) chat.scrollTo({top: chat.scrollHeight, behavior: 'smooth'});
+  if(chat) chat.scrollTop = chat.scrollHeight;
   if(grill.ended){
     // 面试已结束，只显示关闭按钮
     $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:''}; renderAll(); };
