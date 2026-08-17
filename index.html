@@ -3629,8 +3629,8 @@ function initThemeParticles(theme){
         size:14+Math.random()*28,
         rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.004,
         vx:(Math.random()-0.5)*0.35, vy:(Math.random()-0.5)*0.25,
-        alpha:0.18+Math.random()*0.21,
-        hue:Math.random()<0.6?195:32,
+        alpha:0.09+Math.random()*0.105,
+        hue:[195,32,280,160,350,45][(Math.random()*6)|0],
         phase:Math.random()*Math.PI*2
       });
     }
