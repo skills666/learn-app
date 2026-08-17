@@ -1785,7 +1785,7 @@ function buildMemoryQueue(useCache){
     const days=next?Math.floor((today0-nextDate.getTime())/86400000):0;
     if(next===0||now>=next) queue.push({q,d,level,overdue:days,mastered:false,isNew,docOrder:i});
   }));
-  queue.sort((a,b)=>(b.isNew-a.isNew)||a.level-b.level||b.overdue-a.overdue||a.docOrder-b.docOrder);
+  queue.sort((a,b)=>(b.isNew-a.isNew)||(b.overdue-a.overdue)||(a.level-b.level)||(a.docOrder-b.docOrder));
   _memQueueCache = queue;
   _memQueueDirty = false;
   return queue;
