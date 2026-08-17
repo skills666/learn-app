@@ -109,6 +109,24 @@
   .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;animation:lvM-flow 12s linear infinite;box-shadow:0 0 12px rgba(192,132,252,.45)}
   @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
+  .an-wrap{max-width:1040px;margin:0 auto;padding:18px 16px}
+  .an-h{font-size:19px;font-weight:800;margin:2px 0}
+  .an-sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:14px 0}
+  .an-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .an-card .n{font-size:23px;font-weight:800;line-height:1.1}
+  .an-card .t{font-size:12px;color:var(--muted);margin-top:3px}
+  .an-legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0 2px}
+  .an-sec{font-weight:700;font-size:15px;margin:22px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .an-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .an-input{flex:1;min-width:180px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+  .an-tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-bottom:6px}
+  .an-table{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+  .an-table th,.an-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  .an-table th{cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap;background:var(--card)}
+  .an-table tbody tr:hover{background:var(--panel)}
+  .an-table td.title-cell{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .an-dot{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
   .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
   .pcard .ptag{font-size:11px;letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
@@ -446,6 +464,7 @@
       <div class="tab" data-view="campaign"><span class="ic">🗡️</span> 闯关</div>
       <div class="tab" data-view="mock"><span class="ic">📝</span> 八股</div>
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
+      <div class="tab" data-view="analytics"><span class="ic">📈</span> 进度</div>
       <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
     </div>
     <div class="search">
@@ -732,7 +751,7 @@ let CLEARS = {};                  // docId -> 通关次数
 let UNLOCK_ALL = false;           // 闯关是否全部解锁（默认按完成度解锁）
 
 // 视图常量
-const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', CAMPAIGN:'campaign', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse' };
+const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', CAMPAIGN:'campaign', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics' };
 
 // 闯关默认顺序：按 Java 学习难度梯度（基础 → 数据/存储 → 网络/分布式 → 框架工程 → 综合），而非题目数量
 const SEED_ORDER = ["java基础","集合","算法","锁","JVM","并发","线程池","mysql","redis","mybatis","es","网络io","网络通讯","mq","分布式事务","nginx","注册中心","负载均衡组件","网关","微服务","openfeign","SpringBoot","web","设计模式","git","开发流程","测试","运维","对接第三方","项目","前端","AI","非技术题"];
@@ -979,7 +998,8 @@ function renderStatsBar(){
       (v===Views.CAMPAIGN&&view===Views.CAMPAIGN) ||
       (v===Views.MOCK&&view===Views.MOCK) ||
       (v===Views.MEMORY&&view===Views.MEMORY) ||
-      (v===Views.GRILL&&view===Views.GRILL));
+      (v===Views.GRILL&&view===Views.GRILL) ||
+      (v===Views.ANALYTICS&&view===Views.ANALYTICS));
   });
 }
 
@@ -995,6 +1015,7 @@ function renderContent(){
   if(view===Views.PRACTICE) return renderPractice(c);
   if(view===Views.MOCK) return renderMock(c);
   if(view===Views.MEMORY) return renderMemory(c);
+  if(view===Views.ANALYTICS) return renderAnalytics(c);
   if(view===Views.GRILL) return renderGrill(c);
   if(view===Views.BROWSE) return renderBrowse(c);
 }
@@ -1925,6 +1946,194 @@ function renderMemory(c){
   }
 }
 // 统计条中的待复习数
+let analyticsState = { term:'', sortKey:'doc', sortDir:1 };
+
+function buildAnalyticsData(){
+  const now = Date.now();
+  const rows = [];
+  const docStats = [];
+  DOCS.forEach(d=>{
+    const qs = d.questions||[];
+    const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, sumInterval:0, sumEf:0, overdueMax:0, levels:{0:0,1:0,2:0,3:0,4:0,5:0,'M':0} };
+    qs.forEach(q=>{
+      const p = PROGRESS[q.id]||{};
+      if(!(p.seen||p.mastered||p.practiced||p.srLevel||p.srNext)) return;
+      const mastered = !!p.mastered;
+      const lv = mastered ? 'M' : (p.srLevel||0);
+      const next = p.srNext||0;
+      const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
+      const effectiveNext = mastered ? Math.max(next, minNext) : next;
+      const due = mastered ? (now>=effectiveNext) : (!next||now>=next);
+      const overdue = effectiveNext ? Math.max(0, Math.round((now-effectiveNext)/86400000)) : 0;
+      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next, interval:p.interval||0, ef:p.ef||SM2_INIT_EF, lastPracticed:p.lastPracticed||0, due, overdue });
+      st.levels[lv]++; if(mastered) st.mastered++; if(due) st.due++;
+      st.cnt++; st.sumInterval += (p.interval||0); st.sumEf += (p.ef||SM2_INIT_EF);
+      st.overdueMax = Math.max(st.overdueMax, overdue);
+    });
+    if(st.cnt>0) docStats.push(st);
+  });
+  return { rows, docStats };
+}
+
+function buildAnalyticsReport(o){
+  const lvLine = ['M','5','4','3','2','1','0'].map(lv=>`Lv${lv}: ${o.lvCounts[lv]}`).join('  ');
+  const docLines = o.docStats.slice().sort((a,b)=>b.due-a.due).map(d=>`  - ${d.title}: 记忆题 ${d.cnt} / 掌握 ${d.mastered} / 待复习 ${d.due}${d.overdueMax>0?` / 最久逾期 ${d.overdueMax}天`:''}`).join('\n');
+  const top = (o.maxOverdue>0 && o.topOverdue) ? `  - 最久逾期：${o.maxOverdue} 天（${o.topOverdue.doc} · ${o.topOverdue.title}）` : '  - 无逾期，复习节奏良好';
+  return `【学习进度分析报告】生成于 ${new Date().toLocaleString('zh-CN')}
+================================
+记忆题目总数：${o.total}
+已掌握：${o.mastered}（${o.total?Math.round(o.mastered/o.total*100):0}%）
+待复习（今日需刷）：${o.due}
+平均复习间隔：${o.avgInterval} 天
+平均难易因子 EF：${o.avgEf}
+连续打卡：${o.streak} 天 · 今日已刷：${o.todayDone} 题
+
+等级分布：${lvLine}
+
+文档进度（按待复习降序）：
+${docLines}
+
+逾期情况：
+${top}
+
+（把这段文本复制发给 AI，即可获得个性化进度分析与复习建议）
+`;
+}
+
+function exportAnalyticsCSV(rows){
+  const header = ['qid','题目','文档','等级','已掌握','下次复习','间隔(天)','EF','逾期(天)','待复习'];
+  const lines = [header.join(',')];
+  rows.forEach(r=>{
+    const row = [r.qid, `"${String(r.title).replace(/"/g,'""')}"`, `"${r.doc}"`, r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
+    lines.push(row.join(','));
+  });
+  const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`记忆进度_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t)); }
+  else fallbackCopy(t);
+}
+function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); }
+
+function renderAnalytics(c){
+  const { rows, docStats } = buildAnalyticsData();
+  const now = Date.now();
+  const total = rows.length;
+  const mastered = rows.filter(r=>r.mastered).length;
+  const due = rows.filter(r=>r.due).length;
+  const avgInterval = total ? (rows.reduce((s,r)=>s+r.interval,0)/total).toFixed(1) : '0';
+  const avgEf = total ? (rows.reduce((s,r)=>s+r.ef,0)/total).toFixed(2) : '2.50';
+  const maxOverdue = rows.reduce((m,r)=>Math.max(m,r.overdue),0);
+  const topOverdue = rows.slice().sort((a,b)=>b.overdue-a.overdue)[0];
+  const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
+  rows.forEach(r=>lvCounts[r.lv]++);
+  const lvPct = lv => total ? Math.round(lvCounts[lv]/total*100) : 0;
+  const stacked = ['M',5,4,3,2,1,0].map(lv=> lvPct(lv)>0 ? `<i class="lv${lv}" style="width:${lvPct(lv)}%" title="Lv${lv}: ${lvCounts[lv]}题"></i>`:'').join('');
+  const lvLegend = ['M','5','4','3','2','1','0'].map(lv=>`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px;color:var(--muted)"><i class="an-dot lv${lv}"></i>Lv${lv} ${lvCounts[lv]}</span>`).join('');
+  const docRows = docStats.slice().sort((a,b)=>b.due-a.due).slice(0,12);
+  const term = (analyticsState.term||'').trim().toLowerCase();
+  let filtered = rows.filter(r=> !term || r.title.toLowerCase().includes(term) || r.doc.toLowerCase().includes(term));
+  const sk = analyticsState.sortKey, sd = analyticsState.sortDir;
+  const lvRank = r => r.mastered ? 6 : r.lv;
+  filtered.sort((a,b)=>{
+    let va,vb;
+    switch(sk){
+      case 'lv': va=lvRank(a); vb=lvRank(b); break;
+      case 'doc': va=a.doc; vb=b.doc; break;
+      case 'title': va=a.title; vb=b.title; break;
+      case 'next': va=a.next||Infinity; vb=b.next||Infinity; break;
+      case 'interval': va=a.interval; vb=b.interval; break;
+      case 'ef': va=a.ef; vb=b.ef; break;
+      case 'overdue': va=a.overdue; vb=b.overdue; break;
+      case 'mastered': va=a.mastered?1:0; vb=b.mastered?1:0; break;
+      default: va=a.doc; vb=b.doc;
+    }
+    if(typeof va==='string'){ return va.localeCompare(vb,'zh')*sd; }
+    return (va-vb)*sd;
+  });
+  const streak = getStreakDays(), todayDone = getTodayReviewed();
+  const arrow = k => analyticsState.sortKey===k ? (analyticsState.sortDir===1?' ▲':' ▼') : '';
+  const fmtDate = t => t ? new Date(t).toLocaleDateString('zh-CN') : '—';
+  const statusCell = r => r.due ? `<span style="color:var(--bad)">待复习</span>` : (r.mastered ? `<span style="color:var(--good)">已稳</span>` : `<span style="color:var(--muted)">复习中</span>`);
+  const lvCell = r => `<span style="display:inline-flex;align-items:center"><i class="an-dot lv${r.lv}"></i>${r.mastered?'已掌握':('Lv'+r.lv)}</span>`;
+  const detailRows = filtered.map(r=>`<tr>
+    <td class="title-cell" title="${esc(r.title)}">${esc(r.title)}</td>
+    <td>${esc(r.doc)}</td>
+    <td>${lvCell(r)}</td>
+    <td style="text-align:center">${r.mastered?'✅':'—'}</td>
+    <td>${fmtDate(r.next)}</td>
+    <td style="text-align:right">${r.interval}</td>
+    <td style="text-align:right">${(+r.ef).toFixed(2)}</td>
+    <td style="text-align:right;color:${r.overdue>0?'var(--bad)':'var(--muted)'}">${r.overdue>0?r.overdue+'天':'—'}</td>
+    <td>${statusCell(r)}</td>
+  </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">没有匹配的题目</td></tr>`;
+  const docTable = docRows.map(d=>`<tr>
+    <td>${esc(d.title)}</td>
+    <td style="text-align:right">${d.cnt}</td>
+    <td style="text-align:right;color:var(--good)">${d.mastered}</td>
+    <td style="text-align:right;color:${d.due>0?'var(--bad)':'var(--muted)'}">${d.due}</td>
+    <td style="text-align:right">${d.cnt?Math.round(d.mastered/d.cnt*100):0}%</td>
+    <td style="text-align:right;color:${d.overdueMax>0?'var(--bad)':'var(--good)'}">${d.overdueMax>0?d.overdueMax+'天':'—'}</td>
+  </tr>`).join('');
+  c.innerHTML = `
+  <div class="an-wrap">
+    <div class="an-h">📈 学习进度分析</div>
+    <div class="an-sub">基于你浏览器本地的记忆进度数据（SM-2 艾宾浩斯），覆盖全部已学习题目的等级、掌握状态、复习日期与逾期情况。</div>
+    ${total===0 ? `<div class="flash-empty"><div class="big">📭</div><div style="font-weight:700;margin-bottom:6px">还没有记忆进度</div><div style="color:var(--muted)">去「🧠 记忆」或「📝 八股」刷题后，这里会展示你的全部进度。</div></div>`
+    : `
+    <div class="an-grid">
+      <div class="an-card"><div class="n">${total}</div><div class="t">记忆题目</div></div>
+      <div class="an-card"><div class="n" style="color:var(--good)">${mastered}</div><div class="t">已掌握</div></div>
+      <div class="an-card"><div class="n" style="color:var(--bad)">${due}</div><div class="t">待复习</div></div>
+      <div class="an-card"><div class="n">${avgInterval}</div><div class="t">平均间隔(天)</div></div>
+      <div class="an-card"><div class="n">${avgEf}</div><div class="t">平均 EF</div></div>
+      <div class="an-card"><div class="n" style="color:${maxOverdue>0?'var(--bad)':'var(--good)'}">${maxOverdue}</div><div class="t">最久逾期(天)</div></div>
+    </div>
+    <div class="an-sec">🎚️ 等级分布（Lv0 新 → Lv5 熟 → M 已掌握）</div>
+    <div class="pbar">${stacked}</div>
+    <div class="an-legend">${lvLegend}</div>
+    <div class="an-sec">📁 文档进度（按待复习降序，前 12）</div>
+    <div class="an-tbl-wrap"><table class="an-table">
+      <thead><tr><th>文档</th><th style="text-align:right">记忆题</th><th style="text-align:right">掌握</th><th style="text-align:right">待复习</th><th style="text-align:right">掌握率</th><th style="text-align:right">最久逾期</th></tr></thead>
+      <tbody>${docTable}</tbody>
+    </table></div>
+    <div class="an-sec">📋 全部题目进度明细
+      <span style="font-weight:500;font-size:12px;color:var(--muted)">（共 ${filtered.length} 条${term?'，已筛选':''}）</span>
+    </div>
+    <div class="an-toolbar">
+      <input id="anTerm" class="an-input" placeholder="🔍 搜索题目或文档…" value="${esc(analyticsState.term||'')}">
+      <button class="btn sm" id="anExport">⬇ 导出 CSV</button>
+      <button class="btn sm" id="anCopy">📋 复制分析报告</button>
+      <button class="btn sm ghost" id="anRefresh">🔄 刷新</button>
+      <span id="anCopyStatus" style="font-size:12px;color:var(--good)"></span>
+    </div>
+    <div class="an-tbl-wrap"><table class="an-table">
+      <thead><tr>
+        <th data-sort="title">题目${arrow('title')}</th>
+        <th data-sort="doc">文档${arrow('doc')}</th>
+        <th data-sort="lv">等级${arrow('lv')}</th>
+        <th data-sort="mastered" style="text-align:center">掌握${arrow('mastered')}</th>
+        <th data-sort="next">下次复习${arrow('next')}</th>
+        <th data-sort="interval" style="text-align:right">间隔${arrow('interval')}</th>
+        <th data-sort="ef" style="text-align:right">EF${arrow('ef')}</th>
+        <th data-sort="overdue" style="text-align:right">逾期${arrow('overdue')}</th>
+        <th>状态</th>
+      </tr></thead>
+      <tbody>${detailRows}</tbody>
+    </table></div>`}
+  `;
+  if(total===0) return;
+  const termEl = $('#anTerm');
+  if(termEl) termEl.addEventListener('input', e=>{ analyticsState.term = e.target.value; renderAnalytics(c); const i=$('#anTerm'); if(i){ i.focus(); const v=i.value; i.setSelectionRange(v.length,v.length); } });
+  document.querySelectorAll('.an-table thead th[data-sort]').forEach(th=> th.addEventListener('click', ()=>{ const k=th.dataset.sort; if(analyticsState.sortKey===k) analyticsState.sortDir*=-1; else {analyticsState.sortKey=k;analyticsState.sortDir=1;} renderAnalytics(c); }));
+  $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
+  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgEf,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep); const s=$('#anCopyStatus'); if(s) s.textContent='✅ 已复制，发给 AI 即可分析'; toast('分析报告已复制到剪贴板'); };
+  $('#anRefresh').onclick = ()=> renderAnalytics(c);
+}
+
 function renderGrill(c){
   if(!grill.started) return renderGrillConfig(c);
   const modeName = grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战';
@@ -2546,6 +2755,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     else if(v===Views.MOCK){ view=Views.MOCK; renderAll(); }
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:[]}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
+    else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
 });
