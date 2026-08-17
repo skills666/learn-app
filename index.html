@@ -1532,7 +1532,7 @@ function renderPractice(c){
     $('#eqTitle').value = q.title;
     $('#eqTitle').disabled = true;
     $('#eqAnswer').value = q.answer||'';
-    $('#eqTags').value = '';
+    $('#eqTags').value = (q.tags||[]).join(', ');
     $('#eqTags').disabled = true;
     $('#editModal').dataset.docid = doc.id;
     $('#editModal').dataset.qid = q.id;
@@ -1768,10 +1768,10 @@ function buildMemoryQueue(useCache){
   DOCS.forEach(d=>d.questions.forEach((q,i)=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
-      // 已掌握：用 srNext 判断是否到期（和普通题一致），但最小间隔 7 天
-      if(!p.srNext) return;  // 无复习计划，跳过
+      // 已掌握：用 srNext 判断是否到期（和普通题一致），但最小间隔 7 天。
+      // 无 srNext 的（手动/八股标记掌握）也按 lastPracticed+7天 进入复习队列，保证所有题都能复习。
       const minNext = (p.lastPracticed||0) + SM2_MAX_INTERVAL*86400000;
-      const effectiveNext = Math.max(p.srNext, minNext);
+      const effectiveNext = Math.max(p.srNext||0, minNext);
       if(isNaN(effectiveNext)) return;
       if(now < effectiveNext) return;  // 未到期
       const masteredDays=Math.max(0, Math.floor((now - effectiveNext)/86400000));
@@ -2282,10 +2282,9 @@ function memoryDueCount(){
   DOCS.forEach(d=>d.questions.forEach(q=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
-      if(!p.srNext) return;
       const lastPrac = p.lastPracticed || 0;
       const minNext = lastPrac + SM2_MAX_INTERVAL*86400000;
-      const effectiveNext = Math.max(p.srNext, minNext);
+      const effectiveNext = Math.max(p.srNext||0, minNext);
       if(isNaN(effectiveNext)) return;
       if(now >= effectiveNext) cnt++;
     } else {
