@@ -105,11 +105,9 @@
   .pbar > i.lv0{background:#3a3f55}.pbar > i.lv1{background:#d0b030}
   .pbar > i.lv2{background:#50a050}.pbar > i.lv3{background:#30a0a0}
   .pbar > i.lv4{background:#4068c0}
-  .pbar > i.lv5{background:linear-gradient(90deg,#a78bfa,#7c3aed,#c084fc,#f0abfc,#a78bfa);background-size:300% 100%;position:relative;overflow:hidden;animation:lv5-flow 2.4s linear infinite;box-shadow:0 0 8px rgba(167,139,250,.75),0 0 18px rgba(124,58,237,.45)}
-  .pbar > i.lv5::after{content:'';position:absolute;top:0;left:-70%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:lv5-shimmer 1.6s ease-in-out infinite}
-  .pbar > i.lvM{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
-  @keyframes lv5-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
-  @keyframes lv5-shimmer{0%{left:-70%}60%,100%{left:120%}}
+  .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
+  .pbar > i.lvM{background:linear-gradient(90deg,#f0abfc,#c084fc,#22d3ee,#6ee7b7,#f5c542,#f472b6,#f0abfc);background-size:300% 100%;position:relative;overflow:hidden;animation:lvM-flow 10s linear infinite;box-shadow:0 0 12px rgba(192,132,252,.45)}
+  @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
   .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
