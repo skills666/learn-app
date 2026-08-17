@@ -141,8 +141,7 @@
   .salary-card .salary-label{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px}
   .salary-card .salary-num{font-size:52px;font-weight:900;letter-spacing:2px;
     background:linear-gradient(180deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    filter:drop-shadow(0 2px 8px rgba(180,30,40,.25))}
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .salary-card .salary-sub{font-size:12px;color:var(--muted);margin-top:4px}
   .salary-card .salary-sub b{color:var(--accent3)}
   .salary-card .salary-bar{height:8px;border-radius:6px;background:var(--bg);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
@@ -1444,17 +1443,22 @@ function startPractice(scope){
     : (docById(scope)||{questions:[]}).questions
   ).map(q=>q.id);
   if(!order.length){ toast('该范围暂无题目'); return; }
-  // 恢复上次位置：找最后一个已刷过的题
+  // 新题（既没刷过也没看过）优先排在最前面，其余按原顺序排在后面
+  const isNew = qid => !(PROGRESS[qid]||{}).practiced && !(PROGRESS[qid]||{}).seen;
+  const newOnes = order.filter(isNew);
+  const doneOnes = order.filter(qid=>!isNew(qid));
+  const sorted = [...newOnes, ...doneOnes];
+  // 起点：有新题就从第一道新题开始；无新题则恢复上次位置（最后一道已刷题的下一题），全刷完则从头
   let startIdx = 0;
-  if(!practice.done){
-    for(let i=order.length-1; i>=0; i--){
-      if((PROGRESS[order[i]]||{}).practiced){ startIdx = i+1; break; }
+  if(!newOnes.length && !practice.done){
+    for(let i=sorted.length-1; i>=0; i--){
+      if((PROGRESS[sorted[i]]||{}).practiced){ startIdx = i+1; break; }
     }
-    if(startIdx >= order.length) startIdx = 0; // 全部刷完从头开始
+    if(startIdx >= sorted.length) startIdx = 0;
   }
-  practice = { order, index:startIdx, scope, done:false, practiced:new Set(), revealed:new Set() };
+  practice = { order: sorted, index:startIdx, scope, done:false, practiced:new Set(), revealed:new Set() };
   // 标记已掌握的题不再出现在刷题列表
-  order.forEach(qid=>{ if(PROGRESS[qid]?.mastered) practice.practiced.add(qid); });
+  sorted.forEach(qid=>{ if(PROGRESS[qid]?.mastered) practice.practiced.add(qid); });
   view=Views.PRACTICE; renderAll();
 }
 function pQuestion(){ return QINDEX.get(practice.order[practice.index]); }
@@ -2576,7 +2580,7 @@ const THEMES = {
   shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#78c8c8',good:'#50c0a0',warn:'#78c8c8',bad:'#e06070'},
   night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#88c878',accent2:'#a8e060',accent3:'#f0d048',good:'#60d080',warn:'#f0d048',bad:'#e06060'},
   'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
-  ziliang: {bg:'#0a0806',bg2:'#0e0c08',panel:'#12100a',panel2:'#1a160e',card:'#14120c',line:'#423018',line2:'#584020',text:'#d4bc88',muted:'#988040',faint:'#786030',accent:'#b89030',accent2:'#986820',accent3:'#c8a040',good:'#50a868',warn:'#b8a040',bad:'#b85038'},
+  ziliang: {bg:'#8f9496',bg2:'#868c8e',panel:'#9a9fa1',panel2:'#a5a9ab',card:'#92979a',line:'#a8adaf',line2:'#b5babc',text:'#2b3033',muted:'#4a5054',faint:'#676d71',accent:'#3f6f7a',accent2:'#5b8290',accent3:'#b08050',good:'#4a8a5c',warn:'#b08050',bad:'#b0524a'},
   zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#e84050',accent2:'#c8202e',accent3:'#f0a838',good:'#4a9a58',warn:'#f0a838',bad:'#c8202e'}
 };
 
@@ -2593,7 +2597,7 @@ const THEME_CONFIG = {
   shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#60c0f0,#88d8ff'},
   night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#1a1a3e,#2d2d5e'},
   // ── 定制组：子良/松星/子荣 ──
-  ziliang: {group:'custom', name:'子良',   canvas:'ziliang',  gradient:'#b89030,#c8a040'},
+  ziliang: {group:'custom', name:'子良',   canvas:'ziliang',  gradient:'#3f6f7a,#b08050'},
   songxing:{group:'custom', name:'松星',   canvas:'songxing', gradient:'#a78bfa,#d4a854'},
   zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#00FF88,#E03A3A'},
   // ── 自定义组：上传背景图 ──
@@ -2608,7 +2612,7 @@ const CSS_FX = {
   ripple:``,
   particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-  ziliang:`@keyframes zlBg{0%,100%{opacity:.6}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 50% 25%,rgba(180,140,50,.07),transparent 55%),radial-gradient(ellipse 600px 300px at 50% 75%,rgba(140,100,30,.04),transparent 55%);animation:zlBg 6s ease-in-out infinite}.bigbar,.pbar,.stats-bar .bar,.level .lbar{background:#181208!important}.content::-webkit-scrollbar-thumb{background:#4a3820!important}.btn.primary,.lvl-clear-badge,.seg button.active{color:#1c1408!important}.level .lnum{color:#1c1408}.level.locked .lnum{background:#3a3018!important}`,
+  ziliang:`@keyframes zlBg{0%,100%{opacity:.7}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%);animation:zlBg 8s ease-in-out infinite}.bigbar,.pbar,.stats-bar .bar,.level .lbar{background:#7c8285!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary,.lvl-clear-badge,.seg button.active{color:#f2f3f4!important}.level .lnum{color:#f2f3f4}.level.locked .lnum{background:#9aa0a3!important}`,
 };
 
 // 背景渐变映射表
@@ -2623,7 +2627,7 @@ const BODY_BG_MAP = {
   void:     `radial-gradient(1200px 700px at 30% 15%, #e8d8c01f 0%, transparent 55%), radial-gradient(1000px 600px at 70% 25%, #d4c0a018 0%, transparent 55%), var(--bg)`,
   shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
   night:    `radial-gradient(1000px 500px at 75% 15%, rgba(40,50,90,.35) 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, rgba(20,50,15,.18) 0%, transparent 55%), var(--bg)`,
-  ziliang:  `radial-gradient(600px 400px at 50% 15%, rgba(140,100,30,.12) 0%, transparent 50%), radial-gradient(500px 300px at 50% 70%, rgba(100,70,20,.08) 0%, transparent 50%), var(--bg)`,
+  ziliang:  `radial-gradient(900px 500px at 30% 10%, rgba(63,111,122,.14) 0%, transparent 50%), radial-gradient(800px 450px at 75% 20%, rgba(176,128,80,.12) 0%, transparent 50%), radial-gradient(600px 350px at 50% 85%, rgba(90,110,120,.08) 0%, transparent 55%), var(--bg)`,
   zirong:   `radial-gradient(1400px 800px at 20% 10%, rgba(30,180,70,.15) 0%, transparent 50%), radial-gradient(1200px 700px at 85% 5%, rgba(200,40,50,.12) 0%, transparent 50%), radial-gradient(1000px 500px at 50% 80%, rgba(240,160,100,.12) 0%, transparent 55%), var(--bg)`,
 };
 
@@ -3615,10 +3619,39 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── ziliang: 雨丝（子良特效）──
+  // ── ziliang: 流砂星河（子良特效）──
   else if(theme==='ziliang'){
-    const gap=Math.max(10,W/60), cols = Math.floor(W/gap);
-    for(let i=0;i<cols;i++) _uParticles.push({x:i*gap+Math.random()*8, y:Math.random()*H*-1, speed:0.6+Math.random()*1.8, len:10+Math.random()*40, alpha:0.08+Math.random()*0.15, hue:45+Math.random()*10});
+    // 砂金尘埃
+    const n1 = isMobile?24:50;
+    for(let i=0;i<n1;i++){
+      _uParticles.push({
+        type:'dust',
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.35, vy:-(0.15+Math.random()*0.6),
+        size:0.6+Math.random()*2.0, alpha:0.08+Math.random()*0.3,
+        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.4
+      });
+    }
+    // 蓝绿十字星芒
+    const n2 = isMobile?10:22;
+    for(let i=0;i<n2;i++){
+      _uParticles.push({
+        type:'spark',
+        x:Math.random()*W, y:Math.random()*H,
+        size:3+Math.random()*9, alpha:0.12+Math.random()*0.5,
+        phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*1.2
+      });
+    }
+    // 流星
+    const n3 = isMobile?1:3;
+    for(let i=0;i<n3;i++){
+      _uParticles.push({
+        type:'meteor',
+        x:0, y:0, vx:0, vy:0,
+        len:70+Math.random()*90, alpha:0.7+Math.random()*0.3,
+        cooldown:2+Math.random()*6, active:false, ttl:0
+      });
+    }
   }
   // ── shuangren: 雪花冰晶 ──
   else if(theme==='shuangren'){
@@ -3915,16 +3948,87 @@ function drawVoid(ctx,W,H){
   }
 }
 function drawZiliang(ctx,W,H){
-  // 暗金微光晕染
-  const bg=ctx.createRadialGradient(W*0.5,H*0.2,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
-  bg.addColorStop(0,'rgba(120,100,40,.05)');bg.addColorStop(0.5,'rgba(80,60,20,.02)');bg.addColorStop(1,'rgba(40,25,10,0)');
+  const t = _uTime;
+  // 中性雾光晕染
+  const bg=ctx.createRadialGradient(W*0.3,H*0.2,0,W*0.5,H*0.5,Math.max(W,H)*0.75);
+  bg.addColorStop(0,'rgba(63,111,122,.08)');bg.addColorStop(0.5,'rgba(120,130,135,.04)');bg.addColorStop(1,'rgba(90,100,105,0)');
   ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  for(let d of _uParticles){
-    d.y+=d.speed;
-    if(d.y-d.len>H){d.y=-d.len-Math.random()*H*.3;d.x+=Math.random()*8-4;d.alpha=0.08+Math.random()*0.15;}
-    const grad=ctx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
-    grad.addColorStop(0,`hsla(${d.hue},60%,75%,0)`);grad.addColorStop(0.6,`hsla(${d.hue},50%,68%,${d.alpha*0.4})`);grad.addColorStop(1,`hsla(${d.hue},40%,65%,${d.alpha*1.2})`);
-    ctx.strokeStyle=grad;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(d.x,d.y-d.len);ctx.lineTo(d.x,d.y);ctx.stroke();
+
+  // ── 流动沙丘光带（双层正弦波）──
+  for(let k=0;k<3;k++){
+    const amp = 42+k*34, base = H*(0.5+k*0.16);
+    ctx.beginPath();
+    for(let x=0;x<=W;x+=6){
+      const y = base + Math.sin(x*0.006 + t*0.6 + k*1.7)*amp*0.5
+              + Math.sin(x*0.014 - t*0.35 + k*2.1)*amp*0.3;
+      if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=`hsla(${k%2===0?195:32},45%,60%,${0.05+k*0.025})`;
+    ctx.lineWidth=1.2+k*0.7;
+    ctx.stroke();
+  }
+
+  for(const d of _uParticles){
+    if(d.type==='dust'){
+      d.x+=d.vx + Math.sin(t*d.speed*0.5+d.phase)*0.3;
+      d.y+=d.vy;
+      d.phase+=d.speed*0.02;
+      if(d.y<-20){d.y=H+20;d.x=Math.random()*W;}
+      if(d.x<-20)d.x=W+20;if(d.x>W+20)d.x=-20;
+      const tw=0.5+0.5*Math.sin(d.phase);
+      const g=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,d.size*3);
+      g.addColorStop(0,`hsla(32,55%,66%,${d.alpha*tw})`);
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.size*3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=`hsla(32,60%,78%,${d.alpha*tw})`;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.size,0,Math.PI*2);ctx.fill();
+    }
+    else if(d.type==='spark'){
+      const tw=Math.sin(t*d.speed+d.phase);
+      const a=Math.max(0, d.alpha*tw);
+      if(a<=0.02) continue;
+      const g=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,d.size*2.5);
+      g.addColorStop(0,`hsla(195,60%,80%,${a})`);
+      g.addColorStop(0.4,`hsla(195,55%,70%,${a*0.4})`);
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.size*2.5,0,Math.PI*2);ctx.fill();
+      // 十字星芒
+      ctx.strokeStyle=`hsla(195,55%,84%,${a*0.9})`;
+      ctx.lineWidth=1;
+      const L=d.size*2.2;
+      ctx.beginPath();
+      ctx.moveTo(d.x-L,d.y);ctx.lineTo(d.x+L,d.y);
+      ctx.moveTo(d.x,d.y-L);ctx.lineTo(d.x,d.y+L);
+      ctx.stroke();
+      ctx.fillStyle=`hsla(195,40%,94%,${a})`;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.size*0.45,0,Math.PI*2);ctx.fill();
+    }
+    else if(d.type==='meteor'){
+      d.cooldown-=0.016;
+      if(!d.active){
+        if(d.cooldown<=0){
+          d.active=true;d.ttl=1.2+Math.random()*1.2;
+          d.x=W*0.3+Math.random()*W*0.7; d.y=Math.random()*H*0.25;
+          d.vx=-(2.5+Math.random()*3.5); d.vy=(1.2+Math.random()*2);
+        }
+        continue;
+      }
+      d.ttl-=0.016; d.x+=d.vx; d.y+=d.vy;
+      if(d.ttl<=0 || d.x<-120 || d.y>H+120){
+        d.active=false; d.cooldown=3+Math.random()*7;
+        continue;
+      }
+      const grad=ctx.createLinearGradient(d.x,d.y,d.x-d.vx*d.len,d.y-d.vy*d.len);
+      grad.addColorStop(0,`hsla(195,60%,86%,${0.85*d.ttl})`);
+      grad.addColorStop(1,'transparent');
+      ctx.strokeStyle=grad;ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(d.x,d.y);
+      ctx.lineTo(d.x-d.vx*d.len,d.y-d.vy*d.len);
+      ctx.stroke();
+    }
   }
 }
 function drawShuangren(ctx,W,H){
