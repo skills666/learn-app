@@ -3915,11 +3915,26 @@ function initThemeParticles(theme){
   }
 }
 let _uHidden = false;
-document.addEventListener('visibilitychange', () => { _uHidden = document.hidden; });
+function restartCanvasLoop(){
+  if(_uCanvas && _uCtx && !_uRaf){
+    _uLastTs = 0; // 重置时间基准，避免切回前台后 dt 跳变导致特效瞬移
+    _uRaf = requestAnimationFrame(tickUnified);
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  _uHidden = document.hidden;
+  if(_uHidden){
+    // 切后台：取消动画循环，节省电量，并断开依赖自身的 RAF 链
+    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+  } else {
+    // 切回前台：主动重启动画循环（修复部分手机切后台后动态主题卡死的问题）
+    restartCanvasLoop();
+  }
+});
 function tickUnified(ts){
   if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
+  if(_uHidden){ _uRaf = null; return; } // 后台时停止调度，由 visibilitychange 重新拉起
   _uRaf = requestAnimationFrame(tickUnified);
-  if(_uHidden) return;
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
   _uLastTs = ts;
   _uTime += dt;
