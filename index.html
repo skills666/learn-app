@@ -100,13 +100,13 @@
 
   /* practice mode */
   .practice-wrap{max-width:820px;margin:0 auto}
-  .pbar{height:10px;border-radius:8px;background:#0c0f1a;overflow:hidden;margin:6px 0 4px;display:flex}
-  .pbar > i{display:block;height:100%;min-width:2px;transition:width .3s}
+  .pbar{height:10px;border-radius:8px;background:rgba(12,15,26,.35);overflow:hidden;margin:6px 0 4px;display:flex}
+  .pbar > i{display:block;height:100%;min-width:2px;transition:width .3s;border-radius:3px}
   .pbar > i.lv0{background:#3a3f55}.pbar > i.lv1{background:#d0b030}
   .pbar > i.lv2{background:#50a050}.pbar > i.lv3{background:#30a0a0}
   .pbar > i.lv4{background:#4068c0}
   .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
-  .pbar > i.lvM{background:linear-gradient(90deg,#f0abfc,#c084fc,#22d3ee,#6ee7b7,#f5c542,#f472b6,#f0abfc);background-size:300% 100%;position:relative;overflow:hidden;animation:lvM-flow 10s linear infinite;box-shadow:0 0 12px rgba(192,132,252,.45)}
+  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;animation:lvM-flow 12s linear infinite;box-shadow:0 0 12px rgba(192,132,252,.45)}
   @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
   .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
