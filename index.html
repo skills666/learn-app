@@ -106,8 +106,9 @@
   .pbar > i.lv2{background:#50a050}.pbar > i.lv3{background:#30a0a0}
   .pbar > i.lv4{background:#4068c0}
   .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
-  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;animation:lvM-flow 12s linear infinite;box-shadow:0 0 12px rgba(192,132,252,.45)}
+  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 7px rgba(255,224,102,.6),0 0 9px rgba(255,224,102,.7);animation:lvM-flow 12s linear infinite,lvM-arc 1.4s ease-in-out infinite}
   @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+  @keyframes lvM-arc{0%,100%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 5px rgba(255,224,102,.4),0 0 6px rgba(255,224,102,.55)}50%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 10px rgba(255,224,102,.75),0 0 15px rgba(255,224,102,1)}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
   .an-wrap{max-width:1040px;margin:0 auto;padding:18px 16px}
   .an-h{font-size:19px;font-weight:800;margin:2px 0}
@@ -2804,7 +2805,7 @@ const THEME_CONFIG = {
   shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#60c0f0,#88d8ff'},
   night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#1a1a3e,#2d2d5e'},
   // ── 定制组：子良/松星/子荣 ──
-  ziliang: {group:'custom', name:'子良',   canvas:'ziliang',  gradient:'#3f6f7a,#b08050'},
+  ziliang: {group:'custom', name:'子良',   canvas:'none',     gradient:'#3f6f7a,#b08050'},
   songxing:{group:'custom', name:'松星',   canvas:'songxing', gradient:'#a78bfa,#d4a854'},
   zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#00FF88,#E03A3A'},
   // ── 自定义组：上传背景图 ──
@@ -2819,7 +2820,7 @@ const CSS_FX = {
   ripple:``,
   particle:`@keyframes pA{0%{transform:translate(0,0)}25%{transform:translate(14vw,-10vh)}50%{transform:translate(-6vw,-18vh)}75%{transform:translate(-12vw,-8vh)}100%{transform:translate(0,0)}}@keyframes pB{0%{transform:translate(0,0)}33%{transform:translate(-12vw,-14vh)}66%{transform:translate(8vw,-6vh)}100%{transform:translate(0,0)}}@keyframes pC{0%{transform:translate(0,0)}30%{transform:translate(10vw,12vh)}60%{transform:translate(-14vw,6vh)}100%{transform:translate(0,0)}}body::before{content:'';position:fixed;pointer-events:none;z-index:0;width:3px;height:3px;border-radius:50%;background:var(--accent);top:30%;left:20%;box-shadow:40vw 12vh 0 var(--accent2),15vw 58vh 0 var(--accent3),70vw 32vh 0 var(--accent),55vw 68vh 0 var(--accent2),85vw 48vh 0 var(--accent3);animation:pA 20s ease-in-out infinite}body::after{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent3);top:55%;left:58%;box-shadow:18vw 12vh 0 var(--accent),-28vw -18vh 0 var(--accent2),22vw -28vh 0 var(--accent3),-12vw 22vh 0 var(--accent),-35vw -10vh 0 var(--accent2);animation:pB 25s ease-in-out infinite}.app::before{content:'';position:fixed;pointer-events:none;z-index:0;width:2px;height:2px;border-radius:50%;background:var(--accent2);top:20%;left:72%;box-shadow:-22vw 28vh 0 var(--accent),8vw 42vh 0 var(--accent3),-42vw 50vh 0 var(--accent2),-8vw 68vh 0 var(--accent),-30vw 35vh 0 var(--accent3);animation:pC 30s ease-in-out infinite}`,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-  ziliang:`@keyframes zlBg{0%,100%{opacity:.7}50%{opacity:1}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%);animation:zlBg 8s ease-in-out infinite}.bigbar,.level .lbar{background:#7c8285!important}.pbar{background:rgba(255,255,255,.1)!important}.stats-bar .bar{background:rgba(255,255,255,.1)!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary,.lvl-clear-badge,.seg button.active{color:#f2f3f4!important}.level .lnum{color:#f2f3f4}.level.locked .lnum{background:#9aa0a3!important}`,
+  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar,.level .lbar{background:#7c8285!important}.pbar{background:rgba(255,255,255,.1)!important}.stats-bar .bar{background:rgba(255,255,255,.1)!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary,.lvl-clear-badge,.seg button.active{color:#f2f3f4!important}.level .lnum{color:#f2f3f4}.level.locked .lnum{background:#9aa0a3!important}`,
 };
 
 // 背景渐变映射表
@@ -3674,7 +3675,7 @@ let _uParticles = [];
 let _uFadeIn = 1;
 
 function startUnifiedCanvas(theme){
-  const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','ziliang','songxing','zirong'];
+  const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','songxing','zirong'];
   if(!canvasThemes.includes(theme)){
     // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
@@ -3827,35 +3828,6 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── ziliang: 折纸晶簇（全屏漂浮）+ 烟花（底部升空 → 70% 高度爆开）──
-  else if(theme==='ziliang'){
-    // 折纸晶簇：网格均匀撒满全屏（数量减半）
-    const n = isMobile?5:9;
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        type:'shard',
-        x:(i%3)*W/3 + Math.random()*W/3,
-        y:Math.floor(i/3)*H/3 + Math.random()*H/3,
-        size:14+Math.random()*28,
-        rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.004,
-        vx:(Math.random()-0.5)*0.35, vy:(Math.random()-0.5)*0.25,
-        alpha:0.09+Math.random()*0.105,
-        hue:[195,32,280,160,350,45][(Math.random()*6)|0],
-        phase:Math.random()*Math.PI*2
-      });
-    }
-    // 烟花弹丸：2 发错峰发射（频次砍半）
-    const nR = isMobile?1:2;
-    for(let i=0;i<nR;i++){
-      _uParticles.push({
-        type:'rocket',
-        x:W*0.2 + Math.random()*W*0.6, y:H,
-        vy:-(H*0.35 + Math.random()*H*0.1),
-        hue:Math.random()<0.6?195:32,
-        cooldown:i*6 + Math.random()*8
-      });
-    }
-  }
   // ── shuangren: 雪花冰晶 ──
   else if(theme==='shuangren'){
     const n = isMobile?35:70;
@@ -3955,7 +3927,6 @@ function tickUnified(ts){
     case 'void': drawVoid(ctx,W,H); break;
     case 'shuangren': drawShuangren(ctx,W,H); break;
     case 'night': drawNight(ctx,W,H); break;
-    case 'ziliang': drawZiliang(ctx,W,H); break;
     case 'songxing': drawSongxing(ctx,W,H); break;
     case 'zirong': drawZirong(ctx,W,H); break;
     default: break;
@@ -4165,96 +4136,6 @@ function drawVoid(ctx,W,H){
     glow.addColorStop(1,'transparent');
     ctx.fillStyle=glow;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
-  }
-}
-function drawZiliang(ctx,W,H){
-  const t = _uTime;
-  const dt = 0.016;
-  for(const p of _uParticles){
-    // ── 升空弹丸 ──
-    if(p.type==='rocket'){
-      if(p.cooldown > 0){ p.cooldown -= dt; continue; }
-      p.y += p.vy * dt;
-      // 弹丸拖尾
-      const tail = ctx.createLinearGradient(p.x, p.y, p.x, p.y + 26);
-      tail.addColorStop(0, `hsla(${p.hue},60%,88%,0.9)`);
-      tail.addColorStop(1, 'transparent');
-      ctx.strokeStyle = tail; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + 26); ctx.stroke();
-      // 弹头亮点
-      ctx.fillStyle = `hsla(${p.hue},55%,92%,1)`;
-      ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, Math.PI*2); ctx.fill();
-      // 到达 70% 高度爆开
-      if(p.y <= H*0.3){
-        explode(p.x, p.y, p.hue);
-        p.y = H; p.x = W*0.2 + Math.random()*W*0.6;
-        p.vy = -(H*0.35 + Math.random()*H*0.1);
-        p.hue = Math.random()<0.6?195:32;
-        p.cooldown = 2.4 + Math.random()*10;
-      }
-      continue;
-    }
-    // ── 折纸晶簇（全屏缓慢漂移 + 旋转）──
-    if(p.type==='shard'){
-      p.x += p.vx + Math.sin(t*0.3 + p.phase)*0.4;
-      p.y += p.vy + Math.cos(t*0.25 + p.phase)*0.3;
-      p.rot += p.rotV;
-      if(p.x < -70) p.x = W+70; if(p.x > W+70) p.x = -70;
-      if(p.y < -70) p.y = H+70; if(p.y > H+70) p.y = -70;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      const s = p.size;
-      ctx.fillStyle = `hsla(${p.hue},30%,44%,${p.alpha})`;
-      ctx.strokeStyle = `hsla(${p.hue},28%,28%,${p.alpha*1.8})`;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(0,-s);
-      ctx.lineTo(s*0.62,0);
-      ctx.lineTo(0,s);
-      ctx.lineTo(-s*0.62,0);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-      continue;
-    }
-    // ── 烟花火花 ──
-    if(p.type==='spark'){
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 60 * dt;         // 重力下坠
-      p.vx *= 0.985; p.vy *= 0.985; // 空气阻力
-      p.life -= dt;
-      if(p.life <= 0) continue;
-      const a = Math.max(0, p.life / p.maxLife);
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size*3);
-      g.addColorStop(0, `hsla(${p.hue},65%,72%,${a*0.9})`);
-      g.addColorStop(0.5, `hsla(${p.hue},60%,55%,${a*0.35})`);
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size*3, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = `hsla(${p.hue},50%,88%,${a})`;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size*0.6, 0, Math.PI*2); ctx.fill();
-    }
-  }
-
-  function explode(x, y, hue){
-    const count = 90;
-    // 多彩色相池：蓝绿 / 砂金 / 紫 / 青绿 / 粉 / 金黄
-    const palette = [195, 32, 280, 160, 350, 45];
-    for(let i=0;i<count;i++){
-      const ang = Math.random()*Math.PI*2;
-      const spd = 80 + Math.random()*300;
-      _uParticles.push({
-        type:'spark',
-        x:x, y:y,
-        vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
-        size:0.5+Math.random()*1.0,
-        hue:Math.random()<0.5?hue:palette[(Math.random()*palette.length)|0],
-        life:1.6+Math.random()*1.6, maxLife:3.2
-      });
-    }
   }
 }
 function drawShuangren(ctx,W,H){
