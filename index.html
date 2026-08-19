@@ -363,6 +363,13 @@
   .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
   .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
   .grill-dur-btn.sel{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.3)}
+  .grill-endless-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 2px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .grill-endless-row .ge-label{font-size:12.5px;font-weight:600;color:var(--text)}
+  .grill-endless-row .ge-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .ge-switch{position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;background:var(--line2);border-radius:13px;transition:.2s}
+  .ge-switch.on{background:var(--accent)}
+  .ge-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
+  .ge-switch.on::after{left:23px}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .grill-resume:focus{border-color:var(--accent2)}
@@ -764,7 +771,7 @@ let practice = { order: [], index: 0, scope: null, done: false, practiced: new S
 let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
-let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'' };
+let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', endless:false, forceEnd:false };
 // 宝箱动画封装（chest.js 动态加载，可能不存在）
 function tryOpenChest(tier){ if(window.openChest) window.openChest(tier); }
 
@@ -2140,7 +2147,7 @@ function renderGrill(c){
   const modeName = grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战';
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 ${modeName}</span><span>${grill.messages.length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
+      <div class="pmeta"><span>🔥 ${modeName}</span>${grill.endless?'<span style="color:var(--accent)">♾️ 无尽模式</span>':''}<span>${grill.messages.length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
       <div class="grill-chat" id="grillChat">${grill.messages.map((m,i)=>`
         <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}${grill.ended&&grill.feedback?`
@@ -2155,6 +2162,7 @@ function renderGrill(c){
       <div class="grill-input-row">
         <input id="grillInput" placeholder="输入你的回答…" autocomplete="off" ${grill.loading?'disabled':''}>
         <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
+        ${grill.endless?'<button class="btn ghost" id="grillEndBtn" style="color:var(--warn)">结束并总结</button>':''}
         <button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>
       </div>`}
     </div>`;
@@ -2162,7 +2170,7 @@ function renderGrill(c){
   if(chat) chat.scrollTop = chat.scrollHeight;
   if(grill.ended){
     // 面试已结束，只显示关闭按钮
-    $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:''}; renderAll(); };
+    $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',endless:false,forceEnd:false}; renderAll(); };
   } else {
     const input = $('#grillInput');
     const send = () => {
@@ -2173,7 +2181,18 @@ function renderGrill(c){
     $('#grillSend').onclick = send;
     input.onkeydown = e => { if(e.key==='Enter') send(); };
     input.focus();
-    $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:''}; renderAll(); };
+    $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',endless:false,forceEnd:false}; renderAll(); };
+    const endBtn = $('#grillEndBtn');
+    if(endBtn){
+      endBtn.onclick = async () => {
+        if(grill.loading) return;
+        if(!await confirmDialog('结束本场无尽模式并生成总结反馈？')) return;
+        grill.forceEnd = true;
+        grill.messages.push({role:'user', content:'我想结束本场八股扫荡，请停止出题，并输出本次八股扫荡的总结反馈（必须以 [FEEDBACK] 开头）。'});
+        grill.loading = true; renderAll();
+        doGrillChat();
+      };
+    }
   }
 }
 function renderGrillConfig(c){
@@ -2205,6 +2224,15 @@ function renderGrillConfig(c){
           <span class="grill-dur-btn sel" data-dur="standard">标准 (20轮)</span>
           <span class="grill-dur-btn" data-dur="deep">深度 (30轮)</span>
         </div>
+        <div id="grillEndlessRow" style="display:none;margin:8px 0 4px">
+          <div class="grill-endless-row">
+            <div>
+              <div class="ge-label">♾️ 无尽模式</div>
+              <div class="ge-sub">AI 不会主动结束，只能手动点"结束并总结"收尾</div>
+            </div>
+            <div class="ge-switch" id="grillEndlessSwitch"></div>
+          </div>
+        </div>
         <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
         <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性"></textarea>
         <div style="margin-top:14px">
@@ -2217,6 +2245,7 @@ function renderGrillConfig(c){
   // 模式选择
   let selectedMode = '';
   let selectedDuration = 'standard';
+  let selectedEndless = false;
   document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(card=>{
     card.onclick = ()=>{
       document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>c.classList.remove('sel'));
@@ -2226,8 +2255,24 @@ function renderGrillConfig(c){
       // 高压实战才显示时长选项
       const durRow = $('#grillDurRow');
       if(durRow) durRow.style.display = selectedMode==='real' ? '' : 'none';
+      // 无尽模式仅八股扫荡可选
+      const endlessRow = $('#grillEndlessRow');
+      if(endlessRow) endlessRow.style.display = selectedMode==='theory' ? '' : 'none';
+      if(selectedMode!=='theory'){
+        selectedEndless = false;
+        const sw = $('#grillEndlessSwitch'); if(sw) sw.classList.remove('on');
+      }
     };
   });
+  // 无尽模式开关
+  const endlessSwitch = $('#grillEndlessSwitch');
+  if(endlessSwitch){
+    endlessSwitch.onclick = (e)=>{
+      e.stopPropagation();
+      selectedEndless = !selectedEndless;
+      endlessSwitch.classList.toggle('on', selectedEndless);
+    };
+  }
   // 时长选择
   document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(btn=>{
     btn.onclick = (e)=>{
@@ -2243,6 +2288,8 @@ function renderGrillConfig(c){
     if(selectedMode!=='theory' && !resume){ toast('项目深挖和高压实战需要填写简历'); return; }
     grill.mode = selectedMode;
     grill.duration = selectedDuration;
+    grill.endless = (selectedMode==='theory') ? selectedEndless : false;
+    grill.forceEnd = false;
     grill.resume = resume; grill.messages = []; grill.started = true;
     const DUR_MAP = {quick:'约15分钟',standard:'约30分钟',deep:'约45分钟'};
     const greetings = {
@@ -2328,6 +2375,16 @@ ${grill.resume?`难度指南：${DIFFICULTY[lv]}`:'难度：随机出题，不�
 动态调难度：答不上来时降一档出更简单的题；答上了不要升难度，保持当前难度继续。
 Markdown格式，题目加粗，简洁不啰嗦。
 
+${grill.endless?`
+面试结束规则（重要！）：
+- 本场为【无尽模式】，你永远不要主动结束面试，也永远不要输出 [FEEDBACK] 标记
+- 持续出题、持续追问，一轮接一轮，直到用户明确要求结束
+- 只有用户在消息中明确说"结束"或"我想结束了"时，才在回复的最后输出一段总结反馈，格式必须以 [FEEDBACK] 开头
+- 总结反馈要求：评估候选人知识面广度、薄弱环节、学习建议（1-2个重点补强方向），语气客观专业
+
+${grill.resume?`
+候选人简历：
+${grill.resume}`:''}`:`
 面试结束规则（重要！）：
 - 正常结束：面试达到${realRounds.min}-${realRounds.max}轮后，选择合适时机结束
 - 提前结束：仅当候选人连续5轮以上完全答不上来、或者连续答错且没有进步迹象，才可以提前结束。前5轮内不允许结束，即使答得不好也要降难度继续出题
@@ -2336,7 +2393,7 @@ Markdown格式，题目加粗，简洁不啰嗦。
 
 ${grill.resume?`
 候选人简历：
-${grill.resume}`:''}`,
+${grill.resume}`:''}`}`,
 
     real: `你是资深面试官，正在进行真实面试模拟。候选人大约${years}年经验（${lv}）。
 
@@ -2396,9 +2453,11 @@ ${grill.resume}`
     else grill.messages[aiIdx].content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
   } else {
     // 检测 AI 是否主动结束了面试（回复中包含 [FEEDBACK] 标记）
+    // 无尽模式下，只有用户手动触发（forceEnd）才允许结束，AI 不会主动结束
     const fbIdx = r.indexOf('[FEEDBACK]');
-    if(fbIdx !== -1){
+    if(fbIdx !== -1 && (!grill.endless || grill.forceEnd)){
       grill.ended = true;
+      grill.forceEnd = false;
       // 拆分对话内容和反馈
       const dialogPart = r.substring(0, fbIdx).trim();
       const feedbackPart = r.substring(fbIdx + 10).trim(); // 跳过 [FEEDBACK] 标记
