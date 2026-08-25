@@ -868,8 +868,8 @@ function renderAnswer(t){
 }
 function renderAIBlock(qid){
   if(!aiAnswer[qid]) return '';
-  if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+qid+'"><div class="ai-loading">AI 思考中…</div></div>';
-  return '<div class="ai-answer" data-qid="'+qid+'"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">🤖 AI 回复</div>'+formatAI(aiAnswer[qid])+'</div>';
+  if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+esc(qid)+'"><div class="ai-loading">AI 思考中…</div></div>';
+  return '<div class="ai-answer" data-qid="'+esc(qid)+'"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">🤖 AI 回复</div>'+formatAI(aiAnswer[qid])+'</div>';
 }
 function docById(id){ return DINDEX.get(id); }
 function questionById(qid){ return QINDEX.get(qid); }
@@ -936,7 +936,10 @@ function confirmDialog(msg){ return new Promise(resolve=>{
 function _showConfirm(msg, resolve){
   _confirmOpen = true;
   try {
+    let _settled = false;
     const cleanup = (result) => {
+      if(_settled) return;   // 防止遮罩+按钮双击导致重复 resolve/弹出队列
+      _settled = true;
       ov.remove(); _confirmOpen = false; resolve(result);
       // 依次弹出排队的确认框，而不是静默丢弃
       setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } }, 100);
@@ -1468,6 +1471,7 @@ function completeLevel(){
   if(docId){
     CLEARS[docId] = (CLEARS[docId]||0) + 1;
     Store.saveClears(CLEARS);
+    markDirty();   // 通关次数变更也标记云同步脏数据，确保自动推送能上传
   }
   practice.done = true;
   renderContent();
@@ -1737,7 +1741,20 @@ function renderMockResult(c){
 // 记忆队列缓存，避免每次进入记忆模式全量遍历
 let _memQueueCache = null;
 let _memQueueDirty = true;
-function invalidateMemQueue(){ _memQueueDirty = true; }
+let _lvCountsCache = null;   // 等级分布缓存，进度变更时失效
+function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; }
+// 全库等级分布（记忆模式进度条用），缓存避免每次评分都全量遍历
+function computeLvCounts(){
+  if(_lvCountsCache) return _lvCountsCache;
+  const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
+  DOCS.forEach(d2=>d2.questions.forEach(dq=>{
+    const pp = PROGRESS[dq.id]||{};
+    const lv = pp.mastered ? 'M' : pp.srLevel || 0;
+    lvCounts[lv] = (lvCounts[lv]||0)+1;
+  }));
+  _lvCountsCache = lvCounts;
+  return lvCounts;
+}
 // SM-2 记忆队列：获取今日待复习题目
 function buildMemoryQueue(useCache){
   if(useCache && !_memQueueDirty && _memQueueCache) return _memQueueCache;
@@ -1780,15 +1797,34 @@ function buildLvBarHtml(lvCounts){
   ).join('');
   return { stacked, legend };
 }
+// 撤销记忆模式上一步评分：恢复旧进度并定位回被撤销的题目
+function undoMemoryGrade(){
+  if(!memory._history || !memory._history.length) return;
+  const last = memory._history.pop();
+  const undoneQid = last.qid;
+  PROGRESS[undoneQid] = last.oldProgress;
+  saveProgress(); markDirty();
+  memory.flipped = false;
+  memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
+  // 撤销后定位到被撤销的那道题
+  const targetIdx = memory.queue.findIndex(item => item.q.id === undoneQid);
+  memory.index = targetIdx >= 0 ? targetIdx : Math.max(0, memory.index - 2);
+  if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
+  renderAll();
+}
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
+    // 评分越界（队列非空）时保留撤销历史；全新进入（队列空）才清空
+    const hadQueue = memory.queue.length > 0;
     memory.queue = buildMemoryQueue(true);
     memory.index = 0; memory.flipped = false;
-    memory._history = [];
+    if(!hadQueue) memory._history = [];
     if(!memory.queue.length){
       const streak = getStreakDays();
       const todayDone = getTodayReviewed();
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}</div>`;
+      const canUndo = !!(memory._history && memory._history.length);
+      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
+      const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
       return;
     }
   }
@@ -1800,12 +1836,7 @@ function renderMemory(c){
   const tot = memory.queue.length, idx = memory.index+1;
   const maxOverdue = memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
   // 一根总进度条：全部文档所有题目的等级分布
-  const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
-  DOCS.forEach(d2=>d2.questions.forEach(dq=>{
-    const pp = PROGRESS[dq.id]||{};
-    const lv = pp.mastered ? 'M' : pp.srLevel || 0;
-    lvCounts[lv] = (lvCounts[lv]||0)+1;
-  }));
+  const lvCounts = computeLvCounts();
   const lvBar = buildLvBarHtml(lvCounts);
   c.innerHTML = `
     <div class="feature-wrap">
@@ -1892,20 +1923,7 @@ function renderMemory(c){
     tryOpenChest(chestTier);
     renderAll();
   });
-  const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation();
-    if(!memory._history || !memory._history.length) return;
-    const last = memory._history.pop();
-    const undoneQid = last.qid;
-    PROGRESS[undoneQid] = last.oldProgress;
-    saveProgress(); markDirty();
-    memory.flipped = false;
-    memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
-    // 撤销后定位到被撤销的那道题
-    const targetIdx = memory.queue.findIndex(item => item.q.id === undoneQid);
-    memory.index = targetIdx >= 0 ? targetIdx : Math.max(0, memory.index - 2);
-    if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
-    renderAll();
-  };
+  const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
   const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
   const aiCodeBtn = $('#memAICodeBtn'); if(aiCodeBtn) aiCodeBtn.onclick = (e) => { e.stopPropagation(); askAICode(q.id); };
 }
@@ -2315,6 +2333,7 @@ function voiceStatusText(){
   return voiceSRSupported() ? '点击麦克风开始回答' : '⚠️ 当前浏览器不支持语音识别，请用下方文字输入';
 }
 function updateVoiceStatus(){ const el=$('#voiceStatus'); if(el) el.textContent = voiceStatusText(); }
+let _zhVoice = null;   // 缓存中文语音；getVoices 是异步加载的，首次调用常为空
 function speakText(text){
   try{
     speechSynthesis.cancel();
@@ -2322,9 +2341,12 @@ function speakText(text){
     if(!clean) return;
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = 'zh-CN'; u.rate = 1.0;
-    const voices = speechSynthesis.getVoices();
-    const zh = voices.find(v => /zh|cmn|chinese/i.test(v.lang));
-    if(zh) u.voice = zh;
+    if(!_zhVoice){
+      const pick = () => { const v = speechSynthesis.getVoices().find(x => /zh|cmn|chinese/i.test(x.lang)); if(v) _zhVoice = v; };
+      pick();
+      try{ speechSynthesis.onvoiceschanged = pick; }catch(_){}
+    }
+    if(_zhVoice) u.voice = _zhVoice;
     speechSynthesis.speak(u);
   }catch(_){}
 }
@@ -2947,7 +2969,7 @@ async function askAI(qid, mode){
 }
 // 流式更新 AI 输出，只更新 DOM 不触发页面动画
 function updateAIOutput(qid){
-  const el=$('.ai-answer[data-qid="'+qid+'"]');
+  const el=$('.ai-answer[data-qid="'+CSS.escape(qid)+'"]');
   if(!el) return;
   const text=aiAnswer[qid]||'';
   if(text==='loading'){el.innerHTML='<div class="ai-loading">AI 思考中<span class="dots">...</span></div>';return;}
@@ -2960,10 +2982,9 @@ function _limitCache(obj, max){
 }
 function formatAI(text){
   if(!text) return '';
-  let s=text.replace(/^(user|assistant|system|human)[：:\s]*/gim,''); s=esc(s);
-  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+?)`/g,'<code>$1</code>');
-  s=s.replace(/```([\w+-]*)\n?([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
-  return s.split(/\n{2,}/).map(p=>'<p>'+p.split('\n').join('<br>')+'</p>').join('');
+  // 剥离角色前缀后统一交给 md2html 渲染（正确提取代码块，避免换行/**/`被误伤）
+  const s = text.replace(/^(user|assistant|system|human)[：:\s]*/gim,'');
+  return md2html(s);
 }
 
 /* ---------- 记忆模式：AI 生成代码分析 ---------- */
@@ -3538,7 +3559,7 @@ function importJsonDocs(text){
   let added=0, replaced=0;
   data.documents.forEach(nd=>{
     if(!nd.id || !nd.title || !Array.isArray(nd.questions)) return;
-    const clone = { ...nd, questions: (nd.questions||[]).map(q => ({ ...q })) };
+    const clone = { ...nd, questions: (nd.questions||[]).map((q, qi) => ({ ...q, id: q.id || (nd.id + '#' + (qi+1)) })) };
     if(byId.has(nd.id)){ byId.set(nd.id, clone); replaced++; }
     else { byId.set(nd.id, clone); added++; }
   });
@@ -3659,8 +3680,8 @@ async function doPushToGist(token, gistId, onSuccess, onError){
   const contentStr = JSON.stringify(data);
   window._pushContentStr = contentStr;
   try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`,{
-      method:'PATCH',headers:{'Content-Type':'application/json'},
+    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'token '+token},
       body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}})
     });
     if(resp.ok){
@@ -3688,7 +3709,7 @@ async function cloudPush(){
       // 推送后 2 秒验证
       setTimeout(async()=>{
         try{
-          const vResp=await fetch(`https://gitee.com/api/v5/gists/${gid}?access_token=${encodeURIComponent(t)}`);
+          const vResp=await fetch(`https://gitee.com/api/v5/gists/${gid}`,{headers:{'Authorization':'token '+t}});
           const vGist=await vResp.json();
           const vFile=vGist.files['learn-data.json'];
           if(vFile&&vFile.content){
@@ -3708,7 +3729,7 @@ async function cloudPull(){
   if(!token||!gistId){console.warn('[pull] 缺少 token 或 gistId');toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='拉取中…';
   try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
     console.log('[pull] 响应:', resp.status, resp.statusText);
     if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));console.error('[pull] 失败:', e);}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
     const gist=await resp.json();
@@ -3805,7 +3826,7 @@ async function askPullOnStart(){
   _lastKnownRemoteTime = parseInt(localStorage.getItem('lastRemoteTime')||'0');
   console.log('[askPull] 本地记录的云端时间:', new Date(_lastKnownRemoteTime).toLocaleString());
   try{
-    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}?access_token=${encodeURIComponent(token)}`);
+    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
     console.log('[askPull] fetch 成功');
     if(!resp.ok){console.log('[askPull] 响应非 ok:', resp.status);return;}
     // 请求成功后才记录检查时间，避免失败时误拦后续检查
@@ -4553,7 +4574,7 @@ function drawZirong(ctx,W,H){
 
 </script>
 <script>
-const SW_VERSION = '14';
+const SW_VERSION = '15';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
