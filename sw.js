@@ -1,7 +1,7 @@
-const CACHE = 'learn-v13';
+const CACHE = 'learn-v14';
 
 // 预缓存静态资源，确保离线可用
-const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon.svg'];
+const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -29,19 +29,25 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request, { cache: 'no-cache' }).then(resp => {
         const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put('index.html', copy));
+        e.waitUntil(caches.open(CACHE).then(c => c.put('index.html', copy)));
         return resp;
       }).catch(() => caches.match('index.html'))
     );
     return;
   }
 
-  // 同源请求：Network First，仅缓存成功的 GET 响应
+  // 非 GET 请求（如 POST）：直接走网络，不回退缓存（缓存策略仅针对 GET）
+  if (e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // 同源 GET 请求：Network First，仅缓存成功的响应
   e.respondWith(
     fetch(e.request).then(resp => {
-      if (resp.ok && e.request.method === 'GET') {
+      if (resp.ok) {
         const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+        e.waitUntil(caches.open(CACHE).then(c => c.put(e.request, copy)));
       }
       return resp;
     }).catch(() => caches.match(e.request))
