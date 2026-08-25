@@ -1,0 +1,18 @@
+{
+  "name": "面试题学习台",
+  "short_name": "面试题",
+  "description": "本地 · 离线 · 私有 · 艾宾浩斯闪卡记忆",
+  "lang": "zh-CN",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1018",
+  "theme_color": "#0e1018",
+  "icons": [{
+    "src": "icon.png",
+    "sizes": "1024x1024",
+    "type": "image/png",
+    "purpose": "any maskable"
+  }]
+}
