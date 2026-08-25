@@ -295,6 +295,10 @@
   .memory-answer strong{color:var(--text)}
   #memAIBlock{margin-top:16px}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
+  .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
+  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .mem-ai-tip{color:var(--muted);font-size:12px}
+  .mem-ai-wrap .ai-answer{margin-top:12px}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -334,6 +338,11 @@
   .ai-loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:8px;vertical-align:middle}
   @keyframes sp{to{transform:rotate(360deg)}}
   .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+  .ai-answer pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
+  .ai-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .ai-answer h3,.ai-answer h4{margin:14px 0 6px;color:var(--text);font-size:14.5px;font-weight:700}
+  .ai-answer ul,.ai-answer ol{margin:8px 0;padding-left:22px}
+  .ai-answer li{margin:4px 0}
   .ai-grading{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px;max-height:600px;overflow-y:auto}
   /* 闪卡 */
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
@@ -370,9 +379,6 @@
   .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
   .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
   .grill-dur-btn.sel{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.3)}
-  .grill-endless-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 2px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
-  .grill-endless-row .ge-label{font-size:12.5px;font-weight:600;color:var(--text)}
-  .grill-endless-row .ge-sub{font-size:11px;color:var(--muted);margin-top:2px}
   .ge-switch{position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;background:var(--line2);border-radius:13px;transition:.2s}
   .ge-switch.on{background:var(--accent)}
   .ge-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
@@ -418,6 +424,7 @@
     .memory-answer{font-size:13px}
     .q{padding:10px 12px}
     .set-section{border-radius:10px}
+    #skinPopup,#skinBtn{display:none!important}
     .set-head{padding:12px 14px;font-size:13.5px}
     .set-body{padding:14px 14px 14px;gap:14px}
     .set-field label{min-width:56px;font-size:12.5px}
@@ -477,7 +484,6 @@
       <div class="tab active" data-view="overview"><span class="ic">📊</span> 总览</div>
       <div class="tab" data-view="docs"><span class="ic">📁</span> 文档</div>
       <div class="tab" data-view="campaign"><span class="ic">🗡️</span> 闯关</div>
-      <div class="tab" data-view="mock"><span class="ic">📝</span> 八股</div>
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
       <div class="tab" data-view="analytics"><span class="ic">📈</span> 进度</div>
       <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
@@ -776,16 +782,20 @@ let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
 let mock = { cfg:{count:10, scope:'all', order:'random'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
-let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {};
+let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
-let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', endless:false, forceEnd:false };
+let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
 // 宝箱动画封装（chest.js 动态加载，可能不存在）
 function tryOpenChest(tier){ if(window.openChest) window.openChest(tier); }
 
 // SM-2 算法：动态间隔复习
 // EF（难易因子）初始2.5，根据评分调整，最小1.3
-// 间隔 = 上次间隔 × EF，新题首次间隔1天，上限7天
-// 评分5→EF+0.1, 4→EF不变, 3→EF-0.15, 2→EF-0.3, 1→EF-0.2(重置间隔)
+// 间隔 = 上次间隔 × EF，新题首次间隔1天，上限7天，下限0.5天
+// 评分5→EF+0.1（间隔=上次×EF）
+// 评分4→EF不变（间隔=上次×EF）
+// 评分3→EF-0.15（间隔=上次×EF）
+// 评分2→EF-0.15（间隔重置为1天）
+// 评分1→EF-0.2（间隔0.5天）
 const SM2_INIT_EF = 2.5, SM2_MIN_EF = 1.3, SM2_MAX_INTERVAL = 7;
 function sm2Next(ef, interval, rate) {
   // 参数保护：防止 NaN/undefined 导致 toFixed 崩溃
@@ -826,24 +836,37 @@ function stripMarkdown(s){
   return String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+?)`/g, '$1').replace(/^#{1,6}\s+/gm, '').replace(/\n?\*{3,}\s*$/g, '').replace(/\n?\-{3,}\s*$/g, '').replace(/\n?_{3,}\s*$/g, '');
 }
 function md2html(s){
-  let h = esc(s);
-  // 标题
-  h = h.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-  h = h.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-  h = h.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-  // 加粗和行内代码
-  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  h = h.replace(/`([^`]+?)`/g, '<code>$1</code>');
-  // 无序列表
-  h = h.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
-  // 有序列表
-  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-  // 包裹连续的 <li> 为 <ul>
-  h = h.replace(/((?:<li>.*?<\/li>[\n\r]*)+)/g, '<ul>$1</ul>');
-  // 双换行=段落分隔，单换行=<br>
-  h = h.replace(/\n{2,}/g, '<br><br>');
-  h = h.replace(/\n/g, '<br>');
-  return h;
+  // 统一换行，避免 \r 干扰正则
+  let text = esc(s).replace(/\r\n?/g, '\n');
+  // 先提取代码块，避免内部被标题/列表/加粗规则误伤
+  const codeBlocks = [];
+  text = text.replace(/```([\w+-]*)[ \t]*\n?([\s\S]*?)```/g, (m, lang, code) => {
+    codeBlocks.push('<pre><code>' + code.replace(/\n$/, '') + '</code></pre>');
+    return '\u0001CB' + (codeBlocks.length - 1) + '\u0001';
+  });
+  const inline = t => t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+?)`/g, '<code>$1</code>');
+  const out = [];
+  let list = null;   // null | 'ul' | 'ol'
+  const closeList = () => { if (list) { out.push(list === 'ol' ? '</ol>' : '</ul>'); list = null; } };
+  let lastBlock = false;   // 上一行是否为块级元素（标题/列表/代码块），控制段落间距
+  for (const line of text.split('\n')) {
+    let m;
+    if (/^\u0001CB\d+\u0001$/.test(line)) { closeList(); out.push(line); lastBlock = true; continue; }
+    if ((m = line.match(/^### (.+)$/))) { closeList(); out.push('<h4>' + inline(m[1]) + '</h4>'); lastBlock = true; continue; }
+    if ((m = line.match(/^## (.+)$/)))  { closeList(); out.push('<h3>' + inline(m[1]) + '</h3>'); lastBlock = true; continue; }
+    if ((m = line.match(/^# (.+)$/)))   { closeList(); out.push('<h2>' + inline(m[1]) + '</h2>'); lastBlock = true; continue; }
+    if ((m = line.match(/^\d+\. (.+)$/))) { if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); lastBlock = true; continue; }
+    if ((m = line.match(/^[-*] (.+)$/))) { if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); lastBlock = true; continue; }
+    closeList();
+    if (line.trim() === '') { lastBlock = false; continue; }
+    if (out.length && !lastBlock) out.push('<br>');
+    out.push(inline(line));
+    lastBlock = false;
+  }
+  closeList();
+  return out.join('').replace(/\u0001CB(\d+)\u0001/g, (m, i) => codeBlocks[+i]);
 }
 function renderAnswer(t){
   if(!t) return '';
@@ -914,15 +937,19 @@ function hideModal(el){
   el.classList.remove('show','hiding');
 }
 let _confirmOpen = false;
-let _confirmQueue = [];
+let _confirmQueue = [];   // 待弹出的确认框：{msg, resolve}
 function confirmDialog(msg){ return new Promise(resolve=>{
-  if(_confirmOpen){
-    _confirmQueue.push(resolve);
-    return;
-  }
+  if(_confirmOpen){ _confirmQueue.push({msg, resolve}); return; }
+  _showConfirm(msg, resolve);
+});}
+function _showConfirm(msg, resolve){
   _confirmOpen = true;
   try {
-    const cleanup = (result) => { ov.remove(); _confirmOpen = false; resolve(result); setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); next(false); } }, 100); };
+    const cleanup = (result) => {
+      ov.remove(); _confirmOpen = false; resolve(result);
+      // 依次弹出排队的确认框，而不是静默丢弃
+      setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } }, 100);
+    };
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
     const dlg=document.createElement('div');
@@ -952,7 +979,7 @@ function confirmDialog(msg){ return new Promise(resolve=>{
     _confirmOpen = false;
     resolve(false);
   }
-});}
+}
 function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
@@ -1011,7 +1038,6 @@ function renderStatsBar(){
       (v===Views.OVERVIEW&&(view===Views.OVERVIEW||view===Views.BROWSE||view===Views.SEARCH)) ||
       (v===Views.DOCS&&view===Views.DOCS) ||
       (v===Views.CAMPAIGN&&view===Views.CAMPAIGN) ||
-      (v===Views.MOCK&&view===Views.MOCK) ||
       (v===Views.MEMORY&&view===Views.MEMORY) ||
       (v===Views.GRILL&&view===Views.GRILL) ||
       (v===Views.ANALYTICS&&view===Views.ANALYTICS));
@@ -1227,14 +1253,13 @@ function renderBrowse(c){
   } else {
     html += d.questions.map((q,i)=>{
       const p = PROGRESS[q.id]||{};
-      const open = false;
       return `<div class="q" data-qid="${esc(q.id)}">
         <div class="qhead" data-toggle="${esc(q.id)}">
           <div class="qnum">${i+1}</div>
           <div class="qtitle">${renderTitle(q.title)}</div>
           <div class="qacts">
             <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记已掌握">★</button>
-            <button class="iconbtn ${open?'on':''}" data-eye="${esc(q.id)}" title="显示/隐藏答案">${open?'🙈':'👁'}</button>
+            <button class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案">👁</button>
             <button class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目">✏️</button>
             <button class="iconbtn del" data-del="${esc(q.id)}" title="删除题目">🗑</button>
           </div>
@@ -1877,6 +1902,13 @@ function renderMemory(c){
         <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}">
           <div class="label">📝 答案</div>
           ${renderAnswer(q.answer)}
+          <div class="mem-ai-wrap">
+            <div class="mem-ai-head">
+              <button class="btn sm" id="memAICodeBtn">💻 AI 代码分析</button>
+              <span class="mem-ai-tip">看不懂答案？生成示例代码 + 逐行注释讲解</span>
+            </div>
+            <div id="memAICodeOut">${renderAICodeBlock(q.id)}</div>
+          </div>
         </div>
         <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片查看答案，也可用键盘 Enter / 空格</div>
         <div class="grade-row" id="memGradeRow" style="${memory.flipped?'':'display:none'}">
@@ -1950,6 +1982,7 @@ function renderMemory(c){
     renderAll();
   };
   const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
+  const aiCodeBtn = $('#memAICodeBtn'); if(aiCodeBtn) aiCodeBtn.onclick = (e) => { e.stopPropagation(); askAICode(q.id); };
   // 键盘快捷键: 1-5 评分, Enter 展开/收起, Space 展开/收起（统一用一个全局 handler 避免重复绑定）
   if(!window._memoryKeyHandler){
     window._memoryKeyHandler = (e) => {
@@ -2142,7 +2175,15 @@ function renderAnalytics(c){
   `;
   if(total===0) return;
   const termEl = $('#anTerm');
-  if(termEl) termEl.addEventListener('input', e=>{ analyticsState.term = e.target.value; renderAnalytics(c); const i=$('#anTerm'); if(i){ i.focus(); const v=i.value; i.setSelectionRange(v.length,v.length); } });
+  if(termEl) termEl.addEventListener('input', e=>{
+    analyticsState.term = e.target.value;
+    const pos = e.target.selectionStart;
+    clearTimeout(termEl._debounce);
+    termEl._debounce = setTimeout(()=>{
+      renderAnalytics(c);
+      const i=$('#anTerm'); if(i){ i.focus(); i.setSelectionRange(pos, pos); }
+    }, 250);
+  });
   document.querySelectorAll('.an-table thead th[data-sort]').forEach(th=> th.addEventListener('click', ()=>{ const k=th.dataset.sort; if(analyticsState.sortKey===k) analyticsState.sortDir*=-1; else {analyticsState.sortKey=k;analyticsState.sortDir=1;} renderAnalytics(c); }));
   $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
   $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgEf,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep); const s=$('#anCopyStatus'); if(s) s.textContent='✅ 已复制，发给 AI 即可分析'; toast('分析报告已复制到剪贴板'); };
@@ -2154,7 +2195,7 @@ function renderGrill(c){
   const modeName = grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战';
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 ${modeName}</span>${grill.endless?'<span style="color:var(--accent)">♾️ 无尽模式</span>':''}<span>${grill.messages.length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
+      <div class="pmeta"><span>🔥 ${modeName}</span><span>${grill.messages.length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
       <div class="grill-chat" id="grillChat">${grill.messages.map((m,i)=>`
         <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}${grill.ended&&grill.feedback?`
@@ -2169,15 +2210,15 @@ function renderGrill(c){
       <div class="grill-input-row">
         <textarea id="grillInput" rows="1" placeholder="输入你的回答…（Enter 发送，Shift+Enter 换行）" autocomplete="off" ${grill.loading?'disabled':''}></textarea>
         <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
-        ${grill.endless?'<button class="btn ghost" id="grillEndBtn" style="color:var(--warn)">结束并总结</button>':''}
-        <button class="btn ghost" id="grillQuit" style="color:var(--bad)">退出</button>
+        <button class="btn ghost" id="grillQuit" style="color:var(--bad)" title="直接退出，不生成总结">退出</button>
+        <button class="btn ghost" id="grillQuitSum" style="color:var(--bad)" title="退出并让 AI 生成一份总结反馈">退出并总结</button>
       </div>`}
     </div>`;
   const chat = $('#grillChat');
   if(chat) chat.scrollTop = chat.scrollHeight;
   if(grill.ended){
     // 面试已结束，只显示关闭按钮
-    $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',endless:false,forceEnd:false}; renderAll(); };
+    $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };
   } else {
     const input = $('#grillInput');
     const autoGrow = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,180)+'px'; };
@@ -2192,18 +2233,21 @@ function renderGrill(c){
       if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
     };
     input.focus();
-    $('#grillQuit').onclick = async () => { if(!await confirmDialog('退出拷打？对话记录将丢失。')) return; grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',endless:false,forceEnd:false}; renderAll(); };
-    const endBtn = $('#grillEndBtn');
-    if(endBtn){
-      endBtn.onclick = async () => {
-        if(grill.loading) return;
-        if(!await confirmDialog('结束本场无尽模式并生成总结反馈？')) return;
-        grill.forceEnd = true;
-        grill.messages.push({role:'user', content:'我想结束本场八股扫荡，请停止出题，并输出本次八股扫荡的总结反馈（必须以 [FEEDBACK] 开头）。'});
-        grill.loading = true; renderAll();
-        doGrillChat();
-      };
-    }
+    const resetGrill = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };
+    // 直接退出：不生成总结
+    $('#grillQuit').onclick = async () => {
+      if(!await confirmDialog('退出本场拷打？对话记录将清空，不生成总结。')) return;
+      resetGrill();
+    };
+    // 退出并总结：向 AI 索取 [FEEDBACK] 总结反馈（无 AI 配置则直接退出）
+    $('#grillQuitSum').onclick = async () => {
+      if(!await confirmDialog('退出本场拷打并生成一份总结反馈？')) return;
+      if(!aiConfig){ toast('未配置 AI，无法生成总结，已直接退出'); resetGrill(); return; }
+      grill.forceEnd = true;
+      grill.messages.push({role:'user', content:'我想结束本场面试，请停止出题，并输出本次面试的总结反馈（必须以 [FEEDBACK] 开头）。'});
+      grill.loading = true; renderAll();
+      doGrillChat();
+    };
   }
 }
 function renderGrillConfig(c){
@@ -2221,7 +2265,7 @@ function renderGrillConfig(c){
           <div class="grill-mode-card" data-mode="theory">
             <div class="gm-icon">📚</div>
             <div class="gm-title">八股扫荡</div>
-            <div class="gm-desc">根据技术栈随机出经典面试题，覆盖基础、原理、场景题</div>
+            <div class="gm-desc">AI 现场出题，或切换「本地题库」用你录入的题自测（抽题→自评→开宝箱→复盘 MD）</div>
           </div>
           <div class="grill-mode-card" data-mode="real">
             <div class="gm-icon">🎯</div>
@@ -2235,20 +2279,16 @@ function renderGrillConfig(c){
           <span class="grill-dur-btn sel" data-dur="standard">标准 (20轮)</span>
           <span class="grill-dur-btn" data-dur="deep">深度 (30轮)</span>
         </div>
-        <div id="grillEndlessRow" style="display:none;margin:8px 0 4px">
-          <div class="grill-endless-row">
-            <div>
-              <div class="ge-label">♾️ 无尽模式</div>
-              <div class="ge-sub">AI 不会主动结束，只能手动点"结束并总结"收尾</div>
-            </div>
-            <div class="ge-switch" id="grillEndlessSwitch"></div>
-          </div>
+        <div id="grillSrcRow" style="display:none;margin:8px 0 4px">
+          <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:10px">📚 题目来源</span>
+          <span class="grill-dur-btn sel" data-src="ai">AI 现场出题</span>
+          <span class="grill-dur-btn" data-src="local">本地题库</span>
         </div>
-        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
+        <label id="grillResumeLabel" style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
         <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性"></textarea>
         <div style="margin-top:14px">
           <button class="btn primary" id="grillStart" disabled>🔥 开始拷打</button>
-          <button class="btn ghost" id="grillUpload">📎 上传简历（txt/md/pdf）</button>
+          <button class="btn ghost" id="grillUpload" data-resume-ctl>📎 上传简历（txt/md/pdf）</button>
           <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
       </div>
@@ -2256,7 +2296,7 @@ function renderGrillConfig(c){
   // 模式选择
   let selectedMode = '';
   let selectedDuration = 'standard';
-  let selectedEndless = false;
+  let selectedSrc = 'ai'; // 八股扫荡题目来源：ai=AI现场出题，local=本地题库
   document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(card=>{
     card.onclick = ()=>{
       document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>c.classList.remove('sel'));
@@ -2266,24 +2306,33 @@ function renderGrillConfig(c){
       // 高压实战才显示时长选项
       const durRow = $('#grillDurRow');
       if(durRow) durRow.style.display = selectedMode==='real' ? '' : 'none';
-      // 无尽模式仅八股扫荡可选
-      const endlessRow = $('#grillEndlessRow');
-      if(endlessRow) endlessRow.style.display = selectedMode==='theory' ? '' : 'none';
-      if(selectedMode!=='theory'){
-        selectedEndless = false;
-        const sw = $('#grillEndlessSwitch'); if(sw) sw.classList.remove('on');
+      // 题目来源仅八股扫荡可选
+      const srcRow = $('#grillSrcRow');
+      if(srcRow) srcRow.style.display = selectedMode==='theory' ? '' : 'none';
+      // 切换模式时复位题目来源为 AI 现场，并恢复简历显隐（本地题库会在选「本地题库」时单独隐藏）
+      const resumeCtl = document.querySelectorAll('#grillResumeLabel,[data-resume-ctl],#grillResume');
+      resumeCtl.forEach(el=>el.style.display = '');
+      selectedSrc = 'ai';
+      if(srcRow){
+        const aiBtn = srcRow.querySelector('[data-src="ai"]');
+        const localBtn = srcRow.querySelector('[data-src="local"]');
+        if(aiBtn) aiBtn.classList.add('sel');
+        if(localBtn) localBtn.classList.remove('sel');
       }
     };
   });
-  // 无尽模式开关
-  const endlessSwitch = $('#grillEndlessSwitch');
-  if(endlessSwitch){
-    endlessSwitch.onclick = (e)=>{
+  // 题目来源选择
+  document.querySelectorAll('#grillSrcRow .grill-dur-btn').forEach(btn=>{
+    btn.onclick = (e)=>{
       e.stopPropagation();
-      selectedEndless = !selectedEndless;
-      endlessSwitch.classList.toggle('on', selectedEndless);
+      document.querySelectorAll('#grillSrcRow .grill-dur-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      selectedSrc = btn.dataset.src;
+      // 本地题库不需要简历，AI 现场才需要
+      const showResume = selectedSrc!=='local';
+      document.querySelectorAll('#grillResumeLabel,[data-resume-ctl],#grillResume').forEach(el=>el.style.display = showResume ? '' : 'none');
     };
-  }
+  });
   // 时长选择
   document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(btn=>{
     btn.onclick = (e)=>{
@@ -2295,11 +2344,14 @@ function renderGrillConfig(c){
   });
   $('#grillStart').onclick = () => {
     if(!selectedMode){ toast('请先选择一种拷打模式'); return; }
+    // 本地题库：直接进入现有八股练习流程（抽题→自评→开宝箱→复盘 MD）
+    if(selectedMode==='theory' && selectedSrc==='local'){
+      mock.queue=[]; mock.done=false; view=Views.MOCK; renderAll(); return;
+    }
     const resume = $('#grillResume').value.trim();
     if(selectedMode!=='theory' && !resume){ toast('项目深挖和高压实战需要填写简历'); return; }
     grill.mode = selectedMode;
     grill.duration = selectedDuration;
-    grill.endless = (selectedMode==='theory') ? selectedEndless : false;
     grill.forceEnd = false;
     grill.resume = resume; grill.messages = []; grill.started = true;
     const DUR_MAP = {quick:'约15分钟',standard:'约30分钟',deep:'约45分钟'};
@@ -2386,16 +2438,6 @@ ${grill.resume?`难度指南：${DIFFICULTY[lv]}`:'难度：随机出题，不�
 动态调难度：答不上来时降一档出更简单的题；答上了不要升难度，保持当前难度继续。
 Markdown格式，题目加粗，简洁不啰嗦。
 
-${grill.endless?`
-面试结束规则（重要！）：
-- 本场为【无尽模式】，你永远不要主动结束面试，也永远不要输出 [FEEDBACK] 标记
-- 持续出题、持续追问，一轮接一轮，直到用户明确要求结束
-- 只有用户在消息中明确说"结束"或"我想结束了"时，才在回复的最后输出一段总结反馈，格式必须以 [FEEDBACK] 开头
-- 总结反馈要求：评估候选人知识面广度、薄弱环节、学习建议（1-2个重点补强方向），语气客观专业
-
-${grill.resume?`
-候选人简历：
-${grill.resume}`:''}`:`
 面试结束规则（重要！）：
 - 正常结束：面试达到${realRounds.min}-${realRounds.max}轮后，选择合适时机结束
 - 提前结束：仅当候选人连续5轮以上完全答不上来、或者连续答错且没有进步迹象，才可以提前结束。前5轮内不允许结束，即使答得不好也要降难度继续出题
@@ -2404,7 +2446,7 @@ ${grill.resume}`:''}`:`
 
 ${grill.resume?`
 候选人简历：
-${grill.resume}`:''}`}`,
+${grill.resume}`:''}`,
 
     real: `你是资深面试官，正在进行真实面试模拟。候选人大约${years}年经验（${lv}）。
 
@@ -2446,16 +2488,23 @@ ${grill.resume}`
   const aiIdx = grill.messages.length - 1;
   renderAll();
   // 拷打场景：低温度保证专业一致，高max_tokens保证回复充分
+  let _renderTimer = null;
   const r = await callAI(msgs, (full) => {
     // 流式渲染时隐藏 [FEEDBACK] 标记及其之后的内容
     const fbIdx = full.indexOf('[FEEDBACK]');
     const display = fbIdx !== -1 ? full.substring(0, fbIdx).trim() : full;
     grill.messages[aiIdx].content = display;
-    const el = document.getElementById('gm-'+aiIdx);
-    if(el) el.innerHTML = md2html(display);
-    const chat = document.getElementById('grillChat');
-    if(chat) chat.scrollTop = chat.scrollHeight;
+    // 节流：合并高频 SSE 分片，避免每个分片都全量解析 Markdown + 重建 DOM（O(n²) 卡顿）
+    if(_renderTimer) return;
+    _renderTimer = setTimeout(() => {
+      _renderTimer = null;
+      const el = document.getElementById('gm-'+aiIdx);
+      if(el) el.innerHTML = md2html(grill.messages[aiIdx].content);
+      const chat = document.getElementById('grillChat');
+      if(chat) chat.scrollTop = chat.scrollHeight;
+    }, 50);
   }, {temperature:0.4, max_tokens:1024, top_p:0.85});
+  clearTimeout(_renderTimer); _renderTimer = null;
   grill.loading = false;
   if(!r){
     // 如果流式过程中已经渲染了部分内容，只追加错误提示，不全量覆盖
@@ -2463,10 +2512,9 @@ ${grill.resume}`
     if(!existing || existing==='...') grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。';
     else grill.messages[aiIdx].content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
   } else {
-    // 检测 AI 是否主动结束了面试（回复中包含 [FEEDBACK] 标记）
-    // 无尽模式下，只有用户手动触发（forceEnd）才允许结束，AI 不会主动结束
+    // 检测 AI 是否结束了面试（回复中包含 [FEEDBACK] 标记；手动退出时也会触发）
     const fbIdx = r.indexOf('[FEEDBACK]');
-    if(fbIdx !== -1 && (!grill.endless || grill.forceEnd)){
+    if(fbIdx !== -1){
       grill.ended = true;
       grill.forceEnd = false;
       // 拆分对话内容和反馈
@@ -2629,11 +2677,11 @@ async function callAI(messages, onChunk, opts={}){
   const timer = setTimeout(() => ctrl.abort(), ABORT_TIMEOUT);
   try{
     const resp=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body),signal:ctrl.signal});
-    clearTimeout(timer);
     if(!resp.ok){
       const errMap={401:'API Key 无效或已过期',403:'无权限访问该模型',404:'模型地址或模型名不正确',429:'请求太频繁，稍后再试',500:'API 服务器内部错误',502:'API 网关错误，可能正在维护'};
       toast(`API 错误 (${resp.status}): ${errMap[resp.status]||'请检查地址与 Key 是否正确'}`);
       console.warn('AI API 请求失败', {url:cfg.url, model:cfg.model, status:resp.status, body:await resp.text().catch(()=>'')});
+      clearTimeout(timer);
       return null;
     }
     if(onChunk){
@@ -2650,9 +2698,11 @@ async function callAI(messages, onChunk, opts={}){
           try{ const c=JSON.parse(j).choices[0]?.delta?.content; if(c){f+=c;onChunk(f);} }catch(_){}
         }
       }
+      clearTimeout(timer);
       return f;
     }else{
       const j=await resp.json();
+      clearTimeout(timer);
       return j.choices[0]?.message?.content||'';
     }
   }catch(e){
@@ -2666,15 +2716,23 @@ async function callAI(messages, onChunk, opts={}){
 }
 async function gradeInterview(){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
+  if(aiGradingLoading){ toast('AI 阅卷进行中，请稍候…'); return; }
   aiGradingLoading=true; aiGrading=null; renderAll();
   const rm={good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'};
   let p='你是资深技术面试官，请对以下八股练习作答进行客观阅卷。\n\n**要求：**\n- 逐题评分（满分100），给出：你的标准答案（精简）、得分、优点（1-2句）、不足（1-2句）、遗漏的关键点\n- 最后汇总：总分（所有题平均分）、整体评价（2-3句）、针对性备考建议（2-3条）\n- 评分标准：准确度40分 + 完整度30分 + 深度20分 + 表达10分\n- 严格但不苛刻，考生自评仅供参考\n\n';
   for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]);const a=mock.answers[mock.queue[i]]||{};
     p+=`## 第${i+1}题\n**题目：** ${q.title}\n**我的回答：** ${a.answer||'(未填)'}\n**自评：** ${rm[a.selfRate]||'无'}\n\n`; }
+  let _gTimer = null, _gLatest = '';
   const r=await callAI([{role:'system',content:'你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。'},{role:'user',content:p}],(full)=>{
-    aiGrading='<div class="ai-review">'+formatAI(full)+'</div>';
-    const el=$('.ai-grading');if(el)el.innerHTML=aiGrading;
+    _gLatest = full;
+    if(_gTimer) return;
+    _gTimer = setTimeout(()=>{
+      _gTimer = null;
+      aiGrading='<div class="ai-review">'+formatAI(_gLatest)+'</div>';
+      const el=$('.ai-grading');if(el)el.innerHTML=aiGrading;
+    }, 50);
   });
+  clearTimeout(_gTimer);
   aiGradingLoading=false; if(r) aiGrading='<div class="ai-review">'+formatAI(r)+'</div>';
   const el=$('.ai-grading');if(el){el.innerHTML=aiGrading||'';}else{renderAll();}
 }
@@ -2757,7 +2815,13 @@ async function askAI(qid, mode){
 【参考答案】${q.answer||'暂无参考答案'}`;
   }
 
-  const r=await callAI([{role:'system',content:systemPrompt},{role:'user',content:prompt}],(full)=>{aiAnswer[qid]=full;updateAIOutput(qid);});
+  let _aTimer = null;
+  const r=await callAI([{role:'system',content:systemPrompt},{role:'user',content:prompt}],(full)=>{
+    aiAnswer[qid]=full;
+    if(_aTimer) return;
+    _aTimer = setTimeout(()=>{ _aTimer=null; updateAIOutput(qid); }, 50);
+  });
+  clearTimeout(_aTimer);
   if(!r&&aiAnswer[qid]==='loading') aiAnswer[qid]=null;
   updateAIOutput(qid);
 }
@@ -2775,6 +2839,61 @@ function formatAI(text){
   s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+?)`/g,'<code>$1</code>');
   s=s.replace(/```(\w*)\n?([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
   return s.split(/\n{2,}/).map(p=>'<p>'+p.split('\n').join('<br>')+'</p>').join('');
+}
+
+/* ---------- 记忆模式：AI 生成代码分析 ---------- */
+// 光看答案可能看不懂，点击后生成相关示例代码 + 逐行注释讲解
+async function askAICode(qid){
+  if(!aiConfig){ toast('请先配置 AI API'); return; }
+  // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
+  const now = Date.now();
+  if(askAICode._lastCall && now - askAICode._lastCall < 3000 && askAICode._lastQid === qid){
+    toast('请稍等片刻再请求 AI（3秒冷却）'); return;
+  }
+  askAICode._lastCall = now; askAICode._lastQid = qid;
+  const q = questionById(qid); if(!q) return;
+  aiCodeAnswer[qid] = 'loading';
+  updateAICodeOutput(qid);
+  const systemPrompt = '你是一位资深程序员与技术讲师，擅长用「示例代码 + 逐行注释」的方式把抽象知识点讲透，让初学者真正看懂。';
+  const prompt = `请根据下面的面试题，生成一段用于演示该知识点核心原理的示例代码，并配上详细的中文注释分析，帮助一个刚接触该知识点的学习者看懂。
+
+【题目】${q.title}
+【参考答案】${q.answer||'暂无参考答案'}
+
+请按以下结构输出（Markdown 格式，标题用 ##，重点用 **加粗**，代码用 \`\`\`语言 ... \`\`\` 包裹，不要输出 HTML）：
+
+## 核心概念速览
+用 2-4 句话说明这个知识点在解决什么问题、为什么重要。
+
+## 示例代码
+给出完整、精简、聚焦核心的示例代码，语言根据题目自动选择最合适的一种（JS/TS/Python/Java/Go 等），并在代码块标注语言。代码内用行内注释解释关键步骤。
+
+## 逐段讲解
+按代码段落，解释每段代码的作用与背后原理，让初学者能跟着思路走。
+
+## 易错点
+若有常见误区或易错点，单独列出 1-2 条（用 ⚠️ 标注）；没有则写"无"。`;
+  let _t = null;
+  const r = await callAI([{role:'system',content:systemPrompt},{role:'user',content:prompt}], (full)=>{
+    aiCodeAnswer[qid] = full;
+    if(_t) return;
+    _t = setTimeout(()=>{ _t = null; updateAICodeOutput(qid); }, 50);
+  });
+  clearTimeout(_t);
+  if(!r && aiCodeAnswer[qid]==='loading') aiCodeAnswer[qid] = null;
+  updateAICodeOutput(qid);
+}
+// 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）
+function renderAICodeBlock(qid){
+  const v = aiCodeAnswer[qid];
+  if(!v) return '';
+  if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在生成代码分析…</div></div>';
+  return '<div class="ai-answer"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">💻 AI 代码分析</div>'+md2html(v)+'</div>';
+}
+// 流式更新代码分析输出，只更新 DOM 不触发页面动画
+function updateAICodeOutput(qid){
+  const el = $('#memAICodeOut'); if(!el) return;
+  el.innerHTML = renderAICodeBlock(qid);
 }
 
 /* ---------- 搜索 ---------- */
@@ -2847,19 +2966,19 @@ searchInput.oninput = () => {
   主题切换 — 配置驱动引擎
    ========================================================= */
 const THEMES = {
-  aurora:{bg:'#0e1018',bg2:'#141826',panel:'#171b2b',card:'#1a1f31',line:'#272d44',line2:'#323a5a',text:'#e7eaf3',muted:'#9aa3c0',faint:'#6b7494',accent:'#5ad1c9',accent2:'#8b7cf6',accent3:'#f08870',good:'#4fd08a',warn:'#f08870',bad:'#f06a6a'},
-  gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#e8c048',good:'#58c878',warn:'#e8c048',bad:'#f06a6a'},
-  midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#7c5cf8',accent2:'#d858c8',accent3:'#ff6888',good:'#58d088',warn:'#ff6888',bad:'#f06a6a'},
-  sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#ffb838',good:'#10b981',warn:'#ffb838',bad:'#ef4444'},
-  void:  {bg:'#f4f0eb',bg2:'#ede8e2',panel:'#faf7f4',card:'#fffefc',line:'#e0d8cf',line2:'#d0c6b8',text:'#2a2018',muted:'#6b5d4f',faint:'#9a8a78',accent:'#d4a050',accent2:'#c08040',accent3:'#d8a050',good:'#5a9a48',warn:'#d8a050',bad:'#c84040'},
-  ripple:{bg:'#e8edf0',bg2:'#dfe5e9',panel:'#f2f5f7',card:'#fafcfd',line:'#cdd6dc',line2:'#bcc7cf',text:'#1a2228',muted:'#556670',faint:'#8899a4',accent:'#40a0c8',accent2:'#58b898',accent3:'#f09060',good:'#4a9a58',warn:'#f09060',bad:'#c84040'},
-  particle:{bg:'#060810',bg2:'#0a0c18',panel:'#0e1020',card:'#121428',line:'#1c1e38',line2:'#282a48',text:'#c0c8e0',muted:'#7888b0',faint:'#485878',accent:'#f472b6',accent2:'#22d3ee',accent3:'#c084fc',good:'#4fd08a',warn:'#c084fc',bad:'#f06a6a'},
-  songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
-  shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#78c8c8',good:'#50c0a0',warn:'#78c8c8',bad:'#e06070'},
-  night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#88c878',accent2:'#a8e060',accent3:'#f0d048',good:'#60d080',warn:'#f0d048',bad:'#e06060'},
-  'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
+  aurora:{bg:'#0e1018',bg2:'#141826',panel:'#171b2b',panel2:'#1d2236',card:'#1a1f31',line:'#272d44',line2:'#323a5a',text:'#e7eaf3',muted:'#9aa3c0',faint:'#6b7494',accent:'#5ad1c9',accent2:'#8b7cf6',accent3:'#f08870',good:'#4fd08a',warn:'#f08870',bad:'#f06a6a'},
+  gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',panel2:'#221d12',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#e8c048',good:'#58c878',warn:'#e8c048',bad:'#f06a6a'},
+  midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',panel2:'#141432',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#7c5cf8',accent2:'#d858c8',accent3:'#ff6888',good:'#58d088',warn:'#ff6888',bad:'#f06a6a'},
+  sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',panel2:'#22140c',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#ffb838',good:'#10b981',warn:'#ffb838',bad:'#ef4444'},
+  void:  {bg:'#f4f0eb',bg2:'#ede8e2',panel:'#faf7f4',panel2:'#fffefc',card:'#fffefc',line:'#e0d8cf',line2:'#d0c6b8',text:'#2a2018',muted:'#6b5d4f',faint:'#9a8a78',accent:'#d4a050',accent2:'#c08040',accent3:'#d8a050',good:'#5a9a48',warn:'#d8a050',bad:'#c84040'},
+  ripple:{bg:'#e8edf0',bg2:'#dfe5e9',panel:'#f2f5f7',panel2:'#fafcfd',card:'#fafcfd',line:'#cdd6dc',line2:'#bcc7cf',text:'#1a2228',muted:'#556670',faint:'#8899a4',accent:'#40a0c8',accent2:'#58b898',accent3:'#f09060',good:'#4a9a58',warn:'#f09060',bad:'#c84040'},
+  particle:{bg:'#060810',bg2:'#0a0c18',panel:'#0e1020',panel2:'#121428',card:'#121428',line:'#1c1e38',line2:'#282a48',text:'#c0c8e0',muted:'#7888b0',faint:'#485878',accent:'#f472b6',accent2:'#22d3ee',accent3:'#c084fc',good:'#4fd08a',warn:'#c084fc',bad:'#f06a6a'},
+  songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',panel2:'#121026',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
+  shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',panel2:'#0c1428',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#78c8c8',good:'#50c0a0',warn:'#78c8c8',bad:'#e06070'},
+  night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',panel2:'#0e1228',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#88c878',accent2:'#a8e060',accent3:'#f0d048',good:'#60d080',warn:'#f0d048',bad:'#e06060'},
+  'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',panel2:'rgba(0,0,0,0.6)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
   ziliang: {bg:'#8f9496',bg2:'#868c8e',panel:'#9a9fa1',panel2:'#a5a9ab',card:'#92979a',line:'#a8adaf',line2:'#b5babc',text:'#2b3033',muted:'#4a5054',faint:'#676d71',accent:'#3f6f7a',accent2:'#5b8290',accent3:'#b08050',good:'#4a8a5c',warn:'#b08050',bad:'#b0524a'},
-  zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#e84050',accent2:'#c8202e',accent3:'#f0a838',good:'#4a9a58',warn:'#f0a838',bad:'#c8202e'}
+  zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',panel2:'#faf7f5',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#e84050',accent2:'#c8202e',accent3:'#f0a838',good:'#4a9a58',warn:'#f0a838',bad:'#c8202e'}
 };
 
 // ======== 主题配置表（元数据驱动） ========
@@ -2923,6 +3042,7 @@ function applyTheme(name){
 
   // 2. 图片背景主题
   if(name==='img-bg'){
+    document.body.style.background='';  // 清掉上一主题残留的渐变内联样式
     document.body.style.backgroundSize='cover';
     document.body.style.backgroundPosition='center';
     document.body.style.backgroundAttachment='fixed';
@@ -3216,7 +3336,7 @@ function updateCSP(url){
   if(!url) return;
   try{
     const u=new URL(url);
-    const host='https://'+u.hostname;
+    const host=u.protocol+'//'+u.hostname;
     const cspMeta=document.getElementById('cspMeta');
     if(!cspMeta) return;
     let policy=cspMeta.getAttribute('content')||'';
