@@ -6,7 +6,8 @@
   "scripts": {
     "cap:add:android": "cap add android",
     "cap:sync": "cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "build:android": "cap sync android && cd android && gradlew.bat assembleDebug"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0",

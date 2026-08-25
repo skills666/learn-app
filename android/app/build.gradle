@@ -3,12 +3,15 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.learnapp.interview"
     compileSdk rootProject.ext.compileSdkVersion
+
+    def buildTime = new Date().format("yyyyMMddHHmm")
+
     defaultConfig {
         applicationId "com.learnapp.interview"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0." + buildTime
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -20,6 +23,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "learn-app-${variant.versionName}.apk"
         }
     }
 }
