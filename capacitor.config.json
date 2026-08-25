@@ -1,0 +1,8 @@
+{
+  "appId": "com.learnapp.interview",
+  "appName": "刷题",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
