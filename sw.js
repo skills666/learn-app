@@ -24,6 +24,18 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // 页面导航请求：强制走网络（绕过 HTTP 缓存），确保版本升级/修复能立即生效；离线时回退缓存的 index.html
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' }).then(resp => {
+        const copy = resp.clone();
+        caches.open(CACHE).then(c => c.put('index.html', copy));
+        return resp;
+      }).catch(() => caches.match('index.html'))
+    );
+    return;
+  }
+
   // 同源请求：Network First，仅缓存成功的 GET 响应
   e.respondWith(
     fetch(e.request).then(resp => {

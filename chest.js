@@ -1,4 +1,8 @@
+(function(){
 // ════════════════ 宝箱渲染引擎 ════════════════
+// 移动端（窄屏）不渲染宝箱，避免遮挡内容、影响观看
+const IS_MOBILE = !!(window.matchMedia && window.matchMedia('(max-width:768px)').matches);
+if (IS_MOBILE) return;
 const C=document.createElement('canvas');
 C.style.cssText='position:fixed;bottom:-40px;right:-60px;width:340px;height:400px;pointer-events:none;z-index:999;transition:transform .3s ease,opacity .3s ease';
 document.body.appendChild(C);
@@ -665,3 +669,4 @@ window.setRewardSkin=function(skin){rewardSkin=Math.min(Math.max(+skin||0,0),2);
 window.getChestSkin=function(){return chestSkin;};window.getRewardSkin=function(){return rewardSkin;};
 function syncSkinUI(){try{const p=document.getElementById('skinPopup');if(!p)return;p.querySelectorAll('.theme-dot').forEach(d=>{const cat=d.getAttribute('data-skin-cat');if(cat==='chest')d.style.outline=+d.getAttribute('data-skin')===chestSkin?'2px solid var(--accent)':'';if(cat==='item')d.style.outline=+d.getAttribute('data-skin')===rewardSkin?'2px solid var(--accent)':'';});}catch(_){}}
 setTimeout(syncSkinUI,100);
+})();
