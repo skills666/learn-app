@@ -75,6 +75,10 @@
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95)}}
+  /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
   .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
   .doc-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:.5px}
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
@@ -3089,7 +3093,21 @@ function renderSearch(c){
    顶层渲染
    ========================================================= */
 let _persistedView = null;
-function renderAll(){ if(_persistedView !== view){ sessionStorage.setItem('lastView', view); _persistedView = view; } renderStatsBar(); renderContent(); const c=$('.content'); if(c){ c.scrollTop=0; c.classList.remove('out'); c.classList.add('in'); setTimeout(()=>c.classList.remove('in'),250); } }
+function renderAll(){
+  const viewChanged = _persistedView !== view;
+  if(viewChanged){ sessionStorage.setItem('lastView', view); _persistedView = view; }
+  renderStatsBar(); renderContent();
+  const c=$('.content');
+  if(c){
+    c.scrollTop=0; c.classList.remove('out');
+    if(viewChanged){
+      // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
+      c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
+      c.classList.add('in');
+      setTimeout(()=>c.classList.remove('in'),250);
+    }
+  }
+}
 
 /* =========================================================
    事件绑定
@@ -4023,6 +4041,13 @@ let _uParticles = [];
 let _uFadeIn = 1;
 
 function startUnifiedCanvas(theme){
+  // 系统开启「减少动态效果」时，不启动粒子引擎（无障碍降级）
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+    if(_uCanvas){ _uCanvas.remove(); _uCanvas = null; _uCtx = null; }
+    _uParticles = []; _uTheme = ''; _uTime = 0;
+    return;
+  }
   const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','songxing','zirong'];
   if(!canvasThemes.includes(theme)){
     // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
