@@ -278,7 +278,7 @@
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
   .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .mem-ai-tip{color:var(--muted);font-size:12px}
-  .mem-ai-wrap .ai-answer{margin-top:12px;max-height:none;overflow-y:visible}
+  .mem-ai-wrap .ai-answer{margin-top:12px;max-height:320px;overflow-y:auto}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -3017,7 +3017,7 @@ async function askAICode(qid){
 用 2-4 句话说明这个知识点在解决什么问题、为什么重要。
 
 ## 示例代码
-给出完整、精简、聚焦核心的示例代码，语言根据题目自动选择最合适的一种（JS/TS/Python/Java/Go 等），并在代码块标注语言。代码内用行内注释解释关键步骤。
+给出完整、精简、聚焦核心的示例代码，优先使用 Java 编写（学习者主语言为 Java），并在代码块标注语言；若题目本质属于特定语言生态（如前端 JS/Promise），则使用对应语言。代码内用行内注释解释关键步骤。
 
 ## 逐段讲解
 按代码段落，解释每段代码的作用与背后原理，让初学者能跟着思路走。
@@ -3050,11 +3050,19 @@ function renderAICodeBlock(qid){
 function updateAICodeOutput(qid){
   const el = $('#memAICodeOut'); if(!el) return;
   if(el.getAttribute('data-qid') !== qid) return; // 已切换到其他题，忽略过期更新
-  // 流式更新会重建 DOM，先记录并恢复滚动位置，避免生成过程中被拉回顶部
-  const content = $('.content');
-  const st = content ? content.scrollTop : 0;
+  // 流式生成期间：只更新 .ai-stream 文本节点，不重建 DOM，
+  // 避免每 50ms 重建导致滚动位置被强制复位、用户无法滚动页面。
+  if(aiCodeStreaming[qid]){
+    let streamEl = el.querySelector('.ai-stream');
+    if(!streamEl){ // 首次建立结构（loading → 流式文本）
+      el.innerHTML = renderAICodeBlock(qid);
+      streamEl = el.querySelector('.ai-stream');
+    }
+    if(streamEl) streamEl.textContent = aiCodeAnswer[qid] || '';
+    return;
+  }
+  // 非流式（加载中 / 生成完成）：一次性渲染
   el.innerHTML = renderAICodeBlock(qid);
-  if(content) content.scrollTop = st;
 }
 
 /* ---------- 搜索 ---------- */
