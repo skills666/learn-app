@@ -769,7 +769,7 @@ let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
 let mock = { cfg:{count:10, scope:'all'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
-let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {}, aiCodeStreaming = {};
+let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {}, aiCodeStreaming = {}, aiCodeHidden = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
 let voice = { messages:[], started:false, listening:false, interim:'', resume:'', thinking:false, autoSpeak:true };
@@ -3044,7 +3044,25 @@ function renderAICodeBlock(qid){
   // 流式生成期间：Markdown 标记（##、**、```）是逐字出现的，实时解析会导致字体/样式反复跳变，
   // 因此期间用纯文本稳定展示（esc 后由 .ai-answer 的 pre-wrap 保留换行），生成完整后再一次性渲染。
   if(aiCodeStreaming[qid]) return '<div class="ai-answer">'+head+'<div class="ai-stream">'+esc(v)+'</div></div>';
-  return '<div class="ai-answer">'+head+md2html(v)+'</div>';
+  // 已隐藏：只显示标题 + 展开按钮
+  if(aiCodeHidden[qid]){
+    return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
+      + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">👁 展开</button></div>'
+      + '<div style="color:var(--muted);font-size:12px">内容已隐藏</div></div>';
+  }
+  // 正常显示：标题行 + 隐藏按钮 + 内容
+  return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
+    + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">🙈 隐藏</button></div>'
+    + md2html(v) + '</div>';
+}
+// 折叠/展开记忆模式的 AI 代码分析生成内容
+function toggleAICodeHidden(el){
+  const qid = el.getAttribute('data-hide-qid');
+  if(!qid) return;
+  aiCodeHidden[qid] = !aiCodeHidden[qid];
+  updateAICodeOutput(qid);
 }
 // 流式更新代码分析输出，只更新 DOM 不触发页面动画
 function updateAICodeOutput(qid){
