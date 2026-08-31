@@ -273,9 +273,11 @@
   #memAIBlock{margin-top:16px}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
-  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:6;background:var(--card);padding:8px 0 6px}
+  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .mem-ai-tip{color:var(--muted);font-size:12px}
   .mem-ai-wrap .ai-answer{margin-top:12px;max-height:none;overflow-y:visible}
+  /* 生成内容放在 320px 内滚窗口里；标题行与隐藏按钮在窗口外顶部，不随内容滚动 */
+  .mem-ai-wrap .mem-ai-scroll{max-height:320px;overflow-y:auto}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -1845,7 +1847,6 @@ function renderMemory(c){
           <div class="mem-ai-wrap">
             <div class="mem-ai-head">
               <button class="btn sm" id="memAICodeBtn">💻 AI 代码分析</button>
-              <button class="btn sm ${aiCodeAnswer[q.id] && aiCodeAnswer[q.id]!=='loading' && !aiCodeStreaming[q.id] ? '' : 'hidden'}" id="memAIToggleBtn">${aiCodeHidden[q.id]?'👁 展开':'🙈 隐藏'}</button>
               <span class="mem-ai-tip">校验正误 · 判断是否要代码 · 讲解并提炼记忆锚点</span>
             </div>
             <div id="memAICodeOut" data-qid="${esc(q.id)}">${renderAICodeBlock(q.id)}</div>
@@ -1911,7 +1912,6 @@ function renderMemory(c){
   const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
   const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
   const aiCodeBtn = $('#memAICodeBtn'); if(aiCodeBtn) aiCodeBtn.onclick = (e) => { e.stopPropagation(); askAICode(q.id); };
-  const aiToggleBtn = $('#memAIToggleBtn'); if(aiToggleBtn) aiToggleBtn.onclick = (e) => { e.stopPropagation(); toggleAICodeHidden(q.id); };
 }
 // 统计条中的待复习数
 let analyticsState = { term:'', sortKey:'doc', sortDir:1 };
@@ -3021,34 +3021,39 @@ async function askAICode(qid){
   updateAICodeOutput(qid);
 }
 // 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）；
-// 隐藏/展开按钮固定在顶栏（#memAIToggleBtn），不再随内容滚动
+// 内容放在 320px 内滚窗口（.mem-ai-scroll）里，标题行与隐藏按钮固定在盒子顶部，不随内容滚动
 function renderAICodeBlock(qid){
   const v = aiCodeAnswer[qid];
   if(!v) return '';
   if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在生成代码分析…</div></div>';
+  const head = '<div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">💻 AI 代码分析</div>';
   // 流式生成期间：Markdown 标记（##、**、```）是逐字出现的，实时解析会导致字体/样式反复跳变，
-  // 因此期间用纯文本稳定展示（esc 后由 .ai-answer 的 pre-wrap 保留换行），生成完整后再一次性渲染。
-  if(aiCodeStreaming[qid]) return '<div class="ai-answer"><div class="ai-stream">'+esc(v)+'</div></div>';
-  // 已隐藏：不渲染内容，点顶栏「展开」恢复
-  if(aiCodeHidden[qid]) return '';
-  return '<div class="ai-answer">'+md2html(v)+'</div>';
+  // 因此期间用纯文本稳定展示（esc 后由 pre-wrap 保留换行），生成完整后再一次性渲染。
+  if(aiCodeStreaming[qid]) return '<div class="ai-answer">'+head+'<div class="mem-ai-scroll"><div class="ai-stream">'+esc(v)+'</div></div></div>';
+  // 已隐藏：只显示标题 + 展开按钮
+  if(aiCodeHidden[qid]){
+    return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
+      + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">👁 展开</button></div>'
+      + '<div style="color:var(--muted);font-size:12px">内容已隐藏</div></div>';
+  }
+  // 正常显示：标题行 + 隐藏按钮（盒子顶部，不随内容滚动）+ 内滚内容窗口
+  return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
+    + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">🙈 隐藏</button></div>'
+    + '<div class="mem-ai-scroll">'+md2html(v)+'</div></div>';
 }
-// 折叠/展开记忆模式的 AI 代码分析内容（按钮在顶栏，紧邻「AI 代码分析」）
-function toggleAICodeHidden(qid){
+// 折叠/展开记忆模式的 AI 代码分析生成内容
+function toggleAICodeHidden(el){
+  const qid = el.getAttribute('data-hide-qid');
   if(!qid) return;
   aiCodeHidden[qid] = !aiCodeHidden[qid];
   updateAICodeOutput(qid);
 }
-// 流式更新代码分析输出，只更新 DOM 不触发页面动画；同时同步顶栏隐藏/展开按钮状态
+// 流式更新代码分析输出，只更新 DOM 不触发页面动画
 function updateAICodeOutput(qid){
   const el = $('#memAICodeOut'); if(!el) return;
   if(el.getAttribute('data-qid') !== qid) return; // 已切换到其他题，忽略过期更新
-  const v = aiCodeAnswer[qid];
-  const btn = $('#memAIToggleBtn');
-  if(btn){
-    if(!v || v==='loading' || aiCodeStreaming[qid]) btn.classList.add('hidden');   // 生成中无内容可隐藏
-    else { btn.classList.remove('hidden'); btn.textContent = aiCodeHidden[qid] ? '👁 展开' : '🙈 隐藏'; }
-  }
   // 流式生成期间：只更新 .ai-stream 文本节点，不重建 DOM，
   // 避免每 50ms 重建导致滚动位置被强制复位、用户无法滚动页面。
   if(aiCodeStreaming[qid]){
