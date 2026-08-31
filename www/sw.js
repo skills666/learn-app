@@ -27,9 +27,9 @@ self.addEventListener('fetch', e => {
   // 页面导航请求：强制走网络（绕过 HTTP 缓存），确保版本升级/修复能立即生效；离线时回退缓存的 index.html
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request, { cache: 'no-cache' }).then(resp => {
-        const copy = resp.clone();
-        e.waitUntil(caches.open(CACHE).then(c => c.put('index.html', copy)));
+      fetch(e.request, { cache: 'no-cache' }).then(async resp => {
+        // 缓存写入放在 respondWith 链内完成：waitUntil 在事件派发结束后再调用会失败，导致离线缓存一直不更新
+        try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put('index.html', copy); } catch(_) {}
         return resp;
       }).catch(() => caches.match('index.html'))
     );
@@ -44,10 +44,9 @@ self.addEventListener('fetch', e => {
 
   // 同源 GET 请求：Network First，仅缓存成功的响应
   e.respondWith(
-    fetch(e.request).then(resp => {
+    fetch(e.request).then(async resp => {
       if (resp.ok) {
-        const copy = resp.clone();
-        e.waitUntil(caches.open(CACHE).then(c => c.put(e.request, copy)));
+        try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put(e.request, copy); } catch(_) {}
       }
       return resp;
     }).catch(() => caches.match(e.request))

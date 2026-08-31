@@ -9,10 +9,18 @@
   "orientation": "portrait",
   "background_color": "#0e1018",
   "theme_color": "#0e1018",
-  "icons": [{
-    "src": "icon.png",
-    "sizes": "1024x1024",
-    "type": "image/png",
-    "purpose": "any maskable"
-  }]
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
