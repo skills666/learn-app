@@ -4,7 +4,8 @@
 const IS_MOBILE = !!(window.matchMedia && window.matchMedia('(max-width:768px)').matches);
 if (IS_MOBILE) return;
 const C=document.createElement('canvas');
-C.style.cssText='position:fixed;bottom:-40px;right:-60px;width:340px;height:400px;pointer-events:none;z-index:999;transition:transform .3s ease,opacity .3s ease';
+// z-index 90：在内容之上、弹窗(100)/模态(9999)之下，避免遮挡交互层
+C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:90;transition:transform .3s ease,opacity .3s ease';
 document.body.appendChild(C);
 const X=C.getContext('2d');
 // roundRect 兼容：部分旧内核没有原生实现，缺失时整个宝箱脚本会抛错中断
@@ -598,7 +599,7 @@ function diamond1(x,y,r,rt,fire1,fire2){
 }
 function hslFire(){const h=[198,202,208,215,222,235,255,270,290,330,350,360][Math.floor(Math.random()*12)];return 'hsla('+h+','+(55+Math.random()*35)+'%,'+(50+Math.random()*40)+'%,'+(.45+Math.random()*.3)+')';}
 
-// ════════════════ REWARD 2: 灵石奇珍 ════════════════
+// ════════════════ REWARD 2: 魂玉灵器 ════════════════
 function crystalShard(x,y,r,rt){
   X.save();X.translate(x,y);X.rotate(rt);
   X.fillStyle='#787080';
@@ -669,10 +670,169 @@ function holyStone(x,y,r,rt){
 }
 
 // ════════════════ 开/关 ════════════════
-function doOpen(t){items.length=0;sparks.length=0;radiance.length=0;open=true;lidPhase='flying';lidFV=-9;lidRV=(Math.random()-.5)*3.5;glowA=1;lidFY=-cb().h*.28;lidFR=0;const b=cb(),chestTop=b.y+b.h*.12;if(t>=4){const hue=rewardSkin===0?40:rewardSkin===1?200:140;for(let i=0;i<30;i++){const a=-Math.PI/2+(Math.random()-.5)*.7;radiance.push({x:b.x+b.w/2+(Math.random()-.5)*b.w*.3,y:chestTop,vx:Math.cos(a)*(1+Math.random()*4),vy:-2-Math.random()*5,r:3+Math.random()*7,life:.6+Math.random()*1.2,hue:hue+Math.random()*25});}}const counts=[0,7,10,12,15,20];const n=counts[t]||10;for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*1.3;const it={x:b.x+b.w/2+(Math.random()-.5)*25,y:chestTop,vx:Math.cos(a)*(3+Math.random()*5),vy:Math.sin(a)*(3+Math.random()*5)-2.5,r:5+Math.random()*6,rt:Math.random()*6,rv:(Math.random()-.5)*8,life:2.5+Math.random()*2,g:.12,shiny:false};if(rewardSkin===0){if(t===1){it.type='trash';it.fn=trash0;}else if(t===2){it.type='coin';it.fn=coin0;it.color=[240,190,130];it.letter='¢';}else if(t===3){it.type='coin';it.fn=coin0;it.color=[210,215,230];it.letter='S';}else if(t===4){it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}else if(t===5){if(i<n*.35){it.type='gem';it.fn=gem0;it.hue=[200,300,30][i%3];it.r=5+Math.random()*5;it.shiny=true;}else{it.type='coin';it.fn=coin0;it.color=[255,225,60];it.letter='G';it.shiny=true;}}}else if(rewardSkin===1){if(t===1){it.type='stone';it.fn=stone1;it.r=3+Math.random()*4;}else if(t===2){it.type='agate';it.fn=agate1;it.r=5+Math.random()*5;}else if(t===3){it.type='pearl';it.fn=pearl1;it.r=5+Math.random()*5;it.shiny=true;it.pearlType=Math.random()<.5?0:1;}else if(t===4){if(Math.random()<.5){it.type='jade';it.fn=jade1;}else{it.type='ruby';it.fn=ruby1;}it.r=5+Math.random()*5;it.shiny=true;}else if(t===5){it.type='gem';it.fn=diamond1;it.r=6+Math.random()*5;it.shiny=true;it.fire1=hslFire();it.fire2=hslFire();}}else{if(t===1){it.type='crystal';it.fn=crystalShard;it.r=3+Math.random()*4;}else if(t===2){it.type='marrow';it.fn=spiritMarrow;it.r=5+Math.random()*5;it.shiny=true;}else if(t===3){it.type='bloodJade';it.fn=bloodJade;it.r=5+Math.random()*4;it.shiny=true;}else if(t===4){it.type='soulCore';it.fn=soulCore;it.r=6+Math.random()*4;it.shiny=true;}else if(t===5){it.type='holy';it.fn=holyStone;it.r=6+Math.random()*5;it.shiny=true;}}items.push(it);}for(let i=0;i<18+t*5;i++)sparks.push({x:b.x+b.w/2+(Math.random()-.5)*100,y:b.y-8,vx:(Math.random()-.5)*6,vy:-Math.random()*7-2,r:1+Math.random()*2.5,life:.4+Math.random()*.8});}
+function spawnRewardItem(t, i, n, x0, y0){
+  const a = -Math.PI/2 + (Math.random()-.5)*1.3;
+  const it = {
+    x: x0 + (Math.random()-.5)*25, y: y0,
+    vx: Math.cos(a)*(3+Math.random()*5),
+    vy: Math.sin(a)*(3+Math.random()*5) - 2.5,
+    r: 5+Math.random()*6, rt: Math.random()*6, rv: (Math.random()-.5)*8,
+    life: 2.5+Math.random()*2, g: .12, shiny: false
+  };
+  if(rewardSkin===0){ // 金银财宝
+    if(t===1){ it.type='trash'; it.fn=trash0; }
+    else if(t===2){ it.type='coin'; it.fn=coin0; it.color=[240,190,130]; it.letter='¢'; }
+    else if(t===3){ it.type='coin'; it.fn=coin0; it.color=[210,215,230]; it.letter='S'; }
+    else if(t===4){ it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; it.shiny=true; }
+    else if(t===5){
+      if(i < n*.35){ it.type='gem'; it.fn=gem0; it.hue=[200,300,30][i%3]; it.r=5+Math.random()*5; it.shiny=true; }
+      else { it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; it.shiny=true; }
+    }
+  } else if(rewardSkin===1){ // 珠宝奇珍
+    if(t===1){ it.type='stone'; it.fn=stone1; it.r=3+Math.random()*4; }
+    else if(t===2){ it.type='agate'; it.fn=agate1; it.r=5+Math.random()*5; }
+    else if(t===3){ it.type='pearl'; it.fn=pearl1; it.r=5+Math.random()*5; it.shiny=true; it.pearlType=Math.random()<.5?0:1; }
+    else if(t===4){
+      if(Math.random()<.5){ it.type='jade'; it.fn=jade1; } else { it.type='ruby'; it.fn=ruby1; }
+      it.r=5+Math.random()*5; it.shiny=true;
+    }
+    else if(t===5){ it.type='gem'; it.fn=diamond1; it.r=6+Math.random()*5; it.shiny=true; it.fire1=hslFire(); it.fire2=hslFire(); }
+  } else { // 魂玉灵器
+    if(t===1){ it.type='crystal'; it.fn=crystalShard; it.r=3+Math.random()*4; }
+    else if(t===2){ it.type='marrow'; it.fn=spiritMarrow; it.r=5+Math.random()*5; it.shiny=true; }
+    else if(t===3){ it.type='bloodJade'; it.fn=bloodJade; it.r=5+Math.random()*4; it.shiny=true; }
+    else if(t===4){ it.type='soulCore'; it.fn=soulCore; it.r=6+Math.random()*4; it.shiny=true; }
+    else if(t===5){ it.type='holy'; it.fn=holyStone; it.r=6+Math.random()*5; it.shiny=true; }
+  }
+  return it;
+}
+function doOpen(t){
+  items.length=0; sparks.length=0; radiance.length=0;
+  open=true; lidPhase='flying';
+  lidFV=-9; lidRV=(Math.random()-.5)*3.5;
+  glowA=1; lidFY=-cb().h*.28; lidFR=0;
+  const b=cb(), chestTop=b.y+b.h*.12;
+  // 高品级：开盖光柱
+  if(t>=4){
+    const hue = rewardSkin===0?40 : rewardSkin===1?200 : 140;
+    for(let i=0;i<30;i++){
+      const a=-Math.PI/2+(Math.random()-.5)*.7;
+      radiance.push({
+        x: b.x+b.w/2+(Math.random()-.5)*b.w*.3, y: chestTop,
+        vx: Math.cos(a)*(1+Math.random()*4), vy: -2-Math.random()*5,
+        r: 3+Math.random()*7, life: .6+Math.random()*1.2, hue: hue+Math.random()*25
+      });
+    }
+  }
+  // 奖励物件
+  const counts=[0,7,10,12,15,20];
+  const n=counts[t]||10;
+  for(let i=0;i<n;i++){
+    items.push(spawnRewardItem(t, i, n, b.x+b.w/2, chestTop));
+  }
+  // 迸发火花
+  for(let i=0;i<18+t*5;i++){
+    sparks.push({
+      x: b.x+b.w/2+(Math.random()-.5)*100, y: b.y-8,
+      vx: (Math.random()-.5)*6, vy: -Math.random()*7-2,
+      r: 1+Math.random()*2.5, life: .4+Math.random()*.8
+    });
+  }
+}
 
 // ════════════════ 主循环 ════════════════
-let _loopPaused=false;document.addEventListener('visibilitychange',function(){_loopPaused=document.hidden;});function loop(ts){requestAnimationFrame(loop);if(_loopPaused){loop._t=ts;return;}let dt=Math.min((ts-(loop._t||ts))/1000,.08);loop._t=ts;T+=dt;idleBob+=dt;if(lidPhase==='flying'){lidFV+=.14;lidFY+=lidFV*dt*40;lidFR+=lidRV*dt;if(lidFY>-cb().h*.14){lidPhase='closing';lidCloseStart=lidFY;lidCloseTarget=-cb().h*.28;lidCloseProgress=0;lidCloseDuration=.58;}}else if(lidPhase==='closing'){lidCloseProgress+=dt/lidCloseDuration;const t2=Math.min(lidCloseProgress,1);lidFY=lidCloseStart+(lidCloseTarget-lidCloseStart)*easeOutCubic(t2);lidFR=lidFR*(1-t2);if(lidCloseProgress>=1){lidFY=lidCloseTarget;lidFR=0;lidPhase='closed';}}if(glowA>0)glowA-=dt*.8;for(const it of items){it.vy+=it.g;it.x+=it.vx*dt*30;it.y+=it.vy*dt*30;it.life-=dt;if(it.y>flr-it.r){it.y=flr-it.r;it.vy*=-.28;it.vx*=.65;if(Math.abs(it.vy)<.25)it.vy=it.vx=0;}it.rt+=(it.rv||0)*dt;}for(let i=items.length-1;i>=0;i--){if(items[i].life<=0)items.splice(i,1);}for(const s of sparks){s.x+=s.vx*dt*40;s.y+=s.vy*dt*40;s.life-=dt;}for(let i=sparks.length-1;i>=0;i--){if(sparks[i].life<=0)sparks.splice(i,1);}for(const r of radiance){r.x+=r.vx*dt*30;r.y+=r.vy*dt*30;r.life-=dt;r.r*=.995;}for(let i=radiance.length-1;i>=0;i--){if(radiance[i].life<=0)radiance.splice(i,1);}if(Math.random()<.15)sparks.push({x:W*.2+Math.random()*W*.6,y:flr-Math.random()*20,vx:(Math.random()-.5)*.3,vy:-.4-Math.random()*.5,life:.8+Math.random()*1.2,r:.4+Math.random()*.8});X.fillStyle='rgba(0,0,0,0)';X.clearRect(0,0,W,H);for(const r of radiance){const a2=Math.max(0,Math.min(1,r.life/.8));X.fillStyle='hsla('+r.hue+',80%,'+(55+a2*20)+'%,'+(a2*.45).toFixed(2)+')';X.beginPath();X.arc(r.x,r.y,r.r,0,Math.PI*2);X.fill();}for(const it of items){if(!it.fn)continue;if(it.type==='coin')it.fn(it.x,it.y,it.r,it.rt,it.color,it.letter);else if(it.type==='gem')it.fn(it.x,it.y,it.r,it.rt,it.fire1!==undefined?it.fire1:it.hue,it.fire2);else if(it.type==='pearl')it.fn(it.x,it.y,it.r,it.rt,it.pearlType);else it.fn(it.x,it.y,it.r,it.rt);}for(const s of sparks){X.fillStyle='rgba(255,220,140,'+Math.min(s.life,.55)+')';X.beginPath();X.arc(s.x,s.y,s.r,0,Math.PI*2);X.fill();}if(glowA>.01){const b2=cb();X.save();X.globalAlpha=glowA*.16;const cg4=mkRadial(b2.x+b2.w/2,b2.y+b2.h*.3,0,b2.x+b2.w/2,b2.y,b2.w*.42,[0,'rgba(255,200,80,.25)',1,'rgba(0,0,0,0)']);X.fillStyle=cg4;X.fillRect(b2.x-b2.w*.15,b2.y-b2.h*.08,b2.w*1.3,b2.h*1.3);X.restore();}const bob=Math.sin(idleBob*1.8)*1.2;const b3=cb();body(b3.x,b3.y+bob,b3.w,b3.h);lid(b3.x,b3.y+(lidPhase==='closed'?-b3.h*.28:lidFY)+bob,b3.w,b3.h*.28,lidPhase==='closed'?0:lidFR);}requestAnimationFrame(loop);
+let _loopPaused=false;
+document.addEventListener('visibilitychange',function(){_loopPaused=document.hidden;});
+
+function updateFX(dt){
+  T+=dt; idleBob+=dt;
+  // 盖子：飞出 → 回落
+  if(lidPhase==='flying'){
+    lidFV+=.14;
+    lidFY+=lidFV*dt*40;
+    lidFR+=lidRV*dt;
+    if(lidFY>-cb().h*.14){
+      lidPhase='closing';
+      lidCloseStart=lidFY; lidCloseTarget=-cb().h*.28;
+      lidCloseProgress=0; lidCloseDuration=.58;
+    }
+  } else if(lidPhase==='closing'){
+    lidCloseProgress+=dt/lidCloseDuration;
+    const t2=Math.min(lidCloseProgress,1);
+    lidFY=lidCloseStart+(lidCloseTarget-lidCloseStart)*easeOutCubic(t2);
+    lidFR=lidFR*(1-t2);
+    if(lidCloseProgress>=1){ lidFY=lidCloseTarget; lidFR=0; lidPhase='closed'; }
+  }
+  if(glowA>0) glowA-=dt*.8;
+  // 奖励物件物理
+  for(const it of items){
+    it.vy+=it.g;
+    it.x+=it.vx*dt*30;
+    it.y+=it.vy*dt*30;
+    it.life-=dt;
+    if(it.y>flr-it.r){
+      it.y=flr-it.r;
+      it.vy*=-.28; it.vx*=.65;
+      if(Math.abs(it.vy)<.25) it.vy=it.vx=0;
+    }
+    it.rt+=(it.rv||0)*dt;
+  }
+  for(let i=items.length-1;i>=0;i--){ if(items[i].life<=0) items.splice(i,1); }
+  for(const s of sparks){ s.x+=s.vx*dt*40; s.y+=s.vy*dt*40; s.life-=dt; }
+  for(let i=sparks.length-1;i>=0;i--){ if(sparks[i].life<=0) sparks.splice(i,1); }
+  for(const r of radiance){ r.x+=r.vx*dt*30; r.y+=r.vy*dt*30; r.life-=dt; r.r*=.995; }
+  for(let i=radiance.length-1;i>=0;i--){ if(radiance[i].life<=0) radiance.splice(i,1); }
+  // 环境微尘（限量，避免无上限堆积）
+  if(sparks.length<80 && Math.random()<.12){
+    sparks.push({x:W*.2+Math.random()*W*.6, y:flr-Math.random()*20, vx:(Math.random()-.5)*.3, vy:-.4-Math.random()*.5, life:.8+Math.random()*1.2, r:.4+Math.random()*.8});
+  }
+}
+
+function renderFX(){
+  X.clearRect(0,0,W,H);
+  // 开盖光柱
+  for(const r of radiance){
+    const a2=Math.max(0,Math.min(1,r.life/.8));
+    X.fillStyle='hsla('+r.hue+',80%,'+(55+a2*20)+'%,'+(a2*.45).toFixed(2)+')';
+    X.beginPath();X.arc(r.x,r.y,r.r,0,Math.PI*2);X.fill();
+  }
+  // 奖励物件
+  for(const it of items){
+    if(!it.fn) continue;
+    if(it.type==='coin') it.fn(it.x,it.y,it.r,it.rt,it.color,it.letter);
+    else if(it.type==='gem') it.fn(it.x,it.y,it.r,it.rt,it.fire1!==undefined?it.fire1:it.hue,it.fire2);
+    else if(it.type==='pearl') it.fn(it.x,it.y,it.r,it.rt,it.pearlType);
+    else it.fn(it.x,it.y,it.r,it.rt);
+  }
+  // 火花
+  for(const s of sparks){
+    X.fillStyle='rgba(255,220,140,'+Math.min(s.life,.55)+')';
+    X.beginPath();X.arc(s.x,s.y,s.r,0,Math.PI*2);X.fill();
+  }
+  // 开宝箱辉光
+  if(glowA>.01){
+    const b2=cb();
+    X.save();X.globalAlpha=glowA*.16;
+    const cg4=mkRadial(b2.x+b2.w/2,b2.y+b2.h*.3,0,b2.x+b2.w/2,b2.y,b2.w*.42,[0,'rgba(255,200,80,.25)',1,'rgba(0,0,0,0)']);
+    X.fillStyle=cg4;X.fillRect(b2.x-b2.w*.15,b2.y-b2.h*.08,b2.w*1.3,b2.h*1.3);
+    X.restore();
+  }
+  // 宝箱本体 + 盖子
+  const bob=Math.sin(idleBob*1.8)*1.2;
+  const b3=cb();
+  body(b3.x,b3.y+bob,b3.w,b3.h);
+  lid(b3.x,b3.y+(lidPhase==='closed'?-b3.h*.28:lidFY)+bob,b3.w,b3.h*.28,lidPhase==='closed'?0:lidFR);
+}
+
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(_loopPaused){ loop._t=ts; return; }
+  const dt=Math.min((ts-(loop._t||ts))/1000,.08);
+  loop._t=ts;
+  updateFX(dt);
+  renderFX();
+}
+requestAnimationFrame(loop);
 
 // ════════════════ API ════════════════
 window.openChest=function(tier){doOpen(tier||3);};

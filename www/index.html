@@ -20,6 +20,7 @@
     --line:#272d44; --line2:#323a5a;
     --text:#e7eaf3; --muted:#9aa3c0; --faint:#6b7494;
     --accent:#5ad1c9; --accent2:#8b7cf6; --accent3:#f6a85b;
+    --accent-rgb:90,209,201; --accent2-rgb:139,124,246;
     --good:#4fd08a; --warn:#f6a85b; --bad:#f06a6a;
     --radius:14px; --radius-sm:10px;
     --shadow:0 8px 30px rgba(0,0,0,.45);
@@ -47,7 +48,7 @@
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:5px 13px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background .15s,color .15s}
   .tab:hover{background:var(--panel);color:var(--text)}
-  .tab.active{background:linear-gradient(135deg,rgba(90,209,201,.14),rgba(139,124,246,.14));color:var(--text);border-color:var(--line2)}
+  .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2)}
   .tab .ic{margin-right:3px}
   .stats-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:5px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;font-size:11.5px;color:var(--muted)}
   .stats-bar .bar{flex:1;max-width:300px;height:6px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
@@ -230,7 +231,7 @@
   .set-field{display:flex;align-items:center;gap:12px}
   .set-field label{font-size:13px;font-weight:600;color:var(--text);min-width:66px;flex-shrink:0;text-align:right}
   .set-field input,.set-field select{flex:1 1 auto;min-width:0;width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:9px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
-  .set-field input:focus,.set-field select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(139,124,246,.18)}
+  .set-field input:focus,.set-field select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.18)}
   .set-row2{display:flex;gap:14px;margin-bottom:12px}
   .set-row2 .set-field{flex:1 1 0;min-width:0}
   .set-col{display:flex;flex-direction:column;gap:18px}
@@ -281,7 +282,7 @@
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
-  .ref-answer{background:rgba(90,209,201,.07);border:1px solid rgba(90,209,201,.3);border-radius:12px;padding:14px 16px;margin-top:14px}
+  .ref-answer{background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.3);border-radius:12px;padding:14px 16px;margin-top:14px}
   .ref-answer .label{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px}
   .grade-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
   .grade-btn{flex:1;min-width:120px;border:1px solid var(--line2);background:var(--panel);color:var(--text);
@@ -331,16 +332,16 @@
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
   .theme-tab:hover{color:var(--text);background:var(--panel)}
-  .theme-tab.active{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.25)}
+  .theme-tab.active{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.25)}
   .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:11px;cursor:pointer;border:2px solid transparent;transition:.18s;position:relative;background:var(--bg2)}
   .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:0 4px 16px rgba(0,0,0,.3)}
-  .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,209,201,.15)}
+  .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
   .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
   .theme-card .tc-swatch{width:42px;height:30px;border-radius:7px;position:relative;overflow:hidden;flex:none}
   .theme-card .tc-swatch::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
   .theme-card .tc-name{font-size:10.5px;font-weight:600;color:var(--text);line-height:1}
-  .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative}
+  .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   .theme-dot:hover{transform:scale(1.08);border-color:var(--accent2)}
   .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
   .theme-sep{grid-column:1/-1;font-size:10px;color:var(--faint);font-weight:700;letter-spacing:1px;padding:2px 0;text-align:center}
@@ -348,20 +349,20 @@
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
   .grill-mode-card{flex:1;min-width:140px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 12px;cursor:pointer;transition:.18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
   .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
-  .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(90,209,201,.08),rgba(139,124,246,.08));box-shadow:0 0 0 3px rgba(90,209,201,.12)}
+  .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.08),rgba(var(--accent2-rgb),.08));box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
   .gm-icon{font-size:28px}
   .gm-title{font-size:14px;font-weight:700;color:var(--text)}
   .gm-desc{font-size:11.5px;color:var(--muted);line-height:1.5}
   .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
   .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
-  .grill-dur-btn.sel{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.3)}
+  .grill-dur-btn.sel{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.3)}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .grill-resume:focus{border-color:var(--accent2)}
   .grill-chat{display:flex;flex-direction:column;gap:12px;max-height:55vh;overflow-y:auto;padding-right:4px;margin:16px 0}
   .grill-msg{max-width:85%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
   .grill-msg.ai{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
-  .grill-msg.user{align-self:flex-end;background:rgba(139,124,246,.15);border:1px solid rgba(139,124,246,.3);border-bottom-right-radius:4px}
+  .grill-msg.user{align-self:flex-end;background:rgba(var(--accent2-rgb),.15);border:1px solid rgba(var(--accent2-rgb),.3);border-bottom-right-radius:4px}
   .grill-input-row{display:flex;gap:10px;margin-top:12px;align-items:flex-end}
   .grill-input-row textarea{flex:1;min-height:44px;max-height:180px;resize:none;padding:11px 14px;background:var(--panel);border:1px solid var(--line2);color:var(--text);border-radius:12px;font-size:14px;line-height:1.5;outline:none;font-family:inherit;overflow-y:auto}
   .grill-input-row textarea:focus{border-color:var(--accent2)}
@@ -373,15 +374,19 @@
   .grill-fb-content p{margin:8px 0}
   .grill-fb-content strong{color:var(--accent2)}
   .grill-fb-content ul,.grill-fb-content ol{padding-left:20px;margin:8px 0}
-  /* 语音面试 */
-  .voice-ctrl{display:flex;align-items:center;gap:14px;margin-top:6px;flex-wrap:wrap}
-  .voice-mic{width:64px;height:64px;border-radius:50%;border:2px solid var(--line2);background:var(--panel);color:var(--text);font-size:26px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
-  .voice-mic:hover{border-color:var(--accent2);transform:scale(1.05)}
-  .voice-mic.on{border-color:var(--bad);background:rgba(248,113,113,.15);color:var(--bad);animation:voicePulse 1.2s ease-in-out infinite}
-  @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.35)}50%{box-shadow:0 0 0 12px rgba(248,113,113,0)}}
-  .voice-status{flex:1;min-width:140px;font-size:13px;color:var(--muted);line-height:1.5}
-  .voice-auto{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
-  .voice-auto input{accent-color:var(--accent2);cursor:pointer}
+  /* 挖空回忆 */
+  .cloze-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:14px}
+  .cloze-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:0 0 16px}
+  .cloze-body{line-height:2.3;color:var(--text);font-size:14.5px;word-break:break-word}
+  .cloze-body p{margin:0 0 8px}
+  .cloze-body code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
+  .cloze-body pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;line-height:1.6}
+  .cloze-body pre code{background:none;padding:0;color:var(--text);font-size:12.5px}
+  .cloze-blank{display:inline-block;min-width:72px;max-width:180px;border:none;border-bottom:1.5px solid var(--accent2);background:var(--panel);color:var(--text);font-size:13px;padding:2px 6px;margin:0 3px;border-radius:4px 4px 0 0;outline:none;text-align:center;font-family:inherit}
+  .cloze-blank:focus{border-bottom-color:var(--accent);background:var(--panel2)}
+  .cloze-blank.ok{border-bottom-color:var(--good);background:rgba(79,208,138,.12);color:var(--good)}
+  .cloze-blank.bad{border-bottom-color:var(--bad);background:rgba(240,106,106,.12);color:var(--bad)}
+  .cloze-fix{color:var(--bad);font-size:12px;font-weight:700;margin:0 4px 0 2px}
 
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
@@ -467,7 +472,7 @@
       <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
       <div class="tab" data-view="analytics"><span class="ic">📈</span> 进度</div>
       <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
-      <div class="tab" data-view="voice"><span class="ic">🎙️</span> 语音面试</div>
+      <div class="tab" data-view="cloze"><span class="ic">🧩</span> 挖空回忆</div>
     </div>
     <div class="search">
       🔍 <input id="searchInput" placeholder="搜索题目…" autocomplete="off">
@@ -492,7 +497,7 @@
 </div>
 
 <!-- 皮肤选择弹窗 -->
-<div class="theme-popup" id="skinPopup" style="width:260px;right:80px;top:52px">
+<div class="theme-popup" id="skinPopup">
   <div class="theme-sep" style="grid-column:1/-1">📦 宝箱皮肤</div>
   <div class="theme-dot" data-skin-cat="chest" data-skin="0" style="background:linear-gradient(135deg,#D4B048,#6a2020)">鎏金蟠龙</div>
   <div class="theme-dot" data-skin-cat="chest" data-skin="1" style="background:linear-gradient(135deg,#a060e0,#100818)">暗影邪魔</div>
@@ -730,6 +735,8 @@ const Store = (() => {
         }catch(e){ toast('保存失败'); resolve(false); }
       });
     },
+    getCloze: () => get('cloze').then(v => v || {}),
+    saveCloze: v => set('cloze', v),
   };
 })();
 
@@ -742,9 +749,10 @@ let ORDER = [];                   // 文档顺序（doc id 数组，用于导入
 let CLEARS = {};                  // docId -> 通关次数
 
 // 视图常量
-const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', VOICE:'voice' };
+const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', CLOZE:'cloze' };
 
 let view = sessionStorage.getItem('lastView') || Views.OVERVIEW;
+if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
 let currentDocId = null;
 let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
@@ -753,7 +761,7 @@ let mock = { cfg:{count:10, scope:'all'}, queue:[], index:0, answers:{}, scopeNa
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {}, aiCodeStreaming = {}, aiCodeHidden = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
-let voice = { messages:[], started:false, listening:false, interim:'', resume:'', thinking:false, autoSpeak:true };
+let cloze = { queue:[], index:0, qid:null, words:null, html:null, checked:false, result:null, statCorrect:0, statTotal:0, doneCount:0 };
 // 宝箱动画封装（chest.js 动态加载，可能不存在）
 function tryOpenChest(tier){ if(window.openChest) window.openChest(tier); }
 
@@ -777,6 +785,21 @@ function sm2Next(ef, interval, rate) {
   else if (rate >= 2) { ef -= 0.15; interval = 1; }
   else { ef -= 0.2; interval = 0.5; }
   return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(0.5, interval)) };
+}
+// 公共 SM-2 评分：按评分更新间隔/EF/等级并写入 PROGRESS（记忆模式与挖空回忆共用同一套复习计划）
+// historyArr 非 null 时记录撤销栈（记忆模式传 memory._history）
+function applySm2Grade(qid, rate, historyArr){
+  const now = Date.now();
+  const pr = PROGRESS[qid] || {};
+  const r2 = sm2Next(pr.ef||SM2_INIT_EF, pr.interval||0, rate);
+  if(historyArr) historyArr.push({qid, oldProgress:{...pr}});
+  const curLvl = pr.srLevel || 0;
+  const newLvl = rate>=4 ? Math.min(5, curLvl+1) : rate>=3 ? curLvl : 0;
+  // 评分≤2 说明忘了，清除已掌握标记；评分5 标记掌握
+  const newMastered = rate>=5 ? true : (rate<=2 ? false : (pr.mastered||false));
+  PROGRESS[qid]={...pr, ef:r2.ef, interval:r2.interval, srLevel:newLvl, srNext:now+r2.interval*86400000, lastPracticed:now, seen:true, mastered:newMastered};
+  saveProgress();
+  markDirty();
 }
 
 const $ = s => document.querySelector(s);
@@ -1060,7 +1083,7 @@ function renderStatsBar(){
       (v===Views.DOCS&&view===Views.DOCS) ||
       (v===Views.MEMORY&&view===Views.MEMORY) ||
       (v===Views.GRILL&&view===Views.GRILL) ||
-      (v===Views.VOICE&&view===Views.VOICE) ||
+      (v===Views.CLOZE&&view===Views.CLOZE) ||
       (v===Views.ANALYTICS&&view===Views.ANALYTICS));
   });
 }
@@ -1078,7 +1101,7 @@ function renderContent(){
   if(view===Views.MEMORY) return renderMemory(c);
   if(view===Views.ANALYTICS) return renderAnalytics(c);
   if(view===Views.GRILL) return renderGrill(c);
-  if(view===Views.VOICE) return renderVoice(c);
+  if(view===Views.CLOZE) return renderCloze(c);
   if(view===Views.BROWSE) return renderBrowse(c);
 }
 
@@ -1888,22 +1911,8 @@ function renderMemory(c){
     e.stopPropagation();
     const rate=parseInt(r.dataset.rate);
     if(isNaN(rate)) return;
-    const now=Date.now();
-    const pr=PROGRESS[q.id]||{};
-    const prevEf = pr.ef || SM2_INIT_EF;
-    const prevInterval = pr.interval || 0;
-    const r2 = sm2Next(prevEf, prevInterval, rate);
-    // 多步撤销栈：保存旧数据
-    const oldProgress = {...pr};
     if(!memory._history) memory._history = [];
-    memory._history.push({qid: q.id, oldProgress});
-    const curLvl = pr.srLevel || 0;
-    const newLvl = rate>=4 ? Math.min(5, curLvl+1) : rate>=3 ? curLvl : 0;
-    // 评分≤2 说明忘了，清除已掌握标记；评分5 标记掌握
-    const newMastered = rate>=5 ? true : (rate<=2 ? false : (pr.mastered||false));
-    PROGRESS[q.id]={...pr, ef:r2.ef, interval:r2.interval, srLevel:newLvl, srNext:now+r2.interval*86400000, lastPracticed:now, seen:true, mastered:newMastered};
-    saveProgress();
-    markDirty();
+    applySm2Grade(q.id, rate, memory._history);
     memory.index++; memory.flipped=false;
     const chestTier = rate>=5 ? 5 : rate>=4 ? 4 : rate>=3 ? 3 : rate>=2 ? 2 : 1;
     tryOpenChest(chestTier);
@@ -2308,236 +2317,195 @@ function renderGrillConfig(c){
 }
 
 /* =========================================================
-   语音面试（Web Speech API 识别 + 现有文本 AI + 系统 TTS 朗读）
+   挖空回忆：把答案关键词挖成填空，做主动提取测试
+   与记忆模式共用同一套艾宾浩斯复习计划：只取"已学过且到期"的题，
+   评分写回同一份 PROGRESS，两个模式互不冲突
    ========================================================= */
-function voiceSRSupported(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
-// 预加载系统语音音色（Chrome 异步加载）
-if('speechSynthesis' in window){
-  try{ speechSynthesis.getVoices(); }catch(_){}
-  speechSynthesis.onvoiceschanged = () => { try{ speechSynthesis.getVoices(); }catch(_){} };
+// 填空正确率 → SM-2 评分
+function clozeRate(correct, total){
+  if(!total) return 3;
+  const r = correct/total;
+  return r>=1 ? 5 : r>=0.7 ? 4 : r>=0.4 ? 3 : r>0 ? 2 : 1;
 }
-let voiceRec = null;
-function voiceStatusText(){
-  if(voice.listening) return voice.interim ? '正在聆听…（识别中）' : '正在聆听，请说出你的回答…';
-  if(voice.thinking) return '面试官思考中…';
-  return voiceSRSupported() ? '点击麦克风开始回答' : '⚠️ 当前浏览器不支持语音识别，请用下方文字输入';
+// 队列与记忆模式同源（SM-2 到期题），但排除纯新题——新题没见过答案，没法挖空
+function clozeQueueBuild(){
+  return buildMemoryQueue().filter(it=>!it.isNew).map(it=>it.q.id);
 }
-function updateVoiceStatus(){ const el=$('#voiceStatus'); if(el) el.textContent = voiceStatusText(); }
-let _zhVoice = null;   // 缓存中文语音；getVoices 是异步加载的，首次调用常为空
-function speakText(text){
+// 启发式挖空（离线兜底）：行内代码、加粗词、「」内词、数字+单位
+function clozeHeuristic(answer){
+  const t = String(answer||'');
+  const words = [];
+  (t.match(/`([^`\n]{1,20})`/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
+  (t.match(/\*\*([^*\n]{1,20})\*\*/g)||[]).forEach(m=>words.push(m.slice(2,-2).trim()));
+  (t.match(/「([^」\n]{1,20})」/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
+  (t.match(/\d+(?:\.\d+)?\s*(?:%|ms|秒|分钟|小时|天|次|个|倍|层|路|万|条|MB|GB|KB)/g)||[]).forEach(m=>words.push(m.trim()));
+  const seen = new Set(); const out = [];
+  for(const w of words){
+    const k = String(w).trim();
+    if(!k || k.length>20 || seen.has(k.toLowerCase())) continue;
+    seen.add(k.toLowerCase()); out.push(k);
+    if(out.length>=8) break;
+  }
+  return out;
+}
+// AI 挖空：挑出必答正确的"背诵锚点"（需 AI 配置，失败自动回退启发式）
+async function clozeByAI(q){
+  const prompt = `从下面的面试题参考答案中，挑出 5-8 个"背诵锚点"——回答这道题时必须说对的关键词、数字、术语或结论短语，用于填空记忆测试。
+要求：
+- 只输出一个 JSON 数组，形如 ["关键词1","关键词2"]，不要输出任何其他文字或标记
+- 优先挑核心术语、关键数字、结论性短语；每个词不超过 12 个字；互相不要包含或重叠
+【题目】${q.title}
+【参考答案】${q.answer||''}`;
+  const r = await callAI([{role:'system',content:'你是出题助手，只输出 JSON 数组，不输出任何其他内容。'},{role:'user',content:prompt}], null, {temperature:0.2, max_tokens:300});
+  if(!r) return null;
   try{
-    speechSynthesis.cancel();
-    const clean = stripMarkdown(text||'').trim();
-    if(!clean) return;
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = 'zh-CN'; u.rate = 1.0;
-    if(!_zhVoice){
-      const pick = () => { const v = speechSynthesis.getVoices().find(x => /zh|cmn|chinese/i.test(x.lang)); if(v) _zhVoice = v; };
-      pick();
-      try{ speechSynthesis.onvoiceschanged = pick; }catch(_){}
-    }
-    if(_zhVoice) u.voice = _zhVoice;
-    speechSynthesis.speak(u);
-  }catch(_){}
+    const m = r.match(/\[[\s\S]*\]/);
+    if(!m) return null;
+    const arr = JSON.parse(m[0]);
+    if(!Array.isArray(arr)) return null;
+    return arr.map(x=>String(x).trim()).filter(x=>x && x.length<=20).slice(0,8);
+  }catch(_){ return null; }
 }
-function buildVoicePrompt(resume){
-  return `你是一位资深技术面试官，正在进行语音面试，全程用中文口语对话。
-候选人简历：
-${resume}
-规则：
-1. 根据简历中的项目经历、技术栈、工作年限，进行针对性提问
-2. 每次只问一个问题，问题简短、口语化，适合候选人用语音回答
-3. 根据候选人的回答进行简短评价、追问或纠正，然后自然进入下一个问题
-4. 不要使用 Markdown 格式、代码块、列表符号，用纯口语中文，每次回复控制在 3-6 句话
-5. 语气专业、自然、鼓励，像真人面试官在电话里对话
-6. 候选人答得好就肯定并深入追问；答不上来就给出提示和引导`;
-}
-async function voiceAsk(){
-  const sys = buildVoicePrompt(voice.resume);
-  const msgs = [{role:'system', content: sys}];
-  if(!voice.messages.some(m => m.role==='user')){
-    msgs.push({role:'user', content:'我们开始面试吧，请先提出第一个问题。'});
+let _clozeCache = null;   // qid -> 挖空词列表，持久化到 IndexedDB，避免重复调用 AI
+async function clozeGetWords(q){
+  if(!_clozeCache) _clozeCache = await Store.getCloze();
+  let words = _clozeCache[q.id];
+  if(words && words.length) return words;
+  words = aiConfig ? await clozeByAI(q) : null;
+  if(!words || !words.length) words = clozeHeuristic(q.answer);
+  if(words.length){
+    _clozeCache[q.id] = words;
+    const keys = Object.keys(_clozeCache);
+    if(keys.length > 300) keys.slice(0, keys.length-300).forEach(k=>delete _clozeCache[k]);
+    Store.saveCloze(_clozeCache);
   }
-  for(const m of voice.messages){
-    if(m.role==='ai') msgs.push({role:'assistant', content:m.content});
-    else msgs.push({role:'user', content:m.content});
-  }
-  voice.messages.push({role:'ai', content:''});
-  const aiIdx = voice.messages.length - 1;
-  voice.thinking = true;
-  renderAll();
-  const r = await callAI(msgs, (full)=>{
-    voice.messages[aiIdx].content = full;
-    const el = document.getElementById('vm-'+aiIdx);
-    if(el) el.innerHTML = md2html(full);
-    const chat = document.getElementById('voiceChat');
-    if(chat) chat.scrollTop = chat.scrollHeight;
-  }, {temperature:0.5, max_tokens:1024});
-  voice.thinking = false;
-  if(!r && !voice.messages[aiIdx].content){
-    voice.messages[aiIdx].content = '抱歉，AI 调用失败，请检查 AI 配置。';
-  }
-  renderAll();
-  if(voice.autoSpeak && voice.messages[aiIdx].content){
-    speakText(voice.messages[aiIdx].content);
-  }
+  return words || [];
 }
-function stopVoiceListening(){
-  if(voiceRec){ try{ voiceRec.stop(); }catch(_){} }
-  voiceRec = null; voice.listening = false;
+// 把关键词替换成占位标记，渲染答案后再换成填空输入框
+function clozeBuildHtml(answer, words){
+  let text = String(answer||'');
+  const used = [];
+  words.forEach(w=>{
+    const idx = text.indexOf(w);
+    if(idx === -1) return;   // 答案里没出现的词（如 AI 杜撰）跳过
+    text = text.slice(0,idx) + '\u0001' + used.length + '\u0001' + text.slice(idx+w.length);
+    used.push(w);
+  });
+  let html = renderAnswer(text);
+  html = html.replace(/\u0001(\d+)\u0001/g, (m,i)=>'<input type="text" class="cloze-blank" data-idx="'+i+'" autocomplete="off" autocapitalize="off" spellcheck="false">');
+  return { html, words: used };
 }
-function onVoiceInput(text){
-  if(!text || voice.thinking) return;
-  voice.messages.push({role:'user', content:text});
-  voice.thinking = true;
-  renderAll();
-  voiceAsk();
+// 核对后：按"用户填的 + 对错标记 + 正确词"渲染填空
+function clozeResultHtml(){
+  return cloze.html.replace(/<input type="text" class="cloze-blank" data-idx="(\d+)"[^>]*>/g, (m, i) => {
+    const r = cloze.result[+i];
+    if(!r) return m;
+    const fix = r.ok ? '' : '<span class="cloze-fix">'+esc(r.expect)+'</span>';
+    return '<input type="text" data-idx="'+i+'" value="'+esc(r.given)+'" disabled class="cloze-blank '+(r.ok?'ok':'bad')+'">'+fix;
+  });
 }
-function startVoiceListening(){
-  if(!voiceSRSupported()){ toast('当前浏览器不支持语音识别，请用 Chrome/Edge，或用下方文字输入'); return; }
-  if(voice.thinking) return;
-  stopVoiceListening();
-  try{ speechSynthesis.cancel(); }catch(_){}
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const rec = new SR();
-  rec.lang = 'zh-CN';
-  rec.continuous = false;
-  rec.interimResults = true;
-  rec.maxAlternatives = 1;
-  voiceRec = rec;
-  voice.listening = true;
-  voice.interim = '';
-  renderAll();
-  rec.onstart = () => { voice.listening = true; updateVoiceStatus(); };
-  rec.onresult = (e) => {
-    let interim = '', finalText = '';
-    for(let i=e.resultIndex; i<e.results.length; i++){
-      const r = e.results[i];
-      if(r.isFinal) finalText += r[0].transcript;
-      else interim += r[0].transcript;
-    }
-    if(finalText){
-      voice.interim = ''; voice.listening = false;
-      try{ rec.stop(); }catch(_){}
-      const text = finalText.trim();
-      if(text) onVoiceInput(text); else renderAll();
+// 归一化比对：忽略大小写/空白/常见标点；互相包含 ≥70% 也算对
+function clozeEq(a,b){
+  const f = s => String(s).toLowerCase().replace(/[\s，。、,.!！?？;；:'"·\-_()`“”‘’]/g,'');
+  const x = f(a), y = f(b);
+  if(!x || !y) return false;
+  if(x===y) return true;
+  if(y.includes(x) && x.length/y.length>=0.7) return true;
+  if(x.includes(y) && y.length/x.length>=0.7) return true;
+  return false;
+}
+async function renderCloze(c){
+  if(!cloze.queue.length){
+    cloze.queue = clozeQueueBuild();
+    cloze.index = 0; cloze.qid = null; cloze.words = null; cloze.html = null;
+    cloze.checked = false; cloze.result = null;
+    cloze.statCorrect = 0; cloze.statTotal = 0; cloze.doneCount = 0;
+    if(!cloze.queue.length){
+      c.innerHTML = `<div class="flash-empty"><div class="big">🧩</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">暂无可挖空的题</div><div style="color:var(--muted)">挖空回忆只练"已学过且到了复习时间"的题。<br>先去「记忆」或「刷题」学一遍，到期后就能来这里填空测试。</div></div>`;
       return;
     }
-    voice.interim = interim;
-    const el = $('#voiceInterim'); if(el) el.textContent = interim || '聆听中…';
-  };
-  rec.onerror = (e) => {
-    voice.listening = false; voiceRec = null;
-    if(e.error==='not-allowed' || e.error==='service-not-allowed'){ toast('麦克风权限被拒绝，请在浏览器设置中允许'); }
-    else if(e.error==='no-speech'){ /* 未检测到语音，静默 */ }
-    else if(e.error!=='aborted'){ toast('语音识别出错：'+e.error); }
-    updateVoiceStatus();
-  };
-  rec.onend = () => {
-    // 浏览器在给出 final 前就结束（短语音/超时）时，若有识别到的中间文字则补发
-    const pending = voice.listening ? (voice.interim || '').trim() : '';
-    voice.listening = false; voiceRec = null;
-    if(pending && !voice.thinking){
-      voice.interim = '';
-      onVoiceInput(pending);
-      return;
+  }
+  if(cloze.index >= cloze.queue.length) return renderClozeDone(c);
+  const qid = cloze.queue[cloze.index];
+  const q = questionById(qid);
+  if(!q){ cloze.queue.splice(cloze.index,1); return renderCloze(c); }
+  const tot = cloze.queue.length, idx = cloze.index+1;
+  // 为当前题准备挖空：先缓存，再 AI，最后启发式兜底
+  if(cloze.qid !== qid || !cloze.words){
+    cloze.qid = qid; cloze.words = null; cloze.html = null; cloze.checked = false; cloze.result = null;
+    c.innerHTML = `<div class="feature-wrap"><div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span></div><div class="ai-loading">正在生成填空…</div></div>`;
+    const words = await clozeGetWords(q);
+    if(cloze.qid !== qid || view !== Views.CLOZE) return;   // 已切题/切视图，丢弃过期结果
+    const built = words.length ? clozeBuildHtml(q.answer, words) : { words: [] };
+    if(!built.words.length){
+      cloze.queue.splice(cloze.index,1);   // 答案过短或无可挖空内容：跳过该题
+      toast('该题暂无可挖空内容，已跳过');
+      return renderCloze(c);
     }
-    updateVoiceStatus();
-  };
-  try{ rec.start(); }catch(_){}
-}
-function toggleVoiceMic(){
-  if(voice.listening){ stopVoiceListening(); renderAll(); }
-  else { startVoiceListening(); }
-}
-async function startVoiceInterview(){
-  if(!aiConfig){ toast('请先配置 AI API'); return; }
-  const resume = ($('#voiceResume')?.value || '').trim();
-  if(!resume){ toast('请先上传或粘贴简历'); return; }
-  voice.resume = resume;
-  voice.messages = [];
-  voice.started = true;
-  voice.thinking = true;
-  renderAll();
-  await voiceAsk();
-}
-function renderVoice(c){
-  if(!voice.started) return renderVoiceConfig(c);
+    cloze.words = built.words; cloze.html = built.html;
+    if(view !== Views.CLOZE) return;
+    return renderAll();   // 准备完成，重新渲染题卡
+  }
+  const accInfo = cloze.statTotal ? `本场正确率 <b style="color:var(--text)">${Math.round(cloze.statCorrect/cloze.statTotal*100)}%</b>` : '凭记忆填写';
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🎙️ 语音面试</span><span>${voice.messages.length} 轮</span></div>
-      <div class="grill-chat" id="voiceChat">
-        ${voice.messages.map((m,i)=>`
-          <div class="grill-msg ${m.role}" id="vm-${i}">${m.content?md2html(m.content):'<span style="opacity:.5">…</span>'}</div>
-        `).join('')}
-        ${voice.listening ? `<div class="grill-msg user" id="voiceInterim">${esc(voice.interim||'聆听中…')}</div>` : ''}
-        ${voice.thinking ? '<div class="grill-loading">面试官思考中…</div>' : ''}
+      <div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span><span>${accInfo}</span></div>
+      <div class="cloze-card">
+        <div class="ptitle">${renderTitle(q.title)}</div>
+        <div class="cloze-body">${cloze.checked ? clozeResultHtml() : cloze.html}</div>
+        <div class="pcontrols" style="margin-top:18px">
+          ${cloze.checked
+            ? `<button class="btn primary" id="clozeNext">${cloze.index===tot-1?'🏁 完成':'下一题 →'}</button>`
+            : `<button class="btn primary" id="clozeCheck">✅ 提交核对</button><button class="btn ghost" id="clozeSkip">跳过此题</button>`}
+        </div>
+        ${cloze.checked ? (()=>{ const ok=cloze.result.filter(r=>r.ok).length; return '<div class="pstatus" style="margin-top:12px">填对 <b style="color:'+(ok===cloze.result.length?'var(--good)':'var(--warn)')+'">'+ok+'/'+cloze.result.length+'</b> · 错误处已标出正确词 · 本题复习计划已更新</div>'; })() : ''}
       </div>
-      <div class="voice-ctrl">
-        <button class="voice-mic ${voice.listening?'on':''}" id="voiceMicBtn" title="点击开始/停止说话">${voice.listening?'⏹':'🎤'}</button>
-        <div class="voice-status" id="voiceStatus">${voiceStatusText()}</div>
-        <label class="voice-auto"><input type="checkbox" id="voiceAutoSpeak" ${voice.autoSpeak?'checked':''}> 自动朗读回答</label>
-      </div>
-      <div class="grill-input-row">
-        <textarea id="voiceInput" rows="1" placeholder="语音不可用时，可在这里打字回答（Enter 发送）" autocomplete="off" ${voice.thinking?'disabled':''}></textarea>
-        <button class="btn primary" id="voiceSend" ${voice.thinking?'disabled':''}>发送</button>
-        <button class="btn ghost" id="voiceEnd" style="color:var(--bad)">结束</button>
-      </div>
+      <div class="pstatus">空里是答案的"背诵锚点"（术语/数字/结论）。先尽力填写，提交后对则标绿、错则显示正确词——先回想，再纠正。回车 = 跳到下一个空</div>
     </div>`;
-  const chat = $('#voiceChat'); if(chat) chat.scrollTop = chat.scrollHeight;
-  $('#voiceMicBtn').onclick = () => toggleVoiceMic();
-  $('#voiceAutoSpeak').onchange = e => { voice.autoSpeak = e.target.checked; };
-  const input = $('#voiceInput');
-  const send = () => {
-    const text = input.value.trim();
-    if(!text || voice.thinking) return;
-    input.value='';
-    onVoiceInput(text);
-  };
-  $('#voiceSend').onclick = send;
-  input.onkeydown = e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } };
-  $('#voiceEnd').onclick = async () => {
-    if(!await confirmDialog('结束本次语音面试？对话记录将清空。')) return;
-    stopVoiceListening();
-    try{ speechSynthesis.cancel(); }catch(_){}
-    voice = { messages:[], started:false, listening:false, interim:'', resume:'', thinking:false, autoSpeak:true };
+  if(cloze.checked){
+    $('#clozeNext').onclick = () => { cloze.index++; cloze.qid = null; renderAll(); };
+    return;
+  }
+  const blanks = c.querySelectorAll('.cloze-blank');
+  blanks.forEach((inp,i)=>{
+    inp.onkeydown = e => {
+      if(e.key==='Enter'){ e.preventDefault(); if(i < blanks.length-1) blanks[i+1].focus(); else $('#clozeCheck').click(); }
+    };
+  });
+  if(blanks.length) blanks[0].focus();
+  $('#clozeSkip').onclick = () => { cloze.index++; cloze.qid = null; renderAll(); };
+  $('#clozeCheck').onclick = () => {
+    const res = []; let correct = 0;
+    blanks.forEach(inp=>{
+      const expect = cloze.words[+inp.dataset.idx];
+      const ok = clozeEq(inp.value, expect);
+      res.push({expect, given: inp.value.trim(), ok});
+      if(ok) correct++;
+    });
+    cloze.result = res; cloze.checked = true;
+    cloze.statCorrect += correct; cloze.statTotal += blanks.length; cloze.doneCount++;
+    const rate = clozeRate(correct, blanks.length);
+    applySm2Grade(qid, rate, null);   // 写回与记忆模式同一份艾宾浩斯计划
+    tryOpenChest(rate);
     renderAll();
   };
 }
-function renderVoiceConfig(c){
+function renderClozeDone(c){
+  const pct = cloze.statTotal ? Math.round(cloze.statCorrect/cloze.statTotal*100) : 0;
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="cfg-card">
-        <h2>🎙️ 语音面试</h2>
-        <div class="desc">上传简历后，AI 面试官将根据你的项目经历和技术栈进行针对性语音提问，像打电话一样对话并自动朗读。${voiceSRSupported() ? '' : '<br>⚠️ 当前浏览器不支持语音识别，仍可用文字输入对话。'}</div>
-        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">📄 简历（必填，面试官将根据它提问）</label>
-        <textarea class="grill-resume" id="voiceResume" placeholder="粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单"></textarea>
-        <div style="margin-top:14px">
-          <button class="btn primary" id="voiceStart">🎙️ 开始语音面试</button>
-          <button class="btn ghost" id="voiceUpload">📎 上传简历（txt/md/pdf）</button>
-          <input type="file" id="voiceFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
+      <div class="done-card">
+        <div class="big">🧩</div>
+        <h3>本轮挖空回忆完成！</h3>
+        <div class="sub">共复习 <b style="color:var(--accent3)">${cloze.doneCount}</b> 题 · 累计填对 ${cloze.statCorrect}/${cloze.statTotal}（${pct}%）</div>
+        <div class="pcontrols" style="justify-content:center">
+          <button class="btn" id="clozeAgain">🔄 再练一轮</button>
+          <button class="btn" id="clozeBack">返回总览</button>
         </div>
-        <div class="set-hint" style="margin-top:12px">💡 提示：请用 Chrome/Edge 浏览器并允许麦克风权限；AI 每次提问会自动用系统语音朗读（免费）。</div>
       </div>
     </div>`;
-  $('#voiceResume').value = voice.resume || '';
-  $('#voiceStart').onclick = () => startVoiceInterview();
-  $('#voiceUpload').onclick = () => $('#voiceFileInput').click();
-  $('#voiceFileInput').onchange = async e => {
-    const f = e.target.files[0]; if(!f) return;
-    let text='';
-    if(f.name.toLowerCase().endsWith('.pdf')){
-      try{
-        const buf = await f.arrayBuffer();
-        text = await extractPdfText(buf);
-        if(!text.trim()){ toast('PDF 无法提取文字，请粘贴简历内容'); return; }
-      }catch(ex){ toast('PDF 解析失败：'+ex.message); return; }
-    } else {
-      text = await f.text();
-    }
-    $('#voiceResume').value = text;
-    toast('简历已载入，可开始面试');
-  };
+  $('#clozeAgain').onclick = () => { cloze.queue = []; renderAll(); };
+  $('#clozeBack').onclick = () => { view = Views.OVERVIEW; renderAll(); };
 }
 
 async function doGrillChat(){
@@ -2589,9 +2557,10 @@ ${grill.resume?`难度指南：${DIFFICULTY[lv]}`:'难度：随机出题，不�
 
 规则：
 每次出一道经典面试题${grill.resume?'，围绕简历中的技术栈提问':'，优先选择后端方向（Java、Go、Python、数据库、中间件、操作系统、网络、分布式、Linux等），默认不要问前端（HTML/CSS/JS/React/Vue/小程序）相关题目'}。${grill.resume?`初始难度匹配${lv}水平。`:''}${grill.resume?'':`不要假装知道简历，不要说"看你简历上写了XXX"。`}
-答错时指出正确答案并鼓励安慰，答得好就肯定并立刻出下一题。
+候选人作答后，无论答对还是答错，都必须按顺序完成三件事：①一句话点评（答对就肯定鼓励，答错简要指出问题，不嘲讽）；②给出这道题的完整参考答案（准确、完整、条理清晰，分点列出核心要点，关键术语加粗，篇幅控制在8条要点以内）；③出下一道题。
+完整参考答案必须每题都给：即使候选人答得完全正确，也要展示完整参考答案供其对照巩固和背诵，严禁只说"回答正确"就跳过答案直接出下一题。
 动态调难度：答不上来时降一档出更简单的题；答上了不要升难度，保持当前难度继续。
-Markdown格式，题目加粗，简洁不啰嗦。
+Markdown格式，题目加粗，点评简洁不啰嗦，参考答案完整清晰。
 
 面试结束规则（重要！）：
 - 正常结束：面试达到${realRounds.min}-${realRounds.max}轮后，选择合适时机结束
@@ -2642,7 +2611,7 @@ ${grill.resume}`
   grill.messages.push({role:'ai', content:'...'});
   const aiIdx = grill.messages.length - 1;
   renderAll();
-  // 拷打场景：低温度保证专业一致，高max_tokens保证回复充分
+  // 拷打场景：低温度保证专业一致；八股扫荡每题要输出完整参考答案，放宽 max_tokens 避免截断
   let _renderTimer = null;
   const r = await callAI(msgs, (full) => {
     // 流式渲染时隐藏 [FEEDBACK] 标记及其之后的内容
@@ -2658,7 +2627,7 @@ ${grill.resume}`
       const chat = document.getElementById('grillChat');
       if(chat) chat.scrollTop = chat.scrollHeight;
     }, 50);
-  }, {temperature:0.4, max_tokens:1024, top_p:0.85});
+  }, {temperature:0.4, max_tokens:(grill.mode==='theory'?2048:1024), top_p:0.85});
   clearTimeout(_renderTimer); _renderTimer = null;
   grill.loading = false;
   if(!r){
@@ -3128,15 +3097,10 @@ function renderAll(){
 document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => {
     const v = tab.dataset.view;
-    // 离开语音面试时，停止语音识别与朗读，避免后台继续收音/出声
-    if(view===Views.VOICE && v!==Views.VOICE){
-      try{ stopVoiceListening(); }catch(_){}
-      try{ speechSynthesis.cancel(); }catch(_){}
-    }
     if(v===Views.DOCS){ view=Views.DOCS; renderAll(); }
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:[]}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
-    else if(v===Views.VOICE){ view=Views.VOICE; renderAll(); }
+    else if(v===Views.CLOZE){ cloze={queue:[],index:0,qid:null,words:null,html:null,checked:false,result:null,statCorrect:0,statTotal:0,doneCount:0}; view=Views.CLOZE; renderAll(); }
     else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
@@ -3149,7 +3113,6 @@ searchInput.oninput = () => {
   _searchTimer = setTimeout(() => {
     searchTerm = searchInput.value;
     if(searchTerm.trim()){
-      if(view===Views.VOICE){ try{ stopVoiceListening(); }catch(_){} try{ speechSynthesis.cancel(); }catch(_){} }
       view=Views.SEARCH;
     }
     else if(view===Views.SEARCH){ view=Views.OVERVIEW; }
@@ -3165,15 +3128,15 @@ const THEMES = {
   gold:  {bg:'#0f0d08',bg2:'#18140a',panel:'#1c170e',panel2:'#221d12',card:'#221d12',line:'#352d18',line2:'#4a3e20',text:'#f0ebd0',muted:'#a09060',faint:'#706030',accent:'#f5c542',accent2:'#e09020',accent3:'#e8c048',good:'#58c878',warn:'#e8c048',bad:'#f06a6a'},
   midnight:{bg:'#080814',bg2:'#0c0c1e',panel:'#101028',panel2:'#141432',card:'#141432',line:'#242450',line2:'#343468',text:'#d0d0f0',muted:'#8080b0',faint:'#505080',accent:'#7c5cf8',accent2:'#d858c8',accent3:'#ff6888',good:'#58d088',warn:'#ff6888',bad:'#f06a6a'},
   sunset:{bg:'#100804',bg2:'#180c08',panel:'#1c100a',panel2:'#22140c',card:'#22140c',line:'#381c10',line2:'#502818',text:'#f0e0d0',muted:'#b09070',faint:'#786048',accent:'#f97316',accent2:'#ef4444',accent3:'#ffb838',good:'#10b981',warn:'#ffb838',bad:'#ef4444'},
-  void:  {bg:'#f4f0eb',bg2:'#ede8e2',panel:'#faf7f4',panel2:'#fffefc',card:'#fffefc',line:'#e0d8cf',line2:'#d0c6b8',text:'#2a2018',muted:'#6b5d4f',faint:'#9a8a78',accent:'#d4a050',accent2:'#c08040',accent3:'#d8a050',good:'#5a9a48',warn:'#d8a050',bad:'#c84040'},
-  ripple:{bg:'#e8edf0',bg2:'#dfe5e9',panel:'#f2f5f7',panel2:'#fafcfd',card:'#fafcfd',line:'#cdd6dc',line2:'#bcc7cf',text:'#1a2228',muted:'#556670',faint:'#8899a4',accent:'#40a0c8',accent2:'#58b898',accent3:'#f09060',good:'#4a9a58',warn:'#f09060',bad:'#c84040'},
+  void:  {bg:'#f4f0eb',bg2:'#ede8e2',panel:'#faf7f4',panel2:'#fffefc',card:'#fffefc',line:'#e0d8cf',line2:'#d0c6b8',text:'#2a2018',muted:'#6b5d4f',faint:'#9a8a78',accent:'#a8752a',accent2:'#9a6524',accent3:'#d8a050',good:'#5a9a48',warn:'#d8a050',bad:'#c84040'},
+  ripple:{bg:'#e8edf0',bg2:'#dfe5e9',panel:'#f2f5f7',panel2:'#fafcfd',card:'#fafcfd',line:'#cdd6dc',line2:'#bcc7cf',text:'#1a2228',muted:'#556670',faint:'#8899a4',accent:'#2b7e9e',accent2:'#3d8a70',accent3:'#f09060',good:'#4a9a58',warn:'#f09060',bad:'#c84040'},
   particle:{bg:'#060810',bg2:'#0a0c18',panel:'#0e1020',panel2:'#121428',card:'#121428',line:'#1c1e38',line2:'#282a48',text:'#c0c8e0',muted:'#7888b0',faint:'#485878',accent:'#f472b6',accent2:'#22d3ee',accent3:'#c084fc',good:'#4fd08a',warn:'#c084fc',bad:'#f06a6a'},
   songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',panel2:'#121026',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
   shuangren:{bg:'#020810',bg2:'#040c18',panel:'#081020',panel2:'#0c1428',card:'#0c1428',line:'#182840',line2:'#243858',text:'#c8d8f0',muted:'#7090b8',faint:'#486078',accent:'#60c0f0',accent2:'#88d8ff',accent3:'#78c8c8',good:'#50c0a0',warn:'#78c8c8',bad:'#e06070'},
   night: {bg:'#020614',bg2:'#060a1c',panel:'#0a0e20',panel2:'#0e1228',card:'#0e1228',line:'#182040',line2:'#243058',text:'#c8d4e8',muted:'#6880a8',faint:'#405878',accent:'#88c878',accent2:'#a8e060',accent3:'#f0d048',good:'#60d080',warn:'#f0d048',bad:'#e06060'},
   'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',panel2:'rgba(0,0,0,0.6)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#e8e8f0',muted:'#a0a0b8',faint:'#686880',accent:'#c084fc',accent2:'#f472b6',accent3:'#fbbf24',good:'#4fd08a',warn:'#fbbf24',bad:'#f06a6a'},
   ziliang: {bg:'#8f9496',bg2:'#868c8e',panel:'#9a9fa1',panel2:'#a5a9ab',card:'#92979a',line:'#a8adaf',line2:'#b5babc',text:'#2b3033',muted:'#4a5054',faint:'#676d71',accent:'#3f6f7a',accent2:'#5b8290',accent3:'#b08050',good:'#4a8a5c',warn:'#b08050',bad:'#b0524a'},
-  zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',panel2:'#faf7f5',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#e84050',accent2:'#c8202e',accent3:'#f0a838',good:'#4a9a58',warn:'#f0a838',bad:'#c8202e'}
+  zirong: {bg:'#f0ebe6',bg2:'#ebe3dd',panel:'#f5f0ec',panel2:'#faf7f5',card:'#faf7f5',line:'#e0d4cc',line2:'#d4c4b8',text:'#2c1810',muted:'#5a3a30',faint:'#907060',accent:'#cf2a3a',accent2:'#a81826',accent3:'#f0a838',good:'#4a9a58',warn:'#f0a838',bad:'#c8202e'}
 };
 
 // ======== 主题配置表（元数据驱动） ========
@@ -3185,13 +3148,13 @@ const THEME_CONFIG = {
   ripple:  {group:'canvas', name:'雨隙',   canvas:'ripple',   gradient:'#6b8ca4,#4a6d8c'},
   particle:{group:'canvas', name:'粒子',   canvas:'particle', gradient:'#f472b6,#22d3ee'},
   gold:    {group:'canvas', name:'流光',   canvas:'gold',     gradient:'#f5c542,#e09020'},
-  void:    {group:'canvas', name:'晨光',   canvas:'void',     gradient:'#e8c870,#d4a050'},
+  void:    {group:'canvas', name:'晨光',   canvas:'void',     gradient:'#d8b870,#a8752a'},
   shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#60c0f0,#88d8ff'},
-  night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#1a1a3e,#2d2d5e'},
+  night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#3d3d6e,#88c878'},
   // ── 定制组：子良/松星/子荣 ──
   ziliang: {group:'custom', name:'子良',   canvas:'none',     gradient:'#3f6f7a,#b08050'},
   songxing:{group:'custom', name:'松星',   canvas:'songxing', gradient:'#a78bfa,#d4a854'},
-  zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#00FF88,#E03A3A'},
+  zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#cf2a3a,#f0a838'},
   // ── 自定义组：上传背景图 ──
   'img-bg':{group:'bg',    name:'自定义',  canvas:'none',     gradient:'#666,#444'},
 };
@@ -3204,16 +3167,16 @@ const CSS_FX = {
   ripple:``,
   particle:``,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar{background:#7c8285!important}.pbar{background:rgba(255,255,255,.1)!important}.stats-bar .bar{background:rgba(255,255,255,.1)!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary{color:#f2f3f4!important}`,
+  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar{background:#7c8285}.pbar{background:rgba(255,255,255,.1)}.stats-bar .bar{background:rgba(255,255,255,.1)}.content::-webkit-scrollbar-thumb{background:#a5aaad}.btn.primary{color:#f2f3f4}`,
 };
 
 // 背景渐变映射表
 const BODY_BG_MAP = {
-  aurora:   `radial-gradient(1200px 700px at 12% -8%, #8b7cf618 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, #5ad1c915 0%, transparent 50%), var(--bg)`,
+  aurora:   `linear-gradient(rgba(5,5,12,.15), rgba(5,5,12,.15)), radial-gradient(1200px 700px at 12% -8%, #8b7cf618 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, #5ad1c915 0%, transparent 50%), var(--bg)`,
   midnight: `radial-gradient(1200px 700px at 25% -5%, #6366f122 0%, transparent 50%), radial-gradient(1000px 600px at 80% 10%, #818cf814 0%, transparent 50%), var(--bg)`,
   sunset:   `radial-gradient(1400px 700px at 20% 0%, #f973161e 0%, transparent 50%), radial-gradient(1100px 600px at 75% 5%, #ef444415 0%, transparent 50%), var(--bg)`,
   ripple:   `radial-gradient(1200px 700px at 30% 10%, rgba(107,140,164,0.15) 0%, transparent 50%), radial-gradient(1000px 600px at 70% 20%, rgba(74,109,140,0.12) 0%, transparent 50%), var(--bg)`,
-  particle: `radial-gradient(1200px 700px at 15% 10%, #f472b61a 0%, transparent 50%), radial-gradient(1000px 600px at 85% 5%, #22d3ee14 0%, transparent 50%), var(--bg)`,
+  particle: `linear-gradient(rgba(3,4,8,.25), rgba(3,4,8,.25)), radial-gradient(1200px 700px at 15% 10%, #f472b61a 0%, transparent 50%), radial-gradient(1000px 600px at 85% 5%, #22d3ee14 0%, transparent 50%), var(--bg)`,
   songxing: `radial-gradient(1200px 700px at 25% 10%, #a78bfa1a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #d4a85412 0%, transparent 50%), var(--bg)`,
   gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
   void:     `radial-gradient(1200px 700px at 30% 15%, #e8d8c01f 0%, transparent 55%), radial-gradient(1000px 600px at 70% 25%, #d4c0a018 0%, transparent 55%), var(--bg)`,
@@ -3226,26 +3189,64 @@ const BODY_BG_MAP = {
 let currentTheme = 'aurora';
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
 
+// hex → "r,g,b"（供 rgba(var(--accent-rgb),x) 使用）
+function hexToRgbStr(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||''));
+  if(!m) return '';
+  const n = parseInt(m[1],16);
+  return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255);
+}
+
+// img-bg 专用背景层：fixed div 承载图片，避开 WebView 对 background-attachment:fixed 的糟糕实现
+let _bgLayer = null, _bgLayerUrl = null;
+function ensureBgLayer(){
+  if(_bgLayer && _bgLayer.isConnected) return _bgLayer;
+  _bgLayer = document.createElement('div');
+  _bgLayer.id = 'bgImgLayer';
+  _bgLayer.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:var(--bg)';
+  document.body.appendChild(_bgLayer);
+  return _bgLayer;
+}
+function renderBgLayer(layer, url){
+  let scrim = '';
+  try{
+    const colors = JSON.parse(localStorage.getItem('customBgColors')||'null');
+    if(colors && colors.isBright) scrim = 'linear-gradient(rgba(8,10,18,.22),rgba(8,10,18,.22)),'; // 亮图加暗纱，保证文字可读
+  }catch(_){}
+  layer.style.backgroundImage = scrim + 'url('+(url||'img-bg-dark.jpg')+')';
+}
+
 // ======== applyTheme：从配置表驱动 ========
 function applyTheme(name){
   currentTheme = name;
   const t = THEMES[name]||THEMES.aurora;
   const cfg = THEME_CONFIG[name]||{};
 
-  // 1. CSS 变量
-  let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';')+';}';
+  // 1. CSS 变量（附 accent RGB 分量，供高亮/选中态的 rgba() 使用）
+  let cssVars = ':root {'+Object.entries(t).map(([k,v])=>'--'+k+':'+v).join(';');
+  const ar = hexToRgbStr(t.accent), a2 = hexToRgbStr(t.accent2);
+  if(ar) cssVars += ';--accent-rgb:'+ar;
+  if(a2) cssVars += ';--accent2-rgb:'+a2;
+  cssVars += ';}';
 
   // 2. 图片背景主题
   if(name==='img-bg'){
     document.body.style.background='';  // 清掉上一主题残留的渐变内联样式
-    document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
+    document.body.style.backgroundImage='';
+    document.body.style.backgroundSize='';
+    document.body.style.backgroundPosition='';
+    document.body.style.backgroundAttachment='';
+    const layer = ensureBgLayer();
     loadBgFromDB(function(bgUrl){
-      document.body.style.backgroundImage = bgUrl ? `url(${bgUrl})` : 'url(img-bg-dark.jpg)';
+      _bgLayerUrl = bgUrl;
+      renderBgLayer(layer, bgUrl);
     });
   } else {
+    if(_bgLayer) _bgLayer.style.backgroundImage='';
     document.body.style.backgroundImage='';
+    document.body.style.backgroundSize='';
+    document.body.style.backgroundPosition='';
+    document.body.style.backgroundAttachment='';
     document.body.style.background = BODY_BG_MAP[name] || `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
     if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
   }
@@ -3256,6 +3257,12 @@ function applyTheme(name){
     try{ applyBgTextMode(); }catch(_){}
   }
   safeLocalSet('learnAppTheme', name);
+
+  // 3.5 状态栏/任务栏颜色跟随主题
+  try{
+    const metaTc = document.querySelector('meta[name="theme-color"]');
+    if(metaTc) metaTc.content = (t.bg && t.bg.charAt(0)==='#') ? t.bg : '#0e1018';
+  }catch(_){}
 
   // 4. 更新主题选择器 UI
   document.querySelectorAll('#themeGrid .theme-card, #themeBgRow .theme-card').forEach(c=>c.classList.toggle('sel',c.dataset.theme===name));
@@ -3352,12 +3359,15 @@ document.querySelectorAll('.theme-dot').forEach(d=>{
       e.stopPropagation();
       const cat=d.dataset.skinCat;
       const skin=+d.dataset.skin;
+      // setter 内部已负责持久化，仅在 chest.js 未加载时兜底手写
       if(cat==='chest'&&window.setChestSkin)window.setChestSkin(skin);
       else if(cat==='item'&&window.setRewardSkin)window.setRewardSkin(skin);
-      let skins = {};
-      try{ skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}')||{}; }catch(_){ skins = {}; }
-      skins[cat]=String(skin);
-      localStorage.setItem('learnAppSkins', JSON.stringify(skins));
+      else{
+        let skins = {};
+        try{ skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}')||{}; }catch(_){ skins = {}; }
+        skins[cat]=String(skin);
+        localStorage.setItem('learnAppSkins', JSON.stringify(skins));
+      }
       hideModal($('#skinPopup'));
     };
   }
@@ -3368,13 +3378,10 @@ document.addEventListener('click',(e)=>{
   hideModal($('#themePopup')); hideModal($('#skinPopup'));
 });
 
-// 初始化皮肤高亮 & 同步到 chest.js
+// 初始化皮肤：恢复已选皮肤（高亮由 chest.js syncSkinUI 统一维护）
 (function(){
-  const skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}');
-  Object.entries(skins).forEach(([cat,skin])=>{
-    const el = document.querySelector(`.theme-dot[data-skin-cat="${cat}"][data-skin="${skin}"]`);
-    if(el) el.style.outline='2px solid var(--accent)';
-  });
+  let skins = {};
+  try{ skins = JSON.parse(localStorage.getItem('learnAppSkins')||'{}')||{}; }catch(_){ skins = {}; }
   setTimeout(()=>{
     if(skins.chest!==undefined&&window.setChestSkin)window.setChestSkin(+skins.chest);
     if(skins.item!==undefined&&window.setRewardSkin)window.setRewardSkin(+skins.item);
@@ -3441,14 +3448,32 @@ function applyBgTextMode(){
     try{
       const colors = JSON.parse(colorsStr);
       _bgColorStyle = document.createElement('style');
-      // 自定义主题只覆盖强调色，保持暗色面板+浅色文字方案
-      _bgColorStyle.textContent = `:root{--accent:${colors.accent};--accent2:${colors.accent2}}`;
+      // 自定义主题只覆盖强调色，保持暗色面板+浅色文字方案；同步 RGB 分量变量
+      const ar = hexToRgbStr(colors.accent), a2 = hexToRgbStr(colors.accent2);
+      _bgColorStyle.textContent = `:root{--accent:${colors.accent};--accent2:${colors.accent2}`+
+        (ar?`;--accent-rgb:${ar}`:'')+(a2?`;--accent2-rgb:${a2}`:'')+'}';
       document.head.appendChild(_bgColorStyle);
     }catch(_){}
   }
+  // 刷新背景层（含 isBright 暗纱）
+  if(_bgLayer) renderBgLayer(_bgLayer, _bgLayerUrl);
 }
 
-// 自定义背景图上传
+// 自定义背景图上传（入库前压缩，避免手机存原图占空间/解码慢）
+function compressBgImage(img, file, cb){
+  try{
+    const MAX = 2048;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    if(scale >= 1 && file.size <= 4 * 1024 * 1024){ cb(file); return; } // 小图直接用
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    const g = c.getContext('2d');
+    g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height); // 透明像素填黑，JPEG 无透明通道
+    g.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(function(b){ cb(b || file); }, 'image/jpeg', 0.85);
+  }catch(_){ cb(file); }
+}
 const uploadBgBtn = document.getElementById('uploadBgBtn');
 if(uploadBgBtn){
   uploadBgBtn.addEventListener('click', function(e){
@@ -3456,30 +3481,33 @@ if(uploadBgBtn){
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.addEventListener('change', async function(){
+    input.addEventListener('change', function(){
       const file = input.files[0];
       if(!file) return;
       if(file.size > 50 * 1024 * 1024){ toast('图片不能超过 50MB'); return; }
-      // 存原始 Blob 到 IndexedDB
-      saveBgToDB(file, function(){
-        const img = new Image();
-        img.onload = function(){
-          URL.revokeObjectURL(img.src);
-          detectImageColors(img, function(colors){
-            localStorage.setItem('customBgColors', JSON.stringify(colors));
-            const name = file.name.replace(/\.[^.]+$/, '');
-            const label = name.length > 6 ? name.slice(0,6)+'…' : name;
-            localStorage.setItem('customBgLabel', label);
-            // 更新主题选择器卡片名称
-            const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
-            if(card) card.textContent = label;
-            const mb = (file.size / 1024 / 1024).toFixed(1);
-            toast('背景图已保存（'+mb+'MB）');
-            if(currentTheme === 'img-bg') applyTheme('img-bg');
+      const objUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = function(){
+        detectImageColors(img, function(colors){
+          localStorage.setItem('customBgColors', JSON.stringify(colors));
+          compressBgImage(img, file, function(blob){
+            URL.revokeObjectURL(objUrl);
+            saveBgToDB(blob, function(){
+              const name = file.name.replace(/\.[^.]+$/, '');
+              const label = name.length > 6 ? name.slice(0,6)+'…' : name;
+              localStorage.setItem('customBgLabel', label);
+              // 更新主题选择器卡片名称
+              const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
+              if(card) card.textContent = label;
+              const mb = (blob.size / 1024 / 1024).toFixed(1);
+              toast('背景图已保存（'+mb+'MB）');
+              if(currentTheme === 'img-bg') applyTheme('img-bg');
+            });
           });
-        };
-        img.src = URL.createObjectURL(file);
-      });
+        });
+      };
+      img.onerror = function(){ URL.revokeObjectURL(objUrl); toast('图片无法读取'); };
+      img.src = objUrl;
     });
     input.click();
   });
@@ -4300,78 +4328,94 @@ function tickUnified(ts){
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
   _uLastTs = ts;
   _uTime += dt;
-  // 主题切换淡入
-  if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + 0.03); }
+  // 主题切换淡入（按真实时间推进，避免高刷屏淡入过快）
+  if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + dt * 1.8); }
+  _uAlphaBase = _uFadeIn;
   // 注意：ctx 已被 setTransform(dpr) 缩放，坐标须用逻辑像素（innerWidth/Height），
   // 而非 canvas.width/height（物理像素），否则特效会挤在屏幕左上角。
   const ctx = _uCtx, W = window.innerWidth, H = window.innerHeight;
   ctx.clearRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = _uFadeIn;
   switch(_uTheme){
-    case 'aurora': drawAurora(ctx,W,H); break;
-    case 'midnight': drawMidnight(ctx,W,H); break;
-    case 'sunset': drawSunset(ctx,W,H); break;
-    case 'ripple': drawRipple(ctx,W,H); break;
-    case 'particle': drawParticle(ctx,W,H); break;
-    case 'gold': drawGold(ctx,W,H); break;
-    case 'void': drawVoid(ctx,W,H); break;
-    case 'shuangren': drawShuangren(ctx,W,H); break;
-    case 'night': drawNight(ctx,W,H); break;
-    case 'songxing': drawSongxing(ctx,W,H); break;
-    case 'zirong': drawZirong(ctx,W,H); break;
+    case 'aurora': drawAurora(ctx,W,H,dt); break;
+    case 'midnight': drawMidnight(ctx,W,H,dt); break;
+    case 'sunset': drawSunset(ctx,W,H,dt); break;
+    case 'ripple': drawRipple(ctx,W,H,dt); break;
+    case 'particle': drawParticle(ctx,W,H,dt); break;
+    case 'gold': drawGold(ctx,W,H,dt); break;
+    case 'void': drawVoid(ctx,W,H,dt); break;
+    case 'shuangren': drawShuangren(ctx,W,H,dt); break;
+    case 'night': drawNight(ctx,W,H,dt); break;
+    case 'songxing': drawSongxing(ctx,W,H,dt); break;
+    case 'zirong': drawZirong(ctx,W,H,dt); break;
     default: break;
   }
   ctx.restore();
 }
+// ── 精灵图缓存：径向光斑预渲染一次，逐帧 drawImage ──
+// 相比每帧 createRadialGradient（桌面端 50~120 个/帧），drawImage 走合成器，省电明显
+const _spriteCache = new Map();
+let _uAlphaBase = 1;
+function glowSprite(key, px, stops){
+  let c = _spriteCache.get(key);
+  if(c) return c;
+  c = document.createElement('canvas');
+  c.width = c.height = px * 2;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(px, px, 0, px, px, px);
+  for(let i = 0; i < stops.length; i += 2) grad.addColorStop(stops[i], stops[i+1]);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, px*2, px*2);
+  _spriteCache.set(key, c);
+  return c;
+}
+function blit(ctx, spr, x, y, r, alpha){
+  const a = alpha * _uAlphaBase;
+  if(a <= 0.004 || r <= 0) return;
+  ctx.globalAlpha = a > 1 ? 1 : a;
+  ctx.drawImage(spr, x - r, y - r, r*2, r*2);
+  ctx.globalAlpha = _uAlphaBase;
+}
 // ======== 新 Canvas 特效 ========
 
 // ── aurora: 紫青极光飘带 ──
-function drawAurora(ctx,W,H){
-  const t = _uTime;
-  // 底部暗色衬底
-  ctx.fillStyle='rgba(5,5,12,0.15)'; ctx.fillRect(0,0,W,H);
-  // 极光飘带层
+function drawAurora(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
+  // 极光飘带层（精灵图缩放贴图，替代每帧 4 个全屏径向渐变）
   for(let band=0;band<4;band++){
     const by=H*(0.1+band*0.22);
     const bx=W*0.5+Math.sin(t*0.3+band)*W*0.3;
-    const grad=ctx.createRadialGradient(bx,by,0,bx,by,H*0.55);
     const hue=band%2===0?260:170;
-    grad.addColorStop(0,`hsla(${hue},70%,55%,0.12)`);
-    grad.addColorStop(0.3,`hsla(${hue},60%,40%,0.06)`);
-    grad.addColorStop(0.6,`hsla(${hue},50%,30%,0.02)`);
-    grad.addColorStop(1,'transparent');
-    ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+    const spr=glowSprite('aurB'+hue,96,[0,`hsla(${hue},70%,55%,0.12)`,0.3,`hsla(${hue},60%,40%,0.06)`,0.6,`hsla(${hue},50%,30%,0.02)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,bx,by,H*0.55,1);
   }
-  // 光点粒子
+  // 光点粒子（光晕精灵 + 实心亮点）
   for(let p of _uParticles){
-    p.x+=p.vx+Math.sin(t*p.speed+p.phase)*0.3;
-    p.y+=p.vy+Math.cos(t*p.speed+p.phase)*0.2;
+    p.x+=(p.vx+Math.sin(t*p.speed+p.phase)*0.3)*f;
+    p.y+=(p.vy+Math.cos(t*p.speed+p.phase)*0.2)*f;
     if(p.x<0)p.x=W; if(p.x>W)p.x=0;
     if(p.y<0)p.y=H; if(p.y>H)p.y=0;
     const pulse=Math.sin(t*1.5+p.phase);
     const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
-    glow.addColorStop(0,`hsla(${p.hue},70%,70%,${alpha})`);
-    glow.addColorStop(0.5,`hsla(${p.hue},60%,50%,${alpha*0.2})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=`hsla(${p.hue},50%,85%,${alpha*1.2})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+    const spr=glowSprite('aurP'+p.hue,48,[0,`hsla(${p.hue},70%,70%,1)`,0.5,`hsla(${p.hue},60%,50%,0.2)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
+    ctx.fillStyle=`hsla(${p.hue},50%,85%,${Math.min(1,alpha*1.2)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
 
 // ── midnight: 流星雨 + 星云旋转 ──
-function drawMidnight(ctx,W,H){
-  const t=_uTime;
+function drawMidnight(ctx,W,H,dt){
+  const t=_uTime, f=dt*60;
   // 两层大光斑，缓慢漂移 + 呼吸
   const nxA=W*0.25+Math.sin(t*0.08)*W*0.15, nyA=H*0.2+Math.cos(t*0.06)*H*0.1;
   const nebA=ctx.createRadialGradient(nxA,nyA,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
   const nebAlphaA=0.10+0.06*Math.sin(t*0.15);
-  nebA.addColorStop(0,`rgba(99,102,241,${nebAlphaA})`); nebA.addColorStop(0.4,`rgba(80,84,210,${nebAlphaA*0.4})`); nebA.addColorStop(0.75,`rgba(50,54,160,${nebAlphaA*0.08})`); nebA.addColorStop(1,'transparent');
+  nebA.addColorStop(0,`rgba(99,102,241,${nebAlphaA})`); nebA.addColorStop(0.4,`rgba(80,84,210,${nebAlphaA*0.4})`); nebA.addColorStop(0.75,`rgba(50,54,160,${nebAlphaA*0.08})`); nebA.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=nebA; ctx.fillRect(0,0,W,H);
   const nxB=W*0.75+Math.cos(t*0.07)*W*0.12, nyB=H*0.7+Math.sin(t*0.09)*H*0.08;
   const nebB=ctx.createRadialGradient(nxB,nyB,0,W*0.5,H*0.5,Math.max(W,H)*0.75);
   const nebAlphaB=0.08+0.04*Math.cos(t*0.12+1.5);
-  nebB.addColorStop(0,`rgba(129,140,248,${nebAlphaB})`); nebB.addColorStop(0.4,`rgba(100,115,220,${nebAlphaB*0.35})`); nebB.addColorStop(0.75,`rgba(60,70,170,${nebAlphaB*0.06})`); nebB.addColorStop(1,'transparent');
+  nebB.addColorStop(0,`rgba(129,140,248,${nebAlphaB})`); nebB.addColorStop(0.4,`rgba(100,115,220,${nebAlphaB*0.35})`); nebB.addColorStop(0.75,`rgba(60,70,170,${nebAlphaB*0.06})`); nebB.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=nebB; ctx.fillRect(0,0,W,H);
   // 背景星点：固定位置，呼吸闪烁
   for(let p of _uParticles){
@@ -4384,8 +4428,8 @@ function drawMidnight(ctx,W,H){
   // 流星：右上→左下斜射，拖尾渐变
   for(let p of _uParticles){
     if(p.type!=='meteor') continue;
-    p.x+=p.vx; p.y+=p.vy;
-    p.lifeLeft-=0.016;
+    p.x+=p.vx*f; p.y+=p.vy*f;
+    p.lifeLeft-=dt;
     if(p.lifeLeft<=0||p.y>H+50||p.x<-50){
       p.x=Math.random()*W*0.8+W*0.1; p.y=-10-Math.random()*60;
       p.vx=-2-Math.random()*5; p.vy=3+Math.random()*6;
@@ -4394,7 +4438,7 @@ function drawMidnight(ctx,W,H){
     const tailGrad=ctx.createLinearGradient(p.x,p.y,p.x-p.vx*5,p.y-p.vy*5);
     tailGrad.addColorStop(0,`hsla(${p.hue},80%,75%,${p.alpha})`);
     tailGrad.addColorStop(0.4,`hsla(${p.hue},70%,55%,${p.alpha*0.5})`);
-    tailGrad.addColorStop(1,'transparent');
+    tailGrad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.strokeStyle=tailGrad; ctx.lineWidth=p.size;
     ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-p.vx*5,p.y-p.vy*5); ctx.stroke();
     ctx.fillStyle=`hsla(${p.hue},60%,95%,${p.alpha})`;
@@ -4403,197 +4447,195 @@ function drawMidnight(ctx,W,H){
 }
 
 // ── sunset: 暖橙光斑浮尘 ──
-function drawSunset(ctx,W,H){
-  const t = _uTime;
-  // 暖色底光
+function drawSunset(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
+  // 暖色底光（单个低频渐变，保留原样）
   const warmGrad=ctx.createRadialGradient(W*0.5,H*0.7,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  warmGrad.addColorStop(0,'rgba(255,100,40,0.06)'); warmGrad.addColorStop(0.5,'rgba(200,60,20,0.03)'); warmGrad.addColorStop(1,'transparent');
+  warmGrad.addColorStop(0,'rgba(255,100,40,0.06)'); warmGrad.addColorStop(0.5,'rgba(200,60,20,0.03)'); warmGrad.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=warmGrad; ctx.fillRect(0,0,W,H);
-  // 浮尘粒子
+  // 浮尘粒子（光晕精灵按 10° 色相分桶）
   for(let p of _uParticles){
-    p.x+=p.vx+Math.sin(t*0.5+p.phase)*0.2;
-    p.y+=p.vy;
+    p.x+=(p.vx+Math.sin(t*0.5+p.phase)*0.2)*f;
+    p.y+=p.vy*f;
     if(p.y<-20){p.y=H+20; p.x=Math.random()*W;}
     if(p.x<-20)p.x=W+20; if(p.x>W+20)p.x=-20;
     const pulse=Math.sin(t*p.speed+p.phase);
     const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
-    glow.addColorStop(0,`hsla(${p.hue},80%,65%,${alpha})`);
-    glow.addColorStop(0.4,`hsla(${p.hue},70%,45%,${alpha*0.3})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
+    const hb=Math.round(p.hue/10)*10;
+    const spr=glowSprite('sunP'+hb,48,[0,`hsla(${hb},80%,65%,1)`,0.4,`hsla(${hb},70%,45%,0.3)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
     ctx.fillStyle=`hsla(${p.hue},60%,80%,${alpha*0.8})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.4,0,Math.PI*2); ctx.fill();
   }
 }
 
 // ── ripple/雨隙: 柔和雨丝 + 朦胧水雾 ──
-function drawRipple(ctx,W,H){
-  const t=_uTime;
+let _rainStrip = null;
+function rainStripSprite(){
+  if(_rainStrip) return _rainStrip;
+  const c = document.createElement('canvas');
+  c.width = 2; c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 64);
+  grad.addColorStop(0, 'rgba(200,215,240,0)');
+  grad.addColorStop(0.7, 'rgba(180,200,225,0.4)');
+  grad.addColorStop(1, 'rgba(200,215,240,1)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 2, 64);
+  _rainStrip = c;
+  return c;
+}
+function drawRipple(ctx,W,H,dt){
+  const t=_uTime, f=dt*60;
   // 水雾底色：大范围极淡渐变
   const fog=ctx.createRadialGradient(W*0.5,H*0.5,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
   fog.addColorStop(0,'rgba(195,210,225,0.04)');
-  fog.addColorStop(1,'transparent');
+  fog.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=fog; ctx.fillRect(0,0,W,H);
-  // 雨丝：细长渐变，柔和不刺眼
+  // 雨丝：共享一条预渲染渐变条（透明→淡→亮），逐帧缩放贴图，替代每滴一个线性渐变
+  const strip=rainStripSprite();
   for(let p of _uParticles){
-    p.y+=p.vy;
+    p.y+=p.vy*f;
     if(p.y>H+20){ p.y=-20; p.x=Math.random()*W; }
     const top=p.y-p.len;
-    const grad=ctx.createLinearGradient(p.x,top,p.x,p.y);
-    grad.addColorStop(0,'transparent');
-    grad.addColorStop(0.7,`rgba(180,200,225,${p.alpha*0.4})`);
-    grad.addColorStop(1,`rgba(200,215,240,${p.alpha})`);
-    ctx.strokeStyle=grad;
-    ctx.lineWidth=0.8;
-    ctx.beginPath(); ctx.moveTo(p.x,top); ctx.lineTo(p.x,p.y); ctx.stroke();
+    const a=p.alpha*_uAlphaBase;
+    if(a>0.004){
+      ctx.globalAlpha=a;
+      ctx.drawImage(strip,p.x-0.4,top,0.8,p.len);
+      ctx.globalAlpha=_uAlphaBase;
+    }
   }
 }
 
 // ── particle: 七彩荧光漂浮 ──
-function drawParticle(ctx,W,H){
-  const t = _uTime;
-  ctx.fillStyle='rgba(3,4,8,0.25)'; ctx.fillRect(0,0,W,H);
+function drawParticle(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
   for(let p of _uParticles){
-    p.x+=p.vx+Math.sin(t*0.8+p.phase)*0.3;
-    p.y+=p.vy+Math.cos(t*0.6+p.phase)*0.3;
+    p.x+=(p.vx+Math.sin(t*0.8+p.phase)*0.3)*f;
+    p.y+=(p.vy+Math.cos(t*0.6+p.phase)*0.3)*f;
     if(p.x<0)p.x=W; if(p.x>W)p.x=0;
     if(p.y<0)p.y=H; if(p.y>H)p.y=0;
     const pulse=Math.sin(t*p.speed+p.phase);
     const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3);
-    glow.addColorStop(0,`hsla(${p.hue},80%,65%,${alpha})`);
-    glow.addColorStop(0.3,`hsla(${p.hue},70%,50%,${alpha*0.4})`);
-    glow.addColorStop(0.7,`hsla(${p.hue},60%,35%,${alpha*0.1})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=`hsla(${p.hue},40%,90%,${alpha*1.3})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+    const hb=(Math.round(p.hue/30)*30)%360;
+    const spr=glowSprite('parP'+hb,48,[0,`hsla(${hb},80%,65%,1)`,0.3,`hsla(${hb},70%,50%,0.4)`,0.7,`hsla(${hb},60%,35%,0.1)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*3,alpha);
+    ctx.fillStyle=`hsla(${p.hue},40%,90%,${Math.min(1,alpha*1.3)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
 
-function drawGold(ctx,W,H){
-  const t = _uTime;
-  // 流光河层
+function drawGold(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
+  // 流光河层（精灵贴图替代每帧 4 个全屏径向渐变）
   const rivers = [
     {y:0.15, color:[255,200,120,0.12], speed:0.08, width:0.4},
     {y:0.35, color:[255,160,60,0.1], speed:-0.06, width:0.35},
     {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
     {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
   ];
-  for(let r of rivers){
+  for(let i=0;i<rivers.length;i++){
+    const r=rivers[i];
     const offset = (((t*r.speed) % 2 + 2) % 2 - 1) * W;
-    const grad = ctx.createRadialGradient(W*0.5+offset, r.y*H, 0, W*0.5+offset, r.y*H, H*r.width);
-    grad.addColorStop(0, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]})`);
-    grad.addColorStop(0.5, `rgba(${r.color[0]},${r.color[1]},${r.color[2]},${r.color[3]*0.3})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    const c=r.color;
+    const spr=glowSprite('goldR'+i,96,[0,`rgba(${c[0]},${c[1]},${c[2]},${c[3]})`,0.5,`rgba(${c[0]},${c[1]},${c[2]},${c[3]*0.3})`,1,'rgba(0,0,0,0)']);
+    blit(ctx,spr,W*0.5+offset,r.y*H,H*r.width,1);
   }
-  // 金色尘埃粒子层
+  // 金色尘埃粒子层（两种光晕精灵：普通/闪点）
   for(let p of _uParticles){
-    p.y+=p.vy; p.x+=p.vx;
+    p.y+=p.vy*f; p.x+=p.vx*f;
     if(p.y<-10){p.y=H+10; p.x=Math.random()*W;}
     if(p.x<-10)p.x=W+10; if(p.x>W+10)p.x=-10;
     const pulse=Math.sin(t*p.speed+p.phase);
     const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
     const c=p.sparkle?'255,240,180':'220,180,100';
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
-    glow.addColorStop(0,`rgba(${c},${alpha})`);
-    glow.addColorStop(0.5,`rgba(${c},${alpha*0.2})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=`rgba(${c},${alpha*1.1})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+    const spr=glowSprite('goldD'+(p.sparkle?1:0),48,[0,`rgba(${c},1)`,0.5,`rgba(${c},0.2)`,1,'rgba(0,0,0,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
+    ctx.fillStyle=`rgba(${c},${Math.min(1,alpha*1.1)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
 // ── void/晨光: 柔光渐层 + 暖尘漂浮 ──
-function drawVoid(ctx,W,H){
-  const t=_uTime;
+function drawVoid(ctx,W,H,dt){
+  const t=_uTime, f=dt*60;
   // 柔光底色：暖米色大范围渐变
   const bg=ctx.createRadialGradient(W*0.5,H*0.25,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
   bg.addColorStop(0,'rgba(255,248,235,0.10)');
   bg.addColorStop(0.5,'rgba(250,238,218,0.04)');
-  bg.addColorStop(1,'transparent');
+  bg.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  // 暖尘：柔和光斑缓慢漂浮上升，带光晕
+  // 暖尘：柔和光斑缓慢漂浮上升，带光晕（按 10° 色相分桶精灵）
   for(let p of _uParticles){
-    p.x+=p.vx; p.y+=p.vy;
+    p.x+=p.vx*f; p.y+=p.vy*f;
     if(p.y<-20){ p.y=H+20; p.x=Math.random()*W; }
     if(p.x<0)p.x=W; if(p.x>W)p.x=0;
     const twinkle=0.3+0.7*Math.abs(Math.sin(t*p.speed+p.phase));
     const alpha=p.alpha*twinkle;
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*2.5);
-    glow.addColorStop(0,`hsla(${p.hue},60%,85%,${alpha})`);
-    glow.addColorStop(0.4,`hsla(${p.hue},50%,70%,${alpha*0.3})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*2.5,0,Math.PI*2); ctx.fill();
+    const hb=Math.round(p.hue/10)*10;
+    const spr=glowSprite('voidP'+hb,64,[0,`hsla(${hb},60%,85%,1)`,0.4,`hsla(${hb},50%,70%,0.3)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
   }
 }
-function drawShuangren(ctx,W,H){
+function drawShuangren(ctx,W,H,dt){
+  const f=dt*60;
   const bgGrad=ctx.createRadialGradient(W*0.5,H*0.35,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
   bgGrad.addColorStop(0,'rgba(60,120,180,0.08)');bgGrad.addColorStop(0.5,'rgba(30,60,100,0.04)');bgGrad.addColorStop(1,'rgba(2,8,16,0)');
   ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
-  for(let f of _uParticles){
-    f.y+=f.vy;f.x+=f.vx+Math.sin(_uTime*2+f.x*0.01)*0.1;f.rot+=f.rotV;
-    if(f.y>H+10){f.y=-10;f.x=Math.random()*W;}
-    ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);
-    ctx.fillStyle=`rgba(160,220,255,${f.alpha})`;ctx.beginPath();
-    for(let i=0;i<6;i++){const ra=i*Math.PI/3;if(i===0)ctx.moveTo(Math.cos(ra)*f.size,Math.sin(ra)*f.size);else ctx.lineTo(Math.cos(ra)*f.size,Math.sin(ra)*f.size);}
+  for(let fl of _uParticles){
+    fl.y+=fl.vy*f;fl.x+=(fl.vx+Math.sin(_uTime*2+fl.x*0.01)*0.1)*f;fl.rot+=fl.rotV*f;
+    if(fl.y>H+10){fl.y=-10;fl.x=Math.random()*W;}
+    ctx.save();ctx.translate(fl.x,fl.y);ctx.rotate(fl.rot);
+    ctx.fillStyle=`rgba(160,220,255,${fl.alpha})`;ctx.beginPath();
+    for(let i=0;i<6;i++){const ra=i*Math.PI/3;if(i===0)ctx.moveTo(Math.cos(ra)*fl.size,Math.sin(ra)*fl.size);else ctx.lineTo(Math.cos(ra)*fl.size,Math.sin(ra)*fl.size);}
     ctx.closePath();ctx.fill();
-    ctx.fillStyle=`rgba(200,240,255,${f.alpha*0.3})`;ctx.beginPath();ctx.arc(0,0,f.size*1.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=`rgba(200,240,255,${fl.alpha*0.3})`;ctx.beginPath();ctx.arc(0,0,fl.size*1.5,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
 }
-function drawSongxing(ctx,W,H){
-  const t = _uTime;
+function drawSongxing(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
   for(let p of _uParticles){
     // 缓慢漂移，到底部后循环回顶部
-    p.y+=p.vy;if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
+    p.y+=p.vy*f;if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
     const twinkle=Math.sin(t*2+p.seed*30);
     const alpha=0.06+(twinkle+1)*0.18;
     const isGold=p.seed%5===0;
     const c=isGold?'212,168,132':'200,195,240';
-    const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3);
-    glow.addColorStop(0,`rgba(${c},${alpha})`);glow.addColorStop(0.5,`rgba(${c},${alpha*0.25})`);glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.size*3,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=`rgba(${c},${alpha*1.2})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
+    const spr=glowSprite('sxP'+(isGold?1:0),48,[0,`rgba(${c},1)`,0.5,`rgba(${c},0.25)`,1,'rgba(0,0,0,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*3,alpha);
+    ctx.fillStyle=`rgba(${c},${Math.min(1,alpha*1.2)})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
   }
 }
-function drawNight(ctx,W,H){
-  const t = _uTime;
+function drawNight(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
   // 深夜底色 + 微弱月光渐变
   const moon=ctx.createRadialGradient(W*0.7,H*0.15,0,W*0.7,H*0.2,H*0.4);
-  moon.addColorStop(0,'rgba(40,50,80,0.2)');moon.addColorStop(0.5,'rgba(20,25,40,0.08)');moon.addColorStop(1,'transparent');
+  moon.addColorStop(0,'rgba(40,50,80,0.2)');moon.addColorStop(0.5,'rgba(20,25,40,0.08)');moon.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=moon;ctx.fillRect(0,0,W,H);
   // 远处星光（固定，很淡）
   ctx.fillStyle='rgba(255,255,240,0.015)';
   for(let i=0;i<50;i++){const sx=(i*137)%W,sy=(i*89)%H;ctx.beginPath();ctx.arc(sx,sy,0.5,0,Math.PI*2);ctx.fill();}
-  // 萤火虫 - 每只独立飞行
-  for(let f of _uParticles){
+  // 萤火虫 - 每只独立飞行（光晕用共享精灵，避免逐帧建渐变）
+  const spr=glowSprite('nightF',64,[0,'rgba(200,240,100,0.8)',0.3,'rgba(160,220,80,0.35)',0.6,'rgba(100,180,60,0.08)',1,'rgba(0,0,0,0)']);
+  for(let fl of _uParticles){
     // 使用 sin/cos 做平滑漂移
-    f.x+=Math.sin(t*0.7+f.seed*100)*0.4+Math.cos(t*0.5+f.seed*50)*0.3;
-    f.y+=Math.cos(t*0.6+f.seed*80)*0.35+Math.sin(t*0.4+f.seed*60)*0.3;
+    fl.x+=(Math.sin(t*0.7+fl.seed*100)*0.4+Math.cos(t*0.5+fl.seed*50)*0.3)*f;
+    fl.y+=(Math.cos(t*0.6+fl.seed*80)*0.35+Math.sin(t*0.4+fl.seed*60)*0.3)*f;
     // 循环边界
-    if(f.x<0)f.x=W;if(f.x>W)f.x=0;if(f.y<0)f.y=H;if(f.y>H)f.y=0;
+    if(fl.x<0)fl.x=W;if(fl.x>W)fl.x=0;if(fl.y<0)fl.y=H;if(fl.y>H)fl.y=0;
     // 呼吸闪烁
-    const pulse=Math.sin(t*2.5+f.seed*50);
+    const pulse=Math.sin(t*2.5+fl.seed*50);
     const alpha=0.15+(pulse+1)*0.35;
-    // 萤火虫光晕 - 黄绿
-    const glow=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.size*8);
-    glow.addColorStop(0,`rgba(200,240,100,${alpha*0.8})`);
-    glow.addColorStop(0.3,`rgba(160,220,80,${alpha*0.35})`);
-    glow.addColorStop(0.6,`rgba(100,180,60,${alpha*0.08})`);
-    glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(f.x,f.y,f.size*8,0,Math.PI*2);ctx.fill();
+    blit(ctx,spr,fl.x,fl.y,fl.size*8,alpha);
     // 萤火虫身体亮点
     ctx.fillStyle=`rgba(240,255,180,${alpha*0.9})`;
-    ctx.beginPath();ctx.arc(f.x,f.y,f.size*1.2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(fl.x,fl.y,fl.size*1.2,0,Math.PI*2);ctx.fill();
   }
 }
-function drawZirong(ctx,W,H){
+function drawZirong(ctx,W,H,dt){
   const t=_uTime;
+  // 墨点共享精灵（灰阶径向，边缘完全融化）
+  const spr=glowSprite('zrInk',96,[0,'rgba(20,18,15,1)',0.3,'rgba(45,40,35,0.5)',0.6,'rgba(100,95,88,0.12)',1,'rgba(0,0,0,0)']);
   ctx.save();
   for(let p of _uParticles){
-    p.age+=0.016;
+    p.age+=dt;
     if(p.age>p.life){ p.age=0; p.x=Math.random()*W; p.y=Math.random()*H; p.size=15+Math.random()*100; p.alpha=0.03+Math.random()*0.07; p.life=4+Math.random()*10; }
     const progress=p.age/p.life;
     let fade=1;
@@ -4601,22 +4643,14 @@ function drawZirong(ctx,W,H){
     else if(progress>0.8) fade=1-(progress-0.8)/0.2;
     const breath=0.4+0.6*Math.sin(t*0.25+p.phase);
     const alpha=p.alpha*fade*breath;
-    const r=p.size;
-    // 纯黑灰墨色，用RadialGradient让边缘完全融化
-    const ink=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
-    ink.addColorStop(0,`rgba(20,18,15,${alpha})`);
-    ink.addColorStop(0.3,`rgba(45,40,35,${alpha*0.5})`);
-    ink.addColorStop(0.6,`rgba(100,95,88,${alpha*0.12})`);
-    ink.addColorStop(1,'transparent');
-    ctx.fillStyle=ink;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
+    blit(ctx,spr,p.x,p.y,p.size,alpha);
   }
   ctx.restore();
 }
 
 </script>
 <script>
-const SW_VERSION = '15';
+const SW_VERSION = '16';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
