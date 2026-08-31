@@ -273,7 +273,7 @@
   #memAIBlock{margin-top:16px}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
-  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:6;background:var(--card);padding:8px 0 6px}
   .mem-ai-tip{color:var(--muted);font-size:12px}
   .mem-ai-wrap .ai-answer{margin-top:12px;max-height:none;overflow-y:visible}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
@@ -1845,7 +1845,8 @@ function renderMemory(c){
           <div class="mem-ai-wrap">
             <div class="mem-ai-head">
               <button class="btn sm" id="memAICodeBtn">💻 AI 代码分析</button>
-              <span class="mem-ai-tip">先校验答案正误，再判断该题需不需要代码，最后讲解</span>
+              <button class="btn sm ${aiCodeAnswer[q.id] && aiCodeAnswer[q.id]!=='loading' && !aiCodeStreaming[q.id] ? '' : 'hidden'}" id="memAIToggleBtn">${aiCodeHidden[q.id]?'👁 展开':'🙈 隐藏'}</button>
+              <span class="mem-ai-tip">校验正误 · 判断是否要代码 · 讲解并提炼记忆锚点</span>
             </div>
             <div id="memAICodeOut" data-qid="${esc(q.id)}">${renderAICodeBlock(q.id)}</div>
           </div>
@@ -1910,6 +1911,7 @@ function renderMemory(c){
   const undoBtn = $('#flashUndo'); if(undoBtn) undoBtn.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
   const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
   const aiCodeBtn = $('#memAICodeBtn'); if(aiCodeBtn) aiCodeBtn.onclick = (e) => { e.stopPropagation(); askAICode(q.id); };
+  const aiToggleBtn = $('#memAIToggleBtn'); if(aiToggleBtn) aiToggleBtn.onclick = (e) => { e.stopPropagation(); toggleAICodeHidden(q.id); };
 }
 // 统计条中的待复习数
 let analyticsState = { term:'', sortKey:'doc', sortDir:1 };
@@ -2961,7 +2963,7 @@ function formatAI(text){
 }
 
 /* ---------- 记忆模式：AI 生成代码分析 ---------- */
-// 先校验答案正误，再判断题目是否需要代码，最后结合讲解（不盲信参考答案）
+// 先校验答案正误，再判断题目是否需要代码，然后讲解；最后提炼一句「记忆锚点」（不盲信参考答案）
 async function askAICode(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
@@ -2974,37 +2976,39 @@ async function askAICode(qid){
   aiCodeAnswer[qid] = 'loading'; _limitCache(aiCodeAnswer, 60);
   aiCodeStreaming[qid] = true; // 标记进入流式生成
   updateAICodeOutput(qid);
-  const systemPrompt = '你是一位资深程序员与技术讲师，擅长先独立校验答案正误、再判断题目是否需要代码，最后用「示例代码 + 逐行注释」或「纯文字」把知识点讲透，让初学者真正看懂。';
-  const prompt = `请根据下面的面试题，帮助一个刚接触该知识点的学习者真正看懂。注意：题目自带的「参考答案」可能不准确甚至有错误，你绝不能直接照抄它来讲解。
+  const systemPrompt = '你是一位资深程序员与技术讲师，擅长先独立校验答案正误、再判断题目是否需要代码，最后用「示例代码 + 逐行注释」或「纯文字」把知识点讲透。你的输出精炼、直击重点，帮助初学者真正看懂并记住。';
+  const prompt = `请根据下面的面试题，帮助一个刚接触该知识点的学习者真正看懂并记住。注意：题目自带的「参考答案」可能不准确甚至有错误，你绝不能直接照抄它来讲解。
 
 【题目】${q.title}
 【参考答案（供校验，可能不准确）】${q.answer||'暂无参考答案'}
 
-请严格按以下步骤和结构输出（Markdown 格式，标题用 ##，重点用 **加粗**，代码用 \`\`\`语言 ... \`\`\` 包裹，不要输出 HTML）：
+请严格按以下步骤和结构输出（Markdown 格式，标题用 ##，重点用 **加粗**，代码用 \`\`\`语言 ... \`\`\` 包裹，不要输出 HTML；不要复述题目和参考答案原文；全文精炼，除代码外控制在 600 字以内）：
 
 ## 答案校验
 - 以你自己的知识独立判断本题的正确结论，不要盲信「参考答案」。
 - 若「参考答案」正确：写「✅ 参考答案正确，无需纠正」。
-- 若「参考答案」有错误、遗漏或不准确：用 ⚠️ 明确指出错误点，并给出正确的表述。
+- 若有错误、遗漏或不准确：用 ⚠️ 明确指出错误点，并给出正确表述。
 
 ## 是否需要代码
-- 判断本题到底需不需要用代码来辅助理解：
-  - 若本题是纯概念 / 理论 / 对比类题目（例如"什么是XX""XX和YY的区别""XX的原理"），文字就能讲清楚，请写「本题为概念题，无需代码演示」，下方「示例代码」小节直接省略，改用文字讲透。
-  - 若本题涉及代码实现、运行机制、内存 / 输出结果、API 用法等，代码能明显帮助理解，请写「建议结合代码理解」，并给出示例代码。
+- 若本题是纯概念 / 理论 / 对比类题目，文字就能讲清楚：写「本题为概念题，无需代码演示」，下方「示例代码」小节直接省略。
+- 若涉及代码实现、运行机制、内存 / 输出结果、API 用法等，代码能明显帮助理解：写「建议结合代码理解」。
 
 ## 核心概念速览
-用 2-4 句话说明这个知识点在解决什么问题、为什么重要（基于你校验后的正确结论，而不是参考答案）。
+用 2-4 句话说明这个知识点在解决什么问题、为什么重要（基于你校验后的正确结论）。
 
 ## 示例代码
-仅当上一节判定"需要代码"时才输出本节；否则直接跳过本节，不写任何代码。
+仅当上一节判定"需要代码"时才输出本节，否则直接跳过，不写任何代码。
 给出完整、精简、聚焦核心的示例代码，优先使用 Java 编写（学习者主语言为 Java），并在代码块标注语言；若题目本质属于特定语言生态（如前端 JS/Promise），则使用对应语言。代码内用行内注释解释关键步骤。
 
 ## 逐段讲解
 - 若输出了示例代码：按代码段落解释每段的作用与背后原理。
-- 若判定无需代码：改用文字把核心概念、关键点、推导过程讲清楚，让初学者能跟着思路走。
+- 若判定无需代码：用文字把核心概念、关键点、推导过程讲清楚。
 
 ## 易错点
-若有常见误区或易错点，单独列出 1-2 条（用 ⚠️ 标注）；没有则写"无"。`;
+若有常见误区或易错点，列出 1-2 条（用 ⚠️ 标注）；没有则写"无"。
+
+## 记忆锚点
+给出一句面试时可以直接背诵的总结（50 字以内），覆盖本题核心结论，方便快速回忆。`;
   let _t = null;
   const r = await callAI([{role:'system',content:systemPrompt},{role:'user',content:prompt}], (full)=>{
     aiCodeAnswer[qid] = full;
@@ -3016,39 +3020,35 @@ async function askAICode(qid){
   if(!r && aiCodeAnswer[qid]==='loading') aiCodeAnswer[qid] = null;
   updateAICodeOutput(qid);
 }
-// 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）
+// 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）；
+// 隐藏/展开按钮固定在顶栏（#memAIToggleBtn），不再随内容滚动
 function renderAICodeBlock(qid){
   const v = aiCodeAnswer[qid];
   if(!v) return '';
   if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在生成代码分析…</div></div>';
-  const head = '<div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">💻 AI 代码分析</div>';
   // 流式生成期间：Markdown 标记（##、**、```）是逐字出现的，实时解析会导致字体/样式反复跳变，
   // 因此期间用纯文本稳定展示（esc 后由 .ai-answer 的 pre-wrap 保留换行），生成完整后再一次性渲染。
-  if(aiCodeStreaming[qid]) return '<div class="ai-answer">'+head+'<div class="ai-stream">'+esc(v)+'</div></div>';
-  // 已隐藏：只显示标题 + 展开按钮
-  if(aiCodeHidden[qid]){
-    return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
-      + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">👁 展开</button></div>'
-      + '<div style="color:var(--muted);font-size:12px">内容已隐藏</div></div>';
-  }
-  // 正常显示：标题行 + 隐藏按钮 + 内容
-  return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
-    + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">🙈 隐藏</button></div>'
-    + md2html(v) + '</div>';
+  if(aiCodeStreaming[qid]) return '<div class="ai-answer"><div class="ai-stream">'+esc(v)+'</div></div>';
+  // 已隐藏：不渲染内容，点顶栏「展开」恢复
+  if(aiCodeHidden[qid]) return '';
+  return '<div class="ai-answer">'+md2html(v)+'</div>';
 }
-// 折叠/展开记忆模式的 AI 代码分析生成内容
-function toggleAICodeHidden(el){
-  const qid = el.getAttribute('data-hide-qid');
+// 折叠/展开记忆模式的 AI 代码分析内容（按钮在顶栏，紧邻「AI 代码分析」）
+function toggleAICodeHidden(qid){
   if(!qid) return;
   aiCodeHidden[qid] = !aiCodeHidden[qid];
   updateAICodeOutput(qid);
 }
-// 流式更新代码分析输出，只更新 DOM 不触发页面动画
+// 流式更新代码分析输出，只更新 DOM 不触发页面动画；同时同步顶栏隐藏/展开按钮状态
 function updateAICodeOutput(qid){
   const el = $('#memAICodeOut'); if(!el) return;
   if(el.getAttribute('data-qid') !== qid) return; // 已切换到其他题，忽略过期更新
+  const v = aiCodeAnswer[qid];
+  const btn = $('#memAIToggleBtn');
+  if(btn){
+    if(!v || v==='loading' || aiCodeStreaming[qid]) btn.classList.add('hidden');   // 生成中无内容可隐藏
+    else { btn.classList.remove('hidden'); btn.textContent = aiCodeHidden[qid] ? '👁 展开' : '🙈 隐藏'; }
+  }
   // 流式生成期间：只更新 .ai-stream 文本节点，不重建 DOM，
   // 避免每 50ms 重建导致滚动位置被强制复位、用户无法滚动页面。
   if(aiCodeStreaming[qid]){
