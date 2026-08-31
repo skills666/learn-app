@@ -237,9 +237,6 @@
   .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
   .set-status{font-size:12px;color:var(--muted);margin-top:2px;width:100%;text-align:center}
 
-  .seg{display:flex;gap:0;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:6px}
-  .seg button{flex:1;background:var(--panel);border:none;color:var(--muted);padding:9px;cursor:pointer;font-size:13px;font-weight:600}
-  .seg button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0e16}
   .hidden{display:none!important}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
          background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:12px;
@@ -278,7 +275,7 @@
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
   .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .mem-ai-tip{color:var(--muted);font-size:12px}
-  .mem-ai-wrap .ai-answer{margin-top:12px;max-height:320px;overflow-y:auto}
+  .mem-ai-wrap .ai-answer{margin-top:12px;max-height:none;overflow-y:visible}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
@@ -308,10 +305,6 @@
   .q-summary .qt{font-weight:700;margin-bottom:8px}
   .q-summary .qa{font-size:13px;color:var(--muted);line-height:1.6}
   .q-summary .qa b{color:var(--text)}
-  .ai-config{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-top:14px}
-  .ai-config .row{display:flex;gap:8px;align-items:center;margin-bottom:7px;flex-wrap:wrap}
-  .ai-config .row:last-child{margin-bottom:0}
-  .ai-config select,.ai-config input{flex:1;min-width:100px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-size:13px}
   .ai-review{font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
   .ai-review strong{color:var(--accent)}.ai-review code{background:var(--card);padding:2px 5px;border-radius:4px;font-size:12.5px}
   .ai-loading{color:var(--muted);font-size:13px;text-align:center;padding:20px}
@@ -360,10 +353,6 @@
   .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
   .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
   .grill-dur-btn.sel{color:var(--accent);background:rgba(90,209,201,.1);border-color:rgba(90,209,201,.3)}
-  .ge-switch{position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;background:var(--line2);border-radius:13px;transition:.2s}
-  .ge-switch.on{background:var(--accent)}
-  .ge-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
-  .ge-switch.on::after{left:23px}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .grill-resume:focus{border-color:var(--accent2)}
@@ -633,12 +622,6 @@ const _safe = {
     }
     // 无版本标记 → 旧版明文，自动迁移
     return s;
-  },
-  // 存储时总是编码，读取时自动识别
-  wrapStore: (key, val) => {
-    if(key==='giteeToken'||key==='giteeGistId') {
-      localStorage.setItem(key, key==='giteeToken' ? _safe.encode(val) : val);
-    }
   }
 };
 
@@ -668,6 +651,7 @@ const Store = (() => {
     });
   }
   let mem = {};   // 存储不可用（如 file:// 受限）时的内存兜底，保证应用不崩溃
+  let _capWarned = false;   // 容量告警只提示一次，避免每次保存都刷屏
   function loadLS(){
     try{ const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : mem; }
     catch(_){ return mem; }
@@ -676,7 +660,7 @@ const Store = (() => {
     try{
       const str = JSON.stringify(o);
       // 检查序列化后是否接近 localStorage 5MB 上限
-      if(str.length > 4500000){ toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
+      if(str.length > 4500000 && !_capWarned){ _capWarned = true; toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
       localStorage.setItem(LS_KEY, str);
       mem = o;
     }
@@ -715,17 +699,12 @@ const Store = (() => {
     getOrder: () => get('order').then(v => v || null),
     saveOrder: v => set('order', v),
     getOrderCustom: () => get('orderCustom').then(v => !!v),
-    saveOrderCustom: v => set('orderCustom', !!v),
     getClears: () => get('clears').then(v => v || {}),
     saveClears: v => set('clears', v),
     getApiConfig: () => get('apiConfig').then(v => v || null),
     saveApiConfig: v => set('apiConfig', v),
     getSeedOff: () => get('seedOff').then(v => !!v),
     saveSeedOff: v => set('seedOff', !!v),
-    getAutoSync: () => get('autoSync').then(v => !!v),
-    saveAutoSync: v => set('autoSync', !!v),
-    getSyncInterval: () => get('syncInterval').then(v => v || 5),
-    saveSyncInterval: v => set('syncInterval', v),
     getBg: () => {
       return new Promise(resolve => {
         if(!db){ resolve(null); return; }
@@ -1020,7 +999,7 @@ function setupErrorHandler(){
 /* =========================================================
    渲染：侧边栏
    ========================================================= */
-// 一次性汇总统计，避免 renderStatsBar 多次全量遍历（totalQuestions/totalSeen/totalMastered/getStreakDays/getTodayReviewed 各自 O(n)）
+// 一次性汇总统计（含连续打卡/今日已刷），避免多次全量遍历；记忆/进度页也复用此结果
 function computeAllStats(){
   const now = Date.now();
   const today = new Date(now); today.setHours(0,0,0,0);
@@ -1148,6 +1127,7 @@ function drawChart(days, mode){
   try { var ctx = canvas.getContext('2d'); } catch(_){ return; }
   if(!ctx) return;
   const W=canvas.width, H=canvas.height; ctx.clearRect(0,0,W,H);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';   // 复位上次绘制残留的对齐状态，避免 Y 轴刻度错位
   const now=Date.now(), dayMs=86400000;
   // 读取当前主题色
   const style = getComputedStyle(document.documentElement);
@@ -1348,13 +1328,6 @@ function toggleAnswer(qid){
   if(ans) ans.classList.toggle('show', nowOpen);
   if(eye){ eye.classList.toggle('on', nowOpen); eye.textContent = nowOpen?'🙈':'👁'; }
   // 浏览模式下展开答案不记进度（可能是在查资料或编辑内容）
-  if(view !== Views.BROWSE){
-    const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-    p.seen = nowOpen;
-    if(nowOpen) p.lastPracticed = Date.now();
-    saveProgress();
-    renderStatsBar();
-  }
 }
 function toggleMaster(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
@@ -1478,7 +1451,7 @@ function completeLevel(){
     markDirty();   // 通关次数变更也标记云同步脏数据，确保自动推送能上传
   }
   practice.done = true;
-  renderContent();
+  renderAll();   // 用 renderAll 而非 renderContent，确保顶部统计条同步刷新
 }
 function renderPractice(c){
   if(practice.done) return renderDone(c);
@@ -1490,11 +1463,7 @@ function renderPractice(c){
   const doc = docId ? DINDEX.get(docId) : null;
   const atLast = practice.index === tot-1;
   const revealed = practice.revealed && practice.revealed.has(q.id);
-  // 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
-  // 仅 1 题的关卡则要求至少查看过一次答案，避免点一下就通关。
-  const others = practice.order.filter(id => id !== q.id);
-  const othersPracticed = others.every(id => practice.practiced && practice.practiced.has(id));
-  const canComplete = (tot>1 && othersPracticed) || (tot===1 && revealed);
+  const canComplete = canCompletePractice();
   c.innerHTML = `
     <div class="practice-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
@@ -1588,6 +1557,15 @@ function toggleRevealP(qid){
   if(answerEl) answerEl.style.display = revealed ? '' : 'none';
   if(hintEl) hintEl.style.display = revealed ? 'none' : '';
   if(btnEl){ btnEl.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
+}
+// 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
+// 仅 1 题的关卡则要求至少查看过一次答案，避免点一下就通关。按钮与键盘快捷键共用此判定。
+function canCompletePractice(){
+  const tot = practice.order.length;
+  if(!tot) return false;
+  const qid = practice.order[practice.index];
+  if(tot===1) return !!(practice.revealed && practice.revealed.has(qid));
+  return practice.order.filter(id=>id!==qid).every(id=>practice.practiced && practice.practiced.has(id));
 }
 
 /* =========================================================
@@ -1806,7 +1784,8 @@ function undoMemoryGrade(){
   if(!memory._history || !memory._history.length) return;
   const last = memory._history.pop();
   const undoneQid = last.qid;
-  PROGRESS[undoneQid] = last.oldProgress;
+  if(last.oldProgress && Object.keys(last.oldProgress).length) PROGRESS[undoneQid] = last.oldProgress;
+  else delete PROGRESS[undoneQid];   // 该题原本无进度，撤销后恢复为"无记录"，避免残留空对象
   saveProgress(); markDirty();
   memory.flipped = false;
   memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
@@ -1824,8 +1803,9 @@ function renderMemory(c){
     memory.index = 0; memory.flipped = false;
     if(!hadQueue) memory._history = [];
     if(!memory.queue.length){
-      const streak = getStreakDays();
-      const todayDone = getTodayReviewed();
+      const _ms = computeAllStats();
+      const streak = _ms.streak;
+      const todayDone = _ms.todayDone;
       const canUndo = !!(memory._history && memory._history.length);
       c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
       const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
@@ -1865,7 +1845,7 @@ function renderMemory(c){
           <div class="mem-ai-wrap">
             <div class="mem-ai-head">
               <button class="btn sm" id="memAICodeBtn">💻 AI 代码分析</button>
-              <span class="mem-ai-tip">看不懂答案？生成示例代码 + 逐行注释讲解</span>
+              <span class="mem-ai-tip">先校验答案正误，再判断该题需不需要代码，最后讲解</span>
             </div>
             <div id="memAICodeOut" data-qid="${esc(q.id)}">${renderAICodeBlock(q.id)}</div>
           </div>
@@ -1990,7 +1970,7 @@ function exportAnalyticsCSV(rows){
   const header = ['qid','题目','文档','等级','已掌握','下次复习','间隔(天)','EF','逾期(天)','待复习'];
   const lines = [header.join(',')];
   rows.forEach(r=>{
-    const row = [r.qid, `"${String(r.title).replace(/"/g,'""')}"`, `"${r.doc}"`, r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
+    const row = [`"${String(r.qid).replace(/"/g,'""')}"`, `"${String(r.title).replace(/"/g,'""')}"`, `"${String(r.doc).replace(/"/g,'""')}"`, r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
@@ -2037,7 +2017,8 @@ function renderAnalytics(c){
     if(typeof va==='string'){ return va.localeCompare(vb,'zh')*sd; }
     return (va-vb)*sd;
   });
-  const streak = getStreakDays(), todayDone = getTodayReviewed();
+  const _an = computeAllStats();
+  const streak = _an.streak, todayDone = _an.todayDone;
   const arrow = k => analyticsState.sortKey===k ? (analyticsState.sortDir===1?' ▲':' ▼') : '';
   const fmtDate = t => t ? new Date(t).toLocaleDateString('zh-CN') : '—';
   const statusCell = r => r.due ? `<span style="color:var(--bad)">待复习</span>` : (r.mastered ? `<span style="color:var(--good)">已稳</span>` : `<span style="color:var(--muted)">复习中</span>`);
@@ -2228,6 +2209,9 @@ function renderGrillConfig(c){
         </div>
       </div>
     </div>`;
+  // 恢复已输入/已上传的简历内容，并在输入时同步，避免切换标签页后丢失
+  $('#grillResume').value = grill.resume || '';
+  $('#grillResume').addEventListener('input', e => { grill.resume = e.target.value; });
   // 模式选择
   let selectedMode = '';
   let selectedDuration = 'standard';
@@ -2317,7 +2301,7 @@ function renderGrillConfig(c){
     } else {
       text=await f.text();
     }
-    $('#grillResume').value = text;
+    $('#grillResume').value = text; grill.resume = text;
   };
 }
 
@@ -2753,21 +2737,6 @@ function estimateYears(resume){
   // 默认中等
   return 3;
 }
-function getTodayReviewed(){
-  const today=new Date();today.setHours(0,0,0,0);const today0=today.getTime();
-  let cnt=0;
-  DOCS.forEach(d=>d.questions.forEach(q=>{const p=PROGRESS[q.id];if(p&&p.lastPracticed&&p.lastPracticed>=today0)cnt++;}));
-  return cnt;
-}
-function getStreakDays(){
-  const today=new Date();today.setHours(0,0,0,0);
-  const reviewed=new Set();
-  Object.values(PROGRESS).forEach(p=>{if(p.lastPracticed){const d=new Date(p.lastPracticed);d.setHours(0,0,0,0);reviewed.add(d.getTime());}});
-  let streak=0;const check=new Date(today);
-  if(!reviewed.has(check.getTime())){check.setDate(check.getDate()-1);if(!reviewed.has(check.getTime()))return 0;}
-  for(let i=0;i<365;i++){if(reviewed.has(check.getTime())){streak++;check.setDate(check.getDate()-1);}else break;}
-  return streak;
-}
 function exportMockMD(){
   const rateMap = {good:'✅ 熟练', mid:'🟡 模糊', bad:'❌ 不会'};
   const L = [];
@@ -2854,7 +2823,6 @@ async function callAI(messages, onChunk, opts={}){
   }catch(e){
     clearTimeout(timer);
     if(e.name==='AbortError') toast('AI 响应超时，请重试');
-    else if(e.message==='STREAM_TIMEOUT') toast('AI 响应中断，请重试');
     else toast('网络错误，请检查连接');
     console.warn('AI API 异常', e.message);
     return null;
@@ -2976,6 +2944,7 @@ function updateAIOutput(qid){
   const el=$('.ai-answer[data-qid="'+CSS.escape(qid)+'"]');
   if(!el) return;
   const text=aiAnswer[qid]||'';
+  if(!text){ el.remove(); return; }   // 生成失败/被清理时移除残留空盒，避免留下空边框卡片
   if(text==='loading'){el.innerHTML='<div class="ai-loading">AI 思考中<span class="dots">...</span></div>';return;}
   el.innerHTML=formatAI(text);
 }
@@ -2992,7 +2961,7 @@ function formatAI(text){
 }
 
 /* ---------- 记忆模式：AI 生成代码分析 ---------- */
-// 光看答案可能看不懂，点击后生成相关示例代码 + 逐行注释讲解
+// 先校验答案正误，再判断题目是否需要代码，最后结合讲解（不盲信参考答案）
 async function askAICode(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
@@ -3005,22 +2974,34 @@ async function askAICode(qid){
   aiCodeAnswer[qid] = 'loading'; _limitCache(aiCodeAnswer, 60);
   aiCodeStreaming[qid] = true; // 标记进入流式生成
   updateAICodeOutput(qid);
-  const systemPrompt = '你是一位资深程序员与技术讲师，擅长用「示例代码 + 逐行注释」的方式把抽象知识点讲透，让初学者真正看懂。';
-  const prompt = `请根据下面的面试题，生成一段用于演示该知识点核心原理的示例代码，并配上详细的中文注释分析，帮助一个刚接触该知识点的学习者看懂。
+  const systemPrompt = '你是一位资深程序员与技术讲师，擅长先独立校验答案正误、再判断题目是否需要代码，最后用「示例代码 + 逐行注释」或「纯文字」把知识点讲透，让初学者真正看懂。';
+  const prompt = `请根据下面的面试题，帮助一个刚接触该知识点的学习者真正看懂。注意：题目自带的「参考答案」可能不准确甚至有错误，你绝不能直接照抄它来讲解。
 
 【题目】${q.title}
-【参考答案】${q.answer||'暂无参考答案'}
+【参考答案（供校验，可能不准确）】${q.answer||'暂无参考答案'}
 
-请按以下结构输出（Markdown 格式，标题用 ##，重点用 **加粗**，代码用 \`\`\`语言 ... \`\`\` 包裹，不要输出 HTML）：
+请严格按以下步骤和结构输出（Markdown 格式，标题用 ##，重点用 **加粗**，代码用 \`\`\`语言 ... \`\`\` 包裹，不要输出 HTML）：
+
+## 答案校验
+- 以你自己的知识独立判断本题的正确结论，不要盲信「参考答案」。
+- 若「参考答案」正确：写「✅ 参考答案正确，无需纠正」。
+- 若「参考答案」有错误、遗漏或不准确：用 ⚠️ 明确指出错误点，并给出正确的表述。
+
+## 是否需要代码
+- 判断本题到底需不需要用代码来辅助理解：
+  - 若本题是纯概念 / 理论 / 对比类题目（例如"什么是XX""XX和YY的区别""XX的原理"），文字就能讲清楚，请写「本题为概念题，无需代码演示」，下方「示例代码」小节直接省略，改用文字讲透。
+  - 若本题涉及代码实现、运行机制、内存 / 输出结果、API 用法等，代码能明显帮助理解，请写「建议结合代码理解」，并给出示例代码。
 
 ## 核心概念速览
-用 2-4 句话说明这个知识点在解决什么问题、为什么重要。
+用 2-4 句话说明这个知识点在解决什么问题、为什么重要（基于你校验后的正确结论，而不是参考答案）。
 
 ## 示例代码
+仅当上一节判定"需要代码"时才输出本节；否则直接跳过本节，不写任何代码。
 给出完整、精简、聚焦核心的示例代码，优先使用 Java 编写（学习者主语言为 Java），并在代码块标注语言；若题目本质属于特定语言生态（如前端 JS/Promise），则使用对应语言。代码内用行内注释解释关键步骤。
 
 ## 逐段讲解
-按代码段落，解释每段代码的作用与背后原理，让初学者能跟着思路走。
+- 若输出了示例代码：按代码段落解释每段的作用与背后原理。
+- 若判定无需代码：改用文字把核心概念、关键点、推导过程讲清楚，让初学者能跟着思路走。
 
 ## 易错点
 若有常见误区或易错点，单独列出 1-2 条（用 ⚠️ 标注）；没有则写"无"。`;
@@ -3218,7 +3199,7 @@ const CSS_FX = {
   ripple:``,
   particle:``,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar,.level .lbar{background:#7c8285!important}.pbar{background:rgba(255,255,255,.1)!important}.stats-bar .bar{background:rgba(255,255,255,.1)!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary,.lvl-clear-badge,.seg button.active{color:#f2f3f4!important}.level .lnum{color:#f2f3f4}.level.locked .lnum{background:#9aa0a3!important}`,
+  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar{background:#7c8285!important}.pbar{background:rgba(255,255,255,.1)!important}.stats-bar .bar{background:rgba(255,255,255,.1)!important}.content::-webkit-scrollbar-thumb{background:#a5aaad!important}.btn.primary{color:#f2f3f4!important}`,
 };
 
 // 背景渐变映射表
@@ -3621,7 +3602,10 @@ function importJsonDocs(text){
   }
   // 本地 ORDER 中不存在的新文档追加到末尾
   DOCS.forEach(d=>{ if(!ORDER.includes(d.id)) ORDER.push(d.id); });
+  // 清理孤立进度（同 id 文档被替换后，旧题目的进度残留会让统计虚高）
+  {const allIds=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allIds.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allIds.has(qid))delete PROGRESS[qid];});}
   saveDocs(); Store.saveProgress(PROGRESS); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
+  invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
   toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇，现共 ${totalQuestions()} 题`);
 }
 
@@ -3677,6 +3661,7 @@ function parseMarkdownToDoc(text, fallbackTitle){
 $('#resetBtn').onclick = async () => {
   if(await confirmDialog('确定仅清除学习进度（已看/掌握标记）？题目数据与通关次数保留。')){
     PROGRESS = {}; await Store.saveProgress(PROGRESS);
+    invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
     hideModal($('#dataModal')); renderAll(); toast('学习进度已清除');
   }
 };
@@ -3699,6 +3684,7 @@ async function clearAllDocs(){
   if(!await confirmDialog('确定删除全部文档和学习数据？此操作不可撤销。')) return;
   DOCS=[]; PROGRESS={}; CLEARS={}; ORDER=[]; saveDocs(); Store.saveProgress(PROGRESS);
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
+  invalidateMemQueue(); memory._history = [];   // 数据已清空，记忆队列缓存与撤销栈同步重置
   view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
 $('#clearAllBtn').onclick = clearAllDocs;
@@ -3707,6 +3693,7 @@ $('#clearAllBtn').onclick = clearAllDocs;
 function loadGiteeCfg(){const t=_safe.decode(localStorage.getItem('giteeToken')||''),g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
 function saveGiteeCfg(){localStorage.setItem('giteeToken',_safe.encode($('#giteeToken').value.trim()));localStorage.setItem('giteeGistId',$('#giteeGistId').value.trim());
   // 保存后立即迁移：如果 Token 还是明文，下次读取会自动识别
+  startAutoSyncTimer();   // 配置变更后立即启用/重置定时自动推送，无需重启页面
 }
 $('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
 $('#dataBtn').onclick = (e) => { e.stopPropagation(); $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
@@ -3812,6 +3799,7 @@ async function cloudPull(){
     {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
+    invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
     // 用数据内容中的时间戳（更可靠），回退到 Gist 文件时间
     const t = data.updatedAt ? new Date(data.updatedAt).getTime() : (gist.updated_at ? new Date(gist.updated_at).getTime() : Date.now());
     _lastKnownRemoteTime = t;
@@ -3841,7 +3829,7 @@ let _autoSyncTimer = null;   // 定时器
 function markDirty(){ _autoSyncDirty = true; }
 async function autoPush(){
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
-  const gistId = $('#giteeGistId').value.trim();
+  const gistId = (localStorage.getItem('giteeGistId')||'').trim();   // 读 localStorage 而非输入框：输入框只有打开过设置弹窗才有值
   if(!token || !gistId || !_autoSyncDirty) return;
   if(!navigator.onLine) return;
   await doPushToGist(token, gistId,
@@ -3920,6 +3908,7 @@ async function askPullOnStart(){
     {const qids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>qids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!qids.has(qid))delete PROGRESS[qid];});}
     await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
     buildIndex();
+    invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
     _autoSyncDirty = false;
     localStorage.setItem('lastRemoteTime', String(remoteTime));
     _lastKnownRemoteTime = remoteTime;
@@ -3959,10 +3948,7 @@ document.addEventListener('keydown', e => {
     markPracticed(q);
     if(practice.index < practice.order.length-1){ practice.index++; renderAll(); }
     else {
-      const others = practice.order.filter(id=>id!==q);
-      const ok = (practice.order.length>1 && others.every(id=>practice.practiced && practice.practiced.has(id)))
-                 || (practice.order.length===1 && practice.revealed && practice.revealed.has(q));
-      if(ok) completeLevel(); else toast('请先用「下一题 / 上一题」把本文档题目都过一遍');
+      if(canCompletePractice()) completeLevel(); else toast('请先用「下一题 / 上一题」把本文档题目都过一遍');
     }
   }
   else if(e.code==='ArrowLeft'){ if(practice.index>0){ markPracticed(q); practice.index--; renderAll(); } }
