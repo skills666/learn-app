@@ -2332,51 +2332,60 @@ function clozeQueueBuild(){
   return buildMemoryQueue().filter(it=>!it.isNew).map(it=>it.q.id);
 }
 // 启发式挖空（离线兜底）：行内代码、加粗词、「」内词、数字+单位
-function clozeHeuristic(answer){
+function clozeHeuristic(answer, target){
   const t = String(answer||'');
   const words = [];
-  (t.match(/`([^`\n]{1,20})`/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
-  (t.match(/\*\*([^*\n]{1,20})\*\*/g)||[]).forEach(m=>words.push(m.slice(2,-2).trim()));
-  (t.match(/「([^」\n]{1,20})」/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
+  (t.match(/`([^`\n]{1,24})`/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
+  (t.match(/\*\*([^*\n]{1,24})\*\*/g)||[]).forEach(m=>words.push(m.slice(2,-2).trim()));
+  (t.match(/「([^」\n]{1,24})」/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
   (t.match(/\d+(?:\.\d+)?\s*(?:%|ms|秒|分钟|小时|天|次|个|倍|层|路|万|条|MB|GB|KB)/g)||[]).forEach(m=>words.push(m.trim()));
   const seen = new Set(); const out = [];
   for(const w of words){
     const k = String(w).trim();
-    if(!k || k.length>20 || seen.has(k.toLowerCase())) continue;
+    if(!k || k.length>24 || seen.has(k.toLowerCase())) continue;
     seen.add(k.toLowerCase()); out.push(k);
-    if(out.length>=8) break;
+    if(out.length>=target) break;
   }
   return out;
 }
+// 目标挖空数：按答案长度自适应，约每 35 字挖 1 个，6~16 之间（答案越长挖得越多）
+function clozeTargetCount(answer){
+  const len = String(answer||'').length;
+  return Math.max(6, Math.min(16, Math.round(len/35)));
+}
 // AI 挖空：挑出必答正确的"背诵锚点"（需 AI 配置，失败自动回退启发式）
-async function clozeByAI(q){
-  const prompt = `从下面的面试题参考答案中，挑出 5-8 个"背诵锚点"——回答这道题时必须说对的关键词、数字、术语或结论短语，用于填空记忆测试。
+async function clozeByAI(q, target){
+  const prompt = `从下面的面试题参考答案中，挑出 ${target} 个"背诵锚点"——回答这道题时必须说对的关键短语、数字、术语或结论，用于填空记忆测试。
 要求：
-- 只输出一个 JSON 数组，形如 ["关键词1","关键词2"]，不要输出任何其他文字或标记
-- 优先挑核心术语、关键数字、结论性短语；每个词不超过 12 个字；互相不要包含或重叠
+- 必须挑满 ${target} 个（答案确实很短才可适当减少，但要覆盖答案的核心信息）
+- 只输出一个 JSON 数组，形如 ["锚点1","锚点2"]，不要输出任何其他文字或标记
+- 优先挑完整的关键短语（2-14 字）而不是单个词：挖掉"B+树做多路平衡查找"优于只挖"B+树"
+- 锚点必须在参考答案中原文出现；互相不要包含或重叠
 【题目】${q.title}
 【参考答案】${q.answer||''}`;
-  const r = await callAI([{role:'system',content:'你是出题助手，只输出 JSON 数组，不输出任何其他内容。'},{role:'user',content:prompt}], null, {temperature:0.2, max_tokens:300});
+  const r = await callAI([{role:'system',content:'你是出题助手，只输出 JSON 数组，不输出任何其他内容。'},{role:'user',content:prompt}], null, {temperature:0.2, max_tokens:500});
   if(!r) return null;
   try{
     const m = r.match(/\[[\s\S]*\]/);
     if(!m) return null;
     const arr = JSON.parse(m[0]);
     if(!Array.isArray(arr)) return null;
-    return arr.map(x=>String(x).trim()).filter(x=>x && x.length<=20).slice(0,8);
+    return arr.map(x=>String(x).trim()).filter(x=>x && x.length<=24).slice(0, target);
   }catch(_){ return null; }
 }
-let _clozeCache = null;   // qid -> 挖空词列表，持久化到 IndexedDB，避免重复调用 AI
+let _clozeCache = null;   // qid -> 挖空词列表，持久化到 IndexedDB，避免重复调用 AI；__cloze_v 为缓存版本
 async function clozeGetWords(q){
   if(!_clozeCache) _clozeCache = await Store.getCloze();
+  if(_clozeCache.__cloze_v !== 2) _clozeCache = { __cloze_v: 2 };   // 挖空密度策略升级：旧版（稀疏）缓存作废重新生成
   let words = _clozeCache[q.id];
   if(words && words.length) return words;
-  words = aiConfig ? await clozeByAI(q) : null;
-  if(!words || !words.length) words = clozeHeuristic(q.answer);
+  const target = clozeTargetCount(q.answer);
+  words = aiConfig ? await clozeByAI(q, target) : null;
+  if(!words || !words.length) words = clozeHeuristic(q.answer, target);
   if(words.length){
     _clozeCache[q.id] = words;
-    const keys = Object.keys(_clozeCache);
-    if(keys.length > 300) keys.slice(0, keys.length-300).forEach(k=>delete _clozeCache[k]);
+    const qids = Object.keys(_clozeCache).filter(k=>k!=='__cloze_v');
+    if(qids.length > 300) qids.slice(0, qids.length-300).forEach(k=>delete _clozeCache[k]);
     Store.saveCloze(_clozeCache);
   }
   return words || [];
@@ -4650,7 +4659,7 @@ function drawZirong(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '16';
+const SW_VERSION = '17';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
