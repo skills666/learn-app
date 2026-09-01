@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="面试题">
@@ -16,13 +16,13 @@
 <style>
   :root{
     --bg:#0e1018; --bg2:#141826; --panel:#171b2b; --panel2:#1d2236;
-    --card:#1a1f31; --card-hover:#212841;
+    --card:#1a1f31;
     --line:#272d44; --line2:#323a5a;
     --text:#e7eaf3; --muted:#9aa3c0; --faint:#6b7494;
     --accent:#5ad1c9; --accent2:#8b7cf6; --accent3:#f6a85b;
     --accent-rgb:90,209,201; --accent2-rgb:139,124,246;
     --good:#4fd08a; --warn:#f6a85b; --bad:#f06a6a;
-    --radius:14px; --radius-sm:10px;
+    --radius:14px;
     --shadow:0 8px 30px rgba(0,0,0,.45);
     --scroll-thumb:var(--line2); --scroll-thumb-hover:var(--accent2);
   }
@@ -55,7 +55,6 @@
   .stats-bar .bar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
   .stats-bar b{color:var(--text);font-weight:700}
   .stats-bar .urg{color:var(--warn);font-weight:700}
-  .topbar .spacer{flex:1}
   .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;color:var(--muted);flex:none}
   .topbar .search input{background:none;border:none;outline:none;color:var(--text);font-size:13px;width:180px}
   .topbar .search input::placeholder{color:var(--faint)}
@@ -67,15 +66,10 @@
   .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-  .content{flex:1;overflow-y:scroll;padding:24px 28px calc(40px + env(safe-area-inset-bottom, 0px));max-width:1200px;margin:0 auto;width:100%}
+  .content{flex:1;overflow-y:auto;padding:24px 28px calc(40px + env(safe-area-inset-bottom, 0px));max-width:1200px;margin:0 auto;width:100%}
   .content.in{animation:viewIn .22s cubic-bezier(.22,.61,.36,1)}
-  .content.out{animation:viewOut .15s ease forwards}
-  .content::-webkit-scrollbar{width:10px}
   @keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes viewOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-10px)}}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-  @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95)}}
   /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
@@ -159,7 +153,7 @@
 
   /* overview */
   .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:transform .15s,box-shadow .15s}
+  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:border-color .15s}
   .ov-card:hover{border-color:var(--accent2)}
   .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -239,8 +233,8 @@
   .set-status{font-size:12px;color:var(--muted);margin-top:2px;width:100%;text-align:center}
 
   .hidden{display:none!important}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
-         background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:12px;
+  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(20px);
+         max-width:calc(100vw - 32px);background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:12px;
          font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* 加载指示器 */
@@ -271,7 +265,6 @@
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .memory-answer strong{color:var(--text)}
-  #memAIBlock{margin-top:16px}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
   .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -328,7 +321,6 @@
   .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
   .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn .15s ease}
   #skinPopup{display:grid!important;top:52px !important;right:80px !important;width:260px;grid-template-columns:repeat(4,1fr);gap:5px}
-  .theme-popup.hiding{animation:scaleOut .1s ease forwards}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
   .theme-tab:hover{color:var(--text);background:var(--panel)}
@@ -397,7 +389,7 @@
     .btn{font-size:11px;padding:5px 8px}
     .btn.sm{padding:3px 6px;font-size:10px}
     .stats-bar{font-size:10px;gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
-    .content{padding:14px 12px calc(30px + env(safe-area-inset-bottom, 60px));max-width:100%}
+    .content{padding:14px 12px calc(30px + env(safe-area-inset-bottom, 0px));max-width:100%}
     .ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}
     .ov-card{padding:12px 8px}
     .ov-card .n{font-size:22px}
@@ -424,7 +416,6 @@
     .qnum{width:24px;height:24px;font-size:11px;line-height:24px}
     .qtitle{font-size:13px}
     .grill-msg{font-size:13px;max-width:90%}
-    .grill-chat{max-height:45vh}
     .qacts{gap:4px}
     .iconbtn{width:26px;height:26px;font-size:11px}
     .doc-head h2{font-size:18px}
@@ -523,7 +514,7 @@
       <!-- 1. 云同步 -->
       <div class="set-section open">
         <div class="set-head" onclick="toggleSetPanel(this)">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:block" autocomplete="off">
+        <div class="set-body" style="display:block">
           <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" style="color:var(--accent2)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
           <div class="set-col">
             <div class="set-field" style="flex:1"><label>Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password" autocomplete="new-password" name="gtoken"></div>
@@ -607,7 +598,7 @@
 </div>
 
 <input type="file" id="fileInput" accept=".json,.md,.markdown,.txt,application/json,text/markdown" class="hidden" multiple>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" aria-live="polite"></div>
 
 <script>
 /* 题目数据：由 parse.py 生成，已内联以便离线双击打开（无需 seed.js） */
@@ -659,6 +650,7 @@ const Store = (() => {
   }
   let mem = {};   // 存储不可用（如 file:// 受限）时的内存兜底，保证应用不崩溃
   let _capWarned = false;   // 容量告警只提示一次，避免每次保存都刷屏
+  let _lsFailWarned = false;   // 写入失败告警也只提示一次
   function loadLS(){
     try{ const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : mem; }
     catch(_){ return mem; }
@@ -674,7 +666,7 @@ const Store = (() => {
     catch(_){
       // localStorage 满或不可用时的兜底保护
       mem = o;
-      toast('⚠️ 存储空间不足，数据未保存到本地！请导出备份并清理浏览器存储');
+      if(!_lsFailWarned){ _lsFailWarned = true; toast('⚠️ 存储空间不足，数据未保存到本地！请导出备份并清理浏览器存储'); }
       console.error('[Store] localStorage 写入失败，数据仅保留在内存中');
     }
   }
@@ -688,13 +680,16 @@ const Store = (() => {
       }catch(_){ res(undefined); }
     });
   }
+  let _idbFailWarned = false;   // 数据库写失败告警只提示一次
   function set(k,v){
-    if(useLS){ saveLS(Object.assign(loadLS(), {[k]:v})); return Promise.resolve(); }
+    if(useLS){ saveLS(Object.assign(loadLS(), {[k]:v})); return Promise.resolve(true); }
     return new Promise((res)=>{
       try{
         const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').put({key:k,val:v});
-        tx.oncomplete = () => res(); tx.onerror = () => res(); tx.onabort = () => res();
-      }catch(_){ res(); }
+        tx.oncomplete = () => res(true);
+        tx.onerror = () => { if(!_idbFailWarned){ _idbFailWarned = true; toast('⚠️ 保存失败（数据库错误），数据仅保留在内存中'); } console.error('[Store] IndexedDB 写入失败, key=' + k); res(false); };
+        tx.onabort = () => { if(!_idbFailWarned){ _idbFailWarned = true; toast('⚠️ 保存失败（数据库错误），数据仅保留在内存中'); } console.error('[Store] IndexedDB 写入中止, key=' + k); res(false); };
+      }catch(_){ res(false); }
     });
   }
   return {
@@ -751,7 +746,7 @@ let CLEARS = {};                  // docId -> 通关次数
 // 视图常量
 const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', CLOZE:'cloze' };
 
-let view = sessionStorage.getItem('lastView') || Views.OVERVIEW;
+let view; try{ view = sessionStorage.getItem('lastView') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
 if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
 let currentDocId = null;
 let searchTerm = '';
@@ -779,9 +774,10 @@ function sm2Next(ef, interval, rate) {
   if(typeof ef !== 'number' || isNaN(ef)) ef = SM2_INIT_EF;
   if(typeof interval !== 'number' || isNaN(interval)) interval = 1;
   if(typeof rate !== 'number' || isNaN(rate)) rate = 3;
-  if (rate >= 5) { ef += 0.1; interval = Math.round((interval || 1) * ef); }
-  else if (rate >= 4) { interval = Math.round((interval || 1) * ef); }
-  else if (rate >= 3) { ef -= 0.15; interval = Math.round((interval || 1) * ef); }
+  const first = interval <= 0;   // 新题：首次间隔 1 天（与注释一致）；先用旧 EF 算间隔，再更新 EF
+  if (rate >= 5) { interval = first ? 1 : Math.round(interval * ef); ef += 0.1; }
+  else if (rate >= 4) { interval = first ? 1 : Math.round(interval * ef); }
+  else if (rate >= 3) { interval = first ? 1 : Math.round(interval * ef); ef -= 0.15; }
   else if (rate >= 2) { ef -= 0.15; interval = 1; }
   else { ef -= 0.2; interval = 0.5; }
   return { ef: Math.max(SM2_MIN_EF, +ef.toFixed(2)), interval: Math.min(SM2_MAX_INTERVAL, Math.max(0.5, interval)) };
@@ -811,6 +807,10 @@ if(!CSS.escape){CSS.escape=function(s){s=String(s);var r='';for(var i=0;i<s.leng
 let QINDEX = new Map();   // qid -> question
 let DINDEX = new Map();   // docId -> doc
 let QDOC = new Map();     // qid -> docId（反向查文档）
+// 外部数据（存储/导入/云端）统一归一化 questions 数组，避免旧数据缺字段时统计/渲染崩溃
+function normalizeDocs(docs){
+  return (Array.isArray(docs) ? docs : []).map(d => { if(d && !Array.isArray(d.questions)) d.questions = []; return d; });
+}
 function buildIndex(){
   QINDEX.clear(); DINDEX.clear(); QDOC.clear();
   DOCS.forEach(d => {
@@ -884,7 +884,7 @@ function questionById(qid){ return QINDEX.get(qid); }
 function docSeen(d){ return (d.questions||[]).filter(q => { const p=PROGRESS[q.id]; return p && (p.practiced || p.seen); }).length; }
 function docMastered(d){ return (d.questions||[]).filter(q => PROGRESS[q.id] && PROGRESS[q.id].mastered).length; }
 function docClears(id){ return CLEARS[id] || 0; }
-function totalQuestions(){ return DOCS.reduce((a,d)=>a+d.questions.length,0); }
+function totalQuestions(){ return DOCS.reduce((a,d)=>a+(d.questions||[]).length,0); }
 // ===== 存储容量限制（500MB）=====
 const STORAGE_LIMIT = 500 * 1024 * 1024; // 500MB
 function estimateDataSize(data){
@@ -948,9 +948,9 @@ function _showConfirm(msg, resolve){
     const cleanup = (result) => {
       if(_settled) return;   // 防止遮罩+按钮双击导致重复 resolve/弹出队列
       _settled = true;
-      ov.remove(); _confirmOpen = false; resolve(result);
-      // 依次弹出排队的确认框，而不是静默丢弃
-      setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } }, 100);
+      ov.remove(); resolve(result);
+      // 依次弹出排队的确认框；队列清空前保持 _confirmOpen，防止窗口期内新框插队导致双框同屏
+      setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } else { _confirmOpen = false; } }, 100);
     };
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
@@ -978,8 +978,10 @@ function _showConfirm(msg, resolve){
     noBtn.onclick=()=>cleanup(false);
     ov.onclick=e=>{if(e.target===ov)cleanup(false)};
   } catch(e) {
-    _confirmOpen = false;
+    console.error('[confirm] 对话框渲染异常', e);
     resolve(false);
+    _confirmQueue.forEach(item => item.resolve(false)); _confirmQueue = [];   // 排队中的 Promise 也要了结，避免永久悬挂
+    _confirmOpen = false;
   }
 }
 function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
@@ -1014,10 +1016,12 @@ function setupErrorHandler(){
     if(msg) toast('出错了：' + msg);
   });
   window.addEventListener('unhandledrejection', e => {
-    const r = e.reason?.message || e.reason;
-    if(/ServiceWorker|origin 'null'/.test(String(r))) return;
-    console.error('[learn-app unhandledrejection]', e.reason);
-    toast('操作失败：' + (r || '未知错误'));
+    const r = e.reason;
+    if(r && r.name === 'AbortError') return;   // 主动取消请求是预期行为，不提示
+    const msg = r instanceof Error ? r.message : (typeof r === 'string' ? r : (r && r.message) || '');
+    if(/ServiceWorker|origin 'null'|Script error/.test(String(msg || r))) return;
+    console.error('[learn-app unhandledrejection]', r);
+    toast('操作失败：' + (msg || '未知错误'));
   });
 }
 
@@ -1031,7 +1035,7 @@ function computeAllStats(){
   const today0 = today.getTime();
   let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0;
   const reviewed = new Set();
-  DOCS.forEach(d => d.questions.forEach(q => {
+  DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
     if(!p) return;
@@ -1132,8 +1136,8 @@ function renderOverview(c){
         <div style="display:flex;gap:4px">
           <button class="btn sm ${chartDays===7?'primary':''}" id="chartBtn7">7天</button>
           <button class="btn sm ${chartDays===30?'primary':''}" id="chartBtn30">30天</button>
-          <button class="btn sm" id="chartBtnBar">柱状</button>
-          <button class="btn sm" id="chartBtnLine">折线</button>
+          <button class="btn sm ${(window._ovChartMode||'bar')==='bar'?'primary':''}" id="chartBtnBar">柱状</button>
+          <button class="btn sm ${(window._ovChartMode||'bar')==='line'?'primary':''}" id="chartBtnLine">折线</button>
         </div>
       </div>
       <canvas id="chartCanvas" width="1080" height="260" style="width:100%;height:auto;border-radius:8px"></canvas>
@@ -1203,14 +1207,19 @@ function drawChart(days, mode){
     const areaGrad = ctx.createLinearGradient(0,padT,0,padT+chartH);
     // 把十六进制转成 rgba
     function hexToRgba(hex, alpha){
-      if(!hex||!hex.startsWith('#')) return `rgba(0,0,0,${alpha})`;
-      const r = parseInt(hex.slice(1,3),16);
-      const g = parseInt(hex.slice(3,5),16);
-      const b = parseInt(hex.slice(5,7),16);
-      if(isNaN(r)||isNaN(g)||isNaN(b)) return `rgba(0,0,0,${alpha})`;
+      if(!hex||!hex.startsWith('#')) return `rgba(90,209,201,${alpha})`;
+      let h = hex.slice(1);
+      if(h.length===3||h.length===4) h = h.slice(0,3).split('').map(c=>c+c).join('');   // 3/4 位简写展开
+      const r = parseInt(h.slice(0,2),16);
+      const g = parseInt(h.slice(2,4),16);
+      const b = parseInt(h.slice(4,6),16);
+      if(isNaN(r)||isNaN(g)||isNaN(b)) return `rgba(90,209,201,${alpha})`;
       return `rgba(${r},${g},${b},${alpha})`;
     }
-    const accentRgba = accent.startsWith('#') ? hexToRgba(accent, 0.3) : accent.replace(/rgba?\(([^)]+)\)/,'rgba($1,0.3)');
+    let accentRgba;
+    if(accent.startsWith('#')) accentRgba = hexToRgba(accent, 0.3);
+    else if(/rgba?\(/.test(accent)) accentRgba = accent.replace(/rgba?\(([^)]+)\)/,'rgba($1,0.3)');
+    else accentRgba = 'rgba(90,209,201,0.3)';   // 非 rgb 形式（oklch/hsl 等）回退默认色，避免 addColorStop 抛错
     areaGrad.addColorStop(0, accentRgba);
     areaGrad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = areaGrad;
@@ -1366,19 +1375,21 @@ function toggleMaster(qid){
 async function deleteQuestion(docId, qid){
   if(!await confirmDialog('确定删除这道题目？此操作不可撤销。')) return;
   const d = docById(docId);
-  d.questions = d.questions.filter(q=>q.id!==qid);
+  if(!d){ toast('文档已不存在'); return; }   // 确认框排队等待期间文档可能已被导入/拉取替换
+  d.questions = (d.questions||[]).filter(q=>q.id!==qid);
   delete PROGRESS[qid];
   saveDocs(); saveProgress();
   toast('已删除题目');
   renderAll();
 }
 function saveProgress(){ Store.saveProgress(PROGRESS); markDirty(); invalidateMemQueue(); }
-// 保存文档后自动重建索引
-async function saveDocs(){ await Store.saveDocs(DOCS); buildIndex(); markDirty(); }
+// 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
+async function saveDocs(){ buildIndex(); markDirty(); await Store.saveDocs(DOCS); }
 
 /* ---------- 添加题目弹窗 ---------- */
 function openAddModal(docId){
   const d = docById(docId);
+  if(!d){ toast('文档已不存在'); return; }
   $('#addModal').dataset.docid = docId;
   $('#addDocName').textContent = d.title;
   $('#aqTitle').value = '';
@@ -1394,7 +1405,8 @@ function submitAddQuestion(){
   if(!title || !answer){ toast('题目和答案都不能为空'); return; }
   const tagsRaw = $('#aqTags').value.trim();
   const tags = tagsRaw ? tagsRaw.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [d.title];
-  const id = d.id + '#' + (d.questions.length+1) + '_' + Date.now();
+  if(!d.questions) d.questions = [];
+  const id = d.id + '#' + (d.questions.length+1) + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);   // 随机后缀防时钟回拨/同毫秒撞 id
   d.questions.push({ id, title, answer, tags });
   saveDocs();
   $('#addModal').classList.remove('show');
@@ -1405,6 +1417,7 @@ function submitAddQuestion(){
 /* ---------- 编辑题目弹窗 ---------- */
 function openEditModal(docId, qid){
   const d = docById(docId);
+  if(!d){ toast('文档已不存在'); return; }
   const q = (d.questions||[]).find(x=>x.id===qid);
   if(!q) return;
   $('#editModal').dataset.docid = docId;
@@ -1421,6 +1434,7 @@ function openEditModal(docId, qid){
 function submitEditQuestion(){
   const docId = $('#editModal').dataset.docid;
   const d = docById(docId);
+  if(!d){ toast('文档已不存在'); $('#editModal').classList.remove('show'); return; }
   const qid = $('#editModal').dataset.qid;
   const q = (d.questions||[]).find(x=>x.id===qid);
   if(!q) return;
@@ -1747,6 +1761,7 @@ function renderMockResult(c){
 }
 // 记忆队列缓存，避免每次进入记忆模式全量遍历
 let _memQueueCache = null;
+let _memQueueBuiltAt = 0;   // 队列构建时间：超过阈值即使无数据变更也视为脏（长时间挂机后新到期题要能出现）
 let _memQueueDirty = true;
 let _lvCountsCache = null;   // 等级分布缓存，进度变更时失效
 function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; }
@@ -1764,7 +1779,10 @@ function computeLvCounts(){
 }
 // SM-2 记忆队列：获取今日待复习题目
 function buildMemoryQueue(useCache){
-  if(useCache && !_memQueueDirty && _memQueueCache) return _memQueueCache;
+  if(useCache && !_memQueueDirty && _memQueueCache){
+    if(Date.now() - _memQueueBuiltAt < 30*60*1000) return _memQueueCache;   // 缓存新鲜
+    _memQueueDirty = true;   // 缓存在时间维度过期：挂机期间新到期的题不能漏
+  }
   const now=Date.now();
   const today=new Date(now);today.setHours(0,0,0,0);const today0=today.getTime();
   const queue=[];
@@ -1791,6 +1809,7 @@ function buildMemoryQueue(useCache){
   queue.sort((a,b)=>(b.isNew-a.isNew)||(b.overdue-a.overdue)||(a.level-b.level)||(a.docOrder-b.docOrder));
   _memQueueCache = queue;
   _memQueueDirty = false;
+  _memQueueBuiltAt = Date.now();
   return queue;
 }
 // 等级分布 → 进度条段 + 图例 HTML（记忆模式与进度页共用）
@@ -1816,7 +1835,7 @@ function undoMemoryGrade(){
   memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
   // 撤销后定位到被撤销的那道题
   const targetIdx = memory.queue.findIndex(item => item.q.id === undoneQid);
-  memory.index = targetIdx >= 0 ? targetIdx : Math.max(0, memory.index - 2);
+  memory.index = targetIdx >= 0 ? targetIdx : Math.min(memory.index, Math.max(0, memory.queue.length - 1));   // 未找到时安全钳位，不用魔法数
   if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
   renderAll();
 }
@@ -1924,6 +1943,7 @@ function renderMemory(c){
 }
 // 统计条中的待复习数
 let analyticsState = { term:'', sortKey:'doc', sortDir:1 };
+let _anTermDebounce = null;   // 分析页搜索防抖句柄（模块级：重渲染销毁旧节点时可统一 clearTimeout）
 
 function buildAnalyticsData(){
   const now = Date.now();
@@ -1942,7 +1962,7 @@ function buildAnalyticsData(){
       const effectiveNext = mastered ? Math.max(next, minNext) : next;
       const due = mastered ? (now>=effectiveNext) : (!next||now>=next);
       const overdue = effectiveNext ? Math.max(0, Math.round((now-effectiveNext)/86400000)) : 0;
-      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next, interval:p.interval||0, ef:p.ef||SM2_INIT_EF, lastPracticed:p.lastPracticed||0, due, overdue });
+      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, ef:p.ef||SM2_INIT_EF, lastPracticed:p.lastPracticed||0, due, overdue });
       st.levels[lv]++; if(mastered) st.mastered++; if(due) st.due++;
       st.cnt++; st.sumInterval += (p.interval||0); st.sumEf += (p.ef||SM2_INIT_EF);
       st.overdueMax = Math.max(st.overdueMax, overdue);
@@ -1985,14 +2005,14 @@ function exportAnalyticsCSV(rows){
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
-  downloadBlob(blob, `记忆进度_${new Date().toISOString().slice(0,10)}.csv`);
+  downloadBlob(blob, `记忆进度_${dateStr()}.csv`);   // 本地日期，避免东八区凌晨文件名差一天
 }
 
 function copyText(t){
-  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t)); }
-  else fallbackCopy(t);
+  if(navigator.clipboard && navigator.clipboard.writeText){ return navigator.clipboard.writeText(t).then(()=>true).catch(()=>fallbackCopy(t)); }
+  return Promise.resolve(fallbackCopy(t));
 }
-function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); }
+function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); return ok; }
 
 function renderAnalytics(c){
   const { rows, docStats } = buildAnalyticsData();
@@ -2018,7 +2038,7 @@ function renderAnalytics(c){
       case 'lv': va=lvRank(a); vb=lvRank(b); break;
       case 'doc': va=a.doc; vb=b.doc; break;
       case 'title': va=a.title; vb=b.title; break;
-      case 'next': va=a.next||Infinity; vb=b.next||Infinity; break;
+      case 'next': va=a.next||Number.MAX_SAFE_INTEGER; vb=b.next||Number.MAX_SAFE_INTEGER; break;   // Infinity 相减得 NaN 会让排序抖动
       case 'interval': va=a.interval; vb=b.interval; break;
       case 'ef': va=a.ef; vb=b.ef; break;
       case 'overdue': va=a.overdue; vb=b.overdue; break;
@@ -2105,15 +2125,15 @@ function renderAnalytics(c){
   if(termEl) termEl.addEventListener('input', e=>{
     analyticsState.term = e.target.value;
     const pos = e.target.selectionStart;
-    clearTimeout(termEl._debounce);
-    termEl._debounce = setTimeout(()=>{
+    clearTimeout(_anTermDebounce);
+    _anTermDebounce = setTimeout(()=>{
       renderAnalytics(c);
       const i=$('#anTerm'); if(i){ i.focus(); i.setSelectionRange(pos, pos); }
     }, 250);
   });
   document.querySelectorAll('.an-table thead th[data-sort]').forEach(th=> th.addEventListener('click', ()=>{ const k=th.dataset.sort; if(analyticsState.sortKey===k) analyticsState.sortDir*=-1; else {analyticsState.sortKey=k;analyticsState.sortDir=1;} renderAnalytics(c); }));
   $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
-  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgEf,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep); const s=$('#anCopyStatus'); if(s) s.textContent='✅ 已复制，发给 AI 即可分析'; toast('分析报告已复制到剪贴板'); };
+  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgEf,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
   $('#anRefresh').onclick = ()=> renderAnalytics(c);
 }
 
@@ -2122,7 +2142,7 @@ function renderGrill(c){
   const modeName = grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战';
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 ${modeName}</span><span>${grill.messages.length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
+      <div class="pmeta"><span>🔥 ${modeName}</span><span>${grill.messages.filter(m=>m.role==='user' && !m.content.startsWith('我想结束本场面试')).length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
       <div class="grill-chat" id="grillChat">${grill.messages.map((m,i)=>`
         <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}${grill.ended&&grill.feedback?`
@@ -2145,7 +2165,7 @@ function renderGrill(c){
   if(chat) chat.scrollTop = chat.scrollHeight;
   if(grill.ended){
     // 面试已结束，只显示关闭按钮
-    $('#grillClose').onclick = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };
+    $('#grillClose').onclick = () => { if(grill._abort){ try{grill._abort.abort();}catch(_){} } const _r=grill.resume; grill={resume:_r,messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };   // 保留简历，与切页行为一致
   } else {
     const input = $('#grillInput');
     const autoGrow = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,180)+'px'; };
@@ -2157,10 +2177,11 @@ function renderGrill(c){
     $('#grillSend').onclick = send;
     input.oninput = autoGrow;
     input.onkeydown = e => {
-      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+      // 中文输入法组合态（选字按 Enter）不发送，否则未完成的拼音会被当回答发出去
+      if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){ e.preventDefault(); send(); }
     };
     input.focus();
-    const resetGrill = () => { grill={resume:'',messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };
+    const resetGrill = () => { if(grill._abort){ try{grill._abort.abort();}catch(_){} } const _r=grill.resume; grill={resume:_r,messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };   // 中止在途流；保留简历避免重新粘贴
     // 直接退出：不生成总结
     $('#grillQuit').onclick = async () => {
       if(!await confirmDialog('退出本场拷打？对话记录将清空，不生成总结。')) return;
@@ -2294,9 +2315,10 @@ function renderGrillConfig(c){
       grill.messages.push({role:'ai', content: greetings[selectedMode]});
     }
     renderAll();
-    // 项目深挖和八股扫荡直接调API开始
+    // 项目深挖和八股扫荡直接调API开始；自动开局先锁输入，防止首轮生成中并发第二个流式请求
     if(selectedMode==='project' || selectedMode==='theory'){
-      setTimeout(()=>doGrillChat(''), 300);
+      grill.loading = true; renderAll();
+      setTimeout(()=>{ if(grill.started && !grill.ended) doGrillChat(''); }, 300);
     }
   };
   $('#grillUpload').onclick = () => $('#grillFileInput').click();
@@ -2312,7 +2334,7 @@ function renderGrillConfig(c){
     } else {
       text=await f.text();
     }
-    $('#grillResume').value = text; grill.resume = text;
+    grill.resume = text; const _re=$('#grillResume'); if(_re) _re.value = text;   // 解析期间视图可能已重渲染，判空防崩溃
   };
 }
 
@@ -2342,7 +2364,7 @@ function clozeHeuristic(answer, target){
   const seen = new Set(); const out = [];
   for(const w of words){
     const k = String(w).trim();
-    if(!k || k.length>24 || seen.has(k.toLowerCase())) continue;
+    if(!k || k.length<2 || k.length>24 || seen.has(k.toLowerCase())) continue;   // 单字词易挖断/与占位标记冲突
     seen.add(k.toLowerCase()); out.push(k);
     if(out.length>=target) break;
   }
@@ -2370,7 +2392,7 @@ async function clozeByAI(q, target){
     if(!m) return null;
     const arr = JSON.parse(m[0]);
     if(!Array.isArray(arr)) return null;
-    return arr.map(x=>String(x).trim()).filter(x=>x && x.length<=24).slice(0, target);
+    return arr.map(x=>String(x).trim()).filter(x=>x && x.length>=2 && x.length<=24).slice(0, target);
   }catch(_){ return null; }
 }
 let _clozeCache = null;   // qid -> 挖空词列表，持久化到 IndexedDB，避免重复调用 AI；__cloze_v 为缓存版本
@@ -2378,27 +2400,47 @@ async function clozeGetWords(q){
   if(!_clozeCache) _clozeCache = await Store.getCloze();
   if(_clozeCache.__cloze_v !== 2) _clozeCache = { __cloze_v: 2 };   // 挖空密度策略升级：旧版（稀疏）缓存作废重新生成
   let words = _clozeCache[q.id];
-  if(words && words.length) return words;
+  if(Array.isArray(words)) return words;   // 命中缓存（含空数组：无可挖空的题不再重复调 AI）
   const target = clozeTargetCount(q.answer);
   words = aiConfig ? await clozeByAI(q, target) : null;
-  if(!words || !words.length) words = clozeHeuristic(q.answer, target);
-  if(words.length){
-    _clozeCache[q.id] = words;
-    const qids = Object.keys(_clozeCache).filter(k=>k!=='__cloze_v');
-    if(qids.length > 300) qids.slice(0, qids.length-300).forEach(k=>delete _clozeCache[k]);
-    Store.saveCloze(_clozeCache);
+  if(!words || words.length < Math.min(target, 3)){
+    // AI 锚点太少或失败：用启发式挖空回补，过滤包含关系重叠的词
+    const base = words || [];
+    const fill = clozeHeuristic(q.answer, target).filter(x => !base.some(w => w.includes(x) || x.includes(w)));
+    words = base.concat(fill).slice(0, target);
   }
-  return words || [];
+  _clozeCache[q.id] = words;
+  const qids = Object.keys(_clozeCache).filter(k=>k!=='__cloze_v');
+  if(qids.length > 300) qids.slice(0, qids.length-300).forEach(k=>delete _clozeCache[k]);
+  Store.saveCloze(_clozeCache);
+  return words;
 }
 // 把关键词替换成占位标记，渲染答案后再换成填空输入框
 function clozeBuildHtml(answer, words){
   let text = String(answer||'');
+  // 长词优先并按包含关系去重：避免短词挖断长词（"3秒"挖进"13秒"）
+  const uniq = [];
+  words.slice().sort((a,b)=>b.length-a.length).forEach(w=>{
+    if(!uniq.some(u=>u.includes(w)||w.includes(u))) uniq.push(w);
+  });
   const used = [];
-  words.forEach(w=>{
-    const idx = text.indexOf(w);
-    if(idx === -1) return;   // 答案里没出现的词（如 AI 杜撰）跳过
-    text = text.slice(0,idx) + '\u0001' + used.length + '\u0001' + text.slice(idx+w.length);
-    used.push(w);
+  const taken = [];   // 已挖区间（当前文本坐标系；插入标记后坐标随之移动）
+  const isWordChar = c => /[0-9A-Za-z_]/.test(c);
+  uniq.forEach(w=>{
+    let from = 0;
+    while(true){
+      const idx = text.indexOf(w, from);
+      if(idx === -1) break;   // 答案里没出现的词（如 AI 杜撰）跳过
+      const end = idx + w.length;
+      // 边界检查：词由数字/字母构成时，前后不能拼成更长的词，避免挖断词面
+      if(/^[0-9A-Za-z]/.test(w) && ( (idx>0 && isWordChar(text[idx-1])) || isWordChar(text[end]||'') )){ from = idx + 1; continue; }
+      if(taken.some(t => idx < t[1] && end > t[0])){ from = idx + 1; continue; }   // 与已挖区间（含占位标记本身）重叠，跳过
+      const mark = '\u0001' + used.length + '\u0001';
+      text = text.slice(0,idx) + mark + text.slice(end);
+      taken.push([idx, idx + mark.length]);
+      used.push(w);
+      break;
+    }
   });
   let html = renderAnswer(text);
   html = html.replace(/\u0001(\d+)\u0001/g, (m,i)=>'<input type="text" class="cloze-blank" data-idx="'+i+'" autocomplete="off" autocapitalize="off" spellcheck="false">');
@@ -2419,6 +2461,7 @@ function clozeEq(a,b){
   const x = f(a), y = f(b);
   if(!x || !y) return false;
   if(x===y) return true;
+  if(Math.min(x.length, y.length) <= 5) return false;   // 短术语差一个字符含义不同，包含判对太松
   if(y.includes(x) && x.length/y.length>=0.7) return true;
   if(x.includes(y) && y.length/x.length>=0.7) return true;
   return false;
@@ -2518,8 +2561,10 @@ function renderClozeDone(c){
 }
 
 async function doGrillChat(){
+  if(!grill.started || grill.ended){ return; }   // 会话已退出/重置：丢弃延迟调用
   if(!aiConfig){ toast('请先配置 AI API'); grill.loading=false; renderAll(); return; }
-  const years = estimateYears(grill.resume)||3;
+  const _estYears = estimateYears(grill.resume);
+  const years = (typeof _estYears === 'number' && isFinite(_estYears)) ? _estYears : 3;   // 应届/校招返回 0 是有效值，不能被 ||3 吞掉
   const lv = years<=1 ? '初级' : years<=3 ? '中级' : years<=5 ? '高级' : '资深';
   const DEPTH = {
     '初级': '问基础用法和项目做了什么，不要追问底层原理，语气温和鼓励为主',
@@ -2623,29 +2668,36 @@ ${grill.resume}`
   const aiIdx = grill.messages.length - 1;
   renderAll();
   // 拷打场景：低温度保证专业一致；八股扫荡每题要输出完整参考答案，放宽 max_tokens 避免截断
+  if(grill._abort){ try{grill._abort.abort();}catch(_){} }
+  grill._abort = new AbortController();   // 重置/关闭时 abort：不再烧 token、不再写已重置的会话
   let _renderTimer = null;
   const r = await callAI(msgs, (full) => {
     // 流式渲染时隐藏 [FEEDBACK] 标记及其之后的内容
     const fbIdx = full.indexOf('[FEEDBACK]');
     const display = fbIdx !== -1 ? full.substring(0, fbIdx).trim() : full;
-    grill.messages[aiIdx].content = display;
+    const _m = grill.messages && grill.messages[aiIdx];
+    if(!_m) return;   // 会话已被重置：丢弃过期流的写回
+    _m.content = display;
     // 节流：合并高频 SSE 分片，避免每个分片都全量解析 Markdown + 重建 DOM（O(n²) 卡顿）
     if(_renderTimer) return;
     _renderTimer = setTimeout(() => {
       _renderTimer = null;
       const el = document.getElementById('gm-'+aiIdx);
-      if(el) el.innerHTML = md2html(grill.messages[aiIdx].content);
+      const _m2 = grill.messages && grill.messages[aiIdx];
+      if(el && _m2) el.innerHTML = md2html(_m2.content);
       const chat = document.getElementById('grillChat');
       if(chat) chat.scrollTop = chat.scrollHeight;
     }, 50);
-  }, {temperature:0.4, max_tokens:(grill.mode==='theory'?2048:1024), top_p:0.85});
+  }, {temperature:0.4, max_tokens:(grill.mode==='theory'?2048:1024), top_p:0.85, signal: grill._abort.signal});
   clearTimeout(_renderTimer); _renderTimer = null;
   grill.loading = false;
+  const _curMsg = grill.messages && grill.messages[aiIdx];
+  if(!_curMsg){ renderAll(); return; }   // 会话在流式期间被关闭/重置：丢弃过期结果
   if(!r){
     // 如果流式过程中已经渲染了部分内容，只追加错误提示，不全量覆盖
-    const existing = grill.messages[aiIdx].content;
-    if(!existing || existing==='...') grill.messages[aiIdx].content = '抱歉，API 调用失败，请检查 AI 配置。';
-    else grill.messages[aiIdx].content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
+    const existing = _curMsg.content;
+    if(!existing || existing==='...') _curMsg.content = '抱歉，API 调用失败，请检查 AI 配置。';
+    else _curMsg.content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
   } else {
     // 检测 AI 是否结束了面试（回复中包含 [FEEDBACK] 标记；手动退出时也会触发）
     const fbIdx = r.indexOf('[FEEDBACK]');
@@ -2657,43 +2709,51 @@ ${grill.resume}`
         // 拆分对话内容和反馈
         const dialogPart = r.substring(0, fbIdx).trim();
         const feedbackPart = r.substring(fbIdx + 10).trim(); // 跳过 [FEEDBACK] 标记
-        grill.messages[aiIdx].content = dialogPart || '面试结束。';
+        _curMsg.content = dialogPart || '面试结束。';
         grill.feedback = feedbackPart;
       } else {
         // 防守：候选人还没答满 5 题时模型违规输出 [FEEDBACK]（无简历八股首轮高发）——忽略结束标记，继续面试
         const dialogPart = r.substring(0, fbIdx).trim();
-        grill.messages[aiIdx].content = dialogPart || '我们继续面试。请回答上面的问题，或直接输入你的答案。';
+        _curMsg.content = dialogPart || '我们继续面试。请回答上面的问题，或直接输入你的答案。';
       }
     }
   }
   renderAll();
 }
 // PDF 文本提取（使用 pdf.js CDN）
-let _pdfjsReady=false;
+let _pdfjsReady=false, _pdfjsLoading=null;
 async function ensurePdfJs(){
   if(_pdfjsReady) return;
-  if(!window.pdfjsLib){
-    await new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload=resolve;s.onerror=()=>reject(new Error('pdf.js 加载失败'));
-      document.head.appendChild(s);
-    });
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-  _pdfjsReady=true;
+  if(_pdfjsLoading) return _pdfjsLoading;   // 并发加载去重，避免重复注入脚本
+  _pdfjsLoading = (async()=>{
+    if(!window.pdfjsLib){
+      await new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload=resolve;s.onerror=()=>{ _pdfjsLoading=null; reject(new Error('pdf.js 加载失败')); };
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    _pdfjsReady=true;
+  })();
+  return _pdfjsLoading;
 }
 async function extractPdfText(buf){
   await ensurePdfJs();
   const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
   const pages=[];
-  for(let i=1;i<=pdf.numPages;i++){
-    const page=await pdf.getPage(i);
-    const content=await page.getTextContent();
-    const pageText=content.items.map(it=>it.str).join(' ');
-    pages.push(pageText);
+  try{
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const content=await page.getTextContent();
+      const pageText=content.items.map(it=>it.str).join(' ');
+      pages.push(pageText);
+    }
+  } finally {
+    try{ await pdf.destroy(); }catch(_){}   // 释放文档对象，避免多次上传内存累积
   }
-  return pages.join('\n\n').replace(/\s+/g,' ').trim();
+  return pages.join(' ').trim();
 }
 function estimateYears(resume){
   const t = resume.toLowerCase();
@@ -2740,6 +2800,7 @@ function exportMockMD(){
   L.push('---');
   mock.queue.forEach((qid,i)=>{
     const q = questionById(qid);
+    if(!q) return;   // 题目已删除但队列残留
     const a = mock.answers[qid] || {};
     L.push('');
     L.push(`## 第 ${i+1} 题`);
@@ -2774,11 +2835,16 @@ async function saveApiConfig(cfg){ aiConfig=cfg; await Store.saveApiConfig(cfg);
 async function callAI(messages, onChunk, opts={}){
   const cfg=aiConfig; if(!cfg){ toast('请先配置 AI API'); return null; }
   const key=_safe.decode(cfg.key||'')||cfg.key||'';
-  const body={model:cfg.model,messages,stream:!!onChunk,...opts};
-  console.log('AI API 请求 →', cfg.url, '模型:', cfg.model, '参数:', opts, '消息数:', messages.length);
-  const ABORT_TIMEOUT = onChunk ? 180000 : 60000; // 流式请求3分钟超时，非流式60秒
+  const extSignal = opts.signal;   // 外部取消信号（调用方重置/关闭时中止），不进请求体
+  const bodyOpts = Object.assign({}, opts); delete bodyOpts.signal;
+  const body={model:cfg.model,messages,stream:!!onChunk,...bodyOpts};
+  const ABORT_TIMEOUT = onChunk ? 180000 : 60000; // 活跃超时：流式每收到数据就续期，长回答不会被拦腰掐断
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ABORT_TIMEOUT);
+  let timer = null;
+  const bumpTimer = () => { clearTimeout(timer); timer = setTimeout(() => ctrl.abort(), ABORT_TIMEOUT); };
+  bumpTimer();
+  const onExtAbort = () => ctrl.abort();
+  if(extSignal){ if(extSignal.aborted) ctrl.abort(); else extSignal.addEventListener('abort', onExtAbort); }
   try{
     const resp=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body),signal:ctrl.signal});
     if(!resp.ok){
@@ -2789,9 +2855,10 @@ async function callAI(messages, onChunk, opts={}){
       return null;
     }
     if(onChunk){
-      const r=resp.body.getReader();const d=new TextDecoder();let f='';let buf='';
+      const r=resp.body.getReader();const d=new TextDecoder();let f='';let buf='';let finishReason='';
       while(true){
         const{value,done}=await r.read();
+        bumpTimer();   // 收到数据即续期超时
         if(done) break;
         buf+=d.decode(value,{stream:true});
         // 按行分割处理 SSE
@@ -2799,22 +2866,27 @@ async function callAI(messages, onChunk, opts={}){
         buf=lines.pop()||''; // 最后一个可能不完整，留到下次
         for(const l of lines){
           if(!l.startsWith('data:')) continue; const j=l.slice(5).trimStart(); if(j==='[DONE]') continue;
-          try{ const c=JSON.parse(j).choices[0]?.delta?.content; if(c){f+=c;onChunk(f);} }catch(_){}
+          try{ const _p=JSON.parse(j); const c=_p.choices?.[0]?.delta?.content; if(_p.choices?.[0]?.finish_reason) finishReason=_p.choices[0].finish_reason; if(c){f+=c;onChunk(f);} }catch(_){}
         }
       }
       clearTimeout(timer);
+      if(finishReason==='length' && f) f += '\n\n⚠️（回答达到长度上限被截断）';
       return f;
     }else{
-      const j=await resp.json();
+      let j;
+      try{ j=await resp.json(); }catch(_){ clearTimeout(timer); toast('响应解析失败，请检查 API 地址是否正确'); return null; }
       clearTimeout(timer);
+      if(!j || !Array.isArray(j.choices) || !j.choices[0]){ toast((j && j.error && j.error.message) || 'API 返回异常响应'); return null; }
       return j.choices[0]?.message?.content||'';
     }
   }catch(e){
     clearTimeout(timer);
-    if(e.name==='AbortError') toast('AI 响应超时，请重试');
+    if(e.name==='AbortError'){ if(!(extSignal && extSignal.aborted)) toast('AI 响应超时，请重试'); }   // 外部主动取消不提示
     else toast('网络错误，请检查连接');
     console.warn('AI API 异常', e.message);
     return null;
+  }finally{
+    if(extSignal) extSignal.removeEventListener('abort', onExtAbort);
   }
 }
 async function gradeInterview(){
@@ -2823,7 +2895,7 @@ async function gradeInterview(){
   aiGradingLoading=true; aiGrading=null; renderAll();
   const rm={good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'};
   let p='你是资深技术面试官，请对以下八股练习作答进行客观阅卷。\n\n**要求：**\n- 逐题评分（满分100），给出：你的标准答案（精简）、得分、优点（1-2句）、不足（1-2句）、遗漏的关键点\n- 最后汇总：总分（所有题平均分）、整体评价（2-3句）、针对性备考建议（2-3条）\n- 评分标准：准确度40分 + 完整度30分 + 深度20分 + 表达10分\n- 严格但不苛刻，考生自评仅供参考\n\n';
-  for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]);const a=mock.answers[mock.queue[i]]||{};
+  for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]); if(!q) continue;const a=mock.answers[mock.queue[i]]||{};
     p+=`## 第${i+1}题\n**题目：** ${q.title}\n**我的回答：** ${a.answer||'(未填)'}\n**自评：** ${rm[a.selfRate]||'无'}\n\n`; }
   let _gTimer = null, _gLatest = '';
   const r=await callAI([{role:'system',content:'你是资深技术面试官，擅长客观评分。输出用 Markdown 格式，标题用 ##，重点用 **加粗**，不要输出 HTML。'},{role:'user',content:p}],(full)=>{
@@ -2841,6 +2913,7 @@ async function gradeInterview(){
 }
 async function askAI(qid, mode){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
+  if(aiAnswer[qid]==='loading'){ toast('AI 正在生成中，请稍候'); return; }   // 在途拦截：生成超 3 秒时防抖挡不住，双流会互相覆盖
   // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
   const now = Date.now();
   if(askAI._lastCall && now - askAI._lastCall < 3000 && askAI._lastQid === qid){
@@ -2945,7 +3018,7 @@ function _limitCache(obj, max){
 function formatAI(text){
   if(!text) return '';
   // 剥离角色前缀后统一交给 md2html 渲染（正确提取代码块，避免换行/**/`被误伤）
-  const s = text.replace(/^(user|assistant|system|human)[：:\s]*/gim,'');
+  const s = text.replace(/^(user|assistant|system|human)[：:\s]*/gi,'');   // 只剥整串开头；带 m 标志会误伤正文行
   return md2html(s);
 }
 
@@ -2953,6 +3026,7 @@ function formatAI(text){
 // 先校验答案正误，再判断题目是否需要代码，然后讲解；最后提炼一句「记忆锚点」（不盲信参考答案）
 async function askAICode(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
+  if(aiCodeStreaming[qid]){ toast('AI 正在生成中，请稍候'); return; }   // 在途拦截：防止同题双流互相覆盖
   // 防抖：同一题目 3 秒内不能重复请求，避免误触消耗 API 额度
   const now = Date.now();
   if(askAICode._lastCall && now - askAICode._lastCall < 3000 && askAICode._lastQid === qid){
@@ -3324,7 +3398,11 @@ function buildThemeGrid(filterGroup){
       card.className = 'theme-card';
       card.dataset.theme = id;
       const label = localStorage.getItem('customBgLabel') || cfg.name;
-      card.innerHTML = `<div class="tc-swatch" style="background:linear-gradient(135deg,${cfg.gradient})"></div><span class="tc-name">${label}</span>`;
+      card.innerHTML = `<div class="tc-swatch" style="background:linear-gradient(135deg,${cfg.gradient})"></div>`;
+      const _nameEl = document.createElement('span');   // 文件名派生的标签走 textContent，不拼进 innerHTML
+      _nameEl.className = 'tc-name';
+      _nameEl.textContent = label;
+      card.appendChild(_nameEl);
       card.onclick = ()=>{ applyTheme(id); hideModal($('#themePopup')); };
       if(id===currentTheme) card.classList.add('sel');
       bgRow.appendChild(card);
@@ -3408,15 +3486,18 @@ document.addEventListener('click',(e)=>{
 
 // ===== IndexedDB 图片存储（复用 Store 连接，避免重复 openDB） =====
 let _bgBlobUrl = null;
+let _bgLoadSeq = 0;   // 背景加载请求序号：两次 applyTheme('img-bg') 交叠时丢弃过期回调
 async function saveBgToDB(blob, callback){
   const ok = await Store.saveBg(blob);
   if(ok && callback) callback();
 }
 async function loadBgFromDB(callback){
+  const seq = ++_bgLoadSeq;
   const blob = await Store.getBg();
+  if(seq !== _bgLoadSeq) return;   // 已有更新的请求，丢弃过期结果
   if(_bgBlobUrl){ URL.revokeObjectURL(_bgBlobUrl); _bgBlobUrl = null; }
   _bgBlobUrl = blob ? URL.createObjectURL(blob) : null;
-  callback(_bgBlobUrl);
+  if(callback) callback(_bgBlobUrl);
 }
 
 // 检测图片主色调和亮度，计算最佳文字颜色
@@ -3503,29 +3584,55 @@ if(uploadBgBtn){
       const file = input.files[0];
       if(!file) return;
       if(file.size > 50 * 1024 * 1024){ toast('图片不能超过 50MB'); return; }
-      const objUrl = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = function(){
-        detectImageColors(img, function(colors){
+      // 入库成功：持久化配色/标签并刷新卡片（配色放在成功后写，入库失败不残留错配色）
+      const afterSaved = function(blob, colors){
+        saveBgToDB(blob, function(){
           localStorage.setItem('customBgColors', JSON.stringify(colors));
-          compressBgImage(img, file, function(blob){
-            URL.revokeObjectURL(objUrl);
-            saveBgToDB(blob, function(){
-              const name = file.name.replace(/\.[^.]+$/, '');
-              const label = name.length > 6 ? name.slice(0,6)+'…' : name;
-              localStorage.setItem('customBgLabel', label);
-              // 更新主题选择器卡片名称
-              const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
-              if(card) card.textContent = label;
-              const mb = (blob.size / 1024 / 1024).toFixed(1);
-              toast('背景图已保存（'+mb+'MB）');
-              if(currentTheme === 'img-bg') applyTheme('img-bg');
-            });
-          });
+          const name = file.name.replace(/\.[^.]+$/, '');
+          const label = name.length > 6 ? name.slice(0,6)+'…' : name;
+          localStorage.setItem('customBgLabel', label);
+          // 更新主题选择器卡片名称
+          const card = document.querySelector('#themeBgRow .theme-card[data-theme="img-bg"] .tc-name');
+          if(card) card.textContent = label;
+          const mb = (blob.size / 1024 / 1024).toFixed(1);
+          toast('背景图已保存（'+mb+'MB）');
+          if(currentTheme === 'img-bg') applyTheme('img-bg');
         });
       };
-      img.onerror = function(){ URL.revokeObjectURL(objUrl); toast('图片无法读取'); };
-      img.src = objUrl;
+      if(window.createImageBitmap){
+        // 先降采样再解码：超大图（如 12000×9000）全分辨率解码会直接 OOM 崩掉低端 WebView
+        createImageBitmap(file).then(function(full){
+          const scale = Math.min(1, 2048 / Math.max(full.width, full.height));
+          detectImageColors(full, function(colors){
+            if(scale >= 1 && file.size <= 4 * 1024 * 1024){ afterSaved(file, colors); return; }
+            const tw = Math.max(1, Math.round(full.width * scale)), th = Math.max(1, Math.round(full.height * scale));
+            full.close();
+            createImageBitmap(file, {resizeWidth: tw, resizeHeight: th}).then(function(bmp){
+              const c = document.createElement('canvas');
+              c.width = tw; c.height = th;
+              const g = c.getContext('2d');
+              g.fillStyle = '#000'; g.fillRect(0, 0, tw, th);
+              g.drawImage(bmp, 0, 0, tw, th);
+              bmp.close();
+              c.toBlob(function(b){ afterSaved(b || file, colors); }, 'image/jpeg', 0.85);
+            }).catch(function(){ toast('图片无法读取'); });
+          });
+        }).catch(function(){ toast('图片无法读取'); });
+      } else {
+        // 老环境兜底：原 Image 路径
+        const objUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = function(){
+          detectImageColors(img, function(colors){
+            compressBgImage(img, file, function(blob){
+              URL.revokeObjectURL(objUrl);
+              afterSaved(blob, colors);
+            });
+          });
+        };
+        img.onerror = function(){ URL.revokeObjectURL(objUrl); toast('图片无法读取'); };
+        img.src = objUrl;
+      }
     });
     input.click();
   });
@@ -3540,20 +3647,16 @@ if(uploadBgBtn){
   }
 })();
 
-// 初始化主题：如果是 img-bg 但没上传过图片，回退到默认
+// 初始化主题：脚本解析期 IndexedDB 尚未打开，img-bg 无法在此读取背景图。
+// 先应用默认主题避免无主题裸奔；init() 打开数据库后再做 img-bg 恢复（见 _imgBgPending）
 (function initTheme(){
   try{
-    let saved = localStorage.getItem('learnAppTheme');
+    const saved = localStorage.getItem('learnAppTheme');
     if(saved === 'img-bg'){
-      loadBgFromDB(function(bgUrl){
-        if(!bgUrl){
-          safeLocalSet('learnAppTheme', 'aurora');
-          saved = 'aurora';
-        }
-        if(saved && THEMES[saved]) applyTheme(saved);
-      });
-    } else {
-      if(saved && THEMES[saved]) applyTheme(saved);
+      window._imgBgPending = true;
+      applyTheme('aurora');
+    } else if(saved && THEMES[saved]){
+      applyTheme(saved);
     }
   }catch(_){}
 })();
@@ -3573,7 +3676,8 @@ $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagatio
 const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'},deepseek:{url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'}};
 async function loadApiCfgUI(){ const c=await loadApiConfig()||{}; $('#aiUrl').value=c.url||'';$('#aiKey').value=_safe.decode(c.key||'')||'';$('#aiModel').value=c.model||''; }
 $('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) return; $('#aiUrl').value=p.url;$('#aiModel').value=p.model; };
-['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; Store.saveApiConfig(aiConfig); }});
+let _aiCfgSaveTimer=null;   // AI 配置保存防抖
+['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=setTimeout(()=>Store.saveApiConfig(aiConfig), 400); }});
 
 $('#exportMDBtn').onclick = () => {
   const L = [];
@@ -3639,7 +3743,7 @@ function importJsonDocs(text){
     if(byId.has(nd.id)){ byId.set(nd.id, clone); replaced++; }
     else { byId.set(nd.id, clone); added++; }
   });
-  DOCS = [...byId.values()];
+  DOCS = normalizeDocs([...byId.values()]);
   if(data.progress && typeof data.progress==='object'){ PROGRESS = Object.assign({}, PROGRESS, data.progress); }
   if(data.clears && typeof data.clears==='object'){ CLEARS = Object.assign({}, CLEARS, data.clears); }
   const ids = new Set(DOCS.map(d=>d.id));
@@ -3647,7 +3751,7 @@ function importJsonDocs(text){
   if(data.order && Array.isArray(data.order)){
     const importOrder = data.order.filter(id=>ids.has(id));
     const extras = ORDER.filter(id=>ids.has(id)&&!importOrder.includes(id));
-    ORDER = [...importOrder, ...extras];
+    ORDER = [...new Set([...importOrder, ...extras])];   // 去重：导入的 order 含重复 id 会导致文档重复渲染
   } else {
     ORDER = (ORDER||[]).filter(id=>ids.has(id));
   }
@@ -3668,9 +3772,12 @@ function importMarkdownDoc(text, fileName){
   doc.id = doc.title; doc.imported = true; doc.source = 'md导入';
   const existing = DOCS.find(d=>d.id===doc.id) || DOCS.find(d=>d.title===doc.title);
   if(existing){
-    const have = new Set(existing.questions.map(q=>q.title));
+    const have = new Set((existing.questions||[]).map(q=>q.title));
     const fresh = doc.questions.filter(q=>!have.has(q.title));
-    existing.questions = existing.questions.concat(fresh);
+    // 合并时以目标文档现有题数续编 qid：同名文档二次导入若沿用 标题#n 会与旧题碰撞（共享进度、删题误删）
+    const base = (existing.questions||[]).length;
+    fresh.forEach((q,i)=>{ q.id = existing.id + '#' + (base+i+1) + '_' + Date.now(); });
+    existing.questions = (existing.questions||[]).concat(fresh);
     saveDocs();
     toast(`已合并到「${doc.title}」：新增 ${fresh.length} 题，现共 ${existing.questions.length} 题`);
   } else {
@@ -3689,7 +3796,12 @@ function importMarkdownDoc(text, fileName){
 function parseMarkdownToDoc(text, fallbackTitle){
   const lines = String(text).replace(/\r\n/g,'\n').split('\n');
   const heads = [];
-  lines.forEach((ln,i)=>{ const m = ln.match(/^(#{1,6})\s+(.*\S)\s*$/); if(m) heads.push({level:m[1].length, title:m[2].trim(), start:i}); });
+  let inFence = false;   // 跟踪代码围栏：``` 块内的 "# 注释" 行不能被当成题目标题
+  lines.forEach((ln,i)=>{
+    if(/^\s*(```|~~~)/.test(ln)){ inFence = !inFence; return; }
+    if(inFence) return;
+    const m = ln.match(/^(#{1,6})\s+(.*\S)\s*$/); if(m) heads.push({level:m[1].length, title:m[2].trim(), start:i});
+  });
   let docTitle = fallbackTitle, qHeads = heads;
   // 仅当"唯一一个 H1 且后面还有更深的标题(## 等)"时，才把该 H1 视为文档标题；
   // 否则（如笔记里每道题都是 # 开头）所有标题都按"题目"处理，文档标题取文件名。
@@ -3757,19 +3869,25 @@ async function updateStorageUsage(){
   }catch(_){ el.textContent = '无法获取存储用量'; }
 }
 // 公共推送函数，cloudPush 和 autoPush 共用
+let _pushing = false;   // 推送互斥：弱网挂起时防止定时器再发起一个并发 PATCH
 async function doPushToGist(token, gistId, onSuccess, onError){
+  if(_pushing) return false;
+  _pushing = true;
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
-  window._pushContentStr = contentStr;
+  const dirtyStamp = _dirtyStamp;   // 推送开始时的脏标记快照
+  const ctrl = new AbortController();
+  const timeout = setTimeout(()=>ctrl.abort(), 30000);   // 30s 超时：弱网不再无限挂起
   try{
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
       method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'token '+token},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}})
+      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}}),
+      signal:ctrl.signal
     });
     if(resp.ok){
-      _autoSyncDirty=false;
+      if(_dirtyStamp === dirtyStamp) _autoSyncDirty = false;   // 推送进行中产生的新变更不能被误清
       safeLocalSet('lastPushTime', data.updatedAt || '');
-      try{ const rj=await resp.json(); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){localStorage.setItem('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
+      try{ const rj=await resp.json(); const rt=data.updatedAt?new Date(data.updatedAt).getTime():new Date(rj.updated_at).getTime(); if(rt){safeLocalSet('lastRemoteTime',String(rt));_lastKnownRemoteTime=rt;} }catch(_){}
       if(onSuccess) onSuccess(data, contentStr, token, gistId);
       return true;
     } else {
@@ -3779,6 +3897,7 @@ async function doPushToGist(token, gistId, onSuccess, onError){
       return false;
     }
   }catch(e){ if(onError) onError('网络错误'); return false; }
+  finally{ clearTimeout(timeout); _pushing = false; }
 }
 
 async function cloudPush(){
@@ -3795,7 +3914,7 @@ async function cloudPush(){
           const vGist=await vResp.json();
           const vFile=vGist.files['learn-data.json'];
           if(vFile&&vFile.content){
-            if(vFile.content !== window._pushContentStr){
+            if(vFile.content !== contentStr){
               $('#cloudStatus').textContent='⚠️ 推送可能失败：Token 无写入权限或 Gist 不属于你';
             }
           }
@@ -3806,35 +3925,31 @@ async function cloudPush(){
   );
 }
 async function cloudPull(){
-  console.log('[pull] 按钮被点击');
   const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=$('#giteeGistId').value.trim();
-  if(!token||!gistId){console.warn('[pull] 缺少 token 或 gistId');toast('请填写 Token 和 Gist ID');return;}
+  if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='拉取中…';
   try{
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
-    console.log('[pull] 响应:', resp.status, resp.statusText);
-    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));console.error('[pull] 失败:', e);}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
+    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
     const gist=await resp.json();
-    console.log('[pull] gist updated_at:', gist.updated_at, 'owner:', gist.owner?.login);
+    if(gist.public && !cloudPull._pubWarned){ cloudPull._pubWarned=true; toast('⚠️ 该 Gist 是公开的，任何知道地址的人都能看到你的数据，建议改为私有'); }
     const file=gist.files['learn-data.json'];
     if(!file){$('#cloudStatus').textContent='❌ 云端无 learn-data.json';toast('云端无 learn-data.json，请确认 Gist ID 是否正确');return;}
     let rawContent=file.content||'';
-    // Gitee API content字段最多返回1MB，截断时尝试从raw_url获取完整内容
-    const CONTENT_TRUNCATE_THRESHOLD = 900000;
-    if(rawContent.length>CONTENT_TRUNCATE_THRESHOLD&&file.size&&file.size>rawContent.length){
+    // Gitee 对 content 按字节截断（1MB）：按字节数比较，文件比返回内容大即为被截断，改走 raw_url 取完整内容
+    let contentBytes = rawContent.length;
+    try{ contentBytes = new Blob([rawContent]).size; }catch(_){}
+    if(file.size && contentBytes < file.size){
       try{
         const rawResp=await fetch(file.raw_url);
-        if(rawResp.ok){rawContent=await rawResp.text();}
-      }catch(_){console.warn('[pull] 从raw_url获取完整数据失败');}
-      if(rawContent.length<=CONTENT_TRUNCATE_THRESHOLD&&file.size>rawContent.length){
-        toast('⚠️ 数据量较大，拉取可能不完整。建议清理部分题目后重新推送');
-      }
+        if(rawResp.ok){ const full=await rawResp.text(); if(full.length>rawContent.length) rawContent=full; }
+      }catch(_){}
+      let newBytes = rawContent.length; try{ newBytes = new Blob([rawContent]).size; }catch(_){}
+      if(file.size && newBytes < file.size) toast('⚠️ 数据量较大，拉取可能不完整。建议清理部分题目后重新推送');
     }
     if(!rawContent){$('#cloudStatus').textContent='❌ 云端数据为空';toast('云端 learn-data.json 内容为空');return;}
     let data;
-    try{data=JSON.parse(rawContent);}catch(_){$('#cloudStatus').textContent='❌ 云端数据格式异常，请重新推送';toast('云端数据格式异常，请在其他设备重新推送一次');return;}
-    console.log('[pull] 云端:', {docs:data.documents?.length, progressKeys:Object.keys(data.progress||{}).length, updatedAt:data.updatedAt});
-    console.log('[pull] 本地:', {docs:DOCS.length, progressKeys:Object.keys(PROGRESS).length});
+    try{data=JSON.parse(rawContent);}catch(_){$('#cloudStatus').textContent='❌ 云端数据格式异常，请重新推送';toast('云端数据格式异常（可能被截断），请在其他设备重新推送一次');return;}
     // 检查本地与云端数据是否一致（可能之前推送没生效）
     const localUpdated = DOCS.length ? (localStorage.getItem('lastPushTime') || '') : '';
     const cloudSame = data.updatedAt && localUpdated && data.updatedAt === localUpdated;
@@ -3844,17 +3959,29 @@ async function cloudPull(){
       return;
     }
     const timeLabel = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '未知';
+    const stampBeforeConfirm = _dirtyStamp;
     if(!await confirmDialog(`云端数据更新时间：${timeLabel}\n\n（Gist 服务器时间：${new Date(gist.updated_at).toLocaleString()}）\n\n拉取将覆盖本地数据，确定？`))return;
-    DOCS=data.documents||[];PROGRESS=data.progress||{};ORDER=data.order||[];CLEARS=data.clears||{};
+    // 确认等待期间本地若有新变更（定时器可能已把更新的数据推上云），放弃用旧快照覆盖，防止回滚丢数据
+    if(_dirtyStamp !== stampBeforeConfirm){ $('#cloudStatus').textContent='⚠️ 本地数据已变化，已取消拉取'; toast('本地数据有变化，请先推送再拉取'); return; }
+    // 形状校验：畸形云端数据不能污染内存
+    if(!data || !Array.isArray(data.documents)){ $('#cloudStatus').textContent='❌ 云端数据结构异常'; toast('云端数据结构异常，已取消拉取'); return; }
+    const newDocs = normalizeDocs(data.documents);
+    const newProgress = (data.progress && typeof data.progress==='object') ? data.progress : {};
+    const newOrder = Array.isArray(data.order) ? [...new Set(data.order)] : newDocs.map(d=>d.id);
+    const newClears = (data.clears && typeof data.clears==='object') ? data.clears : {};
+    // 先落库、全部成功后才覆盖内存：避免"提示拉取成功、实际没存进去，重载后回到旧数据"
+    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
+    if(!ok){ $('#cloudStatus').textContent='❌ 保存失败，本地数据未变'; toast('保存失败，本地数据未改变'); return; }
+    DOCS=newDocs;PROGRESS=newProgress;ORDER=newOrder;CLEARS=newClears;
     // 清理孤立进度
-    {const allQids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
-    await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
+    {const allQids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     buildIndex();
     invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
     // 用数据内容中的时间戳（更可靠），回退到 Gist 文件时间
     const t = data.updatedAt ? new Date(data.updatedAt).getTime() : (gist.updated_at ? new Date(gist.updated_at).getTime() : Date.now());
     _lastKnownRemoteTime = t;
-    localStorage.setItem('lastRemoteTime', String(t));
+    safeLocalSet('lastRemoteTime', String(t));
+    safeLocalSet('lastPushTime', data.updatedAt || '');   // 同步 lastPushTime：再次拉取同一版本会命中"已是最新"，不反复弹确认
     _autoSyncDirty = false;
     $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
     toast('已从云端同步');renderAll();hideModal($('#dataModal'));
@@ -3867,8 +3994,8 @@ async function cloudPull(){
       $('#cloudStatus').textContent='❌ 网络异常：'+e.message.substring(0,30);
       toast('网络异常，请检查 Token 或网络连接');
     }else{
-      $('#cloudStatus').textContent='❌ '+e.message.substring(0,40);
-      toast('拉取失败：'+e.message.substring(0,50));
+      $('#cloudStatus').textContent='❌ '+(e.message||'未知错误').substring(0,40);
+      toast('拉取失败：'+(e.message||'未知错误').substring(0,50));
     }
   }
 }
@@ -3877,7 +4004,8 @@ $('#cloudPush').onclick=cloudPush;$('#cloudPull').onclick=cloudPull;
 // ===== 云同步（页面加载时询问拉取，定时器自动推送） =====
 let _autoSyncDirty = false;  // 本地有未推送的变更
 let _autoSyncTimer = null;   // 定时器
-function markDirty(){ _autoSyncDirty = true; }
+let _dirtyStamp = 0;         // 变更印章：每次变更自增，用于检测推送/确认期间是否产生了新变更
+function markDirty(){ _autoSyncDirty = true; _dirtyStamp++; }
 async function autoPush(){
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
   const gistId = (localStorage.getItem('giteeGistId')||'').trim();   // 读 localStorage 而非输入框：输入框只有打开过设置弹窗才有值
@@ -3890,82 +4018,89 @@ async function autoPush(){
 function startAutoSyncTimer(){
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
   const gistId = localStorage.getItem('giteeGistId')||'';
+  if(_autoSyncTimer){ clearInterval(_autoSyncTimer); _autoSyncTimer = null; }   // 配置被清空时也要清除残留定时器
   if(!token || !gistId) return;
-  if(_autoSyncTimer) clearInterval(_autoSyncTimer);
   // 每 10 分钟检查一次，在线且有脏数据就推（页面隐藏时跳过，节省资源）
   _autoSyncTimer = setInterval(() => { if(!document.hidden) autoPush(); }, 10 * 60 * 1000);
 }
+// 回到前台补一次自动推送检查（移动端 WebView 后台存活短，定时推送窗口很小）
+document.addEventListener('visibilitychange', () => { if(!document.hidden && _autoSyncTimer) autoPush(); });
 // 页面加载时静默检查云端时间戳，只有云端更新了才弹窗询问
 let _lastKnownRemoteTime = 0; // 本地记录的云端最后更新时间
 async function askPullOnStart(){
-  console.log('[askPull] 开始检查...');
   const token = _safe.decode(localStorage.getItem('giteeToken')||'');
   const gistId = localStorage.getItem('giteeGistId')||'';
-  if(!token || !gistId){console.log('[askPull] 缺少配置，跳过');return;}
+  if(!token || !gistId) return;
   // 距上次检查不到 30 分钟，跳过
   const lastCheck = parseInt(localStorage.getItem('lastCheckTime')||'0');
-  if(Date.now() - lastCheck < 30 * 60 * 1000){console.log('[askPull] 距上次检查不足30分钟，跳过');return;}
+  if(Date.now() - lastCheck < 30 * 60 * 1000) return;
   // 读取本地记录的上次云端时间
   _lastKnownRemoteTime = parseInt(localStorage.getItem('lastRemoteTime')||'0');
-  console.log('[askPull] 本地记录的云端时间:', new Date(_lastKnownRemoteTime).toLocaleString());
   try{
     const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
-    console.log('[askPull] fetch 成功');
-    if(!resp.ok){console.log('[askPull] 响应非 ok:', resp.status);return;}
+    if(!resp.ok) return;
     // 请求成功后才记录检查时间，避免失败时误拦后续检查
-    localStorage.setItem('lastCheckTime', String(Date.now()));
+    safeLocalSet('lastCheckTime', String(Date.now()));
     const gist = await resp.json();
     // 先检查是否有 learn-data.json 文件，没有就跳过
     const file = gist.files['learn-data.json'];
-    if(!file || !file.content){console.log('[askPull] 云端无 learn-data.json');return;}
+    if(!file || !file.content) return;
+    if(gist.public && !askPullOnStart._pubWarned){ askPullOnStart._pubWarned=true; toast('⚠️ 你的同步 Gist 是公开的，题库和学习记录对任何知道地址的人可见，建议改为私有'); }
     let rawContent = file.content || '';
-    // Gitee API content 字段最多返回 1MB，截断时从 raw_url 获取完整内容
-    const CONTENT_TRUNCATE_THRESHOLD = 900000;
-    if(rawContent.length > CONTENT_TRUNCATE_THRESHOLD && file.size && file.size > rawContent.length){
+    // Gitee 对 content 按字节截断（1MB）：按字节数比较，被截断时从 raw_url 获取完整内容
+    let contentBytes = rawContent.length;
+    try{ contentBytes = new Blob([rawContent]).size; }catch(_){}
+    if(file.size && contentBytes < file.size){
       try{
         const rawResp = await fetch(file.raw_url);
-        if(rawResp.ok){ rawContent = await rawResp.text(); }
-      }catch(_){ console.warn('[askPull] 从 raw_url 获取完整数据失败'); }
+        if(rawResp.ok){ const full=await rawResp.text(); if(full.length>rawContent.length) rawContent=full; }
+      }catch(_){}
     }
+    // 只解析一次（原实现重复解析同一份大字符串）；解析失败要提示而非静默吞掉
+    let remote = null;
+    try{ remote = JSON.parse(rawContent); }catch(_){ toast('云端数据已损坏（可能被截断），请在其他设备重新推送'); return; }
     // 优先用数据内容中的 updatedAt（你推送时写入的时间戳），比 Gist 文件时间更可靠
     let remoteTime = 0, timeLabel = '未知';
-    try{
-      const remote = JSON.parse(rawContent);
-      if(remote.updatedAt){
-        remoteTime = new Date(remote.updatedAt).getTime();
-        timeLabel = new Date(remote.updatedAt).toLocaleString();
-      }
-    }catch(_){}
+    if(remote.updatedAt){
+      remoteTime = new Date(remote.updatedAt).getTime();
+      timeLabel = new Date(remote.updatedAt).toLocaleString();
+    }
     // 数据中没有时间戳时，回退到 Gist 文件时间
     if(!remoteTime && gist.updated_at){
       remoteTime = new Date(gist.updated_at).getTime();
       timeLabel = new Date(gist.updated_at).toLocaleString();
     }
-    console.log('[askPull] 云端数据时间:', timeLabel, '本地记录:', new Date(_lastKnownRemoteTime).toLocaleString());
-    if(!remoteTime){console.log('[askPull] 无法获取云端时间');return;}
-    if(remoteTime <= _lastKnownRemoteTime){console.log('[askPull] 云端未更新，跳过');return;}
+    if(!remoteTime) return;
+    if(remoteTime <= _lastKnownRemoteTime) return;
     if(!await confirmDialog(`云端有更新的数据（${timeLabel}），是否拉取？\n\n（请确保已在其他设备推送最新数据）`)){
       // 用户点取消：记录云端时间，下次不再弹同一个版本
       if(remoteTime){_lastKnownRemoteTime=remoteTime;safeLocalSet('lastRemoteTime',String(remoteTime));}
       return;
     }
-    // 拉取完整数据
-    const remote = JSON.parse(rawContent);
-    DOCS = remote.documents||[];
-    PROGRESS = remote.progress||{};
-    ORDER = remote.order||[];
-    CLEARS = remote.clears||{};
+    // 形状校验：畸形云端数据不能污染内存
+    if(!remote || !Array.isArray(remote.documents)){ toast('云端数据结构异常，已取消拉取'); return; }
+    const newDocs = normalizeDocs(remote.documents);
+    const newProgress = (remote.progress && typeof remote.progress==='object') ? remote.progress : {};
+    const newOrder = Array.isArray(remote.order) ? [...new Set(remote.order)] : newDocs.map(d=>d.id);
+    const newClears = (remote.clears && typeof remote.clears==='object') ? remote.clears : {};
+    // 先落库、成功后才覆盖内存
+    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
+    if(!ok){ toast('保存失败，本地数据未改变'); return; }
+    DOCS = newDocs;
+    PROGRESS = newProgress;
+    ORDER = newOrder;
+    CLEARS = newClears;
     // 清理孤立进度
-    {const qids=new Set();DOCS.forEach(d=>d.questions.forEach(q=>qids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!qids.has(qid))delete PROGRESS[qid];});}
-    await Store.saveDocs(DOCS);await Store.saveProgress(PROGRESS);await Store.saveOrder(ORDER);await Store.saveClears(CLEARS);
+    {const qids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>qids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!qids.has(qid))delete PROGRESS[qid];});}
     buildIndex();
     invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
     _autoSyncDirty = false;
-    localStorage.setItem('lastRemoteTime', String(remoteTime));
+    safeLocalSet('lastRemoteTime', String(remoteTime));
+    safeLocalSet('lastPushTime', remote.updatedAt || '');
     _lastKnownRemoteTime = remoteTime;
     renderAll();
     toast('已从云端拉取最新数据');
-  }catch(e){console.error('[askPull] 异常:', e);}
+  }catch(e){console.error('[askPull] 异常:', e);}   // 启动期静默检查：网络类失败不打扰用户
 }
 
 // 添加题目弹窗
@@ -4010,6 +4145,10 @@ document.addEventListener('keydown', e => {
    ========================================================= */
 // 自动合并种子数据：升级"待导入"(空文档)为已导入，并补上种子里新增的文档。
 // 不会覆盖用户已有内容的文档，避免误删手动编辑。
+// 深拷贝种子文档：{...sd} 与 SEED 共享 questions 数组，后续编辑/一次性清理会反向污染 SEED
+function cloneSeedDoc(sd, seedSource){
+  return { ...sd, source: seedSource, questions: (sd.questions||[]).map(q => ({ ...q, tags: Array.isArray(q.tags) ? q.tags.slice() : q.tags })) };
+}
 function mergeSeed(){
   if(!window.SEED || !Array.isArray(window.SEED.documents)) return false;
   const seedSource = (window.SEED && window.SEED.source) || '内置题库';
@@ -4020,10 +4159,10 @@ function mergeSeed(){
     const cur = curById.get(id);
     if(!cur){
       // 种子里有、本地没有 → 新增
-      curById.set(id, {...sd, source: seedSource}); changed = true;
+      curById.set(id, cloneSeedDoc(sd, seedSource)); changed = true;
     } else if((!cur.questions || cur.questions.length===0) && sd.questions && sd.questions.length){
       // 本地是"待导入"(空) 但种子有内容 → 升级为已导入
-      curById.set(id, {...sd, source: seedSource}); changed = true;
+      curById.set(id, cloneSeedDoc(sd, seedSource)); changed = true;
     }
   });
   if(changed) DOCS = [...curById.values()];
@@ -4033,15 +4172,23 @@ function mergeSeed(){
 (async function init(){
   setupErrorHandler();
   await Store.open();
+  // 自定义背景主题恢复：此时数据库已就绪，能真正判断是否上传过背景图
+  if(window._imgBgPending){
+    window._imgBgPending = false;
+    loadBgFromDB(function(bgUrl){
+      if(bgUrl) applyTheme('img-bg');
+      else safeLocalSet('learnAppTheme', 'aurora');   // 没上传过图：持久化回退默认主题
+    });
+  }
   const blank = !!(window.SEED && window.SEED.blank);
   if(blank) await Store.saveSeedOff(true);
   const saved = await Store.getDocs();
   const seedOff = (await Store.getSeedOff()) || blank;
-  if(seedOff){ DOCS = Array.isArray(saved)?saved:[]; }
-  else if(Array.isArray(saved)&&saved.length){ DOCS = saved; }
+  if(seedOff){ DOCS = normalizeDocs(saved); }
+  else if(Array.isArray(saved)&&saved.length){ DOCS = normalizeDocs(saved); }
   else if(window.SEED && Array.isArray(window.SEED.documents)){
     const seedSource = (window.SEED && window.SEED.source) || '内置题库';
-    DOCS = window.SEED.documents.map(d => ({...d, source: seedSource}));
+    DOCS = window.SEED.documents.map(d => cloneSeedDoc(d, seedSource));
   }
   if(!seedOff){ const merged = mergeSeed(); if(merged) await saveDocs(); }
   buildIndex();
@@ -4064,7 +4211,7 @@ function mergeSeed(){
   // 清理孤立进度：删除对应题目已不存在的进度条目
   (function cleanupOrphanProgress(){
     const allQids = new Set();
-    DOCS.forEach(d => d.questions.forEach(q => allQids.add(q.id)));
+    DOCS.forEach(d => (d.questions||[]).forEach(q => allQids.add(q.id)));
     let cleaned = false;
     Object.keys(PROGRESS).forEach(qid => {
       if(!allQids.has(qid)){ delete PROGRESS[qid]; cleaned = true; }
@@ -4127,12 +4274,13 @@ function startUnifiedCanvas(theme){
   }
   // Canvas 主题：创建或复用 Canvas
   if(_uTheme === theme) return;
+  _spriteCache.clear();   // 切主题时清掉上一主题的精灵，避免常驻内存（按需懒生成会自动重建）
   if(!_uCanvas){
     _uCanvas = document.createElement('canvas');
     _uCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     document.body.appendChild(_uCanvas);
     _uCtx = _uCanvas.getContext('2d');
-    window.addEventListener('resize', resizeUnified);
+    window.addEventListener('resize', resizeUnifiedDebounced);
     resizeUnified();
   }
   _uTheme = theme;
@@ -4151,6 +4299,21 @@ function resizeUnified(){
   _uCanvas.style.height = window.innerHeight + 'px';
   // 存在 ctx 时同步缩放，让所有绘制坐标保持逻辑像素
   if(_uCtx) _uCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+let _resizeTimer = null;
+function resizeUnifiedDebounced(){
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(resizeUnified, 150);   // 防抖：移动端地址栏收展/窗口拖动时不再高频重建画布位图
+}
+// 系统「减少动态效果」会话中途切换时同步响应
+if(window.matchMedia){
+  try{
+    const _mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if(_mqReduce.addEventListener) _mqReduce.addEventListener('change', () => {
+      if(_mqReduce.matches){ startUnifiedCanvas(''); }   // 进入 reduce 分支：停止并清理画布
+      else startUnifiedCanvas(localStorage.getItem('learnAppTheme')||'aurora');
+    });
+  }catch(_){}
 }
 function initThemeParticles(theme){
   _uParticles = [];
@@ -4308,19 +4471,7 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── 默认通用粒子 ──
-  else {
-    const count = isMobile?30:60;
-    for(let i=0;i<count;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
-        life:Math.random(), maxLife:1+Math.random()*3,
-        size:0.5+Math.random()*2,
-        seed:Math.random()*9999
-      });
-    }
-  }
+  // 注：canvasThemes 白名单保证每个 canvas 主题都有上面的显式分支，无默认分支（原默认分支不可达）
 }
 let _uHidden = false;
 function restartCanvasLoop(){
@@ -4541,15 +4692,16 @@ function drawParticle(ctx,W,H,dt){
   }
 }
 
+// 流光河层（精灵贴图替代每帧 4 个全屏径向渐变）；提升为常量，避免每帧重建数组
+const GOLD_RIVERS = [
+  {y:0.15, color:[255,200,120,0.12], speed:0.08, width:0.4},
+  {y:0.35, color:[255,160,60,0.1], speed:-0.06, width:0.35},
+  {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
+  {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
+];
 function drawGold(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
-  // 流光河层（精灵贴图替代每帧 4 个全屏径向渐变）
-  const rivers = [
-    {y:0.15, color:[255,200,120,0.12], speed:0.08, width:0.4},
-    {y:0.35, color:[255,160,60,0.1], speed:-0.06, width:0.35},
-    {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
-    {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
-  ];
+  const rivers = GOLD_RIVERS;
   for(let i=0;i<rivers.length;i++){
     const r=rivers[i];
     const offset = (((t*r.speed) % 2 + 2) % 2 - 1) * W;
@@ -4668,27 +4820,45 @@ function drawZirong(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '18';
+const SW_VERSION = '19';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
     if(savedVer !== SW_VERSION){
-      await caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
-      localStorage.setItem('learnAppSWVer', SW_VERSION);
+      // 只清理本应用的缓存（learn- 前缀）与本应用的 SW，避免同域部署其它应用时被误删
+      try{
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(k => k.indexOf('learn-') === 0).map(k => caches.delete(k)));
+      }catch(_){}
+      try{
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => {
+          try{
+            const scriptUrl = (r.active && r.active.scriptURL) || (r.waiting && r.waiting.scriptURL) || (r.installing && r.installing.scriptURL) || '';
+            return (!scriptUrl || scriptUrl.indexOf('sw.js') !== -1) ? r.unregister() : Promise.resolve();
+          }catch(_){ return Promise.resolve(); }
+        }));
+      }catch(_){}
     }
     navigator.serviceWorker.register('sw.js').then(reg => {
+      // 注册成功后才记录版本：注册失败时下次启动仍会触发修复（此前旧 SW 已注销，不修复会永久丢失离线能力）
+      localStorage.setItem('learnAppSWVer', SW_VERSION);
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if(!newWorker) return;
         newWorker.addEventListener('statechange', () => {
           if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
-            if(confirm('有新版本可用，是否立即刷新？')){ newWorker.postMessage('skipWaiting'); location.reload(); }
+            if(confirm('有新版本可用，是否立即刷新？')){
+              newWorker.postMessage('skipWaiting');
+              // 等新 SW 接管页面再刷新，避免立即刷新仍命中旧 SW；3 秒兜底强刷
+              let _reloaded = false;
+              navigator.serviceWorker.addEventListener('controllerchange', () => { if(!_reloaded){ _reloaded = true; location.reload(); } });
+              setTimeout(() => { if(!_reloaded){ _reloaded = true; location.reload(); } }, 3000);
+            }
           }
         });
       });
-    }).catch(() => {});
+    }).catch(e => { console.warn('[SW] 注册失败', e); });
   })();
 }
 </script>
