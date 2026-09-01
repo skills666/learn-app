@@ -1,13 +1,14 @@
-const CACHE = 'learn-v18';
+const CACHE = 'learn-v19';
 
 // 预缓存静态资源，确保离线可用
 const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRE_CACHE).catch(err => {
-      console.warn('[SW] 预缓存部分资源失败:', err);
-    }))
+    // 逐个 add 并容错：单个资源 404 只跳过它自己，不让 addAll 的原子失败拖垮整个离线首开
+    caches.open(CACHE).then(c => Promise.all(
+      PRE_CACHE.map(u => c.add(u).catch(err => console.warn('[SW] 预缓存资源失败:', u, err)))
+    ))
   );
   self.skipWaiting();
 });
@@ -29,9 +30,12 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request, { cache: 'no-cache' }).then(async resp => {
         // 缓存写入放在 respondWith 链内完成：waitUntil 在事件派发结束后再调用会失败，导致离线缓存一直不更新
-        try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put('index.html', copy); } catch(_) {}
+        // 只缓存成功响应：404/5xx 错误页不能当作 index.html 存入缓存，否则离线时会一直打开错误页
+        if (resp.ok) {
+          try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put('index.html', copy); } catch(_) {}
+        }
         return resp;
-      }).catch(() => caches.match('index.html'))
+      }).catch(() => caches.match('index.html').then(r => r || Response.error()))
     );
     return;
   }
@@ -49,7 +53,7 @@ self.addEventListener('fetch', e => {
         try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put(e.request, copy); } catch(_) {}
       }
       return resp;
-    }).catch(() => caches.match(e.request))
+    }).catch(() => caches.match(e.request).then(r => r || Response.error()))
   );
 });
 

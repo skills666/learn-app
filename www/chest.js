@@ -5,7 +5,7 @@ const IS_MOBILE = !!(window.matchMedia && window.matchMedia('(max-width:768px)')
 if (IS_MOBILE) return;
 const C=document.createElement('canvas');
 // z-index 90：在内容之上、弹窗(100)/模态(9999)之下，避免遮挡交互层
-C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:90;transition:transform .3s ease,opacity .3s ease';
+C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:90';
 document.body.appendChild(C);
 const X=C.getContext('2d');
 // roundRect 兼容：部分旧内核没有原生实现，缺失时整个宝箱脚本会抛错中断
@@ -23,7 +23,7 @@ if(X&&!X.roundRect){
   };
 }
 let W,H,flr,chestSkin=0,rewardSkin=0;
-try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');if(s.chest!==undefined)chestSkin=+s.chest;if(s.item!==undefined)rewardSkin=+s.item;}catch(_){}
+try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');if(s.chest!==undefined)chestSkin=Math.min(Math.max(+s.chest||0,0),5);if(s.item!==undefined)rewardSkin=Math.min(Math.max(+s.item||0,0),2);}catch(_){}   // 读回钳制范围：防止 localStorage 被篡改成越界值导致皮肤函数 undefined 每帧抛错
 function R(){W=340;H=400;flr=H*.76;const d=Math.min(devicePixelRatio||1,2);C.width=W*d;C.height=H*d;C.style.width=W+'px';C.style.height=H+'px';C.style.right='-40px';C.style.bottom='-40px';X.setTransform(d,0,0,d,0,0);}
 R();window.addEventListener('resize',R);
 const K=()=>220/520;
@@ -748,7 +748,7 @@ function updateFX(dt){
   T+=dt; idleBob+=dt;
   // 盖子：飞出 → 回落
   if(lidPhase==='flying'){
-    lidFV+=.14;
+    lidFV+=8.4*dt;   // 加速度也按 dt 积分：原来按帧累加，120Hz 屏上盖飞出速度约为 60Hz 两倍
     lidFY+=lidFV*dt*40;
     lidFR+=lidRV*dt;
     if(lidFY>-cb().h*.14){
@@ -766,7 +766,7 @@ function updateFX(dt){
   if(glowA>0) glowA-=dt*.8;
   // 奖励物件物理
   for(const it of items){
-    it.vy+=it.g;
+    it.vy+=it.g*dt*60;   // 与位移的 dt 基准对齐（60fps 下等价于原每帧累加）
     it.x+=it.vx*dt*30;
     it.y+=it.vy*dt*30;
     it.life-=dt;
