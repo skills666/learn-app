@@ -2579,7 +2579,7 @@ Markdown格式，题目加粗，点评简洁不啰嗦，参考答案完整清晰
 
 ${grill.resume?`
 候选人简历：
-${grill.resume}`:''}`,
+${grill.resume}`:'\n现在，直接出第一道题。'}`,
 
     real: `你是资深面试官，正在进行真实面试模拟。候选人大约${years}年经验（${lv}）。
 
@@ -2610,6 +2610,8 @@ ${grill.resume}`
   // 如果历史消息中没有 user 消息，需要一条 user 消息触发 AI（纯 system prompt 会导致模型复述提示词）
   const hasUserMsg = grill.messages.some(m => m.role === 'user');
   if(!hasUserMsg){
+    // 第一轮追加开场约束：无简历八股场景下，提示词以"结束规则"收尾，部分模型会首轮直接输出 [FEEDBACK] 结束面试
+    msgs[0].content += '\n\n当前是面试第一轮：你的回复必须是第一道题/第一个问题本身，严禁说"面试结束"、严禁输出 [FEEDBACK]。';
     msgs.push({role:'user', content: grill.mode==='theory'?'开始出题':'开始面试'});
   }
   for(const m of grill.messages){
@@ -2648,13 +2650,20 @@ ${grill.resume}`
     // 检测 AI 是否结束了面试（回复中包含 [FEEDBACK] 标记；手动退出时也会触发）
     const fbIdx = r.indexOf('[FEEDBACK]');
     if(fbIdx !== -1){
-      grill.ended = true;
-      grill.forceEnd = false;
-      // 拆分对话内容和反馈
-      const dialogPart = r.substring(0, fbIdx).trim();
-      const feedbackPart = r.substring(fbIdx + 10).trim(); // 跳过 [FEEDBACK] 标记
-      grill.messages[aiIdx].content = dialogPart || '面试结束。';
-      grill.feedback = feedbackPart;
+      const userTurns = grill.messages.filter(m=>m.role==='user').length;
+      if(grill.forceEnd || userTurns >= 5){
+        grill.ended = true;
+        grill.forceEnd = false;
+        // 拆分对话内容和反馈
+        const dialogPart = r.substring(0, fbIdx).trim();
+        const feedbackPart = r.substring(fbIdx + 10).trim(); // 跳过 [FEEDBACK] 标记
+        grill.messages[aiIdx].content = dialogPart || '面试结束。';
+        grill.feedback = feedbackPart;
+      } else {
+        // 防守：候选人还没答满 5 题时模型违规输出 [FEEDBACK]（无简历八股首轮高发）——忽略结束标记，继续面试
+        const dialogPart = r.substring(0, fbIdx).trim();
+        grill.messages[aiIdx].content = dialogPart || '我们继续面试。请回答上面的问题，或直接输入你的答案。';
+      }
     }
   }
   renderAll();
@@ -4659,7 +4668,7 @@ function drawZirong(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '17';
+const SW_VERSION = '18';
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');
