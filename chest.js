@@ -2,7 +2,9 @@
 // ════════════════ 宝箱渲染引擎 ════════════════
 // 移动端（窄屏）不渲染宝箱，避免遮挡内容、影响观看
 const IS_MOBILE = !!(window.matchMedia && window.matchMedia('(max-width:768px)').matches);
-if (IS_MOBILE) return;
+// 无障碍：系统开启「减少动态效果」时不渲染宝箱动画（与主 Canvas 引擎、CSS 降级保持一致）
+const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+if (IS_MOBILE || REDUCED_MOTION) return;
 const C=document.createElement('canvas');
 // z-index 90：在内容之上、弹窗(100)/模态(9999)之下，避免遮挡交互层
 C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:90';
@@ -745,7 +747,8 @@ let _loopPaused=false;
 document.addEventListener('visibilitychange',function(){_loopPaused=document.hidden;});
 
 function updateFX(dt){
-  T+=dt; idleBob+=dt;
+  T+=dt; if(T>1e7) T=0;   // 长时间运行回卷，避免 Math.sin 精度下降
+  idleBob+=dt; if(idleBob>1e7) idleBob=0;
   // 盖子：飞出 → 回落
   if(lidPhase==='flying'){
     lidFV+=8.4*dt;   // 加速度也按 dt 积分：原来按帧累加，120Hz 屏上盖飞出速度约为 60Hz 两倍
