@@ -60,15 +60,27 @@
   .topbar .search input::placeholder{color:var(--faint)}
   .btn{border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
   .btn:hover{border-color:var(--accent2)}
-  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0b0e16}
-  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0b0e16;
+               box-shadow:0 2px 8px rgba(0,0,0,.25);transition:filter .18s,box-shadow .22s,transform .22s}
+  .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px);
+                     box-shadow:0 6px 22px rgba(var(--accent-rgb),.38),0 4px 16px rgba(var(--accent2-rgb),.32)}
   .btn.ghost{background:transparent}
   .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
   .content{flex:1;overflow-y:auto;padding:24px 28px calc(40px + env(safe-area-inset-bottom, 0px));max-width:1200px;margin:0 auto;width:100%}
-  .content.in{animation:viewIn .22s cubic-bezier(.22,.61,.36,1)}
-  @keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  /* 视图切换：内容块逐个「上浮 + 去模糊」交错入场（致敬 DeepSeek Harness 的 hero-enter） */
+  .content.in > *{animation:riseIn .55s cubic-bezier(.22,.61,.36,1) backwards}
+  .content.in > *:nth-child(1){animation-delay:.02s}
+  .content.in > *:nth-child(2){animation-delay:.06s}
+  .content.in > *:nth-child(3){animation-delay:.10s}
+  .content.in > *:nth-child(4){animation-delay:.14s}
+  .content.in > *:nth-child(5){animation-delay:.18s}
+  .content.in > *:nth-child(6){animation-delay:.22s}
+  .content.in > *:nth-child(7){animation-delay:.26s}
+  .content.in > *:nth-child(8){animation-delay:.30s}
+  .content.in > *:nth-child(n+9){animation-delay:.34s}
+  @keyframes riseIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
   @media (prefers-reduced-motion: reduce){
@@ -81,8 +93,9 @@
   .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
 
   .q{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-     padding:16px 18px;margin-bottom:13px;transition:.15s}
-  .q:hover{border-color:var(--accent2)}
+     padding:16px 18px;margin-bottom:13px;transition:border-color .18s,box-shadow .22s,transform .22s}
+  .q:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
+           box-shadow:0 8px 26px rgba(0,0,0,.35),0 0 0 1px rgba(var(--accent2-rgb),.12),0 0 22px rgba(var(--accent2-rgb),.16)}
   .q .qhead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
   .q .qnum{flex:none;width:26px;height:26px;border-radius:8px;background:var(--panel2);
           display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--accent);margin-top:1px}
@@ -153,8 +166,9 @@
 
   /* overview */
   .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:border-color .15s}
-  .ov-card:hover{border-color:var(--accent2)}
+  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:border-color .18s,box-shadow .22s,transform .22s}
+  .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);
+                 box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(var(--accent2-rgb),.2)}
   .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .ov-card .t{color:var(--muted);font-size:13px;margin-top:4px}
@@ -255,8 +269,9 @@
   .mock-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:18px}
   .mock-card .ptag{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .mock-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-  .memory-card:hover{border-color:var(--accent2)}
+  .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:border-color .2s,box-shadow .25s,transform .25s}
+  .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
+                     box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(var(--accent2-rgb),.2)}
   .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
   .memory-answer{border-top:1px dashed var(--line2);padding-top:16px;color:var(--muted);line-height:1.8;font-size:15px}
@@ -1288,12 +1303,13 @@ function renderBrowse(c){
   const d = docById(currentDocId);
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
   const seen=docSeen(d), tot=d.questions.length, dp=tot?Math.round(seen/tot*100):0;
+  const mastered=docMastered(d);
   let html = `
     <div class="doc-head">
       <div>
         <h2>${renderTitle(d.title)}</h2>
         <div class="meta">共 ${tot} 题 · 已看 ${seen} 题（${dp}%）${
-          docMastered(d)?` · 掌握 ${docMastered(d)} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'ima 知识库')}</div>
+          mastered?` · 掌握 ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'ima 知识库')}</div>
         <div class="bigbar"><i style="width:${dp}%"></i></div>
       </div>
       <div style="display:flex;gap:8px">
@@ -3177,7 +3193,7 @@ function renderAll(){
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
       c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
       c.classList.add('in');
-      setTimeout(()=>c.classList.remove('in'),250);
+      setTimeout(()=>c.classList.remove('in'),900);
     }
   }
 }
@@ -3234,19 +3250,19 @@ const THEMES = {
 // ======== 主题配置表（元数据驱动） ========
 const THEME_CONFIG = {
   // ── 动态组：全部带Canvas粒子特效 ──
-  aurora:  {group:'canvas', name:'星云',   canvas:'aurora',   gradient:'#8b7cf6,#5ad1c9'},
-  midnight:{group:'canvas', name:'子夜',   canvas:'midnight', gradient:'#6366f1,#818cf8'},
-  sunset:  {group:'canvas', name:'日落',   canvas:'sunset',   gradient:'#f97316,#ef4444'},
-  ripple:  {group:'canvas', name:'雨隙',   canvas:'ripple',   gradient:'#6b8ca4,#4a6d8c'},
-  particle:{group:'canvas', name:'粒子',   canvas:'particle', gradient:'#f472b6,#22d3ee'},
-  gold:    {group:'canvas', name:'流光',   canvas:'gold',     gradient:'#f5c542,#e09020'},
-  void:    {group:'canvas', name:'晨光',   canvas:'void',     gradient:'#d8b870,#a8752a'},
-  shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#60c0f0,#88d8ff'},
-  night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#3d3d6e,#88c878'},
+  aurora:  {group:'canvas', name:'星云',   canvas:'aurora',   gradient:'#7c3aed,#2dd4bf'},
+  midnight:{group:'canvas', name:'子夜',   canvas:'midnight', gradient:'#1e1b4b,#818cf8'},
+  sunset:  {group:'canvas', name:'日落',   canvas:'sunset',   gradient:'#fbbf24,#ef4444'},
+  ripple:  {group:'canvas', name:'雨隙',   canvas:'ripple',   gradient:'#38bdf8,#0f4c5c'},
+  particle:{group:'canvas', name:'粒子',   canvas:'particle', gradient:'#e879f9,#22d3ee'},
+  gold:    {group:'canvas', name:'流光',   canvas:'gold',     gradient:'#fcd34d,#b45309'},
+  void:    {group:'canvas', name:'晨光',   canvas:'void',     gradient:'#fde68a,#d97706'},
+  shuangren:{group:'canvas',name:'霜刃',   canvas:'shuangren',gradient:'#7dd3fc,#0369a1'},
+  night:   {group:'canvas', name:'夜萤',   canvas:'night',    gradient:'#1e1b4b,#a3e635'},
   // ── 定制组：子良/松星/子荣 ──
-  ziliang: {group:'custom', name:'子良',   canvas:'none',     gradient:'#3f6f7a,#b08050'},
+  ziliang: {group:'custom', name:'子良',   canvas:'ziliang',  gradient:'#0f766e,#b8c4c0'},
   songxing:{group:'custom', name:'松星',   canvas:'songxing', gradient:'#a78bfa,#d4a854'},
-  zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#cf2a3a,#f0a838'},
+  zirong:  {group:'custom', name:'子荣',   canvas:'zirong',   gradient:'#dc2626,#f59e0b'},
   // ── 自定义组：上传背景图 ──
   'img-bg':{group:'bg',    name:'自定义',  canvas:'none',     gradient:'#666,#444'},
 };
@@ -3259,7 +3275,6 @@ const CSS_FX = {
   ripple:``,
   particle:``,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
-  ziliang:`body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 450px at 30% 20%,rgba(63,111,122,.10),transparent 55%),radial-gradient(ellipse 700px 350px at 72% 70%,rgba(176,128,80,.08),transparent 55%)}.bigbar{background:#7c8285}.pbar{background:rgba(255,255,255,.1)}.stats-bar .bar{background:rgba(255,255,255,.1)}.content::-webkit-scrollbar-thumb{background:#a5aaad}.btn.primary{color:#f2f3f4}`,
 };
 
 // 背景渐变映射表
@@ -3272,7 +3287,7 @@ const BODY_BG_MAP = {
   songxing: `radial-gradient(1200px 700px at 25% 10%, #a78bfa1a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #d4a85412 0%, transparent 50%), var(--bg)`,
   gold:     `radial-gradient(1200px 600px at 30% 15%, #f5c54240 0%, transparent 50%), radial-gradient(1000px 500px at 70% 10%, #e0902030 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, #f5c5421a 0%, transparent 55%), var(--bg)`,
   void:     `radial-gradient(1200px 700px at 30% 15%, #e8d8c01f 0%, transparent 55%), radial-gradient(1000px 600px at 70% 25%, #d4c0a018 0%, transparent 55%), var(--bg)`,
-  shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), linear-gradient(180deg, #020810, #040e1c, #020810)`,
+  shuangren:`radial-gradient(1400px 700px at 25% 10%, #60c0f030 0%, transparent 50%), radial-gradient(1200px 600px at 75% 5%, #88d8ff25 0%, transparent 50%), var(--bg)`,
   night:    `radial-gradient(1000px 500px at 75% 15%, rgba(40,50,90,.35) 0%, transparent 50%), radial-gradient(800px 350px at 50% 80%, rgba(20,50,15,.18) 0%, transparent 55%), var(--bg)`,
   ziliang:  `radial-gradient(900px 500px at 30% 10%, rgba(63,111,122,.14) 0%, transparent 50%), radial-gradient(800px 450px at 75% 20%, rgba(176,128,80,.12) 0%, transparent 50%), radial-gradient(600px 350px at 50% 85%, rgba(90,110,120,.08) 0%, transparent 55%), var(--bg)`,
   zirong:   `radial-gradient(1400px 800px at 20% 10%, rgba(30,180,70,.15) 0%, transparent 50%), radial-gradient(1200px 700px at 85% 5%, rgba(200,40,50,.12) 0%, transparent 50%), radial-gradient(1000px 500px at 50% 80%, rgba(240,160,100,.12) 0%, transparent 55%), var(--bg)`,
@@ -4248,6 +4263,7 @@ function mergeSeed(){
 let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
 let _uTheme = '';
 let _uParticles = [];
+let _uRipples = [];
 let _uFadeIn = 1;
 
 function startUnifiedCanvas(theme){
@@ -4258,7 +4274,7 @@ function startUnifiedCanvas(theme){
     _uParticles = []; _uTheme = ''; _uTime = 0;
     return;
   }
-  const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','songxing','zirong'];
+  const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','songxing','zirong','ziliang'];
   if(!canvasThemes.includes(theme)){
     // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
@@ -4317,11 +4333,12 @@ if(window.matchMedia){
 }
 function initThemeParticles(theme){
   _uParticles = [];
+  _uRipples = [];
   // 用逻辑像素，与 tickUnified 的坐标系统保持一致
   const W = window.innerWidth, H = window.innerHeight;
   const isMobile = W < 768;
 
-  // ── aurora: 紫青极光飘带 ──
+  // ── aurora: 紫青极光飘带（恢复原样）──
   if(theme==='aurora'){
     const n = isMobile?25:50;
     for(let i=0;i<n;i++){
@@ -4335,9 +4352,8 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── midnight: 流星雨 + 星云旋转 ──
+  // ── midnight: 流星雨 + 星点（保留）──
   else if(theme==='midnight'){
-    // 背景星点：固定位置，极慢闪烁
     const n = isMobile?60:120;
     for(let i=0;i<n;i++){
       _uParticles.push({
@@ -4347,7 +4363,6 @@ function initThemeParticles(theme){
         hue:220+Math.random()*50, type:'star'
       });
     }
-    // 流星：从右上到左下斜射
     const mCount = isMobile?4:10;
     for(let i=0;i<mCount;i++){
       _uParticles.push({
@@ -4359,20 +4374,21 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── sunset: 暖橙光斑浮尘 ──
+  // ── sunset: 落日余烬（火星从地平线升起）──
   else if(theme==='sunset'){
-    const n = isMobile?30:60;
+    const n = isMobile?40:80;
     for(let i=0;i<n;i++){
       _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.5, vy:-(0.2+Math.random()*0.6),
-        size:1+Math.random()*4, alpha:0.08+Math.random()*0.35,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5,
-        hue:15+Math.random()*30 // 橙-红
+        x:Math.random()*W, y:H*0.6+Math.random()*H*0.45,
+        vx:(Math.random()-0.5)*0.3, vy:0.3+Math.random()*1.3,
+        size:0.5+Math.random()*2, alpha:0.2+Math.random()*0.5,
+        phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*2,
+        hue:10+Math.random()*35, // 橙-红余烬
+        sparkle:Math.random()<0.25
       });
     }
   }
-  // ── ripple/雨隙: 柔和雨丝 + 朦胧水雾 ──
+  // ── ripple/雨隙: 雨丝 + 落地涟漪（涟漪动态生成）──
   else if(theme==='ripple'){
     const n = isMobile?40:80;
     for(let i=0;i<n;i++){
@@ -4385,20 +4401,20 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── particle: 七彩荧光漂浮 ──
+  // ── particle: 星座节点（粒子间近距连线成网）──
   else if(theme==='particle'){
-    const n = isMobile?35:70;
+    const n = isMobile?40:75;
     for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.7, vy:(Math.random()-0.5)*0.7,
-        size:1+Math.random()*3.5, alpha:0.15+Math.random()*0.4,
-        phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*2,
-        hue:Math.random()*360
+        vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5,
+        size:0.8+Math.random()*1.8, alpha:0.3+Math.random()*0.5,
+        phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*1.5,
+        hue:Math.round((180+Math.random()*140)/30)*30 // 蓝-紫-品红（量化到 30°，复用光晕精灵，避免浮点 key 撑爆缓存）
       });
     }
   }
-  // ── gold: 金色尘埃粒子 + 闪光 ──
+  // ── gold: 金粉尘埃（保留，配合金丝光河）──
   else if(theme==='gold'){
     const n = isMobile?30:60;
     for(let i=0;i<n;i++){
@@ -4411,28 +4427,27 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── void/晨光: 光线粒子 + 浮尘 ──
+  // ── void/晨光: 浮尘（少量，配合丁达尔光柱）──
   else if(theme==='void'){
-    // 暖尘：柔和光点缓慢漂浮上升
-    const n = isMobile?30:60;
+    const n = isMobile?20:40;
     for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.3, vy:-0.15-Math.random()*0.5,
-        size:4+Math.random()*12,
-        alpha:0.08+Math.random()*0.2,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5,
-        hue:30+Math.random()*25,
+        vx:(Math.random()-0.5)*0.2, vy:-0.1-Math.random()*0.35,
+        size:3+Math.random()*9,
+        alpha:0.06+Math.random()*0.15,
+        phase:Math.random()*Math.PI*2, speed:0.2+Math.random()*0.8,
+        hue:35+Math.random()*20,
         type:'dust'
       });
     }
   }
-  // ── shuangren: 雪花冰晶 ──
+  // ── shuangren: 雪花冰晶 + 反光星芒 ──
   else if(theme==='shuangren'){
     const n = isMobile?35:70;
-    for(let i=0;i<n;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, vy:0.15+Math.random()*0.8, vx:(Math.random()-0.5)*0.4, size:0.5+Math.random()*3, alpha:0.15+Math.random()*0.5, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.025});
+    for(let i=0;i<n;i++) _uParticles.push({x:Math.random()*W, y:Math.random()*H*-1, vy:0.15+Math.random()*0.8, vx:(Math.random()-0.5)*0.4, size:0.5+Math.random()*3, alpha:0.15+Math.random()*0.5, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.025, sparkle:Math.random()<0.12});
   }
-  // ── songxing: 星点飘动（松星特效）──
+  // ── songxing: 星点飘动（松星特效，保留）──
   else if(theme==='songxing'){
     const n = isMobile?60:120;
     for(let i=0;i<n;i++){
@@ -4445,7 +4460,7 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── night: 萤火虫 ──
+  // ── night: 萤火虫（保留）──
   else if(theme==='night'){
     const n = isMobile?5:10;
     for(let i=0;i<n;i++){
@@ -4456,22 +4471,23 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── zirong: 极简墨点 ──
+  // ── zirong: 水墨晕染（红褐墨点）──
   else if(theme==='zirong'){
-    const n = isMobile?20:40;
+    const n = isMobile?18:34;
     for(let i=0;i<n;i++){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
-        size:15+Math.random()*100,
-        alpha:0.03+Math.random()*0.07,
+        size:20+Math.random()*120,
+        alpha:0.04+Math.random()*0.09,
         phase:Math.random()*Math.PI*2,
         life:4+Math.random()*10,
         age:Math.random()*10,
+        hue:Math.random()<0.6?8:30, // 红褐 / 暖橙
         type:'ink'
       });
     }
   }
-  // 注：canvasThemes 白名单保证每个 canvas 主题都有上面的显式分支，无默认分支（原默认分支不可达）
+  // 注：canvasThemes 白名单里除 ziliang（画远山不用粒子）外，各 canvas 主题都有上面的显式粒子分支，无默认分支
 }
 let _uHidden = false;
 function restartCanvasLoop(){
@@ -4517,6 +4533,7 @@ function tickUnified(ts){
     case 'night': drawNight(ctx,W,H,dt); break;
     case 'songxing': drawSongxing(ctx,W,H,dt); break;
     case 'zirong': drawZirong(ctx,W,H,dt); break;
+    case 'ziliang': drawZiliang(ctx,W,H,dt); break;
     default: break;
   }
   ctx.restore();
@@ -4547,7 +4564,7 @@ function blit(ctx, spr, x, y, r, alpha){
 }
 // ======== 新 Canvas 特效 ========
 
-// ── aurora: 紫青极光飘带 ──
+// ── aurora: 紫青极光飘带（恢复原样）──
 function drawAurora(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
   // 极光飘带层（精灵图缩放贴图，替代每帧 4 个全屏径向渐变）
@@ -4615,25 +4632,46 @@ function drawMidnight(ctx,W,H,dt){
   }
 }
 
-// ── sunset: 暖橙光斑浮尘 ──
+// ── sunset: 落日余烬（地平线落日 + 火星冉冉升起）──
 function drawSunset(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
-  // 暖色底光（单个低频渐变，保留原样）
-  const warmGrad=ctx.createRadialGradient(W*0.5,H*0.7,0,W*0.5,H*0.5,Math.max(W,H)*0.8);
-  warmGrad.addColorStop(0,'rgba(255,100,40,0.06)'); warmGrad.addColorStop(0.5,'rgba(200,60,20,0.03)'); warmGrad.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=warmGrad; ctx.fillRect(0,0,W,H);
-  // 浮尘粒子（光晕精灵按 10° 色相分桶）
+  const sunX=W*0.5, sunY=H*0.76;
+  const sunR=Math.min(W,H)*0.15;
+  // 落日大范围暖光晕
+  const glow=ctx.createRadialGradient(sunX,sunY,sunR*0.2,sunX,sunY,sunR*2.8);
+  glow.addColorStop(0,'rgba(255,180,80,0.42)');
+  glow.addColorStop(0.35,'rgba(250,120,40,0.18)');
+  glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  // 太阳圆盘（下半沉入地平线）
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,W,sunY); ctx.clip();
+  const sunGrad=ctx.createLinearGradient(sunX,sunY-sunR,sunX,sunY+sunR);
+  sunGrad.addColorStop(0,'#ffe09a'); sunGrad.addColorStop(0.5,'#ffb35c'); sunGrad.addColorStop(1,'#ff7a2a');
+  ctx.fillStyle=sunGrad;
+  ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  // 地平线高光
+  ctx.fillStyle='rgba(255,130,50,0.14)';
+  ctx.fillRect(0,sunY,W,3);
+  // 余烬粒子：从地平线附近冉冉升起，带火星星芒
   for(let p of _uParticles){
-    p.x+=(p.vx+Math.sin(t*0.5+p.phase)*0.2)*f;
-    p.y+=p.vy*f;
-    if(p.y<-20){p.y=H+20; p.x=Math.random()*W;}
-    if(p.x<-20)p.x=W+20; if(p.x>W+20)p.x=-20;
-    const pulse=Math.sin(t*p.speed+p.phase);
-    const alpha=p.alpha*(0.5+0.5*(pulse+1)/2);
-    const hb=Math.round(p.hue/10)*10;
-    const spr=glowSprite('sunP'+hb,48,[0,`hsla(${hb},80%,65%,1)`,0.4,`hsla(${hb},70%,45%,0.3)`,1,'hsla(0,0%,0%,0)']);
+    p.y-=p.vy*f; p.x+=p.vx*f+Math.sin(t*p.speed+p.phase)*0.2*f;
+    if(p.y<-20){ p.y=H+Math.random()*20; p.x=Math.random()*W; }
+    const tw=0.4+0.6*Math.abs(Math.sin(t*p.speed+p.phase));
+    const alpha=p.alpha*tw;
+    if(p.sparkle){
+      ctx.strokeStyle=`hsla(${p.hue},90%,72%,${alpha})`;
+      ctx.lineWidth=0.6;
+      ctx.beginPath();
+      ctx.moveTo(p.x-p.size*3,p.y); ctx.lineTo(p.x+p.size*3,p.y);
+      ctx.moveTo(p.x,p.y-p.size*3); ctx.lineTo(p.x,p.y+p.size*3);
+      ctx.stroke();
+    }
+    const spr=glowSprite('sunE',48,[0,`hsla(${p.hue},90%,65%,1)`,0.4,`hsla(${p.hue},80%,45%,0.3)`,1,'hsla(0,0%,0%,0)']);
     blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
-    ctx.fillStyle=`hsla(${p.hue},60%,80%,${alpha*0.8})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=`hsla(${p.hue},80%,72%,${alpha})`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
 
@@ -4664,7 +4702,11 @@ function drawRipple(ctx,W,H,dt){
   const strip=rainStripSprite();
   for(let p of _uParticles){
     p.y+=p.vy*f;
-    if(p.y>H+20){ p.y=-20; p.x=Math.random()*W; }
+    if(p.y>H+20){
+      // 雨滴落地，激起一圈涟漪
+      _uRipples.push({x:p.x, y:H-6-Math.random()*12, r:2, alpha:0.35, vr:0.6+Math.random()*0.6});
+      p.y=-20; p.x=Math.random()*W;
+    }
     const top=p.y-p.len;
     const a=p.alpha*_uAlphaBase;
     if(a>0.004){
@@ -4673,22 +4715,55 @@ function drawRipple(ctx,W,H,dt){
       ctx.globalAlpha=_uAlphaBase;
     }
   }
+  // 涟漪：透视压扁的椭圆，向四周扩散并淡出
+  for(let i=_uRipples.length-1;i>=0;i--){
+    const rp=_uRipples[i];
+    rp.r+=rp.vr*f; rp.alpha*=0.97;
+    if(rp.alpha<0.01){ _uRipples.splice(i,1); continue; }
+    ctx.strokeStyle=`rgba(200,220,240,${rp.alpha})`;
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.ellipse(rp.x, rp.y, rp.r, rp.r*0.32, 0, 0, Math.PI*2);
+    ctx.stroke();
+  }
 }
 
-// ── particle: 七彩荧光漂浮 ──
+// ── particle: 星座网络（粒子间近距连线成网，如星图）──
 function drawParticle(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
+  const n=_uParticles.length;
+  // 先推进粒子位置
   for(let p of _uParticles){
-    p.x+=(p.vx+Math.sin(t*0.8+p.phase)*0.3)*f;
-    p.y+=(p.vy+Math.cos(t*0.6+p.phase)*0.3)*f;
+    p.x+=(p.vx+Math.sin(t*0.5+p.phase)*0.25)*f;
+    p.y+=(p.vy+Math.cos(t*0.4+p.phase)*0.25)*f;
     if(p.x<0)p.x=W; if(p.x>W)p.x=0;
     if(p.y<0)p.y=H; if(p.y>H)p.y=0;
-    const pulse=Math.sin(t*p.speed+p.phase);
-    const alpha=p.alpha*(0.4+0.6*(pulse+1)/2);
-    const hb=(Math.round(p.hue/30)*30)%360;
-    const spr=glowSprite('parP'+hb,48,[0,`hsla(${hb},80%,65%,1)`,0.3,`hsla(${hb},70%,50%,0.4)`,0.7,`hsla(${hb},60%,35%,0.1)`,1,'hsla(0,0%,0%,0)']);
-    blit(ctx,spr,p.x,p.y,p.size*3,alpha);
-    ctx.fillStyle=`hsla(${p.hue},40%,90%,${Math.min(1,alpha*1.3)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+  // 近距连线：距离越近越亮
+  const linkDist=Math.min(W,H)*0.18;
+  for(let i=0;i<n;i++){
+    const a=_uParticles[i];
+    for(let j=i+1;j<n;j++){
+      const b=_uParticles[j];
+      const dx=a.x-b.x, dy=a.y-b.y;
+      const d2=dx*dx+dy*dy;
+      if(d2<linkDist*linkDist){
+        const alpha=(1-Math.sqrt(d2)/linkDist)*0.32*_uAlphaBase;
+        if(alpha>0.01){
+          ctx.strokeStyle=`hsla(210,70%,72%,${alpha})`;
+          ctx.lineWidth=0.5;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+  }
+  // 节点：光晕 + 亮点
+  for(let p of _uParticles){
+    const tw=0.5+0.5*Math.abs(Math.sin(t*p.speed+p.phase));
+    const spr=glowSprite('parN'+p.hue,32,[0,`hsla(${p.hue},80%,70%,1)`,0.5,`hsla(${p.hue},70%,50%,0.25)`,1,'hsla(0,0%,0%,0)']);
+    blit(ctx,spr,p.x,p.y,p.size*2.5,p.alpha*tw);
+    ctx.fillStyle=`hsla(${p.hue},50%,88%,${p.alpha*tw})`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2); ctx.fill();
   }
 }
 
@@ -4699,6 +4774,25 @@ const GOLD_RIVERS = [
   {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
   {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
 ];
+// 金色光丝：一条沿正弦流动的细金线，两端淡出，模拟鎏金丝线
+function drawGoldThread(ctx,W,H,t,th){
+  const seg=Math.max(24, Math.floor(W/18));
+  ctx.beginPath();
+  for(let i=0;i<=seg;i++){
+    const x=i/seg*W;
+    const y=th.y*H + Math.sin(x*th.wave + t*th.speed)*th.amp;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  const grad=ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'rgba(255,220,140,0)');
+  grad.addColorStop(0.5,`rgba(255,210,120,${th.alpha})`);
+  grad.addColorStop(1,'rgba(255,220,140,0)');
+  ctx.strokeStyle=grad; ctx.lineWidth=th.width;
+  ctx.stroke();
+  // 叠加一层宽光晕，增强鎏金质感
+  ctx.strokeStyle='rgba(255,200,100,0.10)'; ctx.lineWidth=th.width*4;
+  ctx.stroke();
+}
 function drawGold(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
   const rivers = GOLD_RIVERS;
@@ -4709,6 +4803,13 @@ function drawGold(ctx,W,H,dt){
     const spr=glowSprite('goldR'+i,96,[0,`rgba(${c[0]},${c[1]},${c[2]},${c[3]})`,0.5,`rgba(${c[0]},${c[1]},${c[2]},${c[3]*0.3})`,1,'rgba(0,0,0,0)']);
     blit(ctx,spr,W*0.5+offset,r.y*H,H*r.width,1);
   }
+  // 鎏金丝线：多条错落流动的细金线
+  const threads=[
+    {y:0.28,amp:H*0.06,wave:0.012,speed:0.5,alpha:0.5,width:1.2},
+    {y:0.46,amp:H*0.08,wave:0.010,speed:-0.4,alpha:0.4,width:1.0},
+    {y:0.64,amp:H*0.05,wave:0.014,speed:0.6,alpha:0.35,width:0.8}
+  ];
+  for(const th of threads) drawGoldThread(ctx,W,H,t,th);
   // 金色尘埃粒子层（两种光晕精灵：普通/闪点）
   for(let p of _uParticles){
     p.y+=p.vy*f; p.x+=p.vx*f;
@@ -4722,16 +4823,34 @@ function drawGold(ctx,W,H,dt){
     ctx.fillStyle=`rgba(${c},${Math.min(1,alpha*1.1)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
-// ── void/晨光: 柔光渐层 + 暖尘漂浮 ──
+// ── void/晨光: 丁达尔光柱 + 浮尘 ──
 function drawVoid(ctx,W,H,dt){
   const t=_uTime, f=dt*60;
-  // 柔光底色：暖米色大范围渐变
-  const bg=ctx.createRadialGradient(W*0.5,H*0.25,0,W*0.5,H*0.5,Math.max(W,H)*0.85);
-  bg.addColorStop(0,'rgba(255,248,235,0.10)');
-  bg.addColorStop(0.5,'rgba(250,238,218,0.04)');
-  bg.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  // 暖尘：柔和光斑缓慢漂浮上升，带光晕（按 10° 色相分桶精灵）
+  // 顶部斜射光束（丁达尔效应）：锥形光柱缓慢摆动
+  const beams=[
+    {x:0.28, angle:0.35, width:0.16, alpha:0.10},
+    {x:0.55, angle:0.42, width:0.20, alpha:0.08},
+    {x:0.80, angle:0.30, width:0.14, alpha:0.07}
+  ];
+  for(let i=0;i<beams.length;i++){
+    const b=beams[i];
+    const ang=b.angle+Math.sin(t*0.08+i)*0.03;
+    const topX=b.x*W;
+    const botX=topX+Math.tan(ang)*H;
+    const grad=ctx.createLinearGradient(topX,0,botX,H);
+    grad.addColorStop(0,`rgba(255,244,220,${b.alpha})`);
+    grad.addColorStop(0.5,`rgba(255,236,200,${b.alpha*0.5})`);
+    grad.addColorStop(1,'rgba(255,244,220,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(topX-b.width*W,0);
+    ctx.lineTo(topX+b.width*W,0);
+    ctx.lineTo(botX+b.width*W*1.6,H);
+    ctx.lineTo(botX-b.width*W*1.6,H);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // 浮尘：柔和光斑缓慢漂浮上升，带光晕
   for(let p of _uParticles){
     p.x+=p.vx*f; p.y+=p.vy*f;
     if(p.y<-20){ p.y=H+20; p.x=Math.random()*W; }
@@ -4744,17 +4863,27 @@ function drawVoid(ctx,W,H,dt){
   }
 }
 function drawShuangren(ctx,W,H,dt){
-  const f=dt*60;
+  const f=dt*60, t=_uTime;
   const bgGrad=ctx.createRadialGradient(W*0.5,H*0.35,0,W*0.5,H*0.5,Math.max(W,H)*0.7);
   bgGrad.addColorStop(0,'rgba(60,120,180,0.08)');bgGrad.addColorStop(0.5,'rgba(30,60,100,0.04)');bgGrad.addColorStop(1,'rgba(2,8,16,0)');
   ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
   for(let fl of _uParticles){
-    fl.y+=fl.vy*f;fl.x+=(fl.vx+Math.sin(_uTime*2+fl.x*0.01)*0.1)*f;fl.rot+=fl.rotV*f;
+    fl.y+=fl.vy*f;fl.x+=(fl.vx+Math.sin(t*2+fl.x*0.01)*0.1)*f;fl.rot+=fl.rotV*f;
     if(fl.y>H+10){fl.y=-10;fl.x=Math.random()*W;}
     ctx.save();ctx.translate(fl.x,fl.y);ctx.rotate(fl.rot);
+    // 六角冰晶主体
     ctx.fillStyle=`rgba(160,220,255,${fl.alpha})`;ctx.beginPath();
     for(let i=0;i<6;i++){const ra=i*Math.PI/3;if(i===0)ctx.moveTo(Math.cos(ra)*fl.size,Math.sin(ra)*fl.size);else ctx.lineTo(Math.cos(ra)*fl.size,Math.sin(ra)*fl.size);}
     ctx.closePath();ctx.fill();
+    // 冰晶反光星芒：偶尔十字高光闪烁
+    if(fl.sparkle){
+      const tw=0.4+0.6*Math.abs(Math.sin(t*3+fl.x));
+      ctx.strokeStyle=`rgba(220,245,255,${fl.alpha*tw})`;ctx.lineWidth=0.5;
+      ctx.beginPath();
+      ctx.moveTo(-fl.size*2.2,0);ctx.lineTo(fl.size*2.2,0);
+      ctx.moveTo(0,-fl.size*2.2);ctx.lineTo(0,fl.size*2.2);
+      ctx.stroke();
+    }
     ctx.fillStyle=`rgba(200,240,255,${fl.alpha*0.3})`;ctx.beginPath();ctx.arc(0,0,fl.size*1.5,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
@@ -4801,21 +4930,44 @@ function drawNight(ctx,W,H,dt){
 }
 function drawZirong(ctx,W,H,dt){
   const t=_uTime;
-  // 墨点共享精灵（灰阶径向，边缘完全融化）
-  const spr=glowSprite('zrInk',96,[0,'rgba(20,18,15,1)',0.3,'rgba(45,40,35,0.5)',0.6,'rgba(100,95,88,0.12)',1,'rgba(0,0,0,0)']);
+  // 水墨晕染精灵：红褐 / 深灰两组，边缘完全融化
+  const sprR=glowSprite('zrInkR',96,[0,'rgba(120,40,30,0.8)',0.3,'rgba(90,40,30,0.35)',0.6,'rgba(160,90,60,0.10)',1,'rgba(0,0,0,0)']);
+  const sprG=glowSprite('zrInkG',96,[0,'rgba(28,24,20,0.7)',0.3,'rgba(50,45,38,0.3)',0.6,'rgba(110,105,95,0.1)',1,'rgba(0,0,0,0)']);
   ctx.save();
   for(let p of _uParticles){
     p.age+=dt;
-    if(p.age>p.life){ p.age=0; p.x=Math.random()*W; p.y=Math.random()*H; p.size=15+Math.random()*100; p.alpha=0.03+Math.random()*0.07; p.life=4+Math.random()*10; }
+    if(p.age>p.life){ p.age=0; p.x=Math.random()*W; p.y=Math.random()*H; p.size=20+Math.random()*120; p.alpha=0.04+Math.random()*0.09; p.life=4+Math.random()*10; }
     const progress=p.age/p.life;
     let fade=1;
-    if(progress<0.15) fade=progress/0.15;
-    else if(progress>0.8) fade=1-(progress-0.8)/0.2;
-    const breath=0.4+0.6*Math.sin(t*0.25+p.phase);
+    if(progress<0.2) fade=progress/0.2;
+    else if(progress>0.75) fade=1-(progress-0.75)/0.25;
+    const breath=0.5+0.5*Math.sin(t*0.2+p.phase);
     const alpha=p.alpha*fade*breath;
-    blit(ctx,spr,p.x,p.y,p.size,alpha);
+    const spread=1+progress*0.6; // 晕染：随时间向外扩散
+    const spr=p.hue<20?sprR:sprG;
+    blit(ctx,spr,p.x,p.y,p.size*spread,alpha);
   }
   ctx.restore();
+}
+// ── ziliang: 青雾山水（远山剪影）──
+function drawZiliang(ctx,W,H,dt){
+  const t=_uTime;
+  // 远山剪影：三层深青色山峦轮廓
+  const ridges=['rgba(30,60,60,0.50)','rgba(24,48,50,0.55)','rgba(18,38,42,0.62)'];
+  for(let l=0;l<3;l++){
+    const baseY=H*(0.72+l*0.08);
+    ctx.fillStyle=ridges[l];
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    ctx.lineTo(0,baseY);
+    for(let x=0;x<=W;x+=16){
+      const y=baseY - Math.sin(x*0.006+l*2+t*0.05)*H*0.03 - Math.sin(x*0.013+l)*H*0.015;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(W,H);
+    ctx.closePath();
+    ctx.fill();
+  }
 }
 
 </script>
