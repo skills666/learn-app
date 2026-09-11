@@ -6,8 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="面试题">
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
+<!-- 图标只用 192：1024 的 icon.png 已删除（App 图标由 android/.../mipmap 提供，网页侧根本用不到），
+     原来 <link rel="icon"> 指向它有 796KB，首屏（含离线首开）白白多下一次 -->
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0e1018">
@@ -40,7 +42,11 @@
     background:var(--bg);
     color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px;transition:background .5s ease;
   }
-  .app{display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden;isolation:isolate}
+  /* 注意：.app 特意不加 z-index —— 主题粒子画布(fixed;z-index:0)需要盖在内容之上才有"氛围感"，
+     实测加了 z-index:1 后，10 个动态主题的特效会被不透明卡片挡住、主题几乎失效。
+     因此"不压住文字"改为在特效本身解决：子良(山水)与日落(太阳)已降强度，落日圆盘改为半透明。
+     height 用 100vh + 100dvh 双写：老内核忽略 dvh，新内核避免地址栏收展时底部被裁。 */
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100vw;overflow:hidden;isolation:isolate}
 
   /* ---------- Topbar (导航标签) ---------- */
   .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:calc(8px + env(safe-area-inset-top, 0px)) 18px 8px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
@@ -80,6 +86,9 @@
   .content.in > *:nth-child(7){animation-delay:.26s}
   .content.in > *:nth-child(8){animation-delay:.30s}
   .content.in > *:nth-child(n+9){animation-delay:.34s}
+  /* 超长列表（搜索结果最多 200 条 .sr-item）只让首批入场：一屏最多看到十来条，
+     第 25 条往后全部同时做 transform+opacity 动画只是白白拖慢低端机，直接显示观感无差别 */
+  .content.in > *:nth-child(n+25){animation:none}
   @keyframes riseIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
@@ -91,6 +100,12 @@
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
   .bigbar{height:10px;border-radius:8px;background:#0c0f1a;overflow:hidden;margin-top:12px;max-width:420px}
   .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+  /* 二级页返回按钮（题目浏览 / 刷题） */
+  .back-btn{color:var(--muted)}
+  .back-btn:hover{color:var(--text)}
+  .doc-head .back-btn{margin-bottom:10px}
+  .pmeta-l{display:inline-flex;align-items:center;gap:8px;min-width:0}
+  .pmeta-l > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
   .q{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
      padding:16px 18px;margin-bottom:13px;transition:border-color .18s,box-shadow .22s,transform .22s}
@@ -114,8 +129,40 @@
   .answer .inner code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .answer .inner strong{color:var(--text)}
   .answer .label{font-size:11px;color:var(--accent);letter-spacing:1px;font-weight:700;margin-bottom:6px}
+  /* 通用「展开/收起」容器：grid-rows 0fr→1fr 让高度平滑增长，替代 display:none 的硬切换。
+     用法：外层加 .rv（展开时再加 .show），内容包一层 .rv-in（负责裁剪与内边距/边框）。 */
+  .rv{display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;
+      transition:grid-template-rows .38s cubic-bezier(.22,.61,.36,1),opacity .3s ease,margin-top .38s ease}
+  .rv.show{grid-template-rows:1fr;opacity:1}
+  .rv > .rv-in{overflow:hidden;min-height:0}
+  @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .anim-in{animation:fadeSlideUp .34s cubic-bezier(.22,.61,.36,1) both}
   .empty{text-align:center;color:var(--text);opacity:.5;padding:60px 20px;font-size:14px}
   .empty .big{font-size:40px;margin-bottom:10px}
+
+  /* ---------- 文档视图：条形 / 块形 展示切换 ---------- */
+  .docs-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .docs-toolbar .dt-count{color:var(--muted);font-size:13px;font-weight:600}
+  .docs-toolbar .dt-count b{color:var(--accent)}
+  .docs-switch{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--panel);border:1px solid var(--line)}
+  .docs-switch .dv-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;
+    background:transparent;color:var(--muted);font-size:12.5px;font-weight:650;cursor:pointer;transition:.18s;white-space:nowrap}
+  .docs-switch .dv-btn:hover{color:var(--text)}
+  .docs-switch .dv-btn.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0e16;
+    box-shadow:0 2px 10px rgba(var(--accent-rgb),.32)}
+  /* 块形（网格）：每张卡片等高等宽，标题撑开、进度与按钮贴底 */
+  .docs-wrap.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;align-items:stretch}
+  .docs-wrap.grid .q{margin-bottom:0;display:flex;flex-direction:column;height:100%;padding:14px 15px}
+  .docs-wrap.grid .q .qhead{display:contents}   /* 让 编号/标题/按钮 直接参与卡片纵向排列 */
+  .docs-wrap.grid .q .qnum{order:1;width:auto;height:22px;min-width:26px;padding:0 7px;border-radius:7px;margin:0;align-self:flex-start;font-size:11px}
+  .docs-wrap.grid .q .qtitle{order:2;flex:1;margin-top:8px;font-size:14.5px;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .docs-wrap.grid .q .mini{order:3}
+  .docs-wrap.grid .q .pct{order:4}
+  .docs-wrap.grid .q .qacts{order:5;margin-top:10px;width:100%}
+  .docs-wrap.grid .q .qacts .btn{flex:1;justify-content:center}
+  .docs-wrap.grid .q .qacts .btn.danger{flex:0 0 auto;padding-left:11px;padding-right:11px}
+  .docs-wrap.list .q:last-child{margin-bottom:0}
 
   /* practice mode */
   .practice-wrap{max-width:820px;margin:0 auto}
@@ -155,7 +202,9 @@
          box-shadow:var(--shadow);display:flex;flex-direction:column}
   .pcard .ptag{font-size:11px;letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
   .pcard .ptitle{font-size:22px;font-weight:800;line-height:1.5;margin:10px 0 18px;flex:1}
-  .pcard .panswer{color:var(--muted);line-height:1.8;font-size:15px;border-top:1px dashed var(--line2);padding-top:16px}
+  .pcard .panswer{color:var(--muted);line-height:1.8;font-size:15px}
+  /* 边框与内边距放进 .rv-in：放外层时即使内容折叠也仍会占位，会留下一道虚线 */
+  .pcard .panswer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
   .pcard .panswer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
   .pcard .panswer p{margin:0 0 10px}
   .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
@@ -274,7 +323,8 @@
                      box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(var(--accent2-rgb),.2)}
   .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-answer{border-top:1px dashed var(--line2);padding-top:16px;color:var(--muted);line-height:1.8;font-size:15px}
+  .memory-answer{color:var(--muted);line-height:1.8;font-size:15px}
+  .memory-answer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
   .memory-answer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
 
   .memory-answer p{margin:0 0 10px}
@@ -290,7 +340,9 @@
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .answer-area:focus{border-color:var(--accent2)}
-  .ref-answer{background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.3);border-radius:12px;padding:14px 16px;margin-top:14px}
+  /* 参考答案框同样走 .rv 展开：背景/边框/内边距放 .rv-in（外层是折叠容器，放它上面即使收起也会占位） */
+  .ref-answer > .rv-in{background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.3);border-radius:12px;padding:14px 16px}
+  .ref-answer.show{margin-top:14px}
   .ref-answer .label{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px}
   .grade-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
   .grade-btn{flex:1;min-width:120px;border:1px solid var(--line2);background:var(--panel);color:var(--text);
@@ -301,9 +353,6 @@
   .grade-btn.g-mid.sel{border-color:var(--warn);background:rgba(251,191,36,.18)}
   .grade-btn.g-bad.sel{border-color:var(--bad);background:rgba(248,113,113,.18)}
   .pstatus{font-size:12.5px;color:var(--text);opacity:.85;margin-top:12px;padding:10px 14px;background:var(--card);border-radius:8px;line-height:1.5}
-  .empty-feature{text-align:center;padding:0;color:var(--text);opacity:.85}
-  .empty-feature .big{font-size:54px;margin-bottom:10px}
-  .empty-feature .desc{padding:14px 18px;background:var(--card);border-radius:10px;margin:16px 0;text-align:left}
   .mock-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
   .mock-result .big{text-align:center}
   .mock-result h2{text-align:center;margin:6px 0 2px;font-size:22px}
@@ -322,6 +371,7 @@
   .ai-loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:8px;vertical-align:middle}
   @keyframes sp{to{transform:rotate(360deg)}}
   .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+  .ai-answer .ai-head{font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px}
   .ai-answer pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
   .ai-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
   .ai-answer h3,.ai-answer h4{margin:14px 0 6px;color:var(--text);font-size:14.5px;font-weight:700}
@@ -348,9 +398,9 @@
   .theme-card .tc-swatch{width:42px;height:30px;border-radius:7px;position:relative;overflow:hidden;flex:none}
   .theme-card .tc-swatch::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
   .theme-card .tc-name{font-size:10.5px;font-weight:600;color:var(--text);line-height:1}
+  /* 皮肤按钮（.theme-dot）当前选中态由 chest.js 的 syncSkinUI 写 inline outline 表现 */
   .theme-dot{width:56px;height:46px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#fff;font-weight:600;position:relative;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   .theme-dot:hover{transform:scale(1.08);border-color:var(--accent2)}
-  .theme-dot.sel::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
   .theme-sep{grid-column:1/-1;font-size:10px;color:var(--faint);font-weight:700;letter-spacing:1px;padding:2px 0;text-align:center}
   /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
@@ -416,6 +466,13 @@
     .memory-card .ptitle{font-size:16px}
     .memory-answer{font-size:13px}
     .q{padding:10px 12px}
+    .docs-toolbar{margin-bottom:10px;gap:8px}
+    .docs-toolbar .dt-count{font-size:11.5px}
+    .docs-switch{padding:2px;border-radius:9px}
+    .docs-switch .dv-btn{padding:4px 9px;font-size:11px;border-radius:7px}
+    .docs-wrap.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+    .docs-wrap.grid .q{padding:11px 12px}
+    .docs-wrap.grid .q .qtitle{font-size:13px;margin-top:6px}
     .set-section{border-radius:10px}
     #skinPopup,#skinBtn{display:none!important}
     .set-head{padding:12px 14px;font-size:13.5px}
@@ -431,8 +488,8 @@
     .qnum{width:24px;height:24px;font-size:11px;line-height:24px}
     .qtitle{font-size:13px}
     .grill-msg{font-size:13px;max-width:90%}
-    .qacts{gap:4px}
-    .iconbtn{width:26px;height:26px;font-size:11px}
+    .qacts{gap:6px}
+    .iconbtn{width:32px;height:32px;font-size:13px}
     .doc-head h2{font-size:18px}
     .doc-head .meta{font-size:11px}
     .theme-popup{max-width:300px;padding:8px;gap:4px}
@@ -441,7 +498,8 @@
     .theme-card .tc-name{font-size:9px}
     .theme-dot{width:48px;height:38px;font-size:9px}
     .answer .inner{font-size:13px;line-height:1.6}
-    .ref-answer{font-size:13px;padding:10px 12px}
+    .ref-answer{font-size:13px}
+    .ref-answer > .rv-in{padding:10px 12px}
     .grade-btn{padding:8px;font-size:12px;min-width:80px}
     .modal{width:96vw!important;max-width:500px;padding:18px}
     .mock-result{padding:14px}
@@ -465,6 +523,36 @@
     .theme-card .tc-swatch{width:30px;height:22px}
     .theme-card .tc-name{font-size:8px}
   }
+  /* 无 hover 能力的设备（触屏）：点击后 :hover 会"粘住"，导致卡片上浮/发光一直不恢复，这里统一复位 */
+  @media (hover:none){
+    .q:hover,.ov-card:hover,.memory-card:hover,.grill-mode-card:hover,
+    .theme-card:hover,.btn.primary:hover{transform:none;filter:none;box-shadow:none}
+    .q:hover,.ov-card:hover,.memory-card:hover{border-color:var(--line)}
+    .theme-dot:hover{transform:none;border-color:transparent}
+    .btn.primary:hover{box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  }
+
+  /* ---------- 弹窗「关闭」动画 ----------
+     此前只有入场（.modal-bg.show .modal{animation:scaleIn}）：一移除 .show，动画规则立刻不再匹配，
+     弹窗在遮罩淡出的 0.15s 里"啪"地消失，与入场不对称。
+     给「未 .show」状态补一条反向动画即可，纯 CSS 不需要延迟卸载 DOM。
+     初始状态本来就是 visibility:hidden，所以页面加载时这条动画即使播放也看不见。 */
+  @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.96)}}
+  @keyframes popOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.94)}}
+  .modal-bg:not(.show) .modal{animation:scaleOut .15s ease both}
+  .theme-popup:not(.show){animation:popOut .15s ease both}
+
+  /* ---------- 按下（:active）反馈 ----------
+     全项目此前没有任何 :active 状态，而上面的 @media(hover:none) 又把触屏上的 :hover 变换全部复位，
+     结果手指按住按钮/卡片时零视觉反馈，只有抬手瞬间页面跳变。
+     必须放在样式表最末：要压过前面同权重的 hover 规则（含 hover:none 里的复位）。
+     按下按 .08s 快速响应，抬手沿用各元素原有的 .15~.22s 回弹。 */
+  .btn:active,.iconbtn:active,.docs-switch .dv-btn:active,.theme-tab:active,
+  .theme-card:active,.theme-dot:active,.grill-mode-card:active,.grill-dur-btn:active,
+  .modal-x:active,.grade-btn:active{transform:scale(.97);transition-duration:.08s}
+  .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
+  .tab:not(.active):active{background:var(--panel);color:var(--text)}
+  .set-head:active{background:var(--panel2)}
 </style>
 </head>
 <body>
@@ -473,12 +561,12 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tabs" id="tabs">
-      <div class="tab active" data-view="overview"><span class="ic">📊</span> 总览</div>
-      <div class="tab" data-view="docs"><span class="ic">📁</span> 文档</div>
-      <div class="tab" data-view="memory"><span class="ic">🧠</span> 记忆</div>
-      <div class="tab" data-view="analytics"><span class="ic">📈</span> 进度</div>
-      <div class="tab" data-view="grill"><span class="ic">🔥</span> 拷打</div>
-      <div class="tab" data-view="cloze"><span class="ic">🧩</span> 挖空回忆</div>
+      <div class="tab active" data-view="overview" role="button" tabindex="0"><span class="ic">📊</span> 总览</div>
+      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic">📁</span> 文档</div>
+      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic">🧠</span> 记忆</div>
+      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic">📈</span> 进度</div>
+      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic">🔥</span> 拷打</div>
+      <div class="tab" data-view="cloze" role="button" tabindex="0"><span class="ic">🧩</span> 挖空回忆</div>
     </div>
     <div class="search">
       🔍 <input id="searchInput" placeholder="搜索题目…" autocomplete="off">
@@ -528,42 +616,41 @@
     <div class="set-list">
       <!-- 1. 云同步 -->
       <div class="set-section open">
-        <div class="set-head" onclick="toggleSetPanel(this)">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:block">
+        <div class="set-head">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
+        <div class="rv show"><div class="rv-in"><div class="set-body">
           <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" style="color:var(--accent2)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
           <div class="set-col">
             <div class="set-field" style="flex:1"><label>Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password" autocomplete="new-password" name="gtoken"></div>
             <div class="set-field" style="flex:1"><label>Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId" autocomplete="off" name="gistid"></div>
             <div class="set-btns"><button class="btn sm" id="cloudPull">⬇️ 拉取云端</button> <button class="btn sm" id="cloudPush">⬆️ 推送本地</button></div>
           </div>
-          <div class="set-hint" style="margin-top:8px">在线时每 10 分钟自动推送一次，或手动推送。</div>
+          <div class="set-hint" style="margin-top:8px">在线时每 10 分钟自动推送一次。</div>
           <div id="cloudStatus" class="set-status"></div>
-        </div>
+        </div></div></div>
       </div>
       <!-- 2. 数据备份 -->
       <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:none">
-          <div class="set-hint">所有数据存储在浏览器本地（上限 500MB），导出 Markdown 格式的完整题库，方便备份或交给 AI 阅读。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
+        <div class="set-head">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
+        <div class="rv"><div class="rv-in"><div class="set-body">
+          <div class="set-hint">导出 Markdown 完整题库，便于备份或交给 AI 阅读。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
           <div class="set-btns"><button class="btn primary" id="exportMDBtn">📄 导出全部题库（Markdown）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
-        </div>
+        </div></div></div>
       </div>
       <!-- 3. AI 设置 -->
       <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
-        <div class="set-body" id="aiConfigPanel" style="display:none">
-          <div class="set-hint">配置大模型 API 以启用 AI 阅卷、AI 问答、项目拷打等功能。Key 仅存储在你的浏览器本地，不会上传。</div>
-          <div class="set-row2"><div class="set-field" style="flex:1"><label>预设</label><select id="aiPreset"><option value="">自定义</option><option value="silicon">硅基流动</option><option value="aliyun">阿里云百炼</option><option value="deepseek">DeepSeek</option></select></div><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl"></div></div>
+        <div class="set-head">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
+        <div class="rv"><div class="rv-in"><div class="set-body">
+          <div class="set-hint">Key 只保存在本机浏览器，不会上传。<br>App（Android）默认禁止明文传输，API 地址必须用 <b style="color:var(--accent)">https://</b>；填 http:// 会直接报网络错误（浏览器里却可能正常）。</div>
+          <div class="set-row2"><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl"></div></div>
           <div class="set-row2"><div class="set-field" style="flex:1"><label>API Key</label><input placeholder="sk-..." id="aiKey" type="password"></div><div class="set-field" style="flex:1"><label>模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel"></div></div>
-        </div>
+        </div></div></div>
       </div>
       <!-- 4. 进阶操作 -->
       <div class="set-section">
-        <div class="set-head" onclick="toggleSetPanel(this)">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
-        <div class="set-body" style="display:none">
-          <div class="set-hint">以下操作不可撤销，请确认后再执行。</div>
+        <div class="set-head">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
+        <div class="rv"><div class="rv-in"><div class="set-body">
           <div class="set-btns"><button class="btn danger" id="resetBtn">🗑️ 仅清除学习进度</button> <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button></div>
-        </div>
+        </div></div></div>
       </div>
     </div>
     </div>
@@ -579,7 +666,7 @@
     <div class="row">
       <div>
         <label>答案 *</label>
-        <textarea id="aqAnswer" rows="6" placeholder="在这里写答案内容…"></textarea>
+        <textarea id="aqAnswer" rows="6"></textarea>
       </div>
     </div>
     <label>标签（可选，逗号分隔）</label>
@@ -596,11 +683,11 @@
   <div class="modal">
     <h3>✏️ 编辑题目（「<span id="editDocName"></span>」）</h3>
     <label>题目 *</label>
-    <input type="text" id="eqTitle" placeholder="题目内容">
+    <input type="text" id="eqTitle">
     <div class="row">
       <div>
         <label>答案 *</label>
-        <textarea id="eqAnswer" rows="6" placeholder="在这里写答案内容…"></textarea>
+        <textarea id="eqAnswer" rows="6"></textarea>
       </div>
     </div>
     <label>标签（可选，逗号分隔）</label>
@@ -616,7 +703,7 @@
 <div class="toast" id="toast" aria-live="polite"></div>
 
 <script>
-/* 题目数据：由 parse.py 生成，已内联以便离线双击打开（无需 seed.js） */
+/* 题目数据：由构建脚本内联到此处（本仓库不包含 parse.py / seed.js），便于离线直接双击打开 */
 window.SEED = {"blank": true, "documents": []};
 </script>
 <script>
@@ -626,12 +713,15 @@ window.SEED = {"blank": true, "documents": []};
    ========================================================= */
 const _safe = {
   V: 'v1', // 版本标记，存在即表示已编码
-  encode: (s) => { if(!s) return s; try { const xor = s.split('').map(c=>String.fromCharCode(c.charCodeAt(0)^0x5A)).join(''); return _safe.V + ':' + btoa(unescape(encodeURIComponent(xor))); } catch(_) { return s; } },
+  // UTF-8 字节 ↔ Latin-1 字符串：替代已废弃的 unescape(encodeURIComponent())，产物与旧实现逐字节一致
+  _bytes2bin: (bytes) => { let bin = ''; for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]); return bin; },
+  _bin2bytes: (bin) => { const b = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) b[i] = bin.charCodeAt(i); return b; },
+  encode: (s) => { if(!s) return s; try { const xor = s.split('').map(c=>String.fromCharCode(c.charCodeAt(0)^0x5A)).join(''); return _safe.V + ':' + btoa(_safe._bytes2bin(new TextEncoder().encode(xor))); } catch(e) { warnSilent('配置编码失败（将按明文保存）', e); return s; } },
   decode: (s) => {
     if(!s) return s;
     // 带版本标记 → 编码过的，正常解码
     if(s.startsWith(_safe.V + ':')) {
-      try { const xor = decodeURIComponent(escape(atob(s.slice(3)))); return xor.split('').map(c=>String.fromCharCode(c.charCodeAt(0)^0x5A)).join(''); } catch(_) { return s; }
+      try { const xor = new TextDecoder().decode(_safe._bin2bytes(atob(s.slice(3)))); return xor.split('').map(c=>String.fromCharCode(c.charCodeAt(0)^0x5A)).join(''); } catch(e) { warnSilent('配置解码失败（按原文处理）', e); return s; }
     }
     // 无版本标记 → 旧版明文，自动迁移
     return s;
@@ -647,6 +737,18 @@ const Store = (() => {
   const DB_VERSION = 3;
   function open(){
     return new Promise(resolve => {
+      let settled = false;
+      const done = () => { if(settled) return; settled = true; clearTimeout(guard); resolve(); };
+      // 兜底超时：某些环境（已实测 file:// 双击打开）indexedDB.open 既不触发 success 也不触发 error，
+      // 那样 open() 永不 resolve → 应用永久停在"加载中…"。到点就降级，保证应用一定能进得去。
+      // 降级只切换读取来源，不删除/覆盖 IndexedDB 里的任何数据，刷新后若数据库恢复即可用回。
+      const guard = setTimeout(() => {
+        if(db || useLS) return;
+        useLS = true;
+        warnSilent('IndexedDB 打开超时（无任何事件），降级到 localStorage');
+        toast('本地数据库无响应，已临时降级运行（数据未被删除，稍后可刷新重试）');
+        done();
+      }, 4000);
       try{
         if(!('indexedDB' in window) || !window.indexedDB) throw new Error('no idb');
         const req = indexedDB.open('learnAppDB', DB_VERSION);
@@ -656,19 +758,29 @@ const Store = (() => {
           if(!d.objectStoreNames.contains('bg')) d.createObjectStore('bg');
         };
         req.onsuccess = e => {
+          if(useLS) return;   // 已因阻塞/超时降级：本次会话保持降级，避免"一会儿读 LS 一会儿读 DB"的双源错乱
           db = e.target.result;
-          resolve();
+          done();
         };
-        req.onerror = () => { useLS = true; resolve(); };
-      }catch(_){ useLS = true; resolve(); }
+        req.onerror = () => { useLS = true; done(); };
+        // 其它标签页持有旧版本连接时升级会被阻塞，默认会永久挂起（加载页一直转圈）：给提示 + 兜底降级
+        req.onblocked = () => {
+          toast('检测到其它页面正占用本地数据库，请关闭其它标签页后刷新');
+          setTimeout(() => { if(!db && !useLS){ useLS = true; done(); } }, 5000);
+        };
+      }catch(e){ useLS = true; done(); warnSilent('IndexedDB 打开失败，降级到 localStorage', e); }
     });
   }
   let mem = {};   // 存储不可用（如 file:// 受限）时的内存兜底，保证应用不崩溃
+  let _memPrimed = false;   // 是否已把 localStorage 读进 mem：避免每次读写都重新解析整份 JSON
   let _capWarned = false;   // 容量告警只提示一次，避免每次保存都刷屏
   let _lsFailWarned = false;   // 写入失败告警也只提示一次
   function loadLS(){
-    try{ const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : mem; }
-    catch(_){ return mem; }
+    if(_memPrimed) return mem;
+    _memPrimed = true;
+    try{ const raw = localStorage.getItem(LS_KEY); if(raw) mem = JSON.parse(raw) || {}; }
+    catch(e){ warnSilent('本地存储数据损坏，已改用内存数据', e); mem = {}; }
+    return mem;
   }
   function saveLS(o){
     try{
@@ -676,13 +788,13 @@ const Store = (() => {
       // 检查序列化后是否接近 localStorage 5MB 上限
       if(str.length > 4500000 && !_capWarned){ _capWarned = true; toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
       localStorage.setItem(LS_KEY, str);
-      mem = o;
+      mem = o; _memPrimed = true;
     }
-    catch(_){
+    catch(e){
       // localStorage 满或不可用时的兜底保护
-      mem = o;
+      mem = o; _memPrimed = true;
       if(!_lsFailWarned){ _lsFailWarned = true; toast('⚠️ 存储空间不足，数据未保存到本地！请导出备份并清理浏览器存储'); }
-      console.error('[Store] localStorage 写入失败，数据仅保留在内存中');
+      warnSilent('localStorage 写入失败，数据仅保留在内存中', e);
     }
   }
   function get(k){
@@ -692,7 +804,7 @@ const Store = (() => {
         const tx = db.transaction('kv','readonly'); const r = tx.objectStore('kv').get(k);
         r.onsuccess = () => res(r.result ? r.result.val : undefined);
         r.onerror = () => res(undefined);
-      }catch(_){ res(undefined); }
+      }catch(e){ warnSilent('IndexedDB 读取失败, key=' + k, e); res(undefined); }
     });
   }
   let _idbFailWarned = false;   // 数据库写失败告警只提示一次
@@ -704,7 +816,7 @@ const Store = (() => {
         tx.oncomplete = () => res(true);
         tx.onerror = () => { if(!_idbFailWarned){ _idbFailWarned = true; toast('⚠️ 保存失败（数据库错误），数据仅保留在内存中'); } console.error('[Store] IndexedDB 写入失败, key=' + k); res(false); };
         tx.onabort = () => { if(!_idbFailWarned){ _idbFailWarned = true; toast('⚠️ 保存失败（数据库错误），数据仅保留在内存中'); } console.error('[Store] IndexedDB 写入中止, key=' + k); res(false); };
-      }catch(_){ res(false); }
+      }catch(e){ warnSilent('IndexedDB 写入失败, key=' + k, e); res(false); }
     });
   }
   return {
@@ -736,13 +848,14 @@ const Store = (() => {
     },
     saveBg: blob => {
       return new Promise(resolve => {
+        // 这里不弹提示：失败原因由调用方 saveBgToDB 统一反馈一次，避免同一失败弹两次
         if(!db){ resolve(false); return; }
         try{
           const tx = db.transaction('bg','readwrite');
           tx.objectStore('bg').put(blob,'custom');
           tx.oncomplete = function(){ resolve(true); };
-          tx.onerror = () => { toast('保存失败'); resolve(false); };
-        }catch(e){ toast('保存失败'); resolve(false); }
+          tx.onerror = () => resolve(false);
+        }catch(e){ resolve(false); }
       });
     },
     getCloze: () => get('cloze').then(v => v || {}),
@@ -766,13 +879,17 @@ if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧�
 let currentDocId = null;
 let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
+let browseLimit = 200;     // 题目浏览页单次渲染的题目数（超出用「显示更多」翻页，避免大题库一次渲染上千张卡片卡死页面）
+let docsLayout; try{ docsLayout = localStorage.getItem('learnAppDocsLayout')==='grid' ? 'grid' : 'list'; }catch(_){ docsLayout = 'list'; }   // 文档视图展示方式：list 条形 / grid 块形
+let browseFrom = Views.DOCS;     // 进入「题目浏览」前所在的一级标签：决定返回目标 + 目录高亮归属
+let practiceFrom = Views.DOCS;   // 进入「刷题」前所在页面：决定退出刷题回到哪里
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
 let mock = { cfg:{count:10, scope:'all'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {}, aiCodeStreaming = {}, aiCodeHidden = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
-let cloze = { queue:[], index:0, qid:null, words:null, html:null, checked:false, result:null, statCorrect:0, statTotal:0, doneCount:0 };
-// 宝箱动画封装（chest.js 动态加载，可能不存在）
+let cloze = { queue:[], index:0, qid:null, words:null, html:null, checked:false, result:null, statCorrect:0, statTotal:0, doneCount:0, pending:false };
+// 宝箱动画封装（chest.js 由页面末尾的静态 <script src> 引入；文件缺失时 window.openChest 不存在，此处静默跳过）
 function tryOpenChest(tier){ if(window.openChest) window.openChest(tier); }
 
 // SM-2 算法：动态间隔复习
@@ -803,7 +920,10 @@ function applySm2Grade(qid, rate, historyArr){
   const now = Date.now();
   const pr = PROGRESS[qid] || {};
   const r2 = sm2Next(pr.ef||SM2_INIT_EF, pr.interval||0, rate);
-  if(historyArr) historyArr.push({qid, oldProgress:{...pr}});
+  if(historyArr){
+    historyArr.push({qid, oldProgress:{...pr}});
+    if(historyArr.length > 50) historyArr.splice(0, historyArr.length - 50);   // 撤销栈封顶 50 步，长会话不再无限累积
+  }
   const curLvl = pr.srLevel || 0;
   const newLvl = rate>=4 ? Math.min(5, curLvl+1) : rate>=3 ? curLvl : 0;
   // 评分≤2 说明忘了，清除已掌握标记；评分5 标记掌握
@@ -824,7 +944,22 @@ let DINDEX = new Map();   // docId -> doc
 let QDOC = new Map();     // qid -> docId（反向查文档）
 // 外部数据（存储/导入/云端）统一归一化 questions 数组，避免旧数据缺字段时统计/渲染崩溃
 function normalizeDocs(docs){
-  return (Array.isArray(docs) ? docs : []).map(d => { if(d && !Array.isArray(d.questions)) d.questions = []; return d; });
+  // 存储 / 导入 / 云端数据统一归一化：
+  // - 丢掉非对象文档，保证 DINDEX/QINDEX 的键值始终可读
+  // - questions 必须是数组，且题目必须是对象
+  // - title/answer 强制为字符串：搜索页与分析页会直接 title.toLowerCase()，字段缺失会整页崩溃
+  return (Array.isArray(docs) ? docs : [])
+    .filter(d => d && typeof d === 'object')
+    .map(d => {
+      if(!Array.isArray(d.questions)) d.questions = [];
+      d.questions = d.questions
+        .filter(q => q && typeof q === 'object')
+        .map(q => Object.assign({}, q, {
+          title: (q.title == null || q.title === '') ? '（未命名题目）' : String(q.title),
+          answer: q.answer == null ? '' : String(q.answer)
+        }));
+      return d;
+    });
 }
 function buildIndex(){
   QINDEX.clear(); DINDEX.clear(); QDOC.clear();
@@ -889,10 +1024,11 @@ function renderAnswer(t){
   s = s.split(/\n{2,}/).map(p => '<p>'+p.split('\n').join('<br>')+'</p>').join('');
   return s.replace(/\u0001CB(\d+)\u0001/g, (m, i) => codeBlocks[+i]);
 }
+const AI_BLOCK_HEAD = '<div class="ai-head">🤖 AI 回复</div>';
 function renderAIBlock(qid){
   if(!aiAnswer[qid]) return '';
-  if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+esc(qid)+'"><div class="ai-loading">AI 思考中…</div></div>';
-  return '<div class="ai-answer" data-qid="'+esc(qid)+'"><div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">🤖 AI 回复</div>'+formatAI(aiAnswer[qid])+'</div>';
+  if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+esc(qid)+'">'+AI_BLOCK_HEAD+'<div class="ai-body"><div class="ai-loading">AI 思考中…</div></div></div>';
+  return '<div class="ai-answer" data-qid="'+esc(qid)+'">'+AI_BLOCK_HEAD+'<div class="ai-body">'+formatAI(aiAnswer[qid])+'</div></div>';
 }
 function docById(id){ return DINDEX.get(id); }
 function questionById(qid){ return QINDEX.get(qid); }
@@ -926,7 +1062,7 @@ async function estimateTotalStorage(){
     const bgBlob = await Store.getBg();
     const bgSize = bgBlob ? (bgBlob.size || 0) : 0;
     size += bgSize;
-  }catch(_){}
+  }catch(e){ warnSilent('统计背景图占用失败', e); }
   return size;
 }
 function formatSize(bytes){
@@ -938,9 +1074,10 @@ async function checkStorageLimit(newDataSize){
   const current = await estimateTotalStorage();
   const after = current + newDataSize;
   if(after > STORAGE_LIMIT){
-    const msg = `存储空间不足！\n\n当前已用：${formatSize(current)}\n本次导入：${formatSize(newDataSize)}\n合计将达：${formatSize(after)}\n\n限制上限：500MB\n\n建议：删除部分题库后再导入，或导出备份后清空数据。`;
-    alert(msg);
-    return false;
+    // 500MB 只是应用自设的提示线，真实上限由浏览器/系统配额决定；
+    // 这里改成提示 + 让用户决定（原 alert 会阻塞主线程，且与全局弹窗风格不一致）
+    const msg = `导入后本地数据约 ${formatSize(after)}，超过应用自设的 500MB 提示线。\n\n当前已用：${formatSize(current)}\n本次导入：${formatSize(newDataSize)}\n\n建议先导出备份，或删掉部分题库。实际可用空间由浏览器配额决定。\n\n仍要继续导入吗？`;
+    return await confirmDialog(msg);
   }
   return true;
 }
@@ -948,10 +1085,11 @@ function totalSeen(){ return Object.values(PROGRESS).filter(p=>p.practiced||p.se
 function totalMastered(){ return Object.values(PROGRESS).filter(p=>p.mastered).length; }
 // 模态框关闭
 function hideModal(el){
-  el.classList.remove('show','hiding');
+  if(el) el.classList.remove('show');
 }
 let _confirmOpen = false;
 let _confirmQueue = [];   // 待弹出的确认框：{msg, resolve}
+let _confirmCancel = null;   // 当前确认框的取消回调（供 Esc 关闭；原先只赋值不读取，Esc 其实关不掉）
 function confirmDialog(msg){ return new Promise(resolve=>{
   if(_confirmOpen){ _confirmQueue.push({msg, resolve}); return; }
   _showConfirm(msg, resolve);
@@ -963,6 +1101,7 @@ function _showConfirm(msg, resolve){
     const cleanup = (result) => {
       if(_settled) return;   // 防止遮罩+按钮双击导致重复 resolve/弹出队列
       _settled = true;
+      _confirmCancel = null;
       ov.remove(); resolve(result);
       // 依次弹出排队的确认框；队列清空前保持 _confirmOpen，防止窗口期内新框插队导致双框同屏
       setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } else { _confirmOpen = false; } }, 100);
@@ -989,6 +1128,7 @@ function _showConfirm(msg, resolve){
     dlg.appendChild(btns);
     ov.appendChild(dlg);
     document.body.appendChild(ov);
+    _confirmCancel = () => cleanup(false);   // 供 Esc 关闭
     yesBtn.onclick=()=>cleanup(true);
     noBtn.onclick=()=>cleanup(false);
     ov.onclick=e=>{if(e.target===ov)cleanup(false)};
@@ -997,6 +1137,7 @@ function _showConfirm(msg, resolve){
     resolve(false);
     _confirmQueue.forEach(item => item.resolve(false)); _confirmQueue = [];   // 排队中的 Promise 也要了结，避免永久悬挂
     _confirmOpen = false;
+    _confirmCancel = null;
   }
 }
 function totalClears(){ return Object.values(CLEARS||{}).reduce((a,b)=>a+(b||0),0); }
@@ -1012,6 +1153,10 @@ function downloadBlob(blob, filename){
   a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+// 降级路径上"预期会失败"的异常统一走这里：既不打扰用户，也不把问题彻底吞掉
+function warnSilent(tag, e){
+  try{ console.warn('[learn-app] ' + tag + ':', (e && (e.message || e.name)) || e); }catch(_){}
 }
 function toast(msg){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show');
@@ -1044,7 +1189,11 @@ function setupErrorHandler(){
    渲染：侧边栏
    ========================================================= */
 // 一次性汇总统计（含连续打卡/今日已刷），避免多次全量遍历；记忆/进度页也复用此结果
+// 结果缓存 10s：renderAll 每次都会调用它，题量大时全量遍历代价明显；
+// 进度/文档一旦变更都会经 invalidateMemQueue() 清空缓存，所以数据"变更即准"，只有纯时间流逝最多滞后 10s
+let _statsCache = null;
 function computeAllStats(){
+  if(_statsCache && Date.now() - _statsCache.at < 10000) return _statsCache.data;
   const now = Date.now();
   const today = new Date(now); today.setHours(0,0,0,0);
   const today0 = today.getTime();
@@ -1053,7 +1202,8 @@ function computeAllStats(){
   DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
-    if(!p) return;
+    // 只统计"真实学习进度"：导入/云端同步可能带进来 {} 这类空条目，当待复习算会让统计虚高
+    if(!p || !(p.practiced || p.seen || p.mastered || p.srLevel || p.srNext || p.lastPracticed)) return;
     if(p.practiced || p.seen) ts++;
     if(p.mastered) tm++;
     if(p.lastPracticed){
@@ -1071,39 +1221,44 @@ function computeAllStats(){
   }));
   let streak = 0;
   const check = new Date(today);
-  if(!reviewed.has(check.getTime())){
-    check.setDate(check.getDate()-1);
-    if(!reviewed.has(check.getTime())) return { tq, ts, tm, due, streak: 0, todayDone };
+  const prevDay = new Date(today); prevDay.setDate(prevDay.getDate()-1);
+  // 今天没刷则从前一天起算；前一天也没有记录则连续天数为 0
+  if(reviewed.has(check.getTime()) || reviewed.has(prevDay.getTime())){
+    if(!reviewed.has(check.getTime())) check.setTime(prevDay.getTime());
+    for(let i=0;i<365;i++){
+      if(reviewed.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
+      else break;
+    }
   }
-  for(let i=0;i<365;i++){
-    if(reviewed.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
-    else break;
-  }
-  return { tq, ts, tm, due, streak, todayDone };
+  const data = { tq, ts, tm, due, streak, todayDone };
+  _statsCache = { at: Date.now(), data };
+  return data;
 }
 function renderStatsBar(){
   const s = computeAllStats();
   const tq = s.tq, ts = s.ts, tm = s.tm, due = s.due, streak = s.streak, todayDone = s.todayDone;
   const seenPct = tq ? Math.round(ts/tq*100) : 0;
-  const masteredPct = tq ? Math.round(tm/tq*100) : 0;
+  // 钳位：导入/云端同步进来的进度可能只有 mastered 没有 seen，两段宽度叠加就会超过 100% 导致进度条溢出
+  const masteredPct = Math.min(seenPct, tq ? Math.round(tm/tq*100) : 0);
   $('#statsBar').innerHTML = `
     <span>总进度 <b>${seenPct}%</b></span>
-    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i><i style="width:${Math.max(0,seenPct-masteredPct)}%;background:var(--accent)"></i></div>
+    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent)"></i></div>
     <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
     ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span>今日已刷 <b>${todayDone}</b> 题</span>`:''}
     ${due>0?`<span class="urg">🧠 记忆 <b>${due}</b> 题待复习</span>`:''}
   `;
-  // Tab 激活态
+  // Tab 激活态：二级页（题目浏览）沿用进入时的标签，避免点进文档后高亮跳回「总览」
+  const owner = view===Views.BROWSE ? browseFrom : view;
   document.querySelectorAll('.tab').forEach(t=>{
     const v = t.dataset.view;
     t.classList.toggle('active',
-      (v===Views.OVERVIEW&&(view===Views.OVERVIEW||view===Views.BROWSE||view===Views.SEARCH)) ||
-      (v===Views.DOCS&&view===Views.DOCS) ||
-      (v===Views.MEMORY&&view===Views.MEMORY) ||
-      (v===Views.GRILL&&view===Views.GRILL) ||
-      (v===Views.CLOZE&&view===Views.CLOZE) ||
-      (v===Views.ANALYTICS&&view===Views.ANALYTICS));
+      (v===Views.OVERVIEW&&(owner===Views.OVERVIEW||owner===Views.SEARCH)) ||
+      (v===Views.DOCS&&owner===Views.DOCS) ||
+      (v===Views.MEMORY&&owner===Views.MEMORY) ||
+      (v===Views.GRILL&&owner===Views.GRILL) ||
+      (v===Views.CLOZE&&owner===Views.CLOZE) ||
+      (v===Views.ANALYTICS&&owner===Views.ANALYTICS));
   });
 }
 
@@ -1133,8 +1288,8 @@ function renderOverview(c){
       <div class="salary-glow"></div>
       <div class="salary-inner">
         <div class="salary-label">💼 预计月薪</div>
-        <div class="salary-num" id="salaryNum">¥ ${salary.toLocaleString()}</div>
-        <div class="salary-sub">每掌握 1 道面试题 = <b>+¥100</b> · 已掌握 <b id="masteredCount">${tm}</b> 题 · 目标 ¥${(tq*100).toLocaleString()}</div>
+        <div class="salary-num">¥ ${salary.toLocaleString()}</div>
+        <div class="salary-sub">每掌握 1 道面试题 = <b>+¥100</b> · 已掌握 <b>${tm}</b> 题 · 目标 ¥${(tq*100).toLocaleString()}</div>
         <div class="salary-bar"><i style="width:${tq?Math.round(tm/tq*100):0}%;background:linear-gradient(90deg,#f5c542,#f6a85b,#f5c542)"></i></div>
       </div>
     </div>
@@ -1276,26 +1431,80 @@ function drawChart(days, mode){
 
 /* ---------- 文档视图 ---------- */
 function renderDocs(c){
-  c.innerHTML = DOCS.map(d => {
+  const totalQ = DOCS.reduce((n,d)=>n+((d.questions||[]).length),0);
+  const cards = DOCS.map(d => {
     if(!d.questions.length){
-      return `<div class="q" style="opacity:.4;cursor:not-allowed">
-        <div class="qhead"><div class="qnum">—</div><div class="qtitle">${renderTitle(d.title)} <span style="font-size:11px;color:var(--warn)">（待导入）</span></div></div></div>`;
+      // 空文档同样可点进去：否则在浏览页删光题目后，文档会变成"死文档"（进不去、也没法再添加题目）
+      return `<div class="q" data-godoc="${esc(d.id)}" style="opacity:.55;cursor:pointer">
+        <div class="qhead"><div class="qnum">—</div><div class="qtitle">${renderTitle(d.title)} <span style="font-size:11px;color:var(--warn)">（待导入）</span></div>
+        <div class="qacts"><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档">🗑</button></div></div></div>`;
     }
     const seen=docSeen(d),tot=d.questions.length,dp=tot?Math.round(seen/tot*100):0;
     const m=docMastered(d),cl=docClears(d.id);
     return `<div class="q" data-godoc="${esc(d.id)}" style="cursor:pointer">
       <div class="qhead"><div class="qnum">${tot}</div>
       <div class="qtitle">${renderTitle(d.title)} ${cl?`<span style="font-size:11px;color:var(--accent)">刷过 ${cl} 次</span>`:''}</div>
-      <div class="qacts"><button class="btn sm" data-goprac="${esc(d.id)}">🎯 刷题</button></div></div>
+      <div class="qacts"><button class="btn sm" data-goprac="${esc(d.id)}">🎯 刷题</button><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档及其全部题目">🗑</button></div></div>
       <div class="mini" style="margin-top:10px"><i style="width:${dp}%;height:5px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
       <div class="pct" style="font-size:11px;color:var(--muted);margin-top:4px">${dp}% 已看（${seen}/${tot}）${m?` · ${m} 掌握`:' · 已开干'}</div>
     </div>`;
   }).join('');
+  c.innerHTML = `
+    <div class="docs-toolbar">
+      <div class="dt-count">共 <b>${DOCS.length}</b> 个文档 · <b>${totalQ}</b> 道题目</div>
+      <div class="docs-switch" id="docsSwitch">
+        <button class="dv-btn ${docsLayout==='list'?'on':''}" data-layout="list" title="条形视图" aria-label="条形视图">☰</button>
+        <button class="dv-btn ${docsLayout==='grid'?'on':''}" data-layout="grid" title="块形视图" aria-label="块形视图">▦</button>
+      </div>
+    </div>
+    <div class="docs-wrap ${docsLayout==='grid'?'grid':'list'}">${cards}</div>`;
+  c.querySelectorAll('#docsSwitch [data-layout]').forEach(el=>el.onclick=()=>setDocsLayout(el.dataset.layout));
+  c.querySelectorAll('[data-del-doc]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); deleteDocument(el.dataset.delDoc); });
   c.querySelectorAll('[data-godoc]').forEach(el=>el.onclick=e=>{
-    if(e.target.closest('[data-goprac]')) return;
+    if(e.target.closest('[data-goprac]')||e.target.closest('[data-del-doc]')) return;
+    browseFrom = Views.DOCS;
+    browseLimit = 200;   // 每次进入文档都从第一页开始渲染
     currentDocId=el.dataset.godoc; view=Views.BROWSE; renderAll();
   });
   c.querySelectorAll('[data-goprac]').forEach(el=>el.onclick=()=>startPractice(el.dataset.goprac));
+}
+
+// 切换文档展示方式：条形（列表）/ 块形（网格）
+// FLIP：记录旧位置 → 换布局 → 按位移反向摆好再播放，卡片"滑"到新位置，避免生硬跳变
+function setDocsLayout(layout){
+  layout = layout==='grid' ? 'grid' : 'list';
+  if(layout===docsLayout) return;
+  const c = content();
+  const wrap = c.querySelector('.docs-wrap');
+  const sw = c.querySelector('#docsSwitch');
+  docsLayout = layout;
+  safeLocalSet('learnAppDocsLayout', docsLayout);
+  if(sw) sw.querySelectorAll('[data-layout]').forEach(b=>b.classList.toggle('on', b.dataset.layout===docsLayout));
+  if(!wrap){ renderDocs(c); return; }
+
+  const cards = [...wrap.children];
+  // FIRST：offsetLeft/offsetTop 是纯布局坐标，不受滚动影响
+  const before = cards.map(el=>({x:el.offsetLeft, y:el.offsetTop}));
+  const st = c.scrollTop;
+  // LAST：只换 class，DOM 复用（不重建），否则拿不到同一批节点做动画
+  wrap.classList.toggle('grid', docsLayout==='grid');
+  wrap.classList.toggle('list', docsLayout==='list');
+  c.scrollTop = st;
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce || typeof wrap.animate !== 'function') return;
+  cards.forEach((el,i)=>{
+    const dx = before[i].x - el.offsetLeft, dy = before[i].y - el.offsetTop;
+    const moved = Math.abs(dx) > 1 || Math.abs(dy) > 1;
+    try{
+      // 未移动的卡片也走一遍淡入：尺寸是瞬间变化的，用透明度遮住这个跳变
+      el.animate(
+        moved ? [{ transform:`translate(${dx}px,${dy}px)`, opacity:.3 }, { transform:'none', opacity:1 }]
+              : [{ opacity:.3 }, { opacity:1 }],
+        { duration:360, easing:'cubic-bezier(.22,.61,.36,1)', delay:Math.min(i,8)*14 }
+      );
+    }catch(_){}
+  });
 }
 
 /* ---------- 浏览视图（含插入/删除题目） ---------- */
@@ -1304,12 +1513,15 @@ function renderBrowse(c){
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
   const seen=docSeen(d), tot=d.questions.length, dp=tot?Math.round(seen/tot*100):0;
   const mastered=docMastered(d);
+  // 从搜索跳进来的，返回搜索结果；否则回文档列表（搜索词已被清空时也回文档列表）
+  const backToSearch = browseFrom===Views.SEARCH && !!searchTerm.trim();
   let html = `
     <div class="doc-head">
       <div>
+        <button class="btn sm back-btn" id="browseBack">⬅ ${backToSearch?'返回搜索结果':'返回文档列表'}</button>
         <h2>${renderTitle(d.title)}</h2>
         <div class="meta">共 ${tot} 题 · 已看 ${seen} 题（${dp}%）${
-          mastered?` · 掌握 ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'ima 知识库')}</div>
+          mastered?` · 掌握 ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'本地')}</div>
         <div class="bigbar"><i style="width:${dp}%"></i></div>
       </div>
       <div style="display:flex;gap:8px">
@@ -1319,9 +1531,13 @@ function renderBrowse(c){
       </div>
     </div>`;
   if(!d.questions.length){
-    html += `<div class="empty"><div class="big">📭</div>该文档暂无题目。可点「➕ 添加题目」手动加入，或通过「数据 → 导入」加入。</div>`;
+    html += `<div class="empty"><div class="big">📭</div>该文档暂无题目。可点「➕ 添加题目」，或在「⚙️ 设置」中导入 JSON / Markdown。</div>`;
   } else {
-    html += d.questions.map((q,i)=>{
+    // 大文档分页渲染：单次最多 browseLimit 张卡片，避免上千题时一次性建 DOM 卡死页面
+    const hi = highlightQid ? d.questions.findIndex(x=>x.id===highlightQid) : -1;
+    if(hi >= browseLimit) browseLimit = Math.ceil((hi+1)/200)*200;   // 搜索跳转的目标必须落在渲染窗口内
+    const shown = Math.min(d.questions.length, browseLimit);
+    html += d.questions.slice(0, shown).map((q,i)=>{
       const p = PROGRESS[q.id]||{};
       return `<div class="q" data-qid="${esc(q.id)}">
         <div class="qhead" data-toggle="${esc(q.id)}">
@@ -1339,8 +1555,19 @@ function renderBrowse(c){
         </div>
       </div>`;
     }).join('');
+    if(d.questions.length > shown){
+      html += `<div style="text-align:center;margin:18px 0"><button class="btn" id="browseMore">显示更多（还有 ${d.questions.length-shown} 题）</button></div>`;
+    }
   }
   c.innerHTML = html;
+  const moreBtn = c.querySelector('#browseMore');
+  if(moreBtn) moreBtn.onclick = () => { browseLimit += 200; renderContent(); };
+  const backBtn = c.querySelector('#browseBack');
+  if(backBtn) backBtn.onclick = () => {
+    currentDocId = null; highlightQid = null;
+    view = backToSearch ? Views.SEARCH : Views.DOCS;
+    renderAll();
+  };
   const pracBtn = c.querySelector('[data-prac]'); if(pracBtn) pracBtn.onclick = () => startPractice(d.id);
   const addBtn = c.querySelector('#addQBtn'); if(addBtn) addBtn.onclick = () => openAddModal(d.id);
   const delDir = c.querySelector('[data-deldir]'); if(delDir) delDir.onclick = () => deleteDocument(d.id);
@@ -1394,13 +1621,29 @@ async function deleteQuestion(docId, qid){
   if(!d){ toast('文档已不存在'); return; }   // 确认框排队等待期间文档可能已被导入/拉取替换
   d.questions = (d.questions||[]).filter(q=>q.id!==qid);
   delete PROGRESS[qid];
+  dropClozeCache(qid);
   saveDocs(); saveProgress();
   toast('已删除题目');
   renderAll();
 }
-function saveProgress(){ Store.saveProgress(PROGRESS); markDirty(); invalidateMemQueue(); }
+// 进度落盘节流：翻题/评分每次都整份写 IndexedDB，进度上万条时代价明显；
+// 内存态立即更新（统计/队列都是内存数据），磁盘写入合并到 600ms 后，页面隐藏或卸载时强制 flush
+let _progWriteTimer = null;
+function flushProgressWrite(){
+  if(_progWriteTimer === null) return;   // 无待写内容：不产生多余写库
+  clearTimeout(_progWriteTimer); _progWriteTimer = null;
+  Store.saveProgress(PROGRESS);
+}
+function saveProgress(){
+  markDirty(); invalidateMemQueue();
+  clearTimeout(_progWriteTimer);
+  _progWriteTimer = setTimeout(flushProgressWrite, 600);
+}
+window.addEventListener('pagehide', flushProgressWrite);
+document.addEventListener('visibilitychange', () => { if(document.hidden) flushProgressWrite(); });
 // 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
-async function saveDocs(){ buildIndex(); markDirty(); await Store.saveDocs(DOCS); }
+// 同时失效记忆队列缓存：否则新增/删除题目后，记忆模式最长 30 分钟看不到变化
+async function saveDocs(){ buildIndex(); markDirty(); invalidateMemQueue(); await Store.saveDocs(DOCS); }
 
 /* ---------- 添加题目弹窗 ---------- */
 function openAddModal(docId){
@@ -1460,6 +1703,16 @@ function submitEditQuestion(){
   const tagsRaw = $('#eqTags').value.trim();
   const tags = tagsRaw ? tagsRaw.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [d.title];
   q.title = title; q.answer = answer; q.tags = tags;
+  if(PROGRESS[qid]) delete PROGRESS[qid].clozeNoAnchor;   // 兼容旧版本遗留的标记
+  _clozeFailed.delete(qid);                               // 答案改了，本次会话的"挖不出锚点"也作废，允许重新生成
+  // 挖空词缓存也要一并作废：旧锚点可能已不在新答案里，命中旧缓存会导致挖不出空、
+  // 进而被再次标记成 clozeNoAnchor 永久跳过
+  try{
+    if(_clozeCache && Object.prototype.hasOwnProperty.call(_clozeCache, qid)){
+      delete _clozeCache[qid];
+      Store.saveCloze(_clozeCache);
+    }
+  }catch(e){ warnSilent('清理挖空缓存失败', e); }
   saveDocs();
   $('#editModal').classList.remove('show');
   toast('已保存修改');
@@ -1492,6 +1745,7 @@ function startPractice(scope){
   practice = { order: sorted, index:startIdx, scope, done:false, practiced:new Set(), revealed:new Set() };
   // 标记已掌握的题不再出现在刷题列表
   sorted.forEach(qid=>{ if(PROGRESS[qid]?.mastered) practice.practiced.add(qid); });
+  practiceFrom = (view===Views.BROWSE) ? Views.BROWSE : Views.DOCS;   // 记录入口：退出刷题时回到原处
   view=Views.PRACTICE; renderAll();
 }
 function pQuestion(){ return QINDEX.get(practice.order[practice.index]); }
@@ -1512,6 +1766,12 @@ function renderPractice(c){
   if(practice.done) return renderDone(c);
   if(!practice.order.length){ view=Views.OVERVIEW; return renderContent(); }
   const q = pQuestion();
+  if(!q){   // 题目可能已被删除/数据被云端替换：跳过它，而不是继续读 q.id 整页崩溃
+    practice.order.splice(practice.index,1);
+    if(practice.index >= practice.order.length) practice.index = Math.max(0, practice.order.length-1);
+    if(!practice.order.length){ view=Views.OVERVIEW; return renderContent(); }
+    return renderContent();
+  }
   const tot = practice.order.length, idx = practice.index+1;
   const p = PROGRESS[q.id]||{};
   const docId = QDOC.get(q.id);
@@ -1522,15 +1782,14 @@ function renderPractice(c){
   c.innerHTML = `
     <div class="practice-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}</span><span>${idx} / ${tot}</span></div>
+      <div class="pmeta"><span class="pmeta-l"><button class="btn sm back-btn" id="practiceBack">⬅ 返回</button><span>${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}</span></span><span>${idx} / ${tot}</span></div>
       <div class="pcard">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
-        <div class="panswer" id="pAnswerArea" style="${revealed?'':'display:none'}"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div>
-      <div class="reveal-hint" id="pRevealHint" style="${revealed?'display:none':''}">点击「显示答案」查看解析</div>
+        <div class="rv panswer${revealed?' show':''}" id="pAnswerArea"><div class="rv-in"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div></div>
       </div>
       <div class="pcontrols">
-        <button class="btn" id="prevBtn">← 上一题</button>
+        <button class="btn" id="prevBtn" ${practice.index===0?'disabled style="opacity:.5;cursor:not-allowed"':''}>← 上一题</button>
         <button class="btn ${revealed?'':'primary'}" id="revealBtn">${revealed?'🙈 隐藏答案':'👁 显示答案'}</button>
         <button class="btn" id="aiAskBtn" title="AI 深度诊断此题">🔬 诊断</button>
         <button class="btn" id="editAnswerBtn" title="修改本题答案">✏️ 编辑</button>
@@ -1539,8 +1798,16 @@ function renderPractice(c){
         <button class="btn ${atLast?'primary':''}" id="nextBtn" ${atLast && !canComplete ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${atLast ? (canComplete?'🎉 完成刷题':'需先刷过前面的题目') : '下一题 →'}</button>
       </div>
       ${renderAIBlock(q.id)}
-      <div class="reveal-hint">刷题"已刷"以"过一遍题目"为准：用「下一题 / 上一题」走完所有题才算刷完，单纯显示 / 隐藏答案不会算完成。快捷键：空格 = 显示/隐藏答案 · ← → 切换题目</div>
+      <div class="reveal-hint">需用「下一题 / 上一题」走完全部题目才算刷完，只看答案不算。快捷键：空格 显示/隐藏答案 · ← → 切换题目</div>
     </div>`;
+  const pBack = c.querySelector('#practiceBack');
+  if(pBack) pBack.onclick = () => {
+    practice.done = false;
+    const scope = practice.scope;
+    if(practiceFrom===Views.BROWSE && scope && docById(scope)){ currentDocId = scope; browseLimit = 200; view = Views.BROWSE; }
+    else { currentDocId = null; view = Views.DOCS; }
+    renderAll();
+  };
   $('#prevBtn').onclick = () => { markPracticed(q.id); if(practice.index>0){ practice.index--; renderAll(); } };
   $('#nextBtn').onclick = () => {
     markPracticed(q.id);
@@ -1607,10 +1874,8 @@ function toggleRevealP(qid){
   // 局部切换 DOM，不触发整页动画
   const revealed = practice.revealed.has(qid);
   const answerEl = $('#pAnswerArea');
-  const hintEl = $('#pRevealHint');
   const btnEl = $('#revealBtn');
-  if(answerEl) answerEl.style.display = revealed ? '' : 'none';
-  if(hintEl) hintEl.style.display = revealed ? 'none' : '';
+  if(answerEl) answerEl.classList.toggle('show', revealed);
   if(btnEl){ btnEl.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
 }
 // 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
@@ -1632,6 +1897,11 @@ function renderMock(c){
   if(mock.index>=mock.queue.length){ view=Views.OVERVIEW; return renderContent(); }
   const qid = mock.queue[mock.index];
   const q = questionById(qid);
+  if(!q){   // 题目可能已被删除：跳过它，而不是继续读 q.title 整页崩溃
+    mock.queue.splice(mock.index,1);
+    if(!mock.queue.length){ mock.queue=[]; mock.done=false; view=Views.OVERVIEW; return renderContent(); }
+    return renderContent();
+  }
   const idx = mock.index+1, tot = mock.queue.length;
   const a = mock.answers[qid] || (mock.answers[qid]={answer:'',selfRate:null});
   c.innerHTML = `
@@ -1641,9 +1911,9 @@ function renderMock(c){
       <div class="mock-card">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
-        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答（可后交给 AI 阅卷）</label>
-        <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…（作答完成后点击「显示答案」核对）">${esc(a.answer)}</textarea>
-        <div class="ref-answer" id="mockRefAnswer" style="${mock.revealed?'':'display:none'}"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答</label>
+        <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…">${esc(a.answer)}</textarea>
+        <div class="rv ref-answer${mock.revealed?' show':''}" id="mockRefAnswer"><div class="rv-in"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div></div>
       </div>
       <div class="grade-row">
         <button class="grade-btn g-good ${a.selfRate==='good'?'sel':''}" data-rate="good">✅ 熟练</button>
@@ -1658,7 +1928,7 @@ function renderMock(c){
         <button class="btn ${mock.index===tot-1?'primary':''}" id="mockNext">${mock.index===tot-1?'🏁 交卷':'下一题 →'}</button>
       </div>
       ${renderAIBlock(qid)}
-      <div class="pstatus">先作答，再点「显示答案」核对并自评；自评后才可进入下一题 / 交卷。交卷后导出复盘 MD，交给 AI 阅卷。</div>
+      <div class="pstatus">自评（✅ 熟练 / 🟡 模糊 / ❌ 不会）后才能进入下一题或交卷。</div>
     </div>`;
   const ta = $('#mockAnswer');
   ta.oninput = () => {
@@ -1671,7 +1941,7 @@ function renderMock(c){
     // 局部切换 DOM，不触发整页动画
     const refEl = $('#mockRefAnswer');
     const btnEl = $('#mockReveal');
-    if(refEl) refEl.style.display = mock.revealed ? '' : 'none';
+    if(refEl) refEl.classList.toggle('show', mock.revealed);
     if(btnEl) btnEl.textContent = mock.revealed ? '🙈 隐藏答案' : '👁 显示答案';
   };
   $('#mockAIBtn').onclick = () => { askAI(qid, 'mock'); };
@@ -1685,23 +1955,19 @@ function renderMock(c){
 }
 function renderMockConfig(c){
   const docs = DOCS.filter(d=>d.questions.length);
-  const opts = [`<option value="all">全部题目（${totalQuestions()}）</option>`]
-    .concat(docs.map(d=>`<option value="${esc(d.id)}">${renderTitle(d.title)}（${d.questions.length}）</option>`))
+  const opts = [`<option value="all"${mock.cfg.scope==='all'?' selected':''}>全部题目（${totalQuestions()}）</option>`]
+    .concat(docs.map(d=>`<option value="${esc(d.id)}"${mock.cfg.scope===d.id?' selected':''}>${renderTitle(d.title)}（${d.questions.length}）</option>`))
     .join('');
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
         <h2>🎤 八股练习</h2>
-        <div class="desc">随机抽取题目进行八股练习：自由作答，完成后手动显示答案并自评掌握度。交卷后自动生成一份复盘 MD 文档，可直接交给 AI 阅卷评分。</div>
+        <div class="desc">随机抽题、自由作答、自评掌握度；交卷后可导出复盘 MD 交给 AI 阅卷。</div>
         <div class="cfg-grid">
           <div class="cfg-field"><label>题目数量</label><input type="number" id="mockCount" min="1" max="50" value="${mock.cfg.count}"></div>
           <div class="cfg-field"><label>题目范围</label><select id="mockScope">${opts}</select></div>
         </div>
         <button class="btn primary" id="mockStart">🚀 开始八股练习</button>
-      </div>
-      <div class="empty-feature" style="padding:0">
-        <div style="font-size:13px;color:var(--text);opacity:.85;line-height:1.7;text-align:left;background:var(--card);padding:14px 18px;border-radius:10px">
-          小贴士：答题时尽量<b style="color:var(--text)">口述或打字写出完整答案</b>，时间到或主动点击「显示答案」后，再对照参考答案给自己打分（✅/🟡/❌）。最后导出的 MD 含「题目 + 我的回答 + 参考答案 + 自评」，方便 AI 帮你阅卷。</div>
       </div>
     </div>`;
   $('#mockStart').onclick = () => {
@@ -1719,6 +1985,7 @@ function startMock(){
   mock.queue = pool.slice(0, Math.min(mock.cfg.count, pool.length));
   mock.scopeName = mock.cfg.scope==='all' ? '全部题目' : ((docById(mock.cfg.scope)||{}).title || '题目');
   mock.index = 0; mock.answers = {}; mock.revealed=false; mock.done=false;
+  aiGrading = null; aiGradingLoading = false;   // 清掉上一轮的 AI 阅卷结果，避免残留在新的结果页
   renderAll();
 }
 function mockGrade(qid, rate){
@@ -1750,7 +2017,6 @@ function renderMockResult(c){
           <div class="si"><div class="n" style="color:var(--bad)">${bad}</div><div class="t">❌ 不会</div></div>
           <div class="si"><div class="n">${rated}/${tot}</div><div class="t">已自评</div></div>
         </div>
-        <div class="desc" style="color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:18px">导出复盘 MD 给外部 AI，或用内置模型直接阅卷（需先在「数据 → API 设置」中配置）。</div>
         <div class="pcontrols">
           <button class="btn primary" id="mockExport">⬇️ 导出复盘 MD</button>
           <button class="btn primary" id="mockAIGrade" style="background:linear-gradient(135deg,#f5c542,#f59e42);border:none;color:#1a1a2e">🤖 AI 阅卷</button>
@@ -1759,11 +2025,11 @@ function renderMockResult(c){
           <button class="btn ghost" id="mockExit">返回总览</button>
         </div>
       </div>
-      ${aiGrading ? '<div class="ai-grading">'+aiGrading+'</div>' : ''}
-      ${aiGradingLoading ? '<div class="ai-loading">AI 阅卷中…</div>' : ''}
+      ${(aiGrading || aiGradingLoading) ? '<div class="ai-grading" id="aiGradingBox">'+(aiGrading || '<div class="ai-loading">AI 阅卷中…</div>')+'</div>' : ''}
       <div style="margin-top:18px">
         ${mock.queue.map((id,i)=>{
           const q = questionById(id); const a = mock.answers[id]||{};
+          if(!q) return '';   // 题目已被删除：跳过，避免读 q.title 抛错
           const rm = {good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'}[a.selfRate]||'（未自评）';
           return `<div class="q-summary"><div class="qt">${i+1}. ${renderTitle(q.title)} <span style="color:var(--muted);font-weight:500;font-size:12px">${rm}</span></div>
             <div class="qa"><b>我的回答：</b>${esc(a.answer&&a.answer.trim()?a.answer.trim():'（未填写）')}</div></div>`;
@@ -1780,7 +2046,7 @@ let _memQueueCache = null;
 let _memQueueBuiltAt = 0;   // 队列构建时间：超过阈值即使无数据变更也视为脏（长时间挂机后新到期题要能出现）
 let _memQueueDirty = true;
 let _lvCountsCache = null;   // 等级分布缓存，进度变更时失效
-function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; }
+function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; _statsCache = null; }
 // 全库等级分布（记忆模式进度条用），缓存避免每次评分都全量遍历
 function computeLvCounts(){
   if(_lvCountsCache) return _lvCountsCache;
@@ -1855,6 +2121,23 @@ function undoMemoryGrade(){
   if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
   renderAll();
 }
+// 展开/收起记忆卡的答案区（点击卡片与键盘 Enter/空格 共用）：
+// 答案本体交给 CSS 的 .rv 做高度过渡（grid-rows 0fr→1fr），评分栏与撤销栏补一个上浮淡入，
+// 避免原来 display 一开一关"啪"地整块出现
+function applyMemFlip(){
+  const show = !!memory.flipped;
+  const ma=$('#memAnswer'), mh=$('#memHint'), mg=$('#memGradeRow'), mc=$('#memControls');
+  if(ma) ma.classList.toggle('show', show);
+  if(mh) mh.style.display = show ? 'none' : '';
+  if(mg){
+    mg.style.display = show ? '' : 'none';
+    if(show){ mg.classList.remove('anim-in'); void mg.offsetWidth; mg.classList.add('anim-in'); }
+  }
+  if(mc){
+    mc.style.display = show ? '' : 'none';
+    if(show){ mc.classList.remove('anim-in'); void mc.offsetWidth; mc.classList.add('anim-in'); }
+  }
+}
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
     // 评分越界（队列非空）时保留撤销历史；全新进入（队列空）才清空
@@ -1875,8 +2158,9 @@ function renderMemory(c){
   const item = memory.queue[memory.index];
   const q = item.q, d = item.d;
   const p = PROGRESS[q.id]||{};
-  const ef = p.ef || SM2_INIT_EF;
   const lastInterval = p.interval || 0;
+  // 「距上次」应该是真实经过的天数，而不是上次排程出来的间隔
+  const sinceLastDays = p.lastPracticed ? Math.max(0, Math.round((Date.now()-p.lastPracticed)/86400000)) : 0;
   const tot = memory.queue.length, idx = memory.index+1;
   const maxOverdue = memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
   // 一根总进度条：全部文档所有题目的等级分布
@@ -1889,7 +2173,7 @@ function renderMemory(c){
         <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
           <span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
-          ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${lastInterval} 天`}
+          ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${sinceLastDays} 天`}
           ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
         </span>
       </div>
@@ -1899,18 +2183,20 @@ function renderMemory(c){
           <button class="btn sm" id="flashEdit">✏️ 编辑</button>
         </div>
         <div class="ptitle">${renderTitle(q.title)}</div>
-        <div class="memory-answer" id="memAnswer" style="${memory.flipped?'':'display:none'}">
-          <div class="label">📝 答案</div>
-          ${renderAnswer(q.answer)}
-          <div class="mem-ai-wrap">
-            <div class="mem-ai-head">
-              <button class="btn sm" id="memAICodeBtn">💻 AI 代码分析</button>
-              <span class="mem-ai-tip">校验正误 · 判断是否要代码 · 讲解并提炼记忆锚点</span>
+        <div class="rv memory-answer${memory.flipped?' show':''}" id="memAnswer">
+          <div class="rv-in">
+            <div class="label">📝 答案</div>
+            ${renderAnswer(q.answer)}
+            <div class="mem-ai-wrap">
+              <div class="mem-ai-head">
+                <button class="btn sm" id="memAICodeBtn">💻 分析</button>
+                <span class="mem-ai-tip">校验正误 · 判断是否要代码 · 讲解并提炼记忆锚点</span>
+              </div>
+              <div id="memAICodeOut" data-qid="${esc(q.id)}">${renderAICodeBlock(q.id)}</div>
             </div>
-            <div id="memAICodeOut" data-qid="${esc(q.id)}">${renderAICodeBlock(q.id)}</div>
           </div>
         </div>
-        <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片查看答案，也可用键盘 Enter / 空格</div>
+        <div class="reveal-hint" id="memHint" style="${memory.flipped?'display:none':''}">👆 点击卡片查看答案</div>
         <div class="grade-row" id="memGradeRow" style="${memory.flipped?'':'display:none'}">
           <div class="grade-btn" data-rate="1" style="border-color:var(--bad);color:var(--bad)">😰 完全忘了</div>
           <div class="grade-btn" data-rate="2" style="border-color:#e09040;color:#e09040">🤔 记得一点</div>
@@ -1927,20 +2213,12 @@ function renderMemory(c){
   `;
   // 翻转卡片：点击卡片翻转，答案区域选中文字时不触发
   const card = c.querySelector('.memory-card');
-  const memAnswer = $('#memAnswer');
-  const memHint = $('#memHint');
-  const memGradeRow = $('#memGradeRow');
-  const memControls = $('#memControls');
   card.onclick = (e) => {
     if(e.target.closest('.grade-btn,.btn,button')) return;
     // 答案已展开时，在答案区域内点击不做翻转（允许选中复制文字）
     if(memory.flipped && e.target.closest('.memory-answer')) return;
     memory.flipped = !memory.flipped;
-    const show = memory.flipped;
-    memAnswer.style.display = show ? '' : 'none';
-    memHint.style.display = show ? 'none' : '';
-    memGradeRow.style.display = show ? '' : 'none';
-    memControls.style.display = show ? '' : 'none';
+    applyMemFlip();
   };
   c.querySelectorAll('.grade-btn[data-rate]').forEach(r=>r.onclick=(e)=>{
     e.stopPropagation();
@@ -2013,11 +2291,17 @@ ${top}
 `;
 }
 
+// CSV 单元格转义：引号加倍 + 防 Excel 公式注入（以 = + - @ 开头的文本会被当公式执行）
+function csvCell(v){
+  let s = String(v==null ? '' : v);
+  if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g,'""') + '"';
+}
 function exportAnalyticsCSV(rows){
   const header = ['qid','题目','文档','等级','已掌握','下次复习','间隔(天)','EF','逾期(天)','待复习'];
   const lines = [header.join(',')];
   rows.forEach(r=>{
-    const row = [`"${String(r.qid).replace(/"/g,'""')}"`, `"${String(r.title).replace(/"/g,'""')}"`, `"${String(r.doc).replace(/"/g,'""')}"`, r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
+    const row = [csvCell(r.qid), csvCell(r.title), csvCell(r.doc), r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
@@ -2070,7 +2354,13 @@ function renderAnalytics(c){
   const fmtDate = t => t ? new Date(t).toLocaleDateString('zh-CN') : '—';
   const statusCell = r => r.due ? `<span style="color:var(--bad)">待复习</span>` : (r.mastered ? `<span style="color:var(--good)">已稳</span>` : `<span style="color:var(--muted)">复习中</span>`);
   const lvCell = r => `<span style="display:inline-flex;align-items:center"><i class="an-dot lv${r.lv}"></i>${r.mastered?'已掌握':('Lv'+r.lv)}</span>`;
-  const detailRows = filtered.map(r=>`<tr>
+  // 明细表封顶渲染：题量大时一次生成上万行会直接卡住页面（搜索页早有同样的 200 条保护）
+  const MAX_DETAIL_ROWS = 300;
+  const detailShown = filtered.slice(0, MAX_DETAIL_ROWS);
+  const detailMore = filtered.length > MAX_DETAIL_ROWS
+    ? `<div style="text-align:center;color:var(--warn);font-size:12px;padding:10px 0">仅显示前 ${MAX_DETAIL_ROWS} 条（共 ${filtered.length} 条）· 可用上方搜索缩小范围，或用「导出 CSV」查看全部</div>`
+    : '';
+  const detailRows = detailShown.map(r=>`<tr>
     <td class="title-cell" title="${esc(r.title)}">${esc(r.title)}</td>
     <td>${esc(r.doc)}</td>
     <td>${lvCell(r)}</td>
@@ -2092,7 +2382,7 @@ function renderAnalytics(c){
   c.innerHTML = `
   <div class="an-wrap">
     <div class="an-h">📈 学习进度分析</div>
-    <div class="an-sub">基于你浏览器本地的记忆进度数据（SM-2 艾宾浩斯），覆盖全部已学习题目的等级、掌握状态、复习日期与逾期情况。</div>
+    <div class="an-sub">复习计划由 SM-2（艾宾浩斯）调度，数据仅存于本机浏览器。</div>
     ${total===0 ? `<div class="flash-empty"><div class="big">📭</div><div style="font-weight:700;margin-bottom:6px">还没有记忆进度</div><div style="color:var(--muted)">去「🧠 记忆」或「📝 八股」刷题后，这里会展示你的全部进度。</div></div>`
     : `
     <div class="an-grid">
@@ -2134,7 +2424,7 @@ function renderAnalytics(c){
         <th>状态</th>
       </tr></thead>
       <tbody>${detailRows}</tbody>
-    </table></div>`}
+    </table></div>${detailMore}`}
   `;
   if(total===0) return;
   const termEl = $('#anTerm');
@@ -2219,7 +2509,6 @@ function renderGrillConfig(c){
     <div class="feature-wrap">
       <div class="cfg-card">
         <h2>🔥 面试拷打</h2>
-        <div class="desc">选择一种模式，AI 将以资深面试官身份对你进行高压面试。</div>
         <div class="grill-mode-row" id="grillModeRow">
           <div class="grill-mode-card" data-mode="project">
             <div class="gm-icon">📂</div>
@@ -2334,7 +2623,7 @@ function renderGrillConfig(c){
     // 项目深挖和八股扫荡直接调API开始；自动开局先锁输入，防止首轮生成中并发第二个流式请求
     if(selectedMode==='project' || selectedMode==='theory'){
       grill.loading = true; renderAll();
-      setTimeout(()=>{ if(grill.started && !grill.ended) doGrillChat(''); }, 300);
+      setTimeout(()=>{ if(grill.started && !grill.ended) doGrillChat(); }, 300);
     }
   };
   $('#grillUpload').onclick = () => $('#grillFileInput').click();
@@ -2365,26 +2654,60 @@ function clozeRate(correct, total){
   const r = correct/total;
   return r>=1 ? 5 : r>=0.7 ? 4 : r>=0.4 ? 3 : r>0 ? 2 : 1;
 }
+// 本次会话里"确实挑不出锚点"的题（内存态，不写库）。
+// 它负责防住"跳过 → 队列空 → 重建队列 → 又捞回同一题"的死循环；
+// 之所以不再写进 PROGRESS：老实现用 clozeNoAnchor 持久标记，一次失败就永久跳过，
+// 配合当时只认 Markdown 标记的抽取规则，等于把"本地规则挖空"整个功能废掉了。
+// 重进挖空页会清空本集合，所以它只是"本次别重复试"，不是终身拉黑。
+const _clozeFailed = new Set();
 // 队列与记忆模式同源（SM-2 到期题），但排除纯新题——新题没见过答案，没法挖空
 function clozeQueueBuild(){
-  return buildMemoryQueue().filter(it=>!it.isNew).map(it=>it.q.id);
+  return buildMemoryQueue()
+    .filter(it => !it.isNew && !_clozeFailed.has(it.q.id))
+    .map(it=>it.q.id);
 }
-// 启发式挖空（离线兜底）：行内代码、加粗词、「」内词、数字+单位
+// 启发式挖空（本地规则，不耗 token）：按"像不像要背下来的锚点"排优先级挑词。
+// 关键：答案在导入（parseMarkdownToDoc）与一次性清理时都已被 stripMarkdown 剥掉 ** 和 `，
+// 所以不能只认这两种标记——那样中文答案一个词都挑不出来，这正是原来"没法使用"的原因。
 function clozeHeuristic(answer, target){
   const t = String(answer||'');
-  const words = [];
-  (t.match(/`([^`\n]{1,24})`/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
-  (t.match(/\*\*([^*\n]{1,24})\*\*/g)||[]).forEach(m=>words.push(m.slice(2,-2).trim()));
-  (t.match(/「([^」\n]{1,24})」/g)||[]).forEach(m=>words.push(m.slice(1,-1).trim()));
-  (t.match(/\d+(?:\.\d+)?\s*(?:%|ms|秒|分钟|小时|天|次|个|倍|层|路|万|条|MB|GB|KB)/g)||[]).forEach(m=>words.push(m.trim()));
-  const seen = new Set(); const out = [];
-  for(const w of words){
-    const k = String(w).trim();
-    if(!k || k.length<2 || k.length>24 || seen.has(k.toLowerCase())) continue;   // 单字词易挖断/与占位标记冲突
-    seen.add(k.toLowerCase()); out.push(k);
-    if(out.length>=target) break;
-  }
-  return out;
+  const out = [], seen = new Set();
+  const push = raw => {
+    const k = String(raw==null?'':raw).trim()
+      .replace(/^[（(【\[「『“"']+/, '').replace(/[）)】\]」』”"']+$/, '')
+      .replace(/[。，、；：！？,;:!?]+$/, '');
+    if(k.length<2 || k.length>24) return;
+    if(/^\d$/.test(k)) return;            // 单个数字没意义（0.75 / 16 / 64 这类关键数字要留）
+    if(/^[a-z]{1,3}$/.test(k)) return;    // 英文虚词（is / the / can…）
+    if(!t.includes(k)) return;            // 必须在原文出现，挖空才有意义
+    const lk = k.toLowerCase();
+    if(seen.has(lk)) return;
+    seen.add(lk); out.push(k);
+  };
+  const scan = (re, pick) => {
+    re.lastIndex = 0;
+    let m;
+    while((m = re.exec(t)) !== null){
+      push(pick ? pick(m) : m[0]);
+      if(out.length >= target*4) return;
+    }
+  };
+  scan(/`([^`\n]{1,24})`/g, m=>m[1]);                                    // 行内代码（答案自带 Markdown 时）
+  scan(/\*\*([^*\n]{1,24})\*\*/g, m=>m[1]);                              // 加粗
+  scan(/\d+(?:\.\d+)?\s*(?:%|‰|ms|s|秒|分钟|小时|天|周|次|个|倍|层|路|万|亿|条|MB|GB|KB|TB|bit|byte)/gi);
+  scan(/[A-Za-z][A-Za-z0-9+#._-]{1,23}/g);                               // 英文技术名词 HashMap / JVM / B+
+  scan(/\d+\.\d+|\d{2,}/g);                                              // 关键数字 0.75 / 16 / 64
+  scan(/[（(]([^）)\n]{2,20})[）)]/g, m=>m[1]);                            // 括号里的补充说明
+  scan(/[「『“"]([^」』”"\n]{2,20})[」』”"]/g, m=>m[1]);                     // 引号内的词
+  // 顿号/逗号列举出的短术语（"堆、虚拟机栈、方法区" 这类最常见的答案结构）
+  t.split(/[、，,；;]/).forEach(seg => {
+    const s = seg.trim().replace(/^[\s。.：:]+|[\s。.：:]+$/g, '');
+    if(s.length < 2 || s.length > 8) return;
+    if(/[（）()【】「」“”"'`*#：:]/.test(s)) return;
+    if(/^(以及|等等|例如|因为|所以|但是|如果|可以|需要|并且|而且|同时|另外|其中|主要|一般|通常|就是)/.test(s)) return;
+    push(s);
+  });
+  return out.slice(0, target);
 }
 // 目标挖空数：按答案长度自适应，约每 35 字挖 1 个，6~16 之间（答案越长挖得越多）
 function clozeTargetCount(answer){
@@ -2412,24 +2735,83 @@ async function clozeByAI(q, target){
   }catch(_){ return null; }
 }
 let _clozeCache = null;   // qid -> 挖空词列表，持久化到 IndexedDB，避免重复调用 AI；__cloze_v 为缓存版本
-async function clozeGetWords(q){
+// 题目被删除时同步丢弃它的挖空词缓存：否则缓存会长期堆积，且题目 id 被后续导入的数据复用时可能命中旧词表
+function dropClozeCache(qid){
+  try{
+    if(_clozeCache && Object.prototype.hasOwnProperty.call(_clozeCache, qid)){
+      delete _clozeCache[qid];
+      Store.saveCloze(_clozeCache);
+    }
+  }catch(e){ warnSilent('清理挖空缓存失败', e); }
+}
+async function clozeLoadCache(){
   if(!_clozeCache) _clozeCache = await Store.getCloze();
   if(_clozeCache.__cloze_v !== 2) _clozeCache = { __cloze_v: 2 };   // 挖空密度策略升级：旧版（稀疏）缓存作废重新生成
-  let words = _clozeCache[q.id];
-  if(Array.isArray(words)) return words;   // 命中缓存（含空数组：无可挖空的题不再重复调 AI）
+  return _clozeCache;
+}
+// 只读缓存：命中（含空数组）返回词表，未命中返回 null —— 全程零请求、零 token
+async function clozeCachedWords(q){
+  const c = await clozeLoadCache();
+  return Array.isArray(c[q.id]) ? c[q.id] : null;
+}
+// 生成挖空词并写缓存：useAI=true 才请求 AI（消耗 token），false 只用本地启发式规则
+async function clozeGenWords(q, useAI){
+  const c = await clozeLoadCache();
   const target = clozeTargetCount(q.answer);
-  words = aiConfig ? await clozeByAI(q, target) : null;
+  let words = useAI ? await clozeByAI(q, target) : null;
   if(!words || words.length < Math.min(target, 3)){
     // AI 锚点太少或失败：用启发式挖空回补，过滤包含关系重叠的词
     const base = words || [];
     const fill = clozeHeuristic(q.answer, target).filter(x => !base.some(w => w.includes(x) || x.includes(w)));
     words = base.concat(fill).slice(0, target);
   }
-  _clozeCache[q.id] = words;
-  const qids = Object.keys(_clozeCache).filter(k=>k!=='__cloze_v');
-  if(qids.length > 300) qids.slice(0, qids.length-300).forEach(k=>delete _clozeCache[k]);
-  Store.saveCloze(_clozeCache);
+  c[q.id] = words;
+  const qids = Object.keys(c).filter(k=>k!=='__cloze_v');
+  if(qids.length > 300) qids.slice(0, qids.length-300).forEach(k=>delete c[k]);
+  Store.saveCloze(c);
   return words;
+}
+// 把生成好的词表铺成填空卡片；返回 false 表示这题确实挖不出内容（已标记跳过）
+function clozeApplyWords(q, words){
+  const built = words && words.length ? clozeBuildHtml(q.answer, words) : { words: [] };
+  if(!built.words.length) return false;
+  cloze.words = built.words; cloze.html = built.html; cloze.pending = false;
+  return true;
+}
+// 挖空词表未就绪时的"待生成"卡片：不点按钮就不会有任何 AI 请求
+function renderClozePending(c, q, idx, tot){
+  const hasAI = !!aiConfig;
+  c.innerHTML = `
+    <div class="feature-wrap">
+      <div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span><span>尚未生成填空</span></div>
+      <div class="cloze-card">
+        <div class="ptitle">${renderTitle(q.title)}</div>
+        <div class="pstatus" style="margin-top:14px">这道题还没有生成填空。${hasAI?'点下面的按钮才会请求 AI，避免"只是想看看"就消耗额度。':'用本地规则挖空，不消耗任何额度。'}</div>
+        <div class="pcontrols" style="margin-top:18px">
+          ${hasAI?'<button class="btn primary" id="clozeGenAI">🤖 生成填空（请求 1 次 AI）</button>':''}
+          <button class="btn${hasAI?'':' primary'}" id="clozeGenLocal">⚡ 本地规则挖空（不耗 token）</button>
+          <button class="btn ghost" id="clozeSkipPending">跳过此题</button>
+        </div>
+      </div>
+      <div class="pstatus">生成结果会缓存在本机：同一题下次进来直接复用，不会重复请求。</div>
+    </div>`;
+  const runGen = async useAI => {
+    const myQid = q.id;
+    c.innerHTML = `<div class="feature-wrap"><div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span></div><div class="ai-loading">${useAI?'AI 正在挑背诵锚点…':'正在按本地规则挖空…'}</div></div>`;
+    const words = await clozeGenWords(q, useAI);
+    if(cloze.qid !== myQid || view !== Views.CLOZE){ cloze.pending = false; return; }   // 已切题/切视图：丢弃过期结果并复位"待生成"标记
+    if(clozeApplyWords(q, words)) return renderAll();
+    // 挑不出锚点：本次会话内不再重复捞它（防死循环），同时丢掉刚写进去的空词表，
+    // 下次进来可以换一种方式（AI 或先改答案）再试
+    _clozeFailed.add(myQid);
+    dropClozeCache(myQid);
+    cloze.queue.splice(cloze.index,1);
+    toast('该题暂无可挖空内容，已跳过');
+    return renderCloze(c);
+  };
+  const aiBtn = $('#clozeGenAI'); if(aiBtn) aiBtn.onclick = () => runGen(true);
+  $('#clozeGenLocal').onclick = () => runGen(false);
+  $('#clozeSkipPending').onclick = () => { cloze.index++; cloze.qid = null; cloze.pending = false; renderAll(); };
 }
 // 把关键词替换成占位标记，渲染答案后再换成填空输入框
 function clozeBuildHtml(answer, words){
@@ -2486,7 +2868,7 @@ async function renderCloze(c){
   if(!cloze.queue.length){
     cloze.queue = clozeQueueBuild();
     cloze.index = 0; cloze.qid = null; cloze.words = null; cloze.html = null;
-    cloze.checked = false; cloze.result = null;
+    cloze.checked = false; cloze.result = null; cloze.pending = false;
     cloze.statCorrect = 0; cloze.statTotal = 0; cloze.doneCount = 0;
     if(!cloze.queue.length){
       c.innerHTML = `<div class="flash-empty"><div class="big">🧩</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">暂无可挖空的题</div><div style="color:var(--muted)">挖空回忆只练"已学过且到了复习时间"的题。<br>先去「记忆」或「刷题」学一遍，到期后就能来这里填空测试。</div></div>`;
@@ -2498,21 +2880,38 @@ async function renderCloze(c){
   const q = questionById(qid);
   if(!q){ cloze.queue.splice(cloze.index,1); return renderCloze(c); }
   const tot = cloze.queue.length, idx = cloze.index+1;
-  // 为当前题准备挖空：先缓存，再 AI，最后启发式兜底
+  // 为当前题准备挖空：先查本地缓存（零请求）→ 命中就直接用；
+  // 配了 AI 且无缓存时**不自动请求**，先给一张"待生成"卡片，由用户点按钮决定（避免点进来看看就消耗 token）
   if(cloze.qid !== qid || !cloze.words){
     cloze.qid = qid; cloze.words = null; cloze.html = null; cloze.checked = false; cloze.result = null;
-    c.innerHTML = `<div class="feature-wrap"><div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span></div><div class="ai-loading">正在生成填空…</div></div>`;
-    const words = await clozeGetWords(q);
+    if(!_clozeCache){   // 首次进挖空需要读一次本地缓存（IndexedDB，无网络请求）
+      c.innerHTML = `<div class="feature-wrap"><div class="pmeta"><span>🧩 挖空回忆 · 第 ${idx}/${tot} 题</span></div><div class="ai-loading">读取本地缓存…</div></div>`;
+    }
+    const cached = await clozeCachedWords(q);
     if(cloze.qid !== qid || view !== Views.CLOZE) return;   // 已切题/切视图，丢弃过期结果
-    const built = words.length ? clozeBuildHtml(q.answer, words) : { words: [] };
-    if(!built.words.length){
-      cloze.queue.splice(cloze.index,1);   // 答案过短或无可挖空内容：跳过该题
-      toast('该题暂无可挖空内容，已跳过');
+    if(cached && cached.length){
+      if(clozeApplyWords(q, cached)) return renderAll();    // 命中缓存：直接渲染题卡
+      // 缓存里的词在新答案里一个都找不到（比如 AI 挑的词原文并没有）：丢掉这份缓存 + 本次跳过。
+      // 这里必须记进 _clozeFailed，否则"跳过 → 队列空 → 重建队列 → 又捞回同一题"会无限递归
+      _clozeFailed.add(qid);
+      dropClozeCache(qid);
+      cloze.queue.splice(cloze.index,1);
       return renderCloze(c);
     }
-    cloze.words = built.words; cloze.html = built.html;
-    if(view !== Views.CLOZE) return;
-    return renderAll();   // 准备完成，重新渲染题卡
+    if(aiConfig){
+      cloze.pending = true;
+      return renderClozePending(c, q, idx, tot);            // 等用户确认，零请求
+    }
+    const words = await clozeGenWords(q, false);            // 未配 AI：本地规则挖空，零 token
+    if(cloze.qid !== qid || view !== Views.CLOZE) return;
+    if(clozeApplyWords(q, words)) return renderAll();
+    // 挑不出锚点：本次会话内不再重复捞它（否则重建队列会再次捞回同一题形成死循环），
+    // 并把空词表从缓存里删掉，下次进来重新按新规则生成
+    _clozeFailed.add(qid);
+    dropClozeCache(qid);
+    cloze.queue.splice(cloze.index,1);
+    toast('该题暂无可挖空内容，已跳过');
+    return renderCloze(c);
   }
   const accInfo = cloze.statTotal ? `本场正确率 <b style="color:var(--text)">${Math.round(cloze.statCorrect/cloze.statTotal*100)}%</b>` : '凭记忆填写';
   c.innerHTML = `
@@ -2528,7 +2927,7 @@ async function renderCloze(c){
         </div>
         ${cloze.checked ? (()=>{ const ok=cloze.result.filter(r=>r.ok).length; return '<div class="pstatus" style="margin-top:12px">填对 <b style="color:'+(ok===cloze.result.length?'var(--good)':'var(--warn)')+'">'+ok+'/'+cloze.result.length+'</b> · 错误处已标出正确词 · 本题复习计划已更新</div>'; })() : ''}
       </div>
-      <div class="pstatus">空里是答案的"背诵锚点"（术语/数字/结论）。先尽力填写，提交后对则标绿、错则显示正确词——先回想，再纠正。回车 = 跳到下一个空</div>
+      <div class="pstatus">空格里是答案的背诵锚点（术语 / 数字 / 结论）；填对标绿，填错显示正确词。回车 = 跳到下一个空</div>
     </div>`;
   if(cloze.checked){
     $('#clozeNext').onclick = () => { cloze.index++; cloze.qid = null; renderAll(); };
@@ -2701,6 +3100,8 @@ ${grill.resume}`
       const el = document.getElementById('gm-'+aiIdx);
       const _m2 = grill.messages && grill.messages[aiIdx];
       if(el && _m2) el.innerHTML = md2html(_m2.content);
+      // 首个分片已经到达：去掉"专家思考中…"占位，避免与流式正文同时显示
+      const _ld = document.getElementById('grillLoading'); if(_ld) _ld.remove();
       const chat = document.getElementById('grillChat');
       if(chat) chat.scrollTop = chat.scrollHeight;
     }, 50);
@@ -2920,12 +3321,18 @@ async function gradeInterview(){
     _gTimer = setTimeout(()=>{
       _gTimer = null;
       aiGrading='<div class="ai-review">'+formatAI(_gLatest)+'</div>';
-      const el=$('.ai-grading');if(el)el.innerHTML=aiGrading;
+      // 容器在 aiGradingLoading=true 那次渲染里已经建好，这里只换它的内容，才能真的边生成边显示；
+      // 原来取的是 .ai-grading（那时还不存在）→ 流式内容全被丢弃，用户要等整段生成完才看到结果。
+      // 替换前记一下滚动位置，避免用户翻看前面内容时被拽回顶部
+      const box=document.getElementById('aiGradingBox');
+      if(box){ const st=box.scrollTop; box.innerHTML=aiGrading; box.scrollTop=st; }
     }, 50);
   });
   clearTimeout(_gTimer);
   aiGradingLoading=false; if(r) aiGrading='<div class="ai-review">'+formatAI(r)+'</div>';
-  const el=$('.ai-grading');if(el){el.innerHTML=aiGrading||'';}else{renderAll();}
+  const box=document.getElementById('aiGradingBox');
+  if(box) box.innerHTML = aiGrading || '<div class="ai-loading">AI 阅卷未返回内容，请重试</div>';
+  else renderAll();
 }
 async function askAI(qid, mode){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
@@ -3018,18 +3425,29 @@ async function askAI(qid, mode){
   updateAIOutput(qid);
 }
 // 流式更新 AI 输出，只更新 DOM 不触发页面动画
+// 只替换 .ai-body 内部：整体 innerHTML 覆盖会把「🤖 AI 回复」标题一起冲掉
 function updateAIOutput(qid){
   const el=$('.ai-answer[data-qid="'+CSS.escape(qid)+'"]');
   if(!el) return;
   const text=aiAnswer[qid]||'';
   if(!text){ el.remove(); return; }   // 生成失败/被清理时移除残留空盒，避免留下空边框卡片
-  if(text==='loading'){el.innerHTML='<div class="ai-loading">AI 思考中<span class="dots">...</span></div>';return;}
-  el.innerHTML=formatAI(text);
+  let body = el.querySelector('.ai-body');
+  if(!body){ el.insertAdjacentHTML('beforeend','<div class="ai-body"></div>'); body = el.querySelector('.ai-body'); }
+  if(!body) return;
+  if(text==='loading'){body.innerHTML='<div class="ai-loading">AI 思考中<span class="dots">...</span></div>';return;}
+  body.innerHTML=formatAI(text);
 }
 // 限制 AI 结果缓存大小，避免长时间使用后内存无限增长
 function _limitCache(obj, max){
   const keys = Object.keys(obj);
   if(keys.length > max) keys.slice(0, keys.length - max).forEach(k => delete obj[k]);
+}
+// 标记型 Map（aiCodeStreaming / aiCodeHidden）只增不减，长会话会持续膨胀：
+// 条目够多时清掉"已复位为 false"的键；真值（正在流式/已折叠）不动，不丢状态
+function pruneFlagMap(map, softLimit){
+  const keys = Object.keys(map);
+  if(keys.length < (softLimit || 120)) return;
+  keys.forEach(k => { if(!map[k]) delete map[k]; });
 }
 function formatAI(text){
   if(!text) return '';
@@ -3096,28 +3514,30 @@ async function askAICode(qid){
   clearTimeout(_t);
   if(!r && aiCodeAnswer[qid]==='loading') aiCodeAnswer[qid] = null;
   updateAICodeOutput(qid);
+  pruneFlagMap(aiCodeStreaming);
+  pruneFlagMap(aiCodeHidden);
 }
 // 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）；
 // 内容放在 320px 内滚窗口（.mem-ai-scroll）里，标题行与隐藏按钮固定在盒子顶部，不随内容滚动
 function renderAICodeBlock(qid){
   const v = aiCodeAnswer[qid];
   if(!v) return '';
-  if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在生成代码分析…</div></div>';
-  const head = '<div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">💻 AI 代码分析</div>';
+  if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在分析…</div></div>';
+  const head = '<div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px">💻 分析</div>';
   // 流式生成期间：Markdown 标记（##、**、```）是逐字出现的，实时解析会导致字体/样式反复跳变，
   // 因此期间用纯文本稳定展示（esc 后由 pre-wrap 保留换行），生成完整后再一次性渲染。
   if(aiCodeStreaming[qid]) return '<div class="ai-answer">'+head+'<div class="mem-ai-scroll"><div class="ai-stream">'+esc(v)+'</div></div></div>';
   // 已隐藏：只显示标题 + 展开按钮
   if(aiCodeHidden[qid]){
     return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
-      + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">👁 展开</button></div>'
+      + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 分析</span>'
+      + '<button class="btn sm" data-hide-qid="'+esc(qid)+'">👁 展开</button></div>'
       + '<div style="color:var(--muted);font-size:12px">内容已隐藏</div></div>';
   }
   // 正常显示：标题行 + 隐藏按钮（盒子顶部，不随内容滚动）+ 内滚内容窗口
   return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 AI 代码分析</span>'
-    + '<button class="btn sm" data-hide-qid="'+esc(qid)+'" onclick="toggleAICodeHidden(this)">🙈 隐藏</button></div>'
+    + '<span style="font-size:12px;color:var(--accent2);font-weight:700">💻 分析</span>'
+    + '<button class="btn sm" data-hide-qid="'+esc(qid)+'">🙈 隐藏</button></div>'
     + '<div class="mem-ai-scroll">'+md2html(v)+'</div></div>';
 }
 // 折叠/展开记忆模式的 AI 代码分析生成内容
@@ -3127,6 +3547,12 @@ function toggleAICodeHidden(el){
   aiCodeHidden[qid] = !aiCodeHidden[qid];
   updateAICodeOutput(qid);
 }
+// 事件委托：分析块的「展开/隐藏」按钮是 innerHTML 动态生成的，原先用内联 onclick，
+// 依赖 CSP 的 'unsafe-inline'（将来收紧策略会静默失效），这里统一在 document 上委托一次
+document.addEventListener('click', e => {
+  const btn = (e.target && e.target.closest) ? e.target.closest('[data-hide-qid]') : null;
+  if(btn) toggleAICodeHidden(btn);
+});
 // 流式更新代码分析输出，只更新 DOM 不触发页面动画
 function updateAICodeOutput(qid){
   const el = $('#memAICodeOut'); if(!el) return;
@@ -3152,7 +3578,9 @@ function renderSearch(c){
   if(!term){ view=Views.OVERVIEW; return renderContent(); }
   const results = [];
   DOCS.forEach(d=>d.questions.forEach(q=>{
-    if(q.title.toLowerCase().includes(term) || (q.answer||'').toLowerCase().includes(term)){
+    // 标签也参与匹配：tags 原本只在编辑弹窗里可见，等于录了却用不上
+    const hitTag = Array.isArray(q.tags) && q.tags.some(t=>String(t).toLowerCase().includes(term));
+    if(q.title.toLowerCase().includes(term) || (q.answer||'').toLowerCase().includes(term) || hitTag){
       results.push({doc:d, q});
     }
   }));
@@ -3174,7 +3602,7 @@ function renderSearch(c){
     }).join('');
   c.querySelectorAll('[data-jump]').forEach(el=>el.onclick=()=>{
     const qid=el.dataset.jump; const docId = QDOC.get(qid);
-    if(docId){ currentDocId=docId; highlightQid=qid; view=Views.BROWSE; renderAll(); }
+    if(docId){ browseFrom=Views.SEARCH; browseLimit = 200; currentDocId=docId; highlightQid=qid; view=Views.BROWSE; renderAll(); }
   });
 }
 
@@ -3182,18 +3610,27 @@ function renderSearch(c){
    顶层渲染
    ========================================================= */
 let _persistedView = null;
+let _inAnimTimer = null;   // 入场动画收尾定时器：连续切视图时先清旧的，否则上一轮的定时器会把新一轮动画从中间掐断
 function renderAll(){
   const viewChanged = _persistedView !== view;
-  if(viewChanged){ sessionStorage.setItem('lastView', view); _persistedView = view; }
+  // 这里是渲染主入口，sessionStorage 在隐私模式/受限 WebView 下写入会抛异常，
+  // 不加保护会让后面的 renderStatsBar/renderContent 全部不执行（整页停在旧内容）
+  if(viewChanged){ try{ sessionStorage.setItem('lastView', view); }catch(_){} _persistedView = view; }
   renderStatsBar(); renderContent();
   const c=$('.content');
   if(c){
-    c.scrollTop=0; c.classList.remove('out');
+    // 列表类视图（文档页/题目浏览页）在原地编辑、删除后要保住滚动位置，
+    // 否则题多的文档一删题就被弹回顶部；切视图/翻题/评分仍然回顶部
+    const keepScroll = !viewChanged && (view===Views.DOCS || view===Views.BROWSE);
+    if(!keepScroll) c.scrollTop=0;
     if(viewChanged){
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
       c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
       c.classList.add('in');
-      setTimeout(()=>c.classList.remove('in'),900);
+      // 最长一路动画是 .34s 延迟 + .55s 时长 ≈ .89s，留足余量再摘 class；
+      // 先 clear 上一轮：否则快速连点标签时，旧定时器会在新动画播到一半时移除 class 导致入场被掐断
+      clearTimeout(_inAnimTimer);
+      _inAnimTimer = setTimeout(()=>{ _inAnimTimer = null; c.classList.remove('in'); }, 1000);
     }
   }
 }
@@ -3206,9 +3643,11 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => {
     const v = tab.dataset.view;
     if(v===Views.DOCS){ view=Views.DOCS; renderAll(); }
-    else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:[]}; view=Views.MEMORY; renderAll(); }
+    // 保留 _history：只是重进标签页，不该把之前的撤销栈丢掉（否则刚评完分切走再回来就没法撤销了）
+    else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:(memory._history||[])}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
-    else if(v===Views.CLOZE){ cloze={queue:[],index:0,qid:null,words:null,html:null,checked:false,result:null,statCorrect:0,statTotal:0,doneCount:0}; view=Views.CLOZE; renderAll(); }
+    // 重进挖空页时清掉"本次挑不出锚点"的记忆：上一轮失败的题还能再试一次（避免变成终身拉黑）
+    else if(v===Views.CLOZE){ _clozeFailed.clear(); cloze={queue:[],index:0,qid:null,words:null,html:null,checked:false,result:null,statCorrect:0,statTotal:0,doneCount:0,pending:false}; view=Views.CLOZE; renderAll(); }
     else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
@@ -3268,12 +3707,8 @@ const THEME_CONFIG = {
 };
 
 // CSS 特效（keyframe 动画，通过 ::before/::after 伪元素实现）
+// 只有「松星」需要额外注入 keyframes；其它主题的光效全部由 CSS 变量 + Canvas 引擎负责
 const CSS_FX = {
-  aurora:``,
-  midnight:``,
-  sunset:``,
-  ripple:``,
-  particle:``,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
 };
 
@@ -3323,8 +3758,24 @@ function renderBgLayer(layer, url){
   layer.style.backgroundImage = scrim + 'url('+(url||'img-bg-dark.jpg')+')';
 }
 
+// ======== 统一 Canvas 2D 引擎状态 ========
+// 必须声明在 applyTheme() 之前：initTheme() 会在脚本解析期就调用 applyTheme()，而 applyTheme 内部会
+// 调 startUnifiedCanvas()，若这些 let/const 声明在文件更后面，就会命中 TDZ 抛 ReferenceError
+// （原来被一个空 catch 吞掉，表现为"粒子延迟到 init 才启动"）
+let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
+let _uTheme = '';
+let _uParticles = [];
+let _uRipples = [];
+let _uFadeIn = 1;
+let _uAlphaBase = 1;
+let _uStaticTheme = '';   // 静态主题标记：只画一帧、不进逐帧循环（子良山水这类"画面"型主题，不需要也不该有流动动画）
+const STATIC_CANVAS_THEMES = ['ziliang'];
+const _spriteCache = new Map();
+// resize 只注册一次：原来写在"创建画布"的分支里，主题来回切换会不断累积重复监听
+window.addEventListener('resize', resizeUnifiedDebounced);
+
 // ======== applyTheme：从配置表驱动 ========
-function applyTheme(name){
+function applyTheme(name, opts){
   currentTheme = name;
   const t = THEMES[name]||THEMES.aurora;
   const cfg = THEME_CONFIG[name]||{};
@@ -3343,6 +3794,10 @@ function applyTheme(name){
     document.body.style.backgroundSize='';
     document.body.style.backgroundPosition='';
     document.body.style.backgroundAttachment='';
+    // 关键：html 的 background 必须透明，否则 body 的不透明底色会盖住 z-index:-1 的 #bgImgLayer，
+    // 表现为"选了自定义背景图主题却只看到纯色底"（已在 Chrome 实测）。html 透明后 body 底色会被
+    // 传播到画布作为画布背景，图片层正好落在画布之上、正文之下。
+    document.documentElement.style.background='transparent';
     const layer = ensureBgLayer();
     loadBgFromDB(function(bgUrl){
       _bgLayerUrl = bgUrl;
@@ -3350,6 +3805,7 @@ function applyTheme(name){
     });
   } else {
     if(_bgLayer) _bgLayer.style.backgroundImage='';
+    document.documentElement.style.background='';   // 还原 html 背景（img-bg 之外的主题正常用 body 渐变）
     document.body.style.backgroundImage='';
     document.body.style.backgroundSize='';
     document.body.style.backgroundPosition='';
@@ -3361,20 +3817,19 @@ function applyTheme(name){
   // 3. CSS 特效 + 写入
   themeVars.textContent = cssVars + (CSS_FX[name]||'');
   if(name==='img-bg'){
-    try{ applyBgTextMode(); }catch(_){}
+    try{ applyBgTextMode(); }catch(e){ warnSilent('应用背景图配色失败', e); }
   }
-  safeLocalSet('learnAppTheme', name);
+  // opts.persist === false：只做"临时应用"，不写偏好（避免解析期用默认主题覆盖用户保存的 img-bg）
+  if(!opts || opts.persist !== false) safeLocalSet('learnAppTheme', name);
 
   // 3.5 状态栏/任务栏颜色跟随主题
   try{
     const metaTc = document.querySelector('meta[name="theme-color"]');
     if(metaTc) metaTc.content = (t.bg && t.bg.charAt(0)==='#') ? t.bg : '#0e1018';
-  }catch(_){}
+  }catch(e){ warnSilent('同步 theme-color 失败', e); }
 
-  // 4. 更新主题选择器 UI
+  // 4. 更新主题选择器 UI（皮肤弹窗的高亮由 chest.js 的 syncSkinUI 用 inline outline 维护，与主题无关）
   document.querySelectorAll('#themeGrid .theme-card, #themeBgRow .theme-card').forEach(c=>c.classList.toggle('sel',c.dataset.theme===name));
-  // 同步高亮旧的 theme-dot（皮肤弹窗里还保留）
-  document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('sel',d.dataset.theme===name));
 
   // 5. Canvas 粒子引擎（配置驱动）
   startUnifiedCanvas(name);
@@ -3504,7 +3959,9 @@ let _bgBlobUrl = null;
 let _bgLoadSeq = 0;   // 背景加载请求序号：两次 applyTheme('img-bg') 交叠时丢弃过期回调
 async function saveBgToDB(blob, callback){
   const ok = await Store.saveBg(blob);
-  if(ok && callback) callback();
+  if(ok){ if(callback) callback(); return; }
+  // 失败必须出声：IndexedDB 不可用（降级 localStorage）时原来完全静默，用户以为上传成功了
+  toast('背景图未保存：当前存储不可用或空间不足（localStorage 降级模式不支持背景图）');
 }
 async function loadBgFromDB(callback){
   const seq = ++_bgLoadSeq;
@@ -3567,7 +4024,7 @@ function applyBgTextMode(){
       _bgColorStyle.textContent = `:root{--accent:${colors.accent};--accent2:${colors.accent2}`+
         (ar?`;--accent-rgb:${ar}`:'')+(a2?`;--accent2-rgb:${a2}`:'')+'}';
       document.head.appendChild(_bgColorStyle);
-    }catch(_){}
+    }catch(e){ warnSilent('应用自定义背景配色失败', e); }
   }
   // 刷新背景层（含 isBright 暗纱）
   if(_bgLayer) renderBgLayer(_bgLayer, _bgLayerUrl);
@@ -3669,30 +4126,51 @@ if(uploadBgBtn){
     const saved = localStorage.getItem('learnAppTheme');
     if(saved === 'img-bg'){
       window._imgBgPending = true;
-      applyTheme('aurora');
+      applyTheme('aurora', {persist:false});   // 临时兜底主题：不能覆盖用户已保存的 img-bg 偏好
     } else if(saved && THEMES[saved]){
       applyTheme(saved);
     }
-  }catch(_){}
+  }catch(e){ warnSilent('应用已保存主题失败', e); }
 })();
 
 // 折叠面板（手风琴模式：展开一个时自动折叠其他）
+// 展开/收起改用全站通用的 .rv（grid-template-rows 0fr↔1fr）高度过渡：
+// 原来直接切 .set-body 的 display:none/flex，面板"啪"地整块出现，而旁边的 .set-arrow 却在慢慢转，
+// 观感不统一；换成 .rv 后开合都是 0.38s，且自动继承 prefers-reduced-motion 的降级处理。
 function toggleSetPanel(head){
   const section=head.parentElement;
   const isOpen=section.classList.contains('open');
-  document.querySelectorAll('.set-section').forEach(s=>{s.classList.remove('open');s.querySelector('.set-body').style.display='none';});
-  if(!isOpen){section.classList.add('open');section.querySelector('.set-body').style.display='flex';}
+  document.querySelectorAll('.set-section').forEach(s=>{
+    s.classList.remove('open');
+    const body=s.querySelector('.rv'); if(body) body.classList.remove('show');
+  });
+  if(!isOpen){
+    section.classList.add('open');
+    const body=section.querySelector('.rv'); if(body) body.classList.add('show');
+  }
 }
+// 折叠面板的点击绑定：原先写在 HTML 的 onclick 属性里（要依赖 CSP 的 'unsafe-inline'），统一挪到 JS，
+// 与 AI 分析块的按钮保持同一种做法
+document.querySelectorAll('.set-head').forEach(h => { h.onclick = () => toggleSetPanel(h); });
 // 数据弹窗
 $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
 
-// AI API 配置
-const aiPresets={silicon:{url:'https://api.siliconflow.cn/v1/chat/completions',model:'deepseek-ai/DeepSeek-V3'},aliyun:{url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',model:'qwen-plus'},deepseek:{url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'}};
-async function loadApiCfgUI(){ const c=await loadApiConfig()||{}; $('#aiUrl').value=c.url||'';$('#aiKey').value=_safe.decode(c.key||'')||'';$('#aiModel').value=c.model||''; }
-$('#aiPreset').onchange=()=>{ const p=aiPresets[$('#aiPreset').value]; if(!p) return; $('#aiUrl').value=p.url;$('#aiModel').value=p.model; };
+// AI API 配置（地址 / Key / 模型名全部手填）
 let _aiCfgSaveTimer=null;   // AI 配置保存防抖
-['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=()=>{ aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()}; if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null; clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=setTimeout(()=>Store.saveApiConfig(aiConfig), 400); }});
+// 把三个输入框的当前内容同步到 aiConfig（程序化赋值 .value 不会触发 input 事件，需要时手动调用）
+function syncAiConfigFromUI(){
+  if(!$('#aiUrl')) return aiConfig;
+  aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()};
+  if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null;
+  clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=setTimeout(()=>Store.saveApiConfig(aiConfig), 400);
+  return aiConfig;
+}
+async function loadApiCfgUI(){
+  const c=await loadApiConfig()||{};
+  $('#aiUrl').value=c.url||'';$('#aiKey').value=_safe.decode(c.key||'')||'';$('#aiModel').value=c.model||'';
+}
+['aiUrl','aiKey','aiModel'].forEach(id=>{$('#'+id).oninput=syncAiConfigFromUI;});
 
 $('#exportMDBtn').onclick = () => {
   const L = [];
@@ -3804,17 +4282,25 @@ function importMarkdownDoc(text, fileName){
 }
 
 // 把一篇 Markdown 解析成 {title, questions}
-// 约定（沿用 parse.py，也兼容常见笔记）：
+// 约定（兼容常见笔记导出格式）：
 //   - 以 # / ## 等标题开头的行 = 一道题（标题为题目，直到下个标题前的正文为答案）
 //   - 若第一个标题是 H1 且后面还有其它标题，则第一个 H1 视为文档标题，其余标题为题目
 //   - 文档 id = 文件名（去扩展名）；题目 id = 文档标题#序号
 function parseMarkdownToDoc(text, fallbackTitle){
   const lines = String(text).replace(/\r\n/g,'\n').split('\n');
   const heads = [];
-  let inFence = false;   // 跟踪代码围栏：``` 块内的 "# 注释" 行不能被当成题目标题
+  let fenceMark = null;   // 当前打开的代码围栏字符（` 或 ~），null = 不在围栏内
   lines.forEach((ln,i)=>{
-    if(/^\s*(```|~~~)/.test(ln)){ inFence = !inFence; return; }
-    if(inFence) return;
+    // 只有同一种围栏才算闭合：原来 ``` 与 ~~~ 共用一个布尔开关，混用时（``` 开、~~~ 闭合）
+    // 会互相抵消，导致代码块里的 "# 注释" 被当成题目标题
+    const fm = ln.match(/^\s*(`{3,}|~{3,})/);
+    if(fm){
+      const mark = fm[1][0];
+      if(fenceMark === null) fenceMark = mark;
+      else if(fenceMark === mark) fenceMark = null;
+      return;
+    }
+    if(fenceMark !== null) return;
     const m = ln.match(/^(#{1,6})\s+(.*\S)\s*$/); if(m) heads.push({level:m[1].length, title:m[2].trim(), start:i});
   });
   let docTitle = fallbackTitle, qHeads = heads;
@@ -3848,7 +4334,7 @@ $('#resetBtn').onclick = async () => {
 async function deleteDocument(docId){
   const d = docById(docId); if(!d) return;
   if(!await confirmDialog(`确定删除文档「${d.title}」及其全部题目？`)) return;
-  d.questions.forEach(q=>{ delete PROGRESS[q.id]; });
+  d.questions.forEach(q=>{ delete PROGRESS[q.id]; dropClozeCache(q.id); });
   DOCS = DOCS.filter(x=>x.id!==docId); saveDocs(); saveProgress();
   delete CLEARS[docId]; Store.saveClears(CLEARS);
   ORDER = ORDER.filter(id=>id!==docId); Store.saveOrder(ORDER);
@@ -3862,13 +4348,20 @@ async function clearAllDocs(){
   if(!await confirmDialog('确定删除全部文档和学习数据？此操作不可撤销。')) return;
   DOCS=[]; PROGRESS={}; CLEARS={}; ORDER=[]; saveDocs(); Store.saveProgress(PROGRESS);
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
+  // 题库清空后挖空词缓存也失去意义：一并重置，避免下次从头建库时命中旧 qid 的词表
+  try{ _clozeCache = { __cloze_v: 2 }; Store.saveCloze(_clozeCache); }catch(e){ warnSilent('清理挖空缓存失败', e); }
+  // 题库清空后挖空词缓存也失去意义：一并重置，避免下次从头建库时命中旧 qid 的词表
+  try{ _clozeCache = { __cloze_v: 2 }; Store.saveCloze(_clozeCache); }catch(e){ warnSilent('清理挖空缓存失败', e); }
   invalidateMemQueue(); memory._history = [];   // 数据已清空，记忆队列缓存与撤销栈同步重置
   view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
 $('#clearAllBtn').onclick = clearAllDocs;
 
 // Gitee 云同步
-function loadGiteeCfg(){const t=_safe.decode(localStorage.getItem('giteeToken')||''),g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;}
+// 面板是否已加载过：只有加载过（输入框内容来自已保存配置）才允许把输入框内容回写 localStorage，
+// 否则未打开过设置面板时点击推送会用空值覆盖掉已保存的 Token
+let _giteeUILoaded = false;
+function loadGiteeCfg(){const t=_safe.decode(localStorage.getItem('giteeToken')||''),g=localStorage.getItem('giteeGistId')||'';$('#giteeToken').value=t;$('#giteeGistId').value=g;_giteeUILoaded=true;}
 function saveGiteeCfg(){localStorage.setItem('giteeToken',_safe.encode($('#giteeToken').value.trim()));localStorage.setItem('giteeGistId',$('#giteeGistId').value.trim());
   // 保存后立即迁移：如果 Token 还是明文，下次读取会自动识别
   startAutoSyncTimer();   // 配置变更后立即启用/重置定时自动推送，无需重启页面
@@ -3886,7 +4379,7 @@ async function updateStorageUsage(){
 // 公共推送函数，cloudPush 和 autoPush 共用
 let _pushing = false;   // 推送互斥：弱网挂起时防止定时器再发起一个并发 PATCH
 async function doPushToGist(token, gistId, onSuccess, onError){
-  if(_pushing) return false;
+  if(_pushing){ if(onError) onError('已有推送正在进行'); return false; }   // 早退也要回调，否则状态栏会一直停在"推送中…"
   _pushing = true;
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
@@ -3916,7 +4409,8 @@ async function doPushToGist(token, gistId, onSuccess, onError){
 }
 
 async function cloudPush(){
-  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=$('#giteeGistId').value.trim();
+  if(_giteeUILoaded) saveGiteeCfg();   // 输入框还没触发过 blur/change 时也能取到最新值
+  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=(localStorage.getItem('giteeGistId')||'').trim();
   if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='推送中…';
   await doPushToGist(token, gistId,
@@ -3940,7 +4434,8 @@ async function cloudPush(){
   );
 }
 async function cloudPull(){
-  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=$('#giteeGistId').value.trim();
+  if(_giteeUILoaded) saveGiteeCfg();   // 同 cloudPush：统一以 localStorage 为唯一数据源
+  const token=_safe.decode(localStorage.getItem('giteeToken')||''),gistId=(localStorage.getItem('giteeGistId')||'').trim();
   if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='拉取中…';
   try{
@@ -4129,13 +4624,31 @@ $('#editSubmit').onclick = submitEditQuestion;
 
 // 键盘快捷键（刷题模式）
 document.addEventListener('keydown', e => {
+  // Esc 关闭最上层弹窗/面板（放在输入框判断之前，输入框里按 Esc 也能关）
+  if(e.key==='Escape'){
+    // 确认框是最高层（z-index 9999）：优先交给它，否则会先命中下面打开的弹窗分支
+    if(_confirmCancel){ e.preventDefault(); _confirmCancel(); return; }
+    const modals = [$('#addModal'), $('#editModal'), $('#dataModal')].filter(el => el && el.classList.contains('show'));
+    if(modals.length){ e.preventDefault(); hideModal(modals[modals.length-1]); return; }
+    const tp = $('#themePopup'), sp = $('#skinPopup');
+    if(tp && tp.classList.contains('show')){ e.preventDefault(); hideModal(tp); return; }
+    if(sp && sp.classList.contains('show')){ e.preventDefault(); hideModal(sp); return; }
+    return;
+  }
+  // 顶部标签已加 tabindex="0"，支持键盘 Enter / 空格激活。
+  // 注意：鼠标点击会让标签获得焦点，若空格一律触发标签，会吃掉记忆/八股/刷题里"空格"的原有快捷键，故此处让位
+  const tabEl = e.target.closest && e.target.closest('.tab');
+  if(tabEl && (e.key==='Enter' || e.key===' ')){
+    const spaceReserved = e.key===' ' && (view===Views.MEMORY || view===Views.MOCK || view===Views.PRACTICE);
+    if(!spaceReserved){ e.preventDefault(); if(typeof tabEl.onclick === 'function') tabEl.onclick(); return; }
+  }
   // 忽略输入框和中文输入法组合输入（避免选字时误触）
   if(e.isComposing || (e.target.closest && e.target.closest('input,textarea,select'))) return;
   // 记忆模式：数字键 1-5 评分，Enter/空格 翻转卡片
   if(view===Views.MEMORY){
     const r = parseInt(e.key);
     if(r>=1&&r<=5&&memory.flipped){ memory.flipped=false; const btn = document.querySelector('.grade-btn[data-rate="'+r+'"]'); if(btn) btn.click(); }
-    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; const s=memory.flipped; try{ const ma=document.getElementById('memAnswer'); if(ma)ma.style.display=s?'':'none'; const mh=document.getElementById('memHint'); if(mh)mh.style.display=s?'none':''; const mr=document.getElementById('memGradeRow'); if(mr)mr.style.display=s?'':'none'; const mc=document.getElementById('memControls'); if(mc)mc.style.display=s?'':'none'; }catch(_){} }
+    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; try{ applyMemFlip(); }catch(_){} }
     return;
   }
   if(view===Views.MOCK && !mock.done && mock.queue.length){
@@ -4144,6 +4657,7 @@ document.addEventListener('keydown', e => {
   }
   if(view!==Views.PRACTICE || practice.done) return;
   const q = practice.order[practice.index];
+  if(!q) return;   // 题目已被删除：交给渲染层清理，这里不处理快捷键
   if(e.code==='Space'){ e.preventDefault(); toggleRevealP(q); }
   else if(e.code==='ArrowRight'){
     markPracticed(q);
@@ -4164,6 +4678,9 @@ document.addEventListener('keydown', e => {
 function cloneSeedDoc(sd, seedSource){
   return { ...sd, source: seedSource, questions: (sd.questions||[]).map(q => ({ ...q, tags: Array.isArray(q.tags) ? q.tags.slice() : q.tags })) };
 }
+// 说明：发行版里 window.SEED 是 blank 种子（{blank:true, documents:[]}），init() 会直接置 seedOff，
+// 因此下面的合并逻辑在发行版里不执行；它是给"内联了真实题库的开发版"用的（见 .backup 里的打包脚本）。
+// 若将来发行版也不再内联 seed，可以把 mergeSeed/cloneSeedDoc/saveSeedOff 一起删掉。
 function mergeSeed(){
   if(!window.SEED || !Array.isArray(window.SEED.documents)) return false;
   const seedSource = (window.SEED && window.SEED.source) || '内置题库';
@@ -4182,6 +4699,14 @@ function mergeSeed(){
   });
   if(changed) DOCS = [...curById.values()];
   return changed;
+}
+
+// 收起启动遮罩：成功/失败路径共用，避免初始化异常时页面一直转圈
+function hideAppLoader(){
+  const loader = document.getElementById('appLoader');
+  if(!loader) return;
+  loader.style.opacity = '0'; loader.style.transition = 'opacity .3s';
+  setTimeout(() => loader.remove(), 350);
 }
 
 (async function init(){
@@ -4234,6 +4759,21 @@ function mergeSeed(){
     if(cleaned) Store.saveProgress(PROGRESS);
   })();
 
+  // 一次性修复：旧版本把"本地规则挑不出锚点"的题永久标记成 clozeNoAnchor，而当时的规则只认 ** 与 ` 
+  // （导入时已被 stripMarkdown 剥掉）→ 大量题被误判"无可挖空"、挖空功能几乎不可用。
+  // 现在只做"本次会话跳过"，这里把历史误标清掉，并把因此变成 {} 的进度条目一并删除。
+  if(!localStorage.getItem('learnAppClozeFix_v1')){
+    let fixed = 0;
+    Object.keys(PROGRESS).forEach(qid => {
+      const p = PROGRESS[qid];
+      if(!p || typeof p !== 'object') return;
+      if('clozeNoAnchor' in p){ delete p.clozeNoAnchor; fixed++; }
+      if(!Object.keys(p).length) delete PROGRESS[qid];
+    });
+    if(fixed){ await Store.saveProgress(PROGRESS); console.warn('[learn-app] 已解除 ' + fixed + ' 道题的挖空跳过标记'); }
+    localStorage.setItem('learnAppClozeFix_v1', '1');
+  }
+
   const custom = await Store.getOrderCustom();
   let ord = await Store.getOrder();
   if(!custom){
@@ -4246,32 +4786,30 @@ function mergeSeed(){
     await Store.saveOrder(ORDER);
   }
   CLEARS = await Store.getClears() || {};
-  loadApiConfig();
+  await loadApiConfig();   // 等 AI 配置就绪：否则刚进页面就点 AI 按钮会误报"请先配置 AI API"
   renderAll();
-  // 隐藏加载指示器
-  const loader = document.getElementById('appLoader');
-  if(loader) { loader.style.opacity = '0'; loader.style.transition = 'opacity .3s'; setTimeout(() => loader.remove(), 350); }
+  hideAppLoader();
 // 页面加载时询问是否拉取云端数据
   askPullOnStart();
   // 启动定时自动推送（每 10 分钟，在线且有变更才推）
   startAutoSyncTimer();
   // 初始主题如果是陨石，启动 Canvas
   try{ startUnifiedCanvas(localStorage.getItem('learnAppTheme')||'aurora'); }catch(_){}
-})();
+})().catch(e => {
+  // 初始化异常时也要给可见反馈并收起遮罩（原先会永久转圈，用户看到的是"卡在加载中"）
+  warnSilent('应用初始化失败', e);
+  try{ toast('初始化失败：' + ((e && e.message) || e)); }catch(_){}
+}).finally(hideAppLoader);
 
 // ======== 统一 Canvas 2D 引擎（所有动态主题） ========
-let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
-let _uTheme = '';
-let _uParticles = [];
-let _uRipples = [];
-let _uFadeIn = 1;
-
+// 引擎状态（_uCanvas/_uCtx/_uRef/_uTheme/_uParticles/_uRipples/_uFadeIn/_uAlphaBase/_spriteCache）
+// 已在 applyTheme 之前声明，这里只保留绘制逻辑
 function startUnifiedCanvas(theme){
   // 系统开启「减少动态效果」时，不启动粒子引擎（无障碍降级）
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
     if(_uCanvas){ _uCanvas.remove(); _uCanvas = null; _uCtx = null; }
-    _uParticles = []; _uTheme = ''; _uTime = 0;
+    _uParticles = []; _uTheme = ''; _uTime = 0; _uStaticTheme = '';
     return;
   }
   const canvasThemes = ['aurora','midnight','sunset','ripple','particle','gold','void','shuangren','night','songxing','zirong','ziliang'];
@@ -4286,6 +4824,7 @@ function startUnifiedCanvas(theme){
     _uParticles = [];
     _uTime = 0;
     _uTheme = '';
+    _uStaticTheme = '';
     return;
   }
   // Canvas 主题：创建或复用 Canvas
@@ -4296,7 +4835,6 @@ function startUnifiedCanvas(theme){
     _uCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     document.body.appendChild(_uCanvas);
     _uCtx = _uCanvas.getContext('2d');
-    window.addEventListener('resize', resizeUnifiedDebounced);
     resizeUnified();
   }
   _uTheme = theme;
@@ -4304,7 +4842,23 @@ function startUnifiedCanvas(theme){
   _uTime = 0; _uLastTs = 0;
   _uFadeIn = 0; // 切换主题时淡入：0→1
   initThemeParticles(theme);
+  // 静态主题（子良山水）：画一帧就够，不进逐帧循环——省电，也避免"山水在流动"的假动效
+  if(STATIC_CANVAS_THEMES.includes(theme)){
+    _uStaticTheme = theme;
+    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+    drawStaticCanvasFrame();
+    return;
+  }
+  _uStaticTheme = '';
   if(!_uRaf) _uRaf = requestAnimationFrame(tickUnified);
+}
+// 静态主题只画这一帧；resize 时会再调一次
+function drawStaticCanvasFrame(){
+  if(!_uCanvas || !_uCtx || !_uStaticTheme) return;
+  const ctx = _uCtx, W = window.innerWidth, H = window.innerHeight;
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+  if(_uStaticTheme === 'ziliang') drawZiliang(ctx, W, H);
 }
 function resizeUnified(){
   if(!_uCanvas) return;
@@ -4315,6 +4869,7 @@ function resizeUnified(){
   _uCanvas.style.height = window.innerHeight + 'px';
   // 存在 ctx 时同步缩放，让所有绘制坐标保持逻辑像素
   if(_uCtx) _uCtx.setTransform(dpr,0,0,dpr,0,0);
+  if(_uStaticTheme) drawStaticCanvasFrame();   // 静态主题没有循环，尺寸变化后要补画一帧
 }
 let _resizeTimer = null;
 function resizeUnifiedDebounced(){
@@ -4454,7 +5009,6 @@ function initThemeParticles(theme){
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
         vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
-        life:Math.random(), maxLife:1+Math.random()*3,
         size:0.5+Math.random()*2,
         seed:Math.random()*9999
       });
@@ -4491,6 +5045,7 @@ function initThemeParticles(theme){
 }
 let _uHidden = false;
 function restartCanvasLoop(){
+  if(_uStaticTheme) return;   // 静态主题没有循环需要恢复
   if(_uCanvas && _uCtx && !_uRaf){
     _uLastTs = 0; // 重置时间基准，避免切回前台后 dt 跳变导致特效瞬移
     _uRaf = requestAnimationFrame(tickUnified);
@@ -4508,6 +5063,7 @@ document.addEventListener('visibilitychange', () => {
 });
 function tickUnified(ts){
   if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
+  if(_uStaticTheme){ _uRaf = null; return; }   // 静态主题：画面已经画好，不需要逐帧重绘
   if(_uHidden){ _uRaf = null; return; } // 后台时停止调度，由 visibilitychange 重新拉起
   _uRaf = requestAnimationFrame(tickUnified);
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
@@ -4533,15 +5089,13 @@ function tickUnified(ts){
     case 'night': drawNight(ctx,W,H,dt); break;
     case 'songxing': drawSongxing(ctx,W,H,dt); break;
     case 'zirong': drawZirong(ctx,W,H,dt); break;
-    case 'ziliang': drawZiliang(ctx,W,H,dt); break;
+    case 'ziliang': drawZiliang(ctx,W,H); break;   // 静态主题（正常不会走到这里，兜底保持参数正确）
     default: break;
   }
   ctx.restore();
 }
 // ── 精灵图缓存：径向光斑预渲染一次，逐帧 drawImage ──
 // 相比每帧 createRadialGradient（桌面端 50~120 个/帧），drawImage 走合成器，省电明显
-const _spriteCache = new Map();
-let _uAlphaBase = 1;
 function glowSprite(key, px, stops){
   let c = _spriteCache.get(key);
   if(c) return c;
@@ -4637,17 +5191,19 @@ function drawSunset(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
   const sunX=W*0.5, sunY=H*0.76;
   const sunR=Math.min(W,H)*0.15;
-  // 落日大范围暖光晕
+  // 落日大范围暖光晕（画布在内容之上，强度控制在"氛围"级别，避免把卡片文字洗白）
   const glow=ctx.createRadialGradient(sunX,sunY,sunR*0.2,sunX,sunY,sunR*2.8);
-  glow.addColorStop(0,'rgba(255,180,80,0.42)');
-  glow.addColorStop(0.35,'rgba(250,120,40,0.18)');
+  glow.addColorStop(0,'rgba(255,180,80,0.26)');
+  glow.addColorStop(0.35,'rgba(250,120,40,0.11)');
   glow.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
-  // 太阳圆盘（下半沉入地平线）
+  // 太阳圆盘（下半沉入地平线）：半透明而非实心——原来是不透明渐变，会直接在底部中间盖住卡片和文字
   ctx.save();
   ctx.beginPath(); ctx.rect(0,0,W,sunY); ctx.clip();
   const sunGrad=ctx.createLinearGradient(sunX,sunY-sunR,sunX,sunY+sunR);
-  sunGrad.addColorStop(0,'#ffe09a'); sunGrad.addColorStop(0.5,'#ffb35c'); sunGrad.addColorStop(1,'#ff7a2a');
+  sunGrad.addColorStop(0,'rgba(255,224,154,0.62)');
+  sunGrad.addColorStop(0.5,'rgba(255,179,92,0.56)');
+  sunGrad.addColorStop(1,'rgba(255,122,42,0.52)');
   ctx.fillStyle=sunGrad;
   ctx.beginPath(); ctx.arc(sunX,sunY,sunR,0,Math.PI*2); ctx.fill();
   ctx.restore();
@@ -4718,7 +5274,9 @@ function drawRipple(ctx,W,H,dt){
   // 涟漪：透视压扁的椭圆，向四周扩散并淡出
   for(let i=_uRipples.length-1;i>=0;i--){
     const rp=_uRipples[i];
-    rp.r+=rp.vr*f; rp.alpha*=0.97;
+    // 衰减同样按 dt 归一化（0.97^f，60fps 下等价于原来的每帧 ×0.97）：
+    // 原来按帧衰减，120Hz 屏上涟漪淡出速度会翻倍
+    rp.r+=rp.vr*f; rp.alpha*=Math.pow(0.97,f);
     if(rp.alpha<0.01){ _uRipples.splice(i,1); continue; }
     ctx.strokeStyle=`rgba(200,220,240,${rp.alpha})`;
     ctx.lineWidth=1;
@@ -4739,23 +5297,33 @@ function drawParticle(ctx,W,H,dt){
     if(p.x<0)p.x=W; if(p.x>W)p.x=0;
     if(p.y<0)p.y=H; if(p.y>H)p.y=0;
   }
-  // 近距连线：距离越近越亮
-  const linkDist=Math.min(W,H)*0.18;
+  // 近距连线：距离越近越亮。按亮度分 3 档"攒批"后各描一次边，
+  // 原来是每条线一次 beginPath/stroke（75 粒子时每帧可达数百次 draw call），分档后固定 3 次，观感几乎不变
+  const linkDist=Math.min(W,H)*0.18, linkDist2=linkDist*linkDist;
+  const buckets=[[],[],[]];
   for(let i=0;i<n;i++){
     const a=_uParticles[i];
     for(let j=i+1;j<n;j++){
       const b=_uParticles[j];
       const dx=a.x-b.x, dy=a.y-b.y;
       const d2=dx*dx+dy*dy;
-      if(d2<linkDist*linkDist){
-        const alpha=(1-Math.sqrt(d2)/linkDist)*0.32*_uAlphaBase;
-        if(alpha>0.01){
-          ctx.strokeStyle=`hsla(210,70%,72%,${alpha})`;
-          ctx.lineWidth=0.5;
-          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-        }
+      if(d2<linkDist2){
+        const k=1-Math.sqrt(d2)/linkDist;   // 0(最远) → 1(最近)
+        if(k>0.03) buckets[k<0.34?0:k<0.67?1:2].push(a.x,a.y,b.x,b.y);
       }
     }
+  }
+  const LINK_ALPHA=[0.11,0.21,0.32];
+  for(let bi=0;bi<3;bi++){
+    const seg=buckets[bi];
+    if(!seg.length) continue;
+    const alpha=LINK_ALPHA[bi]*_uAlphaBase;
+    if(alpha<=0.01) continue;
+    ctx.strokeStyle=`hsla(210,70%,72%,${alpha})`;
+    ctx.lineWidth=0.5;
+    ctx.beginPath();
+    for(let s=0;s<seg.length;s+=4){ ctx.moveTo(seg[s],seg[s+1]); ctx.lineTo(seg[s+2],seg[s+3]); }
+    ctx.stroke();
   }
   // 节点：光晕 + 亮点
   for(let p of _uParticles){
@@ -4774,13 +5342,26 @@ const GOLD_RIVERS = [
   {y:0.55, color:[255,220,140,0.08], speed:0.1, width:0.45},
   {y:0.75, color:[255,140,40,0.09], speed:-0.07, width:0.3}
 ];
+// 鎏金丝线模板（振幅用屏幕高度的比例表示，绘制时再换算）
+const GOLD_THREADS = [
+  {y:0.28, ampK:0.06, wave:0.012, speed:0.5, alpha:0.5, width:1.2},
+  {y:0.46, ampK:0.08, wave:0.010, speed:-0.4, alpha:0.4, width:1.0},
+  {y:0.64, ampK:0.05, wave:0.014, speed:0.6, alpha:0.35, width:0.8}
+];
+// 晨光光束模板
+const VOID_BEAMS = [
+  {x:0.28, angle:0.35, width:0.16, alpha:0.10},
+  {x:0.55, angle:0.42, width:0.20, alpha:0.08},
+  {x:0.80, angle:0.30, width:0.14, alpha:0.07}
+];
 // 金色光丝：一条沿正弦流动的细金线，两端淡出，模拟鎏金丝线
 function drawGoldThread(ctx,W,H,t,th){
   const seg=Math.max(24, Math.floor(W/18));
+  const amp=(th.ampK||0)*H;   // 振幅按屏高换算，模板可复用（避免每帧重建数组）
   ctx.beginPath();
   for(let i=0;i<=seg;i++){
     const x=i/seg*W;
-    const y=th.y*H + Math.sin(x*th.wave + t*th.speed)*th.amp;
+    const y=th.y*H + Math.sin(x*th.wave + t*th.speed)*amp;
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   }
   const grad=ctx.createLinearGradient(0,0,W,0);
@@ -4803,13 +5384,8 @@ function drawGold(ctx,W,H,dt){
     const spr=glowSprite('goldR'+i,96,[0,`rgba(${c[0]},${c[1]},${c[2]},${c[3]})`,0.5,`rgba(${c[0]},${c[1]},${c[2]},${c[3]*0.3})`,1,'rgba(0,0,0,0)']);
     blit(ctx,spr,W*0.5+offset,r.y*H,H*r.width,1);
   }
-  // 鎏金丝线：多条错落流动的细金线
-  const threads=[
-    {y:0.28,amp:H*0.06,wave:0.012,speed:0.5,alpha:0.5,width:1.2},
-    {y:0.46,amp:H*0.08,wave:0.010,speed:-0.4,alpha:0.4,width:1.0},
-    {y:0.64,amp:H*0.05,wave:0.014,speed:0.6,alpha:0.35,width:0.8}
-  ];
-  for(const th of threads) drawGoldThread(ctx,W,H,t,th);
+  // 鎏金丝线：多条错落流动的细金线（模板常量，避免每帧重建数组）
+  for(const th of GOLD_THREADS) drawGoldThread(ctx,W,H,t,th);
   // 金色尘埃粒子层（两种光晕精灵：普通/闪点）
   for(let p of _uParticles){
     p.y+=p.vy*f; p.x+=p.vx*f;
@@ -4826,14 +5402,9 @@ function drawGold(ctx,W,H,dt){
 // ── void/晨光: 丁达尔光柱 + 浮尘 ──
 function drawVoid(ctx,W,H,dt){
   const t=_uTime, f=dt*60;
-  // 顶部斜射光束（丁达尔效应）：锥形光柱缓慢摆动
-  const beams=[
-    {x:0.28, angle:0.35, width:0.16, alpha:0.10},
-    {x:0.55, angle:0.42, width:0.20, alpha:0.08},
-    {x:0.80, angle:0.30, width:0.14, alpha:0.07}
-  ];
-  for(let i=0;i<beams.length;i++){
-    const b=beams[i];
+  // 顶部斜射光束（丁达尔效应）：锥形光柱缓慢摆动（模板常量在文件下方 VOID_BEAMS）
+  for(let i=0;i<VOID_BEAMS.length;i++){
+    const b=VOID_BEAMS[i];
     const ang=b.angle+Math.sin(t*0.08+i)*0.03;
     const topX=b.x*W;
     const botX=topX+Math.tan(ang)*H;
@@ -4949,30 +5520,59 @@ function drawZirong(ctx,W,H,dt){
   }
   ctx.restore();
 }
-// ── ziliang: 青雾山水（远山剪影）──
-function drawZiliang(ctx,W,H,dt){
-  const t=_uTime;
-  // 远山剪影：三层深青色山峦轮廓
-  const ridges=['rgba(30,60,60,0.50)','rgba(24,48,50,0.55)','rgba(18,38,42,0.62)'];
-  for(let l=0;l<3;l++){
-    const baseY=H*(0.72+l*0.08);
-    ctx.fillStyle=ridges[l];
+// ── ziliang: 青雾山水（四层静止远山 + 三层静止雾带）──
+// 重做要点：
+// 1. 山体只占画面下 40%，整体半透明（最强处把底色压暗约 20%），作为背景纹理而不压住卡片文字
+// 2. 只用两组正弦叠加做出自然起伏，**不做任何位移动画**：山不"流动"、雾不"漂"，画面静而不假
+// 3. 因为是静态画面，本主题不进逐帧重绘循环（见 STATIC_CANVAS_THEMES）：只在首次与 resize 时画一帧
+function drawZiliang(ctx,W,H){
+  // base 山脊基准高度 / amp 起伏幅度 / freq 横向频率 / phase 固定相位（让四层错落）
+  const RIDGES=[
+    {base:0.70, amp:0.028, freq:0.0040, phase:0.0, top:'rgba(158,178,178,.10)', bot:'rgba(126,152,154,.12)'},
+    {base:0.78, amp:0.040, freq:0.0062, phase:1.7, top:'rgba(132,160,162,.12)', bot:'rgba(100,132,136,.15)'},
+    {base:0.86, amp:0.050, freq:0.0080, phase:3.4, top:'rgba(108,142,146,.14)', bot:'rgba(78,112,118,.17)'},
+    {base:0.94, amp:0.038, freq:0.0105, phase:5.1, top:'rgba(88,124,130,.16)', bot:'rgba(58,90,98,.20)'}
+  ];
+  // 雾带：位置固定的横向柔光，插在山层之间做纵深（x 为横向位置比例）
+  const MISTS=[
+    {y:0.745, x:0.34, alpha:0.14},
+    {y:0.825, x:0.62, alpha:0.11},
+    {y:0.905, x:0.48, alpha:0.09}
+  ];
+  const step=Math.max(6, Math.round(W/90));   // 采样步长：窄屏也不会过度绘制
+
+  for(let i=0;i<RIDGES.length;i++){
+    const r=RIDGES[i];
+    const baseY=H*r.base;
+    // 山脊轮廓（两组正弦叠加，不含时间项 → 完全静止）
     ctx.beginPath();
-    ctx.moveTo(0,H);
-    ctx.lineTo(0,baseY);
-    for(let x=0;x<=W;x+=16){
-      const y=baseY - Math.sin(x*0.006+l*2+t*0.05)*H*0.03 - Math.sin(x*0.013+l)*H*0.015;
-      ctx.lineTo(x,y);
+    for(let x=0;x<=W+step;x+=step){
+      const y=baseY - Math.sin(x*r.freq+r.phase)*H*r.amp - Math.sin(x*r.freq*2.3+r.phase*1.4)*H*r.amp*0.42;
+      if(x===0) ctx.moveTo(0,y); else ctx.lineTo(x,y);
     }
-    ctx.lineTo(W,H);
-    ctx.closePath();
-    ctx.fill();
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    // 上淡下深：山脚比山脊略深，但整体保持半透明
+    const g=ctx.createLinearGradient(0,baseY-H*r.amp*1.5,0,H);
+    g.addColorStop(0,r.top); g.addColorStop(1,r.bot);
+    ctx.fillStyle=g; ctx.fill();
+    ctx.strokeStyle='rgba(232,242,242,.09)'; ctx.lineWidth=1; ctx.stroke();   // 山脊亮线
+    // 层间雾带（静止）
+    const m=MISTS[i];
+    if(m){
+      const cx=W*m.x;
+      const mg=ctx.createRadialGradient(cx,H*m.y,0,cx,H*m.y,W*0.6);
+      mg.addColorStop(0,'rgba(232,241,242,'+m.alpha+')');
+      mg.addColorStop(0.5,'rgba(232,241,242,'+(m.alpha*0.45)+')');
+      mg.addColorStop(1,'rgba(232,241,242,0)');
+      ctx.fillStyle=mg;
+      ctx.beginPath(); ctx.ellipse(cx,H*m.y,W*0.5,H*0.03,0,0,Math.PI*2); ctx.fill();
+    }
   }
 }
 
 </script>
 <script>
-const SW_VERSION = '19';
+const SW_VERSION = '23';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v23）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = localStorage.getItem('learnAppSWVer');

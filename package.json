@@ -4,10 +4,12 @@
   "description": "面试题学习台 - 本地·离线·私有·艾宾浩斯闪卡记忆",
   "private": true,
   "scripts": {
+    "sync:www": "node sync-www.js",
+    "check": "node scripts/check-syntax.js && node scripts/check-globals.js",
     "cap:add:android": "cap add android",
-    "cap:sync": "cap sync android",
+    "cap:sync": "node sync-www.js && cap sync android",
     "cap:open": "cap open android",
-    "build:android": "cap sync android && cd android && gradlew.bat assembleDebug"
+    "build:android": "node sync-www.js && cap sync android && cd android && gradlew.bat assembleDebug"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0",

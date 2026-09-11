@@ -6,8 +6,9 @@ const IS_MOBILE = !!(window.matchMedia && window.matchMedia('(max-width:768px)')
 const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 if (IS_MOBILE || REDUCED_MOTION) return;
 const C=document.createElement('canvas');
-// z-index 90：在内容之上、弹窗(100)/模态(9999)之下，避免遮挡交互层
-C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:90';
+// z-index 40：在主题粒子(0)与页面内容之上，但低于设置弹窗(.modal-bg=50)、提示(80)、
+// 主题/皮肤面板(100)与确认框(9999)，避免宝箱盖在弹窗上
+C.style.cssText='position:fixed;bottom:-40px;right:-40px;width:340px;height:400px;pointer-events:none;z-index:40';
 document.body.appendChild(C);
 const X=C.getContext('2d');
 // roundRect 兼容：部分旧内核没有原生实现，缺失时整个宝箱脚本会抛错中断
@@ -27,7 +28,10 @@ if(X&&!X.roundRect){
 let W,H,flr,chestSkin=0,rewardSkin=0;
 try{const s=JSON.parse(localStorage.getItem('learnAppSkins')||'{}');if(s.chest!==undefined)chestSkin=Math.min(Math.max(+s.chest||0,0),5);if(s.item!==undefined)rewardSkin=Math.min(Math.max(+s.item||0,0),2);}catch(_){}   // 读回钳制范围：防止 localStorage 被篡改成越界值导致皮肤函数 undefined 每帧抛错
 function R(){W=340;H=400;flr=H*.76;const d=Math.min(devicePixelRatio||1,2);C.width=W*d;C.height=H*d;C.style.width=W+'px';C.style.height=H+'px';C.style.right='-40px';C.style.bottom='-40px';X.setTransform(d,0,0,d,0,0);}
-R();window.addEventListener('resize',R);
+R();
+// resize 防抖：移动端地址栏收展、横竖屏切换会连续触发，逐次重建画布位图代价高（主画布同样做了防抖）
+let _rTimer=null;
+window.addEventListener('resize',function(){clearTimeout(_rTimer);_rTimer=setTimeout(R,150);});
 const K=()=>220/520;
 const CX=()=>W/2, CY=()=>H*.66;
 let lidFY=0,lidFR=0,lidFV=0,lidRV=0,lidPhase='closed',lidCloseStart=0,lidCloseTarget=0,lidCloseProgress=0,lidCloseDuration=.55;
@@ -679,32 +683,32 @@ function spawnRewardItem(t, i, n, x0, y0){
     vx: Math.cos(a)*(3+Math.random()*5),
     vy: Math.sin(a)*(3+Math.random()*5) - 2.5,
     r: 5+Math.random()*6, rt: Math.random()*6, rv: (Math.random()-.5)*8,
-    life: 2.5+Math.random()*2, g: .12, shiny: false
+    life: 2.5+Math.random()*2, g: .12
   };
   if(rewardSkin===0){ // 金银财宝
     if(t===1){ it.type='trash'; it.fn=trash0; }
     else if(t===2){ it.type='coin'; it.fn=coin0; it.color=[240,190,130]; it.letter='¢'; }
     else if(t===3){ it.type='coin'; it.fn=coin0; it.color=[210,215,230]; it.letter='S'; }
-    else if(t===4){ it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; it.shiny=true; }
+    else if(t===4){ it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; }
     else if(t===5){
-      if(i < n*.35){ it.type='gem'; it.fn=gem0; it.hue=[200,300,30][i%3]; it.r=5+Math.random()*5; it.shiny=true; }
-      else { it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; it.shiny=true; }
+      if(i < n*.35){ it.type='gem'; it.fn=gem0; it.hue=[200,300,30][i%3]; it.r=5+Math.random()*5; }
+      else { it.type='coin'; it.fn=coin0; it.color=[255,225,60]; it.letter='G'; }
     }
   } else if(rewardSkin===1){ // 珠宝奇珍
     if(t===1){ it.type='stone'; it.fn=stone1; it.r=3+Math.random()*4; }
     else if(t===2){ it.type='agate'; it.fn=agate1; it.r=5+Math.random()*5; }
-    else if(t===3){ it.type='pearl'; it.fn=pearl1; it.r=5+Math.random()*5; it.shiny=true; it.pearlType=Math.random()<.5?0:1; }
+    else if(t===3){ it.type='pearl'; it.fn=pearl1; it.r=5+Math.random()*5; it.pearlType=Math.random()<.5?0:1; }
     else if(t===4){
       if(Math.random()<.5){ it.type='jade'; it.fn=jade1; } else { it.type='ruby'; it.fn=ruby1; }
-      it.r=5+Math.random()*5; it.shiny=true;
+      it.r=5+Math.random()*5;
     }
-    else if(t===5){ it.type='gem'; it.fn=diamond1; it.r=6+Math.random()*5; it.shiny=true; it.fire1=hslFire(); it.fire2=hslFire(); }
+    else if(t===5){ it.type='gem'; it.fn=diamond1; it.r=6+Math.random()*5; it.fire1=hslFire(); it.fire2=hslFire(); }
   } else { // 魂玉灵器
     if(t===1){ it.type='crystal'; it.fn=crystalShard; it.r=3+Math.random()*4; }
-    else if(t===2){ it.type='marrow'; it.fn=spiritMarrow; it.r=5+Math.random()*5; it.shiny=true; }
-    else if(t===3){ it.type='bloodJade'; it.fn=bloodJade; it.r=5+Math.random()*4; it.shiny=true; }
-    else if(t===4){ it.type='soulCore'; it.fn=soulCore; it.r=6+Math.random()*4; it.shiny=true; }
-    else if(t===5){ it.type='holy'; it.fn=holyStone; it.r=6+Math.random()*5; it.shiny=true; }
+    else if(t===2){ it.type='marrow'; it.fn=spiritMarrow; it.r=5+Math.random()*5; }
+    else if(t===3){ it.type='bloodJade'; it.fn=bloodJade; it.r=5+Math.random()*4; }
+    else if(t===4){ it.type='soulCore'; it.fn=soulCore; it.r=6+Math.random()*4; }
+    else if(t===5){ it.type='holy'; it.fn=holyStone; it.r=6+Math.random()*5; }
   }
   return it;
 }
@@ -785,8 +789,8 @@ function updateFX(dt){
   for(let i=sparks.length-1;i>=0;i--){ if(sparks[i].life<=0) sparks.splice(i,1); }
   for(const r of radiance){ r.x+=r.vx*dt*30; r.y+=r.vy*dt*30; r.life-=dt; r.r*=.995; }
   for(let i=radiance.length-1;i>=0;i--){ if(radiance[i].life<=0) radiance.splice(i,1); }
-  // 环境微尘（限量，避免无上限堆积）
-  if(sparks.length<80 && Math.random()<.12){
+  // 环境微尘（限量，避免无上限堆积）；生成概率按 dt 归一化：原来是"每帧 .12"，120Hz 屏上生成速率翻倍
+  if(sparks.length<80 && Math.random()<Math.min(1,.12*dt*60)){
     sparks.push({x:W*.2+Math.random()*W*.6, y:flr-Math.random()*20, vx:(Math.random()-.5)*.3, vy:-.4-Math.random()*.5, life:.8+Math.random()*1.2, r:.4+Math.random()*.8});
   }
 }
