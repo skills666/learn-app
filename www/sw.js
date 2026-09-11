@@ -1,7 +1,10 @@
-const CACHE = 'learn-v19';
+// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '23'）同步递增，否则页面不会触发 SW 更新
+const CACHE = 'learn-v23';
 
-// 预缓存静态资源，确保离线可用
-const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon.png'];
+// 预缓存静态资源，确保离线可用。
+// 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
+// 而 App 图标由 android 的 mipmap 提供、PWA 图标有 192/512/maskable 就够了。
+const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -21,7 +24,9 @@ self.addEventListener('fetch', e => {
 
   // 第三方请求（Gitee API、AI API 等）：仅走网络，不缓存
   if (url.origin !== location.origin) {
-    e.respondWith(fetch(e.request).catch(() => new Response(null, {status: 503, statusText: 'Service Unavailable'})));
+    // 离线时用 Response.error() 明确表达"网络错误"：对 no-cors 请求（如 CDN 脚本）
+    // 返回自造的 503 响应在规范上属边缘情况，各内核表现并不一致
+    e.respondWith(fetch(e.request).catch(() => Response.error()));
     return;
   }
 
@@ -59,7 +64,11 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
+    // 只清理本应用的缓存（learn- 前缀）：同域若还部署了其它 PWA，删掉它们的缓存属于破坏性副作用
+    // （index.html 里的版本修复逻辑同样是只删 learn- 前缀，两处保持一致）
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && k.indexOf('learn-') === 0).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
