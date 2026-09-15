@@ -6,6 +6,7 @@
   "scripts": {
     "sync:www": "node sync-www.js",
     "check": "node scripts/check-syntax.js && node scripts/check-globals.js",
+    "test": "node scripts/smoke-test.js",
     "cap:add:android": "cap add android",
     "cap:sync": "node sync-www.js && cap sync android",
     "cap:open": "cap open android",

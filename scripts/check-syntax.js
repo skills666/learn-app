@@ -28,7 +28,6 @@ const targets = blocks.map((b, i) => {
   fs.writeFileSync(f, b.code, 'utf8');
   return { name: `index.html inline script #${i + 1} (starts line ${b.startLine})`, file: f };
 });
-targets.push({ name: 'chest.js', file: path.join(ROOT, 'chest.js') });
 targets.push({ name: 'sw.js', file: path.join(ROOT, 'sw.js') });
 targets.push({ name: 'sync-www.js', file: path.join(ROOT, 'sync-www.js') });
 

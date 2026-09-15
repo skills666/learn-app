@@ -8,8 +8,7 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const chest = fs.readFileSync(path.join(ROOT, 'chest.js'), 'utf8');
-const all = html + '\n' + chest;
+const all = html;
 
 // 1. 字面量 id 收集与重复检测
 const idMap = new Map();
@@ -67,13 +66,16 @@ console.log('  addEventListener: ' + ((all.match(/addEventListener\(/g) || []).l
 
 // 6. 疑似未被引用的 CSS 类（只报"整个文件里只出现一次"的类名，供人工判断）
 const styleBlock = (html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '';
-const body = html.slice(html.indexOf('</style>')) + chest;
+const body = html.slice(html.indexOf('</style>'));
 const classNames = new Set();
 const clsRe = /\.(-?[_a-zA-Z][\w-]*)/g;
 while ((m = clsRe.exec(styleBlock)) !== null) classNames.add(m[1]);
 console.log('\n=== 疑似只在 <style> 里定义、正文/JS 中未出现的类（人工确认）===');
-// 已知的"运行时拼接"类名（源码里写作 `lv${lv}` / `an-dot lv${lv}`），静态扫描匹配不到，显式放行
-const DYNAMIC_CLASS_ALLOW = new Set(['lv0', 'lv1', 'lv2', 'lv3', 'lv4', 'lv5', 'lvM']);
+// 已知的"运行时拼接"类名（源码里写作 `lv${lv}` / `an-dot lv${lv}` / 热力图色阶 `hm-cell l${n}`），
+// 静态扫描匹配不到，显式放行
+// theme-* 由 applyTheme 里 'theme-'+name 拼接写入 body；热力图/等级色阶同理
+const DYNAMIC_CLASS_ALLOW = new Set(['lv0', 'lv1', 'lv2', 'lv3', 'lv4', 'lv5', 'lvM', 'l0', 'l1', 'l2', 'l3', 'l4',
+                                     'theme-ziliang']);
 let unused = 0;
 for (const cn of classNames) {
   if (DYNAMIC_CLASS_ALLOW.has(cn)) continue;
@@ -85,3 +87,36 @@ for (const cn of classNames) {
   if (!used) { console.log('  .' + cn); unused++; }
 }
 if (!unused) console.log('  (无)');
+
+// 7. localStorage 直接调用扫描：存储被禁用/受限时（隐私模式、企业策略、受限 WebView），
+//    localStorage 访问会抛异常，解析期执行的代码一旦抛出会中断整个脚本。
+//    这里列出"既没走 safeLocal* 封装、就近也没有 try 兜底"的调用点，正常应为 0
+{
+  const rows = all.split('\n');
+  const naked = [];
+  let tryNear = -99;
+  rows.forEach((ln, i) => {
+    if (/\btry\s*\{/.test(ln)) tryNear = i;
+    if (!/localStorage\.(getItem|setItem|removeItem)\(/.test(ln)) return;
+    if (/function\s+safeLocal\w*/.test(ln)) return;   // 安全封装本体
+    if (i - tryNear <= 8) return;                     // 就近有 try 兜底
+    naked.push(i + 1);
+  });
+  console.log('\n=== localStorage 直接调用（未走 safeLocal*，且就近无 try，应为 0）===');
+  console.log(naked.length ? naked.map(n => '  line ' + n).join('\n') : '  (无)');
+}
+
+// 8. 疑似"定义后没被调用"的函数（同名标识符全文件仅出现 1 次）
+{
+  const unusedFns = [];
+  const fnRe = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
+  let fm;
+  while ((fm = fnRe.exec(all)) !== null) {
+    const name = fm[1];
+    if (unusedFns.indexOf(name) !== -1) continue;
+    const cnt = (all.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
+    if (cnt <= 1) unusedFns.push(name);
+  }
+  console.log('\n=== 疑似未使用的函数（同名标识符仅出现 1 次，需人工确认）===');
+  console.log(unusedFns.length ? unusedFns.map(n => '  ' + n).join('\n') : '  (无)');
+}

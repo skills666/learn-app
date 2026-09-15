@@ -5,12 +5,15 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     def buildTime = new Date().format("yyyyMMddHHmm")
+    // versionCode 必须单调递增（Play 上架要求，也是"新包覆盖旧包"的前提）。
+    // 由构建时间派生（yyMMddHH，每小时 +1），避免所有构建都停在 1 而无法升级
+    def buildCode = new Date().format("yyMMddHH").toInteger()
 
     defaultConfig {
         applicationId "com.learnapp.interview"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode buildCode
         versionName "1.0." + buildTime
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

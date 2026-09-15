@@ -1,10 +1,10 @@
-// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '23'）同步递增，否则页面不会触发 SW 更新
-const CACHE = 'learn-v23';
+// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '45'）同步递增，否则页面不会触发 SW 更新
+const CACHE = 'learn-v45';
 
 // 预缓存静态资源，确保离线可用。
 // 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
 // 而 App 图标由 android 的 mipmap 提供、PWA 图标有 192/512/maskable 就够了。
-const PRE_CACHE = ['index.html', 'manifest.json', 'chest.js', 'img-bg-dark.jpg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
+const PRE_CACHE = ['index.html', 'manifest.json', 'img-bg-dark.jpg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(

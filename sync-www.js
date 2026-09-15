@@ -2,7 +2,7 @@
 /**
  * 把根目录的 Web 源文件同步到 www/（Capacitor 的 webDir）。
  *
- * 为什么需要它：根目录和 www/ 各存了一份内容完全相同的 index.html / chest.js / sw.js …
+ * 为什么需要它：根目录和 www/ 各存了一份内容完全相同的 index.html / sw.js …
  * 手工双向维护迟早分叉。这里固定单向约定：
  *   根目录 = 唯一源    www/ = 生成产物
  * `npm run cap:sync` 与 `npm run build:android` 都会先执行本脚本，所以只需要改根目录的文件。
@@ -15,7 +15,7 @@ const DEST = path.join(ROOT, 'www');
 // 参与打包的静态资源清单（android/app/src/main/assets/public 的内容由 cap sync 负责）
 // 已移除 1024 的 icon.png：网页只留 192/512/maskable，App 图标走 android 的 mipmap
 const FILES = [
-  'index.html', 'chest.js', 'sw.js', 'manifest.json',
+  'index.html', 'sw.js', 'manifest.json',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'img-bg-dark.jpg'
 ];
 
