@@ -5692,11 +5692,16 @@ function initThemeParticles(theme){
   else if(theme==='songxing'){
     const n = isMobile?60:120;
     for(let i=0;i<n;i++){
+      // 两个属性在初始化期一次算好，绘制循环不再重复计算：
+      //   gold —— 按索引固定 1/5 金星（原写作 seed%5===0，那是对 0~9999 的浮点随机数取模，
+      //           实际恒为 false，drawSongxing 里的金星分支与 sxP1 光晕精灵从未被用到）
+      //   ph   —— 闪烁相位（等价于原来的 seed*30，只是从逐帧计算提到初始化）
+      const seed = Math.random()*9999;
       _uParticles.push({
         x:Math.random()*W, y:Math.random()*H,
         vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
         size:0.5+Math.random()*2,
-        seed:Math.random()*9999
+        gold:i%5===0, ph:seed*30
       });
     }
   }
@@ -6315,17 +6320,24 @@ function drawShuangren(ctx,W,H,dt){
     }
   }
 }
+// ── songxing: 星点两色（紫白 / 暖金，金色与主题 accent3 #d4a854 同族）──
+// 色表与光晕精灵的渐变参数在循环外备好：逐帧只做 2 次精灵缓存命中，
+// 不再按星点重复拼颜色字符串、建渐变参数数组（桌面端 120 颗/帧）
+const SX_STAR_RGB = ['200,195,240','212,168,132'];
+const SX_STAR_STOPS = SX_STAR_RGB.map(c=>[0,`rgba(${c},1)`,0.5,`rgba(${c},0.25)`,1,'rgba(0,0,0,0)']);
 function drawSongxing(ctx,W,H,dt){
   const t = _uTime, f = dt*60;
+  const sprCool = glowSprite('sxP0',48,SX_STAR_STOPS[0]);
+  const sprGold = glowSprite('sxP1',48,SX_STAR_STOPS[1]);
   for(let p of _uParticles){
     // 缓慢漂移，到底部后循环回顶部
     p.y+=p.vy*f;if(p.y>H+10){p.y=-10;p.x=Math.random()*W;}
-    const twinkle=Math.sin(t*2+p.seed*30);
-    const alpha=0.06+(twinkle+1)*0.18;
-    const isGold=p.seed%5===0;
-    const c=isGold?'212,168,132':'200,195,240';
-    const spr=glowSprite('sxP'+(isGold?1:0),48,[0,`rgba(${c},1)`,0.5,`rgba(${c},0.25)`,1,'rgba(0,0,0,0)']);
-    blit(ctx,spr,p.x,p.y,p.size*3,alpha);
+    // 与「星闪」同一处理：热力图/预测图区内的星点渐隐（星点与数据格子混在一起会被误读成数据点）
+    const ma=maskAlphaAt(p.x,p.y); if(ma<=0) continue;
+    const twinkle=Math.sin(t*2+p.ph);
+    const alpha=(0.06+(twinkle+1)*0.18)*ma;
+    const gi=p.gold?1:0, c=SX_STAR_RGB[gi];
+    blit(ctx, gi?sprGold:sprCool, p.x, p.y, p.size*3, alpha);
     ctx.fillStyle=`rgba(${c},${Math.min(1,alpha*1.2)})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
   }
 }
@@ -6577,7 +6589,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '52';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v52）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
+const SW_VERSION = '53';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v53）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');
