@@ -107,13 +107,20 @@ if (!unused) console.log('  (无)');
 }
 
 // 8. 疑似"定义后没被调用"的函数（同名标识符全文件仅出现 1 次）
+//    只统计函数声明：函数表达式（含具名 IIFE，如 `(function cleanupOrphanProgress(){...})()`）的名字
+//    只写给堆栈/调试看，自带调用，按名字数次数会长期误报
 {
   const unusedFns = [];
   const fnRe = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
+  // 表达式语境的前缀：出现在这些字符之后，说明是函数表达式而不是函数声明
+  const EXPR_PREFIX = '([=:,!+-~';
   let fm;
   while ((fm = fnRe.exec(all)) !== null) {
     const name = fm[1];
     if (unusedFns.indexOf(name) !== -1) continue;
+    let j = fm.index - 1;
+    while (j >= 0 && /\s/.test(all[j])) j--;
+    if (j >= 0 && EXPR_PREFIX.indexOf(all[j]) !== -1) continue;
     const cnt = (all.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
     if (cnt <= 1) unusedFns.push(name);
   }
