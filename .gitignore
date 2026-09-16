@@ -4,3 +4,6 @@ node_modules/
 .syntax-tmp/
 # AI 代码审查的中间产物（含 token 统计等本地信息，不入库）
 ocr-review-result.json
+# www/ 是 sync-www.js 从根目录生成的产物（Capacitor 的 webDir），逐字节副本不入库：
+# npm run cap:sync / build:android 都会先重新生成它，根目录才是唯一源
+www/
