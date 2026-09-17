@@ -279,6 +279,15 @@
   .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
   .modal .desc{color:var(--text);opacity:.65;font-size:13px;line-height:1.7;margin:6px 0 0}
 
+  /* ===== 题目表单弹窗（新增/编辑题目，.qmodal）======
+     通用 .modal 固定 520px 宽，桌面端写长答案时像在"小纸条"里打字，空间太憋屈；
+     这两个表单弹窗在桌面上加宽、答案框加高。768px 及以下仍走移动端规则
+     （.modal{width:96vw!important;max-width:500px}），此处用互斥断点，不影响小屏 */
+  @media(min-width:769px){
+    .modal.qmodal{width:min(760px,92vw);padding:26px 30px}
+    .qmodal textarea{min-height:clamp(180px,34vh,340px)}
+  }
+
   /* ===== 设置弹窗（.settings-modal 作用域，不影响其它弹窗） ===== */
   .settings-modal .modal{display:flex;flex-direction:column;max-height:88vh}
   .settings-modal .modal-head{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
@@ -774,7 +783,7 @@
 
 <!-- ADD QUESTION MODAL -->
 <div class="modal-bg" id="addModal">
-  <div class="modal">
+  <div class="modal qmodal">
     <h3>➕ 在「<span id="addDocName"></span>」中添加题目</h3>
     <label>题目 *</label>
     <input type="text" id="aqTitle" placeholder="例如：说一下 HashMap 的底层结构？" aria-label="题目">
@@ -795,7 +804,7 @@
 
 <!-- EDIT QUESTION MODAL -->
 <div class="modal-bg" id="editModal">
-  <div class="modal">
+  <div class="modal qmodal">
     <h3>✏️ 编辑题目（「<span id="editDocName"></span>」）</h3>
     <label>题目 *</label>
     <input type="text" id="eqTitle" aria-label="题目">
