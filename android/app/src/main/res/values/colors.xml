@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppTheme（styles.xml）引用的三个颜色。
+         本文件原先是缺失的：这三个名字实际由 @capacitor/android 的库资源提供（Material 默认蓝
+         #3F51B5 / #303F9F / #FF4081），能构建成功纯属依赖库里恰好同名 —— 依赖升级或换库就会直接
+         构建失败，而且取色也不受本项目控制。这里按品牌色板显式定义（应用资源优先级高于库资源，
+         定义同名不会冲突）。
+
+         说明：原生主题只影响窗口背景与启动画面，界面主体是 WebView。色值取自 App 主题变量：
+         主色 accent #5AD1C9 / 底色 bg #0D0E17 / 辅色 accent2 #8B7CF6。 -->
+    <color name="colorPrimary">#5AD1C9</color>
+    <color name="colorPrimaryDark">#0D0E17</color>
+    <color name="colorAccent">#8B7CF6</color>
+</resources>

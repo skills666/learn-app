@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- allowBackup=false：本应用把 Gitee Token / AI Key 与全部题库存在 WebView 的
+         localStorage / IndexedDB 里，开启备份等于把它们交给系统云备份与 adb backup。
+         数据迁移走应用内的导出/导入 + Gitee 云同步，不依赖系统备份。 -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
