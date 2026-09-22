@@ -132,7 +132,7 @@
   .answer .inner p{margin:0 0 10px}
   .answer .inner p:last-child{margin-bottom:0}
   .answer .inner code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
-  /* 代码块样式：原先只有 .ai-answer / .cloze-body 有 pre 规则，题目答案里的代码块是"裸 pre"——
+  /* 代码块样式：原先只有 .ai-answer 有 pre 规则，题目答案里的代码块是"裸 pre"——
      无背景、无圆角、长行还会撑出横向溢出。这里与 .ai-answer pre 保持同一套观感 */
   .answer .inner pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
   .answer .inner pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
@@ -143,10 +143,16 @@
   .rv{display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;
       transition:grid-template-rows .38s cubic-bezier(.22,.61,.36,1),opacity .3s ease,margin-top .38s ease}
   .rv.show{grid-template-rows:1fr;opacity:1}
-  .rv > .rv-in{overflow:hidden;min-height:0}
+  .rv > .rv-in{overflow:hidden;min-height:0;min-width:0}
+  /* 长串断行：英文术语 / URL / 长标识符（如 AbstractApplicationContext）默认没有断行点，
+     而折叠容器（.rv-in、.answer .inner）都是 overflow:hidden、宽度被钉在卡片上 ——
+     长串既不换行、超出部分又被整段裁掉，表现为"只显示几个字符、然后凭空消失"。
+     这里统一放开任意位置断行。代码块是 white-space:pre，不受影响，仍走自身横向滚动。 */
+  .rv > .rv-in,.answer .inner{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+  .pcard .ptitle,.memory-card .ptitle,.mock-card .ptitle,.q .qtitle{overflow-wrap:anywhere;word-break:break-word}
   @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .anim-in{animation:fadeSlideUp .34s cubic-bezier(.22,.61,.36,1) both}
-  .empty{text-align:center;color:var(--text);opacity:.5;padding:60px 20px;font-size:14px}
+  .empty{text-align:center;color:var(--text);opacity:.62;padding:60px 20px;font-size:14px}
   .empty .big{font-size:40px;margin-bottom:10px}
 
   /* ---------- 文档视图：块形（网格）展示 ---------- */
@@ -289,7 +295,10 @@
   }
 
   /* ===== 设置弹窗（.settings-modal 作用域，不影响其它弹窗） ===== */
-  .settings-modal .modal{display:flex;flex-direction:column;max-height:88vh}
+  /* 注意选择器必须写成 .modal.settings-modal（同一个元素上的两个类）：
+     写成 .settings-modal .modal 是"后代"，而 .settings-modal 本身就是 .modal 元素，
+     永远匹配不到 —— 会让吸顶头/独立滚动体整套布局静默失效 */
+  .modal.settings-modal{display:flex;flex-direction:column;max-height:88vh;padding:0;overflow:hidden}
   .settings-modal .modal-head{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
   .settings-modal .modal-title{font-size:17px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
   .settings-modal .modal-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
@@ -297,12 +306,13 @@
   /* overflow-x:hidden + scrollbar-gutter:stable —— 展开分区后内容高度跨越弹窗高度时垂直滚动条会出现，
    其占位会挤压内容宽度，一瞬间触发水平滚动条（展开 AI 设置/进阶操作时最明显）。
    gutter 让槽位恒定（宽度不变），overflow-x:hidden 则保证任何瞬时溢出都不会画出水平滚动条 */
-.settings-modal .modal-scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;padding:18px 24px}
+.settings-modal .modal-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;padding:18px 24px}
   .set-list{display:flex;flex-direction:column;gap:14px}
   .set-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);transition:border-color .15s}
   .set-section.open{border-color:var(--line2)}
   .set-head{cursor:pointer;padding:14px 16px;font-size:14px;font-weight:700;color:var(--text);background:var(--panel);display:flex;justify-content:space-between;align-items:center;transition:.15s;user-select:none}
-  .set-head:hover{border-color:var(--accent2)}
+  /* 原来写的是 border-color —— .set-head 自身没有 border，改了也看不见，等于没有悬停反馈 */
+  .set-head:hover{background:var(--panel2)}
   .set-section.open .set-head{color:var(--accent)}
   .set-arrow{font-size:11px;transition:transform .25s;color:var(--muted)}
   .set-section.open .set-arrow{transform:rotate(180deg);color:var(--accent)}
@@ -498,38 +508,15 @@
   .grill-fb-content p{margin:8px 0}
   .grill-fb-content strong{color:var(--accent2)}
   .grill-fb-content ul,.grill-fb-content ol{padding-left:20px;margin:8px 0}
-  /* 回忆训练（空白页自由回忆）：覆盖率反馈 + 关键点明细 */
-  .cloze-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:14px}
-  .cloze-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:0 0 16px}
-  .cloze-card .recall-label{font-size:12px;color:var(--muted);font-weight:600;display:block;margin:0 0 8px}
-  .cloze-body{line-height:1.8;color:var(--text);font-size:14.5px;word-break:break-word}
-  .cloze-body p{margin:0 0 8px}
-  .cloze-body p:last-child{margin-bottom:0}
-  .cloze-body code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
-  .cloze-body pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
-  .cloze-body pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
-  .cover-card{margin-top:4px;padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--line2)}
-  .cover-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .cover-num{font-size:26px;font-weight:800;line-height:1.1}
-  .cover-sub{font-size:12.5px;color:var(--muted)}
-  .cover-tip{font-size:12px;color:var(--muted);margin-top:8px}
-  .anchor-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-  .anchor-chip{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line2);background:var(--card);color:var(--muted);line-height:1.75}
-  .anchor-chip.ok{border-color:rgba(79,208,138,.55);color:var(--good);background:rgba(79,208,138,.10)}
-  .anchor-chip.miss{border-color:rgba(240,106,106,.5);color:var(--bad);background:rgba(240,106,106,.09)}
-  .recall-self > .rv-in{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px 16px}
-  .recall-self.show{margin-top:14px}
-  .recall-self .label{font-size:12px;color:var(--accent3);font-weight:700;margin-bottom:8px}
-
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
       .topbar{padding:calc(6px + env(safe-area-inset-top, 0px)) 8px 6px 8px;gap:3px;justify-content:flex-start}
-    .tab{padding:4px 8px;font-size:11px;border-radius:6px}
+    .tab{padding:4px 8px;font-size:12px;border-radius:6px}
     .topbar .search{padding:3px 8px}
     .topbar .search input{width:100px;font-size:12px}
     .btn{font-size:11px;padding:5px 8px}
-    .btn.sm{padding:3px 6px;font-size:10px}
-    .stats-bar{font-size:10px;gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
+    .btn.sm{padding:3px 6px;font-size:11px}
+    .stats-bar{font-size:11px;gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
     .content{padding:14px 12px calc(30px + env(safe-area-inset-bottom, 0px));max-width:100%}
     .ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}
     .ov-card{padding:12px 8px}
@@ -589,13 +576,13 @@
     .grill-chat{max-height:40vh}
   }
   @media(max-width:400px){
-    .tab{padding:3px 6px;font-size:10px}
+    .tab{padding:3px 6px;font-size:11px}
     .tab .ic{display:none}
     .topbar .search input{width:70px}
     .ov-grid{grid-template-columns:repeat(2,1fr);gap:6px}
     .memory-card{padding:14px 10px}
     .memory-card .ptitle{font-size:14px}
-    .btn{font-size:10px;padding:4px 6px;gap:3px}
+    .btn{font-size:11px;padding:4px 6px;gap:3px}
     .salary-card .salary-num{font-size:24px}
     .theme-card .tc-swatch{width:30px;height:22px}
     .theme-card .tc-name{font-size:8px}
@@ -641,8 +628,10 @@
 
   /* 未来到期预测：柱高按当日题量归一化；空日留 3px 基线，避免"没排期"和"柱太矮看不见"混淆 */
   .fc-strip{display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:4px}
+  /* 柱高也要过渡：切换/刷新时原来只有透明度在动，高度是硬跳 */
   .fc-strip>i{flex:1 1 0;min-width:2px;border-radius:2px 2px 0 0;opacity:.78;
-    background:linear-gradient(180deg,var(--accent2),var(--accent));transition:opacity .15s}
+    background:linear-gradient(180deg,var(--accent2),var(--accent));
+    transition:opacity .15s,height .35s cubic-bezier(.22,.61,.36,1)}
   .fc-strip>i:hover{opacity:1}
   .fc-strip>i.today{background:linear-gradient(180deg,var(--accent3),#e07a4a);opacity:1}
   .fc-strip>i.fc-empty{background:rgba(var(--text-rgb,255,255,255),.09);opacity:1}   /* 类名不能叫 empty：会撞上上面空状态样式的 padding:60px 20px；底色须用 --text-rgb，否则浅色主题下白 x% 隐形 */
@@ -654,7 +643,9 @@
      初始状态本来就是 visibility:hidden，所以页面加载时这条动画即使播放也看不见。 */
   @keyframes scaleOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.96)}}
   @keyframes popOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.94)}}
-  .modal-bg:not(.show) .modal{animation:scaleOut .15s ease both}
+  /* .was-shown 由 showModal() 打上：否则页面首次加载时所有弹窗都会跑一遍退场动画，
+     而 fill:both 会把 .modal 停在 opacity:0 —— 将来任何"不经 .show 直接显示弹窗"的改动都会踩坑 */
+  .modal-bg.was-shown:not(.show) .modal{animation:scaleOut .15s ease both}
   .theme-popup:not(.show){animation:popOut .15s ease both}
 
   /* ---------- 按下（:active）反馈 ----------
@@ -669,17 +660,63 @@
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
 
-  /* ---------- 网格主题（子良）下的方块语言统一 ----------
-     背景是方角网格 + 方角高亮格，而热力图/等级条/预测柱这些数据方块全是圆角：
-     一个像工程图纸、一个像 UI 卡片，叠在一起就会互相打架。这里在网格主题下把数据方块
-     收成方角（保留 1px 免得边缘过硬），让背景与数据同属一套"图纸"语言。 */
-  body.theme-ziliang .hm-cell,
-  body.theme-ziliang .an-dot,
-  body.theme-ziliang .pbar>i,
-  body.theme-ziliang .pbar,
-  body.theme-ziliang .fc-strip>i,
-  body.theme-ziliang .stats-bar .bar,
-  body.theme-ziliang .stats-bar .bar>i{border-radius:1px}
+  /* 进度条/热力图/等级条/预测柱等数据块：全主题统一用圆角（不再为某个主题特殊收成方角）。 */
+
+  /* =========================================================
+     ===== 增强层（主题 / 动效 / 过渡 / 外观 / 无障碍）=====
+     统一附在样式表末尾：与前面同权重的规则靠源码顺序覆盖，
+     且全部尊重 prefers-reduced-motion 的降级。
+     ========================================================= */
+
+  /* ---------- 无障碍：键盘焦点可见环 ----------
+     顶栏标签/主题卡等用了 tabindex，但此前没有 :focus-visible 样式，暗色下浏览器默认焦点环几乎看不见。
+     用 --accent 画环、:where() 保持零特异度（不抢既有样式的优先级），只在键盘导航时出现。 */
+  :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.theme-tab,.q,.memory-card,.iconbtn,
+         .pace-btn,.grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt):focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+  /* 屏幕阅读器专用（视觉隐藏，供 aria-live 播报切页） */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* ---------- 视图切换：方向性入场 ----------
+     原来无论往哪个标签切都是同一种 riseIn（向上浮）。现在按标签左右顺序给出水平方向：
+     往右切（fwd）新页从右侧滑入、往左切（back）从左侧滑入，建立"横向桌面"的空间连续感。
+     仅覆盖 animation-name，沿用原有 duration/easing/delay 交错（来自 .content.in>* 的 animation 简写）。 */
+  .content.in[data-nav="fwd"] > *{animation-name:slideInFwd}
+  .content.in[data-nav="back"] > *{animation-name:slideInBack}
+  @keyframes slideInFwd{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+  @keyframes slideInBack{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+
+  /* ---------- 换题翻卡：刷题 / 趁热（复用记忆模式已验证的「飞出 + 入场」手感） ----------
+     旧卡用 WAAPI 飞出（见 practiceStep / 趁热评分），新卡在模板里挂 .flip-in-* / .card-enter 做入场；
+     memCardIn 复用记忆卡牌堆入场的关键帧（全局定义）。均不加 fill，动画结束后自然交还 hover 位移。 */
+  @keyframes cardInFwd{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
+  @keyframes cardInBack{from{opacity:0;transform:translateX(-48px)}to{opacity:1;transform:none}}
+  .pcard.flip-in-fwd{animation:cardInFwd .3s cubic-bezier(.22,.61,.36,1)}
+  .pcard.flip-in-back{animation:cardInBack .3s cubic-bezier(.22,.61,.36,1)}
+  .memory-card.card-enter{animation:memCardIn .42s cubic-bezier(.22,.61,.36,1)}
+
+  /* ---------- 确认框进出场（原生 confirmDialog）：补齐与 .modal 一致的对称动效 ----------
+     此前 confirmDialog 用内联样式 append/remove，啪一下出现啪一下消失，是全站唯一裸奔的浮层。 */
+  @keyframes ovIn{from{opacity:0}to{opacity:1}}
+  @keyframes ovOut{from{opacity:1}to{opacity:0}}
+  .confirm-ov{animation:ovIn .18s ease both}
+  .confirm-dlg{animation:scaleIn .22s cubic-bezier(.22,.61,.36,1) both}
+  .confirm-ov.closing{animation:ovOut .16s ease both}
+  .confirm-ov.closing .confirm-dlg{animation:scaleOut .16s ease both}
+
+  /* ---------- 主题切换：View Transitions 圆形扩散 ----------
+     修掉"背景在 .5s 渐变、卡片/面板瞬间硬切"的错位：切主题时整个 root 由旧色板"承接"、
+     新色板以点击点为圆心圆形铺开（Material / shadcn 主题切换同款），一次到位全站同步。
+     仅给 JS 主动画 clip-path，这里关掉浏览器默认的根交叉淡入避免叠加；.theme-vt 由 JS 临时挂在 <html>。 */
+  .theme-vt::view-transition-old(root),
+  .theme-vt::view-transition-new(root){animation:none;mix-blend-mode:normal}
+  .theme-vt::view-transition-old(root){z-index:0}
+  .theme-vt::view-transition-new(root){z-index:1}
+
+  /* ---------- 顶栏 SVG 图标：跟随文字颜色(currentColor)，尺寸与旧 emoji 对齐 ---------- */
+  .ic svg,.btn-ic,.search-ic{width:15px;height:15px;display:inline-block;vertical-align:-3px;
+    fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .topbar .search .search-ic{width:14px;height:14px;color:var(--muted);flex:none}
 
 </style>
 </head>
@@ -692,18 +729,18 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tabs" id="tabs">
-      <div class="tab active" data-view="overview" role="button" tabindex="0"><span class="ic">📊</span> 总览</div>
-      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic">📁</span> 文档</div>
-      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic">🧠</span> 记忆</div>
-      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic">📈</span> 进度</div>
-      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic">🔥</span> 拷打</div>
-      <div class="tab" data-view="cloze" role="button" tabindex="0"><span class="ic">✍️</span> 回忆</div>
+      <div class="tab active" data-view="overview" role="button" tabindex="0" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/></svg></span> 总览</div>
+      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> 文档</div>
+      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/></svg></span> 进度</div>
+      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> 拷打</div>
+      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> 记忆</div>
+      <div class="tab" data-view="hot" role="button" tabindex="0" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> 趁热</div>
     </div>
     <div class="search">
-      🔍 <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
+      <svg class="search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
     </div>
-    <button class="btn ghost" id="dataBtn">⚙️ 设置</button>
-    <button class="btn ghost" id="themeBtn" title="切换主题" aria-label="切换主题">🎨</button>
+    <button class="btn ghost" id="dataBtn"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M1 15h6M9 9h6M17 17h6"/></svg> 设置</button>
+    <button class="btn ghost" id="themeBtn" title="切换主题" aria-label="切换主题"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 10.6C21.4 5.8 17.1 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7" r="1.2"/></svg></button>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
   <div class="content" id="content"></div>
@@ -721,7 +758,7 @@
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="modal-bg" id="dataModal">
+<div class="modal-bg" id="dataModal" role="dialog" aria-modal="true" aria-label="设置">
   <div class="modal settings-modal">
     <div class="modal-head">
       <span class="modal-title">⚙️ 设置</span>
@@ -764,7 +801,7 @@
       <div class="set-section">
         <div class="set-head">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-hint">Key 只保存在本机浏览器，不会上传。<br>App（Android）默认禁止明文传输，API 地址必须用 <b style="color:var(--accent)">https://</b>；填 http:// 会直接报网络错误（浏览器里却可能正常）。</div>
+          <div class="set-hint">Key 只保存在本机浏览器，不会随题库上传。<br>说明：本地存储只做了<b>可逆混淆</b>（防肩窥，不是加密），能读到你浏览器的程序同样能读到它。<br>App（Android）默认禁止明文传输，API 地址必须用 <b style="color:var(--accent)">https://</b>；填 http:// 会直接报网络错误（浏览器里却可能正常）。</div>
           <div class="set-row2"><div class="set-field" style="flex:1"><label>API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl" aria-label="AI API 地址"></div></div>
           <div class="set-row2"><div class="set-field" style="flex:1"><label>API Key</label><input placeholder="sk-..." id="aiKey" type="password" aria-label="AI API Key"></div><div class="set-field" style="flex:1"><label>模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel" aria-label="AI 模型名"></div></div>
         </div></div></div>
@@ -782,7 +819,7 @@
 </div>
 
 <!-- ADD QUESTION MODAL -->
-<div class="modal-bg" id="addModal">
+<div class="modal-bg" id="addModal" role="dialog" aria-modal="true" aria-label="添加题目">
   <div class="modal qmodal">
     <h3>➕ 在「<span id="addDocName"></span>」中添加题目</h3>
     <label>题目 *</label>
@@ -803,7 +840,7 @@
 </div>
 
 <!-- EDIT QUESTION MODAL -->
-<div class="modal-bg" id="editModal">
+<div class="modal-bg" id="editModal" role="dialog" aria-modal="true" aria-label="编辑题目">
   <div class="modal qmodal">
     <h3>✏️ 编辑题目（「<span id="editDocName"></span>」）</h3>
     <label>题目 *</label>
@@ -825,6 +862,8 @@
 
 <input type="file" id="fileInput" accept=".json,.md,.markdown,.txt,application/json,text/markdown" class="hidden" multiple>
 <div class="toast" id="toast" aria-live="polite"></div>
+<!-- 屏幕阅读器专用：切换视图时播报当前页（视觉隐藏） -->
+<div id="srAnnounce" class="sr-only" aria-live="polite"></div>
 
 <script>
 /* 题目数据：由构建脚本内联到此处（本仓库不包含 parse.py / seed.js），便于离线直接双击打开 */
@@ -956,6 +995,8 @@ const Store = (() => {
     getOrder: () => get('order').then(v => v || null),
     saveOrder: v => set('order', v),
     getOrderCustom: () => get('orderCustom').then(v => !!v),
+    // 原来只有读、没有写：orderCustom 永远是 false，init 里"按存档顺序排文档"的分支根本不可达
+    saveOrderCustom: v => set('orderCustom', !!v),
     getClears: () => get('clears').then(v => v || {}),
     saveClears: v => set('clears', v),
     getApiConfig: () => get('apiConfig').then(v => v || null),
@@ -988,9 +1029,6 @@ const Store = (() => {
     },
     // 旧版「挖空回忆」的 AI 词表缓存（已废弃）：只保留清理入口，供 init 释放空间
     clearLegacyCloze: () => set('cloze', {}),
-    // 回忆训练的独立复习计划（qid -> FSRS 状态）：与记忆模式的 progress 完全隔离，各排各的
-    getClozeP: () => get('clozeP').then(v => v || {}),
-    saveClozeP: v => set('clozeP', v),
   };
 })();
 
@@ -999,12 +1037,14 @@ const Store = (() => {
    ========================================================= */
 let DOCS = [];
 let PROGRESS = {};                 // qid -> {seen, mastered}
-let CLOZEP = {};                   // 回忆训练的独立复习计划（qid -> FSRS 状态）：不读不写 PROGRESS，两模式互不干扰
 let ORDER = [];                   // 文档顺序（doc id 数组，用于导入/同步数据维护）
 let CLEARS = {};                  // docId -> 通关次数
 
 // 视图常量
-const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', CLOZE:'cloze' };
+const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', HOT:'hot' };
+// ↑ 原 CLOZE:'cloze'（回忆模式）已下线；故意从 Views 中移除，旧存档 lastView='cloze' 会在下方启动检查里回退到总览，不会残留进入不存在的页
+// 视图中文名：供切页时给屏幕阅读器播报（aria-live）
+const VIEW_NAMES = { overview:'总览', docs:'文档', search:'搜索结果', practice:'刷题', mock:'模拟面试', memory:'记忆复习', grill:'项目拷打', browse:'题目浏览', analytics:'学习进度', hot:'趁热打铁' };
 
 let view; try{ view = sessionStorage.getItem('lastView') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
 if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
@@ -1020,6 +1060,9 @@ let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, 
 let memory = { queue:[], index:0, flipped:false, _history:[] };
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
 let cloze = { queue:[], index:0, qid:null, answer:'', checked:false, result:null, statHit:0, statAnchor:0, doneCount:0 };
+// 趁热打铁：HOT = 持久化热榜 [{qid, addedAt}]（localStorage + 独立 gist 文件）；hot = 趁热页本轮游标
+let HOT = [];
+let hot = { queue:[], index:0, flipped:false, cleared:0, inPass:false };
 /* ===== 撒花庆祝（纯手写 Canvas 粒子，无依赖）=====
    用于「简单」评分、通关完成、手动标记掌握等时刻 */
 let _confettiCanvas = null;
@@ -1030,7 +1073,8 @@ function celebrateConfetti(opts){
   if(_confettiCanvas) return;   // 已有一场在播：不叠加，避免多层画布
   const count = opts.count || 90;
   const cvs = document.createElement('canvas');
-  cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95';
+  // z-index 必须低于 .toast(80)：撒花期间弹出的 toast 会被彩纸盖住（彩纸 pointer-events:none，不挡点击，但挡视线）
+  cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:75';
   document.body.appendChild(cvs);
   _confettiCanvas = cvs;
   const W = window.innerWidth, H = window.innerHeight;
@@ -1207,13 +1251,15 @@ function fsrsFromRate(rate){
   if(r >= 5) return Rate.EASY;
   return Rate.GOOD;
 }
-// 记忆模式评分入口：只写 PROGRESS。回忆训练有自己独立的 CLOZEP 与 clozeGrade()，不走这里，
-// 两个模式的到期时间/等级完全隔离，互相不会推迟或提前对方的复习。
+// 记忆模式评分入口：只写 PROGRESS（含 FSRS 调度状态）。
 // historyArr 非 null 时记录撤销栈（记忆模式传 memory._history）
 function applySm2Grade(qid, rate, historyArr){
   const now = Date.now();
   const pr = PROGRESS[qid] || {};
   const g = fsrsFromRate(rate);
+  // 趁热进料：记忆模式评「非简单」且不在热榜 → 入队一次。
+  // 用 typeof 守卫 + try 兜住：让离线冒烟测试的沙箱（无 HOT/localStorage）不因这一行而失败。
+  if(typeof feedHotFromMemory === 'function'){ try{ feedHotFromMemory(qid, rate); }catch(_){} }
   if(historyArr){
     historyArr.push({qid, oldProgress:{...pr}});
     if(historyArr.length > 50) historyArr.splice(0, historyArr.length - 50);   // 撤销栈封顶 50 步，长会话不再无限累积
@@ -1227,6 +1273,23 @@ function applySm2Grade(qid, rate, historyArr){
   PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card, ef:+fsrsEfOf(res.card.d).toFixed(2)};
   saveProgress();
   markDirty();
+}
+
+/* ===== 趁热打铁：记忆模式的伴生"热榜"（零副作用 · 独立同步） =====
+   规则：记忆模式某题评「非简单」且不在榜 → 入队一次（去重，不重复加、不插队）；
+   评「简单」不改动热榜。只有「趁热页里点记住了」才会消减。
+   本队列绝不写 PROGRESS、不改排期/统计/打卡；数据单独存 localStorage + 单独 gist 文件，不与记忆进度混。 */
+function saveHot(){ try{ localStorage.setItem('learnAppHot', JSON.stringify(HOT)); }catch(_){ console.warn('[hot] 热榜持久化失败'); } }
+function loadHot(){ try{ const a = JSON.parse(localStorage.getItem('learnAppHot') || '[]'); return Array.isArray(a) ? a.filter(x => x && x.qid) : []; }catch(_){ return []; } }
+function hotHas(qid){ return HOT.some(h => h.qid === qid); }
+function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid, addedAt: Date.now() }); saveHot(); markDirty(); return true; }
+function hotRemove(qid){ const i = HOT.findIndex(h => h.qid === qid); if(i < 0) return false; HOT.splice(i, 1); saveHot(); markDirty(); return true; }
+function feedHotFromMemory(qid, rate){ if(rate >= Rate.EASY) return; hotAdd(qid); }   // 按原始评分判断：简单(≥Rate.EASY=4)→不动；非简单→去重入队
+function hotLiveQueue(){
+  // 解析热榜为真实存在的题目，顺带回收被删题遗留的孤立 qid
+  const kept = HOT.filter(h => questionById(h.qid));
+  if(kept.length !== HOT.length){ HOT = kept; saveHot(); markDirty(); }   // 删了隐藏数据也要推上去，否则多设备各留一份孤儿
+  return HOT.map(h => h.qid);
 }
 
 /* ===== 复习节奏切换（设置面板） ===== */
@@ -1303,6 +1366,18 @@ function normalizeDocs(docs){
         }));
       return d;
     });
+}
+// 按 ORDER 重排 DOCS —— 文档顺序唯一的落地处。
+// 原先 ORDER 只是被维护/落库/同步，从没参与渲染：导入数据里带的 order 下次启动就被丢弃，
+// 列表顺序完全取决于数组插入顺序（本地原有的在前、新导入的追加在后）。
+// 不在 ORDER 里的文档一律补在末尾，绝不允许因为顺序数据缺失而丢文档。
+function applyOrder(){
+  if(!Array.isArray(ORDER) || !ORDER.length || !DOCS.length) return;
+  const byId = new Map(DOCS.map(d => [d.id, d]));
+  const next = [];
+  ORDER.forEach(id => { const d = byId.get(id); if(d){ next.push(d); byId.delete(id); } });
+  byId.forEach(d => next.push(d));
+  DOCS = next;
 }
 function buildIndex(){
   QINDEX.clear(); DINDEX.clear(); QDOC.clear();
@@ -1440,8 +1515,21 @@ async function checkStorageLimit(newDataSize){
 }
 // 说明：原先还有 totalSeen()/totalMastered() 两个全量遍历辅助函数，改用 computeAllStats() 的缓存结果后已无调用方，故删除
 // 模态框关闭
+function showModal(el){
+  if(!el || el.classList.contains('show')) return;
+  el.__returnTo = document.activeElement;   // 记录打开者，关闭时归还焦点
+  el.classList.add('was-shown');   // 只有打开过的弹窗才播关闭动画（见 CSS 说明）
+  el.classList.add('show');
+  // 焦点移入对话框第一个可聚焦元素（避免键盘用户仍停在背景）
+  const f = el.querySelector('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(f) requestAnimationFrame(()=>{ try{ f.focus(); }catch(_){} });
+}
 function hideModal(el){
-  if(el) el.classList.remove('show');
+  if(!el) return;
+  const was = el.classList.contains('show');
+  el.classList.remove('show');
+  // 关闭时把焦点还给当初打开它的元素（无障碍：不让 Tab 从 document 顶部重新找）
+  if(was && el.__returnTo && document.contains(el.__returnTo)){ try{ el.__returnTo.focus(); }catch(_){}} el.__returnTo = null;
 }
 let _confirmOpen = false;
 let _confirmQueue = [];   // 待弹出的确认框：{msg, resolve}
@@ -1458,13 +1546,18 @@ function _showConfirm(msg, resolve){
       if(_settled) return;   // 防止遮罩+按钮双击导致重复 resolve/弹出队列
       _settled = true;
       _confirmCancel = null;
-      ov.remove(); resolve(result);
+      resolve(result);
+      // 关闭对称动画：加 .closing 触发反向淡出/缩放，动画结束后再摘除 DOM（reduced-motion 下 CSS 已把时长压到 .01ms）
+      ov.classList.add('closing');
+      setTimeout(()=>{ try{ ov.remove(); }catch(_){} }, 180);
       // 依次弹出排队的确认框；队列清空前保持 _confirmOpen，防止窗口期内新框插队导致双框同屏
-      setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } else { _confirmOpen = false; } }, 100);
+      setTimeout(()=>{ if(_confirmQueue.length){ const next = _confirmQueue.shift(); _showConfirm(next.msg, next.resolve); } else { _confirmOpen = false; } }, 120);
     };
     const ov=document.createElement('div');
+    ov.className='confirm-ov';
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
     const dlg=document.createElement('div');
+    dlg.className='confirm-dlg';
     dlg.style.cssText='background:var(--card);color:var(--text);padding:24px 28px;border-radius:14px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid var(--line2);text-align:center';
     const msgP=document.createElement('p');
     msgP.style.cssText='margin:0 0 20px;font-size:15px;line-height:1.6;white-space:pre-wrap';
@@ -1558,13 +1651,15 @@ function computeAllStats(){
   const now = Date.now();
   const today = new Date(now); today.setHours(0,0,0,0);
   const today0 = today.getTime();
-  let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0;
+  let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0, fresh = 0;
   const reviewed = new Set();
   DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
-    // 只统计"真实学习进度"：导入/云端同步可能带进来 {} 这类空条目，当待复习算会让统计虚高
-    if(!p || !(p.practiced || p.seen || p.mastered || p.srLevel || p.srNext || p.lastPracticed)) return;
+    // 只统计"真实学习进度"：导入/云端同步可能带进来 {} 这类空条目，当待复习算会让统计虚高。
+    // 但"从没刷过"的题必须单列出来（fresh）：记忆队列会把它们全部入队（见 buildMemoryQueue），
+    // 若这里只报"到期"，就会出现"待复习 0、点进记忆却有 500 题"的口径错位
+    if(!p || !(p.practiced || p.seen || p.mastered || p.srLevel || p.srNext || p.lastPracticed)){ fresh++; return; }
     if(p.practiced || p.seen) ts++;
     if(p.mastered) tm++;
     if(p.lastPracticed){
@@ -1591,13 +1686,13 @@ function computeAllStats(){
       else break;
     }
   }
-  const data = { tq, ts, tm, due, streak, todayDone };
+  const data = { tq, ts, tm, due, fresh, streak, todayDone };
   _statsCache = { at: Date.now(), data };
   return data;
 }
 function renderStatsBar(){
   const s = computeAllStats();
-  const tq = s.tq, ts = s.ts, tm = s.tm, due = s.due, streak = s.streak, todayDone = s.todayDone;
+  const tq = s.tq, ts = s.ts, tm = s.tm, due = s.due, fresh = s.fresh, streak = s.streak, todayDone = s.todayDone;
   const seenPct = tq ? Math.round(ts/tq*100) : 0;
   // 钳位：导入/云端同步进来的进度可能只有 mastered 没有 seen，两段宽度叠加就会超过 100% 导致进度条溢出
   const masteredPct = Math.min(seenPct, tq ? Math.round(tm/tq*100) : 0);
@@ -1608,18 +1703,22 @@ function renderStatsBar(){
     ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span>今日已刷 <b>${todayDone}</b> 题</span>`:''}
     ${due>0?`<span class="urg">🧠 记忆 <b>${due}</b> 题待复习</span>`:''}
+    ${fresh>0?`<span>🌱 未学 <b>${fresh}</b></span>`:''}
   `;
   // Tab 激活态：二级页（题目浏览）沿用进入时的标签，避免点进文档后高亮跳回「总览」
   const owner = view===Views.BROWSE ? browseFrom : view;
   document.querySelectorAll('.tab').forEach(t=>{
     const v = t.dataset.view;
-    t.classList.toggle('active',
+    const on =
       (v===Views.OVERVIEW&&(owner===Views.OVERVIEW||owner===Views.SEARCH)) ||
       (v===Views.DOCS&&owner===Views.DOCS) ||
       (v===Views.MEMORY&&owner===Views.MEMORY) ||
       (v===Views.GRILL&&owner===Views.GRILL) ||
-      (v===Views.CLOZE&&owner===Views.CLOZE) ||
-      (v===Views.ANALYTICS&&owner===Views.ANALYTICS));
+      (v===Views.HOT&&owner===Views.HOT) ||
+      (v===Views.ANALYTICS&&owner===Views.ANALYTICS);
+    t.classList.toggle('active', on);
+    // aria-current：给屏幕阅读器/辅助技术标记当前所在标签（视觉高亮之外再补语义）
+    if(on) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
   });
 }
 
@@ -1638,7 +1737,7 @@ function renderContent(){
   if(view===Views.MEMORY) return renderMemory(c);
   if(view===Views.ANALYTICS) return renderAnalytics(c);
   if(view===Views.GRILL) return renderGrill(c);
-  if(view===Views.CLOZE) return renderCloze(c);
+  if(view===Views.HOT) return renderHot(c);   // 趁热打铁（原「回忆」位）
   if(view===Views.BROWSE) return renderBrowse(c);
 }
 
@@ -1647,7 +1746,8 @@ function renderOverview(c){
   // tq/ts/tm 与 due 同源取自缓存，省去三次无缓存的全量遍历
   const _ovStats = computeAllStats();
   const tq = _ovStats.tq, ts = _ovStats.ts, tm = _ovStats.tm;
-  const due = _ovStats.due;
+  const due = _ovStats.due, fresh = _ovStats.fresh;
+  const todo = due + fresh;   // 记忆队列实际会排给你的题量（到期 + 从没刷过）
   const salary = tm * 100;
   const chartDays = (window._ovChartDays||7);
   c.innerHTML = `
@@ -1664,9 +1764,9 @@ function renderOverview(c){
       <div class="ov-card"><div class="n" id="ovTotal">${tq}</div><div class="t">总数</div></div>
       <div class="ov-card"><div class="n" id="ovSeen">${ts}</div><div class="t">已学</div></div>
       <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
-      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${due>0?' style="cursor:pointer" title="点击进入记忆模式，开始今日复习"':''}>
+      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` style="cursor:pointer" title="点击进入记忆模式，开始复习${fresh?`（另有 ${fresh} 道未学）`:''}"`:''}>
         <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
-        <div class="t">待复习</div>
+        <div class="t">待复习${fresh>0?` · 未学 ${fresh}`:''}</div>
       </div>
       <div class="ov-card"><div class="n" id="ovDocs">${DOCS.length}</div><div class="t">文档</div></div>
     </div>
@@ -1680,7 +1780,7 @@ function renderOverview(c){
           <button class="btn sm ${(window._ovChartMode||'bar')==='line'?'primary':''}" id="chartBtnLine">折线</button>
         </div>
       </div>
-      <canvas id="chartCanvas" width="1080" height="260" style="width:100%;height:auto;border-radius:8px"></canvas>
+      <canvas id="chartCanvas" style="width:100%;height:auto;border-radius:8px;aspect-ratio:1080/260"></canvas>
     </div>
   `;
   // Draw chart
@@ -1700,7 +1800,12 @@ function renderOverview(c){
   }, 30);
   // 待复习卡：点击直接进记忆模式开始复习（无到期题时不可点）
   const dueCard = c.querySelector('#ovDueCard');
-  if(dueCard && due>0) dueCard.onclick = () => { view = Views.MEMORY; memory.index = 0; memory.flipped = false; renderAll(); };
+  if(dueCard && todo>0) dueCard.onclick = () => {
+    // 必须整体重建 memory：memory.queue 是上一轮快照（可能含刚评完、已排到明天的题），
+    // 只把 index 归 0 会让人二次复习同一题并二次推进 FSRS。与顶部标签入口同一套语义（保留撤销栈）
+    memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };
+    view = Views.MEMORY; renderAll();
+  };
   $('#chartBtn7').onclick = ()=>{ window._ovChartDays=7; $('#chartBtn7').classList.add('primary');$('#chartBtn30').classList.remove('primary'); drawChart(7, window._ovChartMode||'bar'); };
   $('#chartBtn30').onclick = ()=>{ window._ovChartDays=30; $('#chartBtn30').classList.add('primary');$('#chartBtn7').classList.remove('primary'); drawChart(30, window._ovChartMode||'bar'); };
   $('#chartBtnBar').onclick = ()=>{ window._ovChartMode='bar'; $('#chartBtnBar').classList.add('primary');$('#chartBtnLine').classList.remove('primary'); drawChart(window._ovChartDays||7, 'bar'); };
@@ -1711,7 +1816,17 @@ function drawChart(days, mode){
   const canvas = $('#chartCanvas'); if(!canvas) return;
   try { var ctx = canvas.getContext('2d'); } catch(_){ return; }
   if(!ctx) return;
-  const W=canvas.width, H=canvas.height; ctx.clearRect(0,0,W,H);
+  // 逻辑尺寸按容器宽度算，backing store 再乘 DPR：原实现把 1080×260 写死在标签上、
+  // 靠 CSS 拉伸铺满，宽屏上刻度与柱顶数字都是糊的（且完全没吃 DPR）
+  const cssW = Math.max(240, Math.round(canvas.clientWidth || (canvas.parentElement && canvas.parentElement.clientWidth) || 1080));
+  const cssH = Math.round(cssW * 260 / 1080);   // 保持与旧版一致的宽高比，不改变视觉比例
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if(canvas.width !== Math.round(cssW*dpr) || canvas.height !== Math.round(cssH*dpr)){
+    canvas.width = Math.round(cssW*dpr); canvas.height = Math.round(cssH*dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
+  ctx.clearRect(0,0,W,H);
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';   // 复位上次绘制残留的对齐状态，避免 Y 轴刻度错位
   const now=Date.now(), dayMs=86400000;
   // 读取当前主题色
@@ -1815,6 +1930,16 @@ function drawChart(days, mode){
   }
 }
 
+// 窗口尺寸变化后重绘趋势图：原来只在渲染那一刻画一次，旋转屏幕/拖动窗口后画布被 CSS 拉伸变糊
+let _chartResizeTimer = null;
+window.addEventListener('resize', () => {
+  if(view !== Views.OVERVIEW) return;
+  clearTimeout(_chartResizeTimer);
+  _chartResizeTimer = setTimeout(() => {
+    if(view === Views.OVERVIEW) drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
+  }, 200);
+}, {passive:true});
+
 /* ---------- 文档视图 ---------- */
 function renderDocs(c){
   const totalQ = DOCS.reduce((n,d)=>n+((d.questions||[]).length),0);
@@ -1887,10 +2012,10 @@ function renderBrowse(c){
           <div class="qnum">${i+1}</div>
           <div class="qtitle">${renderTitle(q.title)}</div>
           <div class="qacts">
-            <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记已掌握">★</button>
-            <button class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案">👁</button>
-            <button class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目">✏️</button>
-            <button class="iconbtn del" data-del="${esc(q.id)}" title="删除题目">🗑</button>
+            <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记已掌握" aria-label="标记已掌握">★</button>
+            <button class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">👁</button>
+            <button class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">✏️</button>
+            <button class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">🗑</button>
           </div>
         </div>
         <div class="answer" data-ans="${esc(q.id)}">
@@ -1946,7 +2071,11 @@ function toggleAnswer(qid){
   const wasOpen = ans ? ans.classList.contains('show') : false;
   const nowOpen = !wasOpen;
   if(ans) ans.classList.toggle('show', nowOpen);
-  if(eye){ eye.classList.toggle('on', nowOpen); eye.textContent = nowOpen?'🙈':'👁'; }
+  if(eye){
+    eye.classList.toggle('on', nowOpen); eye.textContent = nowOpen?'🙈':'👁';
+    eye.title = nowOpen?'隐藏答案':'显示答案';                 // 按钮换了图标，语义也要跟着换
+    eye.setAttribute('aria-label', nowOpen?'隐藏答案':'显示答案');
+  }
   // 浏览模式下展开答案不记进度（可能是在查资料或编辑内容）
 }
 function toggleMaster(qid){
@@ -1958,16 +2087,42 @@ function toggleMaster(qid){
   if(btn) btn.classList.toggle('on', p.mastered);
   renderStatsBar();
 }
+// FLIP 删除动画：先把目标卡片淡出/微缩，再提交数据变更（renderAll 会重建 DOM），
+// 最后对“存活卡片”按新旧位置差做反向 transform 归位 → 下方卡片平滑上移补位，不再“向上跳一格”。
+// commit 内部会调 renderAll，故 commit 后需重新查询元素（旧引用已被销毁）。reduced-motion / 无 WAAPI 时直接提交。
+function flipAway(itemEl, commit){
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if(reduce || !itemEl || typeof itemEl.animate!=='function'){ commit(); return; }
+  const keyAttr = itemEl.hasAttribute('data-qid') ? 'data-qid' : 'data-godoc';
+  const root = itemEl.closest('.content') || document;
+  const before = new Map();
+  root.querySelectorAll('['+keyAttr+']').forEach(el=>{ if(el!==itemEl){ const r=el.getBoundingClientRect(); before.set(el.getAttribute(keyAttr), {x:r.left, y:r.top}); } });
+  const a = itemEl.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.97)'}], { duration:200, easing:'cubic-bezier(.4,0,.2,1)', fill:'forwards' });
+  let done=false;
+  const once = () => { if(done) return; done=true; commit();
+    const cont = document.querySelector('.content') || document;
+    cont.querySelectorAll('['+keyAttr+']').forEach(el=>{
+      const b = before.get(el.getAttribute(keyAttr)); if(!b) return;
+      const r = el.getBoundingClientRect(); const dx = b.x - r.left, dy = b.y - r.top;
+      if(Math.abs(dx)<1 && Math.abs(dy)<1) return;
+      el.animate([{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate(0,0)'}], { duration:320, easing:'cubic-bezier(.22,.61,.36,1)' });
+    });
+  };
+  a.onfinish = once; setTimeout(once, 260);
+}
 async function deleteQuestion(docId, qid){
   if(!await confirmDialog('确定删除这道题目？此操作不可撤销。')) return;
   const d = docById(docId);
   if(!d){ toast('文档已不存在'); return; }   // 确认框排队等待期间文档可能已被导入/拉取替换
-  d.questions = (d.questions||[]).filter(q=>q.id!==qid);
-  delete PROGRESS[qid];
-  dropClozePlan(qid);
-  saveDocs(); saveProgress();
-  toast('已删除题目');
-  renderAll();
+  // qid 来自导入/云端数据，必须转义后再拼选择器（含引号会抛 SyntaxError，异常被 async 吞掉后只表现为"删不掉"）
+  const card = document.querySelector('.content .q[data-qid="'+CSS.escape(qid)+'"]');
+  flipAway(card, () => {
+    d.questions = (d.questions||[]).filter(q=>q.id!==qid);
+    delete PROGRESS[qid];
+    saveDocs(); saveProgress();
+    toast('已删除题目');
+    renderAll();
+  });
 }
 // 进度落盘节流：翻题/评分每次都整份写 IndexedDB，进度上万条时代价明显；
 // 内存态立即更新（统计/队列都是内存数据），磁盘写入合并到 600ms 后，页面隐藏或卸载时强制 flush
@@ -1982,9 +2137,9 @@ function saveProgress(){
   clearTimeout(_progWriteTimer);
   _progWriteTimer = setTimeout(flushProgressWrite, 600);
 }
-// 页面隐藏/卸载时把两个进度表都立即落盘（各自都有 600ms 防抖，不 flush 会丢掉最后一次评分）
-window.addEventListener('pagehide', () => { flushProgressWrite(); flushClozePWrite(); });
-document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushClozePWrite(); } });
+// 页面隐藏/卸载时把所有带防抖的落盘项立即 flush（各 600ms 防抖，不 flush 会丢掉最后一次评分/最后一次输入）
+window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); });
+document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); } });
 // 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
 // 同时失效记忆队列缓存：否则新增/删除题目后，记忆模式最长 30 分钟看不到变化
 async function saveDocs(){ buildIndex(); markDirty(); invalidateMemQueue(); await Store.saveDocs(DOCS); }
@@ -1998,7 +2153,7 @@ function openAddModal(docId){
   $('#aqTitle').value = '';
   $('#aqAnswer').value = '';
   $('#aqTags').value = '';
-  $('#addModal').classList.add('show');
+  showModal($('#addModal'));
   setTimeout(()=>$('#aqTitle').focus(), 50);
 }
 function submitAddQuestion(){
@@ -2012,9 +2167,14 @@ function submitAddQuestion(){
   const id = d.id + '#' + (d.questions.length+1) + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);   // 随机后缀防时钟回拨/同毫秒撞 id
   d.questions.push({ id, title, answer, tags });
   saveDocs();
-  $('#addModal').classList.remove('show');
+  hideModal($('#addModal'));   // 走 hideModal：把焦点归还给「添加题目」按钮，键盘用户不会掉到 body
   toast('已添加题目');
   renderAll();
+  // 新题出现在列表末尾：给它一个淡入上浮的入场，避免“凭空冒出来”
+  const _nc = document.querySelector('.content .q[data-qid="'+CSS.escape(id)+'"]');
+  if(_nc && typeof _nc.animate==='function' && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    _nc.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}], { duration:320, easing:'cubic-bezier(.22,.61,.36,1)' });
+  }
 }
 
 /* ---------- 编辑题目弹窗 ---------- */
@@ -2031,13 +2191,13 @@ function openEditModal(docId, qid){
   $('#eqTags').disabled = false;
   $('#eqAnswer').value = q.answer || '';
   $('#eqTags').value = (q.tags||[]).join(', ');
-  $('#editModal').classList.add('show');
+  showModal($('#editModal'));
   setTimeout(()=>$('#eqTitle').focus(), 50);
 }
 function submitEditQuestion(){
   const docId = $('#editModal').dataset.docid;
   const d = docById(docId);
-  if(!d){ toast('文档已不存在'); $('#editModal').classList.remove('show'); return; }
+  if(!d){ toast('文档已不存在'); hideModal($('#editModal')); return; }
   const qid = $('#editModal').dataset.qid;
   const q = (d.questions||[]).find(x=>x.id===qid);
   if(!q) return;
@@ -2047,10 +2207,9 @@ function submitEditQuestion(){
   const tagsRaw = $('#eqTags').value.trim();
   const tags = tagsRaw ? tagsRaw.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [d.title];
   q.title = title; q.answer = answer; q.tags = tags;
-  if(PROGRESS[qid]) delete PROGRESS[qid].clozeNoAnchor;   // 兼容旧版本遗留的标记
-  // 回忆训练的关键点是提交时从当前答案实时抽取的，改答案无需清理任何缓存
+  if(PROGRESS[qid]) delete PROGRESS[qid].clozeNoAnchor;   // 旧版挖空功能遗留的标记，顺手清掉
   saveDocs();
-  $('#editModal').classList.remove('show');
+  hideModal($('#editModal'));   // 归还焦点给打开者（与 addModal 一致）
   toast('已保存修改');
   renderAll();
 }
@@ -2098,6 +2257,33 @@ function completeLevel(){
   practice.done = true;
   renderAll();   // 用 renderAll 而非 renderContent，确保顶部统计条同步刷新
 }
+// 刷题模式换题：与记忆模式同款「旧卡横向飞出 → 新卡反向滑入」的翻卡动效，消除同视图内换题的硬跳变。
+// 返回 true 表示已发起换题（含动画中吞掉多余点击），false 表示已到边界（交给调用方处理“完成/提示”）。
+let _pBusy = false;
+function practiceStep(delta){
+  const q = pQuestion();
+  if(!q) return false;
+  const tot = practice.order.length;
+  if(delta>0 && practice.index>=tot-1) return false;
+  if(delta<0 && practice.index<=0) return false;
+  if(_pBusy) return true;   // 动画进行中：吞掉连点，不致于一次跳两题
+  markPracticed(q.id);
+  const go = () => { _pBusy=false; practice.index+=delta; practice._flip = delta>0?'next':'prev'; renderAll(); };
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const card = document.querySelector('.pcard');
+  if(reduce || !card || typeof card.animate!=='function'){ go(); return true; }
+  _pBusy = true;
+  // 新题从顶部开始：先把滚动平滑归位，避免动画结束时内容重建造成位置瞬跳
+  const c = document.querySelector('.content'); if(c && c.scrollTop>8){ try{ c.scrollTo({top:0,behavior:'smooth'}); }catch(_){ c.scrollTop=0; } }
+  const dx = delta>0 ? -48 : 48;   // 下一题→旧卡向左飞出；上一题→向右
+  let done=false; const once=()=>{ if(done)return; done=true; go(); };
+  const a = card.animate([
+    {transform:'translateX(0) scale(1)',opacity:1},
+    {transform:'translateX('+dx+'px) scale(.98)',opacity:0}
+  ], { duration:240, easing:'cubic-bezier(.4,0,.75,.25)', fill:'forwards' });
+  a.onfinish = once; setTimeout(once, 360);   // 保底：动画事件丢失也要放行
+  return true;
+}
 function renderPractice(c){
   if(practice.done) return renderDone(c);
   if(!practice.order.length){ view=Views.OVERVIEW; return renderContent(); }
@@ -2115,11 +2301,13 @@ function renderPractice(c){
   const atLast = practice.index === tot-1;
   const revealed = practice.revealed && practice.revealed.has(q.id);
   const canComplete = canCompletePractice();
+  const flipEnter = practice._flip==='next' ? ' flip-in-fwd' : practice._flip==='prev' ? ' flip-in-back' : '';
+  practice._flip = null;
   c.innerHTML = `
     <div class="practice-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
       <div class="pmeta"><span class="pmeta-l"><button class="btn sm back-btn" id="practiceBack">⬅ 返回</button><span>${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}</span></span><span>${idx} / ${tot}</span></div>
-      <div class="pcard">
+      <div class="pcard${flipEnter}">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
         <div class="rv panswer${revealed?' show':''}" id="pAnswerArea"><div class="rv-in"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div></div>
@@ -2144,13 +2332,15 @@ function renderPractice(c){
     else { currentDocId = null; view = Views.DOCS; }
     renderAll();
   };
-  $('#prevBtn').onclick = () => { markPracticed(q.id); if(practice.index>0){ practice.index--; renderAll(); } };
+  $('#prevBtn').onclick = () => { practiceStep(-1); };
   $('#nextBtn').onclick = () => {
+    if(practiceStep(1)) return;   // 正常前进（带动画）
+    // 已到最后一题：保持原有“完成/提示”逻辑
     markPracticed(q.id);
     if(atLast){
       if(canComplete){ completeLevel(); }
       else { toast('请先用「下一题 / 上一题」把本文档题目都过一遍'); }
-    } else if(practice.index<tot-1){ practice.index++; renderAll(); }
+    }
   };
   $('#revealBtn').onclick = () => { toggleRevealP(q.id); };
   $('#masterBtn').onclick = () => { toggleMasterP(q.id); };
@@ -2169,7 +2359,7 @@ function renderPractice(c){
     $('#eqTags').disabled = true;
     $('#editModal').dataset.docid = doc.id;
     $('#editModal').dataset.qid = q.id;
-    $('#editModal').classList.add('show');
+    showModal($('#editModal'));
   };
 }
 function renderDone(c){
@@ -2473,6 +2663,88 @@ function applyMemFlip(){
     if(show){ mc.classList.remove('anim-in'); void mc.offsetWidth; mc.classList.add('anim-in'); }
   }
 }
+/* ===== 趁热打铁页：只认题、只动热榜（零副作用） ===== */
+let _hBusy = false;   // 换题飞出期间的锁，防连点双跳
+function renderHot(c){
+  if(!hot.inPass){
+    const list = hotLiveQueue();
+    if(!list.length){
+      c.innerHTML = `<div class="flash-empty"><div class="big">🔥</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">热榜是空的</div><div style="color:var(--muted)">在「记忆」模式里没答<em>简单</em>的题会自动进这里，趁热再过一遍。</div><div style="margin-top:16px"><button class="btn primary" id="hotGoMemory">🧠 去记忆模式</button></div></div>`;
+      const gb = $('#hotGoMemory'); if(gb) gb.onclick = () => {
+        memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };   // 同总览入口：不复用旧队列快照
+        view = Views.MEMORY; renderAll();
+      };
+      return;
+    }
+    hot.queue = list; hot.index = 0; hot.flipped = false; hot.cleared = 0; hot.inPass = true;
+  } else if(hot.index >= hot.queue.length){
+    return renderHotDone(c);
+  }
+  const qid = hot.queue[hot.index];
+  const q = questionById(qid);
+  if(!q){ hot.index++; return renderHot(c); }
+  const doc = DINDEX.get(QDOC.get(qid));
+  const tot = hot.queue.length, idx = Math.min(hot.index+1, tot);
+  const hotEnter = hot._flip ? ' card-enter' : ''; hot._flip = false;
+  c.innerHTML = `
+    <div class="feature-wrap">
+      <div class="pmeta"><span>🔥 趁热打铁${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${HOT.length} 题</span></div>
+      <div class="memory-card${hotEnter}" id="hotCard">
+        <div class="ptag">题目</div>
+        <div class="ptitle">${renderTitle(q.title)}</div>
+        <div class="rv memory-answer${hot.flipped?' show':''}" id="hotAnswer"><div class="rv-in"><div class="label">📝 答案</div>${renderAnswer(q.answer)}</div></div>
+        <div class="reveal-hint" id="hotHint" style="${hot.flipped?'display:none':''}">👆 点击卡片翻看答案</div>
+        <div class="grade-row" id="hotGradeRow" style="${hot.flipped?'':'display:none'}"><div class="grade-btn g-good" data-hot="done">✅ 记住了 · 移出热榜</div><div class="grade-btn g-bad" data-hot="again">🔁 还没 · 留在榜上</div></div>
+      </div>
+      <div class="pstatus">这里只是把记忆模式里没答简单的题再认一遍，<b>不改动等级、排期与统计</b>；点「记住了」= 从热榜移出。</div>
+    </div>`;
+  const card = c.querySelector('#hotCard');
+  card.onclick = (e) => {
+    if(e.target.closest('.btn,button,.grade-btn')) return;
+    if(hot.flipped && e.target.closest('.memory-answer')) return;   // 答案内选字不翻回
+    hot.flipped = !hot.flipped;
+    const an = $('#hotAnswer'); if(an) an.classList.toggle('show', hot.flipped);
+    const h = $('#hotHint'); if(h) h.style.display = hot.flipped ? 'none' : '';
+    const gr = $('#hotGradeRow');
+    if(gr){ gr.style.display = hot.flipped ? '' : 'none'; if(hot.flipped){ gr.classList.remove('anim-in'); void gr.offsetWidth; gr.classList.add('anim-in'); } }
+  };
+  c.querySelectorAll('[data-hot]').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();
+    if(_hBusy) return;
+    const apply = () => {
+      _hBusy = false;
+      if(b.dataset.hot === 'done'){ hotRemove(qid); hot.cleared = (hot.cleared||0) + 1; }
+      hot.index++; hot.flipped = false; hot._flip = true; renderAll();
+    };
+    const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const cardEl = $('#hotCard');
+    if(reduce || !cardEl || typeof cardEl.animate!=='function'){ apply(); return; }
+    _hBusy = true;
+    const _cc = $('.content'); if(_cc && _cc.scrollTop>8){ try{ _cc.scrollTo({top:0,behavior:'smooth'}); }catch(_){ _cc.scrollTop=0; } }
+    let done=false; const once=()=>{ if(done)return; done=true; apply(); };
+    const a = cardEl.animate([
+      {transform:'translateY(0) scale(1)',opacity:1},
+      {transform:'translateY(-56px) scale(.97)',opacity:0}
+    ], { duration:260, easing:'cubic-bezier(.4,0,.75,.25)', fill:'forwards' });
+    a.onfinish = once; setTimeout(once, 400);
+  });
+}
+function renderHotDone(c){
+  const passed = hot.queue.length, cleared = hot.cleared||0, remain = HOT.length;
+  c.innerHTML = `
+    <div class="feature-wrap"><div class="done-card">
+      <div class="big">🔥</div><h3>本轮趁热打铁完成</h3>
+      <div class="sub">过了一遍 ${passed} 题 · 移出热榜 ${cleared} · 仍需练 ${remain}</div>
+      <div class="pcontrols" style="justify-content:center">
+        ${remain>0?`<button class="btn primary" id="hotAgain">🔁 再来一轮</button>`:''}
+        <button class="btn" id="hotBack">返回</button>
+      </div>
+    </div>
+    <div class="pstatus">没移出的题还在热榜，下轮可继续。它们在记忆模式里也会被各自排期正常召回。</div></div>`;
+  hot.inPass = false;
+  const ag = $('#hotAgain'); if(ag) ag.onclick = () => { hot.index = 0; hot.cleared = 0; renderAll(); };
+  const bk = $('#hotBack'); if(bk) bk.onclick = () => { view = Views.OVERVIEW; renderAll(); };
+}
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
     // 评分越界（队列非空）时保留撤销历史；全新进入（队列空）才清空
@@ -2485,8 +2757,10 @@ function renderMemory(c){
       const streak = _ms.streak;
       const todayDone = _ms.todayDone;
       const canUndo = !!(memory._history && memory._history.length);
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
+      const hotLive = hotLiveQueue().length;   // 真实可练题数：会顺带回收被删题遗留的孤儿 qid，不能直接用 HOT.length
+      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button class="btn primary" id="memGoHot">🔥 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
       const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
+      const gh = $('#memGoHot'); if(gh) gh.onclick = () => { hot.inPass = false; hot.index = 0; hot.cleared = 0; view = Views.HOT; renderAll(); };
       return;
     }
   }
@@ -2975,6 +3249,7 @@ function renderGrillConfig(c){
   let selectedDuration = 'standard';
   let selectedSrc = 'ai'; // 八股扫荡题目来源：ai=AI现场出题，local=本地题库
   document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(card=>{
+    card.tabIndex = 0; card.setAttribute('role','button');   // 模式卡是 div：补上键盘可达性
     card.onclick = ()=>{
       document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>c.classList.remove('sel'));
       card.classList.add('sel');
@@ -3000,6 +3275,7 @@ function renderGrillConfig(c){
   });
   // 题目来源选择
   document.querySelectorAll('#grillSrcRow .grill-dur-btn').forEach(btn=>{
+    btn.tabIndex = 0; btn.setAttribute('role','button');
     btn.onclick = (e)=>{
       e.stopPropagation();
       document.querySelectorAll('#grillSrcRow .grill-dur-btn').forEach(b=>b.classList.remove('sel'));
@@ -3012,6 +3288,7 @@ function renderGrillConfig(c){
   });
   // 时长选择
   document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(btn=>{
+    btn.tabIndex = 0; btn.setAttribute('role','button');
     btn.onclick = (e)=>{
       e.stopPropagation();
       document.querySelectorAll('#grillDurRow .grill-dur-btn').forEach(b=>b.classList.remove('sel'));
@@ -3062,285 +3339,6 @@ function renderGrillConfig(c){
     }
     grill.resume = text; const _re=$('#grillResume'); if(_re) _re.value = text;   // 解析期间视图可能已重渲染，判空防崩溃
   };
-}
-
-/* =========================================================
-   回忆训练：空白页自由回忆（Free Recall）
-   看题目 → 凭记忆写出完整答案 → 提交后本地抽"关键点"做覆盖率检测。
-   锚点抽取与命中判定全是本地规则：零 AI 调用、零 token。
-
-   与「记忆」模式的关系：完全隔离，互不干扰。
-   - 队列自己建（不读记忆模式的到期队列）
-   - 复习计划存在独立的 CLOZEP（IndexedDB key: clozeP），评分只写它，
-     不碰 PROGRESS —— 两边的到期时间、等级、掌握标记各算各的
-   ========================================================= */
-// 覆盖率（0-1）→ 旧 5 档评分：100%⇒5 / ≥70%⇒4 / ≥40%⇒3 / >0⇒2 / 0⇒1
-function clozeRate(hit, total){
-  if(!total) return 3;
-  const r = hit/total;
-  return r>=1 ? 5 : r>=0.7 ? 4 : r>=0.4 ? 3 : r>0 ? 2 : 1;
-}
-// 每轮题量上限：全库都是没练过的题时，不会一次压进来几百道
-const CLOZE_ROUND_LIMIT = 15;
-// 本次会话内被跳过的题：下一轮重建队列时降权排到最后，避免"跳过 → 立刻又遇到它"的循环
-const _clozeSkipped = new Set();
-// 独立队列：到期题（超期久的优先）→ 没练过的题（按文档顺序），每轮封顶 CLOZE_ROUND_LIMIT
-function clozeQueueBuild(){
-  const now = Date.now(), day0 = new Date(now).setHours(0,0,0,0);
-  const due = [], fresh = [];
-  DOCS.forEach((d, di) => (d.questions||[]).forEach((q, qi) => {
-    const p = CLOZEP[q.id];
-    const seq = di*100000 + qi;                 // 跨文档的稳定顺序（文档序 × 题序）
-    if(p && p.srNext){
-      if(now >= p.srNext) due.push({qid:q.id, seq, overdue: Math.floor((day0 - new Date(p.srNext).setHours(0,0,0,0))/86400000)});
-      return;                                   // 练过但还没到期：本轮不捞
-    }
-    fresh.push({qid:q.id, seq});
-  }));
-  const bySkip = (a,b) => (_clozeSkipped.has(a.qid)?1:0) - (_clozeSkipped.has(b.qid)?1:0);
-  due.sort((a,b) => bySkip(a,b) || (b.overdue-a.overdue) || (a.seq-b.seq));
-  fresh.sort((a,b) => bySkip(a,b) || (a.seq-b.seq));
-  return due.concat(fresh).slice(0, CLOZE_ROUND_LIMIT).map(x=>x.qid);
-}
-// 覆盖率 → FSRS 四档
-function clozeRateFromCoverage(hit, total){
-  if(!total) return Rate.GOOD;
-  return fsrsFromRate(clozeRate(hit, total));
-}
-// 本模式唯一的评分入口：只写 CLOZEP（独立复习计划），不碰 PROGRESS、不失效记忆队列
-function clozeGrade(qid, g){
-  const now = Date.now();
-  const prev = CLOZEP[qid] || {};
-  const res = fsrsStep(prev, g, now);
-  const curLvl = prev.srLevel || 0;
-  CLOZEP[qid] = {
-    interval: res.interval, srNext: res.next,
-    srLevel: g>=Rate.GOOD ? Math.min(5, curLvl+1) : (g===Rate.HARD ? curLvl : 0),
-    lastPracticed: now, seen: true, fsrs: res.card, ef: +fsrsEfOf(res.card.d).toFixed(2)
-  };
-  saveClozeP();
-}
-// 回忆进度落盘（600ms 防抖，与 PROGRESS 同节奏）；markDirty 让云端同步把它一起推上去
-let _clozePWriteTimer = null;
-function flushClozePWrite(){ clearTimeout(_clozePWriteTimer); _clozePWriteTimer = null; Store.saveClozeP(CLOZEP); }
-function saveClozeP(){
-  markDirty();
-  clearTimeout(_clozePWriteTimer);
-  _clozePWriteTimer = setTimeout(flushClozePWrite, 600);
-}
-// 题目/文档被删除时同步清掉它的回忆进度，避免孤立数据长期堆积
-function dropClozePlan(qid){
-  if(CLOZEP[qid]){ delete CLOZEP[qid]; saveClozeP(); }
-}
-// 启发式挖空（本地规则，不耗 token）：按"像不像要背下来的锚点"排优先级挑词。
-// 关键：答案在导入（parseMarkdownToDoc）与一次性清理时都已被 stripMarkdown 剥掉 ** 和 `，
-// 所以不能只认这两种标记——那样中文答案一个词都挑不出来，这正是原来"没法使用"的原因。
-function clozeHeuristic(answer, target){
-  const t = String(answer||'');
-  const out = [], seen = new Set();
-  const push = raw => {
-    const k = String(raw==null?'':raw).trim()
-      .replace(/^[（(【\[「『“"']+/, '').replace(/[）)】\]」』”"']+$/, '')
-      .replace(/[。，、；：！？,;:!?]+$/, '');
-    if(k.length<2 || k.length>24) return;
-    if(/^\d$/.test(k)) return;            // 单个数字没意义（0.75 / 16 / 64 这类关键数字要留）
-    if(/^[a-z]{1,3}$/.test(k)) return;    // 英文虚词（is / the / can…）
-    if(!t.includes(k)) return;            // 必须在原文出现，挖空才有意义
-    const lk = k.toLowerCase();
-    if(seen.has(lk)) return;
-    seen.add(lk); out.push(k);
-  };
-  const scan = (re, pick) => {
-    re.lastIndex = 0;
-    let m;
-    while((m = re.exec(t)) !== null){
-      push(pick ? pick(m) : m[0]);
-      if(out.length >= target*4) return;
-    }
-  };
-  scan(/`([^`\n]{1,24})`/g, m=>m[1]);                                    // 行内代码（答案自带 Markdown 时）
-  scan(/\*\*([^*\n]{1,24})\*\*/g, m=>m[1]);                              // 加粗
-  scan(/\d+(?:\.\d+)?\s*(?:%|‰|ms|s|秒|分钟|小时|天|周|次|个|倍|层|路|万|亿|条|MB|GB|KB|TB|bit|byte)/gi);
-  scan(/[A-Za-z][A-Za-z0-9+#._-]{1,23}/g);                               // 英文技术名词 HashMap / JVM / B+
-  scan(/\d+\.\d+|\d{2,}/g);                                              // 关键数字 0.75 / 16 / 64
-  scan(/[（(]([^）)\n]{2,20})[）)]/g, m=>m[1]);                            // 括号里的补充说明
-  scan(/[「『“"]([^」』”"\n]{2,20})[」』”"]/g, m=>m[1]);                     // 引号内的词
-  // 顿号/逗号列举出的短术语（"堆、虚拟机栈、方法区" 这类最常见的答案结构）
-  t.split(/[、，,；;]/).forEach(seg => {
-    const s = seg.trim().replace(/^[\s。.：:]+|[\s。.：:]+$/g, '');
-    if(s.length < 2 || s.length > 8) return;
-    if(/[（）()【】「」“”"'`*#：:]/.test(s)) return;
-    if(/^(以及|等等|例如|因为|所以|但是|如果|可以|需要|并且|而且|同时|另外|其中|主要|一般|通常|就是)/.test(s)) return;
-    push(s);
-  });
-  return out.slice(0, target);
-}
-// 目标挖空数：按答案长度自适应，约每 35 字挖 1 个，6~16 之间（答案越长挖得越多）
-function clozeTargetCount(answer){
-  const len = String(answer||'').length;
-  return Math.max(6, Math.min(16, Math.round(len/35)));
-}
-// 命中判定：用户写的答案里是否提到了这个关键点。
-// 1) 归一化（去大小写/空白/常见标点）后直接包含 —— 原词照抄
-// 2) 近似改写：关键点去重字符 ≥80% 都出现在答案里（仅 3 字以上启用：短词差一个字含义就变）
-function clozeHit(userAnswer, anchor){
-  const f = s => String(s||'').toLowerCase().replace(/[\s，。、,.!！?？;；:'"·\-_()`“”‘’\[\]【】（）()「」{}*|\\/]/g,'');
-  const u = f(userAnswer), a = f(anchor);
-  if(!a || !u) return false;
-  if(u.includes(a)) return true;
-  if(a.length < 3) return false;
-  const chars = Array.from(new Set(a.split('')));
-  let hit = 0;
-  chars.forEach(ch => { if(u.includes(ch)) hit++; });
-  return hit / chars.length >= 0.8;
-}
-// 覆盖率检测：把参考答案抽出的关键点逐个比对用户答案，分成"说到 / 没说"两组
-function clozeCoverage(userAnswer, anchors){
-  const hits = [], misses = [];
-  anchors.forEach(w => (clozeHit(userAnswer, w) ? hits : misses).push(w));
-  return { hits, misses, total: anchors.length, pct: anchors.length ? hits.length/anchors.length : 0 };
-}
-function renderCloze(c){
-  if(!cloze.queue.length){
-    cloze.queue = clozeQueueBuild();
-    cloze.index = 0; cloze.qid = null; cloze.answer = '';
-    cloze.checked = false; cloze.result = null;
-    cloze.statHit = 0; cloze.statAnchor = 0; cloze.doneCount = 0;
-    if(!cloze.queue.length){
-      const none = totalQuestions() === 0;
-      c.innerHTML = `<div class="flash-empty"><div class="big">${none?'✍️':'✅'}</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">${none?'题库还是空的':'本轮的题都还没到复习时间'}</div><div style="color:var(--muted)">${none?'先在「文档」里导入题库，再回来做空白页回忆。':'回忆训练按覆盖率 + 遗忘曲线安排下次复习：练过的题要等到期才会再出现。'}</div></div>`;
-      return;
-    }
-  }
-  if(cloze.index >= cloze.queue.length) return renderClozeDone(c);
-  const qid = cloze.queue[cloze.index];
-  const q = questionById(qid);
-  if(!q){ cloze.queue.splice(cloze.index,1); return renderCloze(c); }
-  const tot = cloze.queue.length, idx = cloze.index+1;
-  cloze.qid = qid;
-  const basePct = cloze.statAnchor ? Math.round(cloze.statHit/cloze.statAnchor*100) : null;
-  const meta = basePct===null ? '凭记忆写出完整答案' : `本场覆盖 <b style="color:var(--text)">${basePct}%</b>`;
-  const bar = `<div class="pbar"><i style="width:${Math.round((idx-1)/tot*100)}%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></i></div>`;
-
-  /* ---- 未提交：空白页自由回忆，不给任何提示 ---- */
-  if(!cloze.checked){
-    c.innerHTML = `
-      <div class="feature-wrap">
-        ${bar}
-        <div class="pmeta"><span>✍️ 空白页回忆 · 第 ${idx}/${tot} 题</span><span>${meta}</span></div>
-        <div class="cloze-card">
-          <div class="ptitle">${renderTitle(q.title)}</div>
-          <label class="recall-label" for="clozeAnswer">✍️ 凭记忆把答案完整写出来 —— 写完之前别翻答案</label>
-          <textarea class="answer-area" id="clozeAnswer" style="min-height:220px" placeholder="试着从零讲一遍：先给结论，再讲原理、细节和例外…" aria-label="凭记忆写出答案">${esc(cloze.answer||'')}</textarea>
-        </div>
-        <div class="pcontrols">
-          <button class="btn primary" id="clozeCheck">✅ 提交并对照答案</button>
-          <button class="btn ghost" id="clozeSkip">跳过此题</button>
-        </div>
-        <div class="pstatus">空白页回忆不给任何提示：检索越费力，记忆越牢。提交后本地会检测你覆盖了多少个关键点，并据此安排下次复习 —— 全程不消耗 AI 额度（Ctrl+Enter 也能提交）。</div>
-      </div>`;
-    const ta = $('#clozeAnswer');
-    ta.oninput = () => { cloze.answer = ta.value; };
-    ta.onkeydown = e => { if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); $('#clozeCheck').click(); } };
-    // 刻意不自动聚焦：移动端一进页面就弹键盘会挡住题目，先让用户读完题再自己点输入框
-    $('#clozeSkip').onclick = () => {
-      _clozeSkipped.add(qid);   // 下一轮排到队尾，不再连着出现
-      cloze.index++; cloze.qid = null; cloze.answer = '';
-      cloze.checked = false; cloze.result = null;
-      renderAll();
-    };
-    $('#clozeCheck').onclick = () => {
-      const text = (cloze.answer||'').trim();
-      if(!text){ toast('先写下你记得的内容，哪怕只有几句'); return; }
-      const anchors = clozeHeuristic(q.answer, clozeTargetCount(q.answer));   // 本地抽关键点，零 token
-      const r = clozeCoverage(text, anchors);
-      r.graded = false;
-      cloze.checked = true;
-      cloze.doneCount++;
-      if(r.total >= 3){
-        r.graded = true;   // 覆盖率够用：直接自动评分，不劳用户自评
-        cloze.statHit += r.hits.length; cloze.statAnchor += r.total;
-        clozeGrade(qid, clozeRateFromCoverage(r.hits.length, r.total));
-      }
-      cloze.result = r;
-      renderAll();
-    };
-    return;
-  }
-
-  /* ---- 已提交：覆盖率反馈 + 我的回答 / 参考答案对照 ---- */
-  const r = cloze.result || { hits:[], misses:[], total:0, pct:0, graded:true };
-  const pct = Math.round((r.pct||0)*100);
-  const tone = pct>=70 ? 'var(--good)' : pct>=40 ? 'var(--accent2)' : 'var(--warn)';
-  const coverBlock = `
-        <div class="cover-card">
-          <div class="cover-head">
-            <span class="cover-num" style="color:${tone}">${r.hits.length}<span style="font-size:14px;color:var(--muted);font-weight:600">/${r.total}</span></span>
-            <span class="cover-sub">关键点已覆盖 · <b style="color:${tone}">${pct}%</b></span>
-          </div>
-          <div class="pbar" style="margin:10px 0 0"><i style="width:${pct}%;background:${tone}"></i></div>
-          <div class="anchor-chips">
-            ${r.hits.map(w=>`<span class="anchor-chip ok">✓ ${esc(w)}</span>`).join('')}
-            ${r.misses.map(w=>`<span class="anchor-chip miss">✗ ${esc(w)}</span>`).join('')}
-          </div>
-          ${r.misses.length?`<div class="cover-tip">✗ 的这几处是这次没说到（或说得不到位）的 —— 下一轮重点回忆它们</div>`:'<div class="cover-tip">全部关键点都说到了，很稳</div>'}
-        </div>`;
-  const selfBlock = `
-        <div class="cover-card">
-          <div class="cover-sub">这题的答案太短（或大多是代码），本地关键词规则没能抽出足够的关键点。请自己对照下面的参考答案，给这次回忆评个档：</div>
-          <div class="grade-row" style="margin-top:12px">
-            <button class="grade-btn g-good${r.selfRate===Rate.GOOD?' sel':''}" data-g="${Rate.GOOD}"${r.graded?' disabled':''}>😐 记得</button>
-            <button class="grade-btn g-mid${r.selfRate===Rate.HARD?' sel':''}" data-g="${Rate.HARD}"${r.graded?' disabled':''}>🤔 模糊</button>
-            <button class="grade-btn g-bad${r.selfRate===Rate.AGAIN?' sel':''}" data-g="${Rate.AGAIN}"${r.graded?' disabled':''}>😰 忘了</button>
-          </div>
-        </div>`;
-  c.innerHTML = `
-    <div class="feature-wrap">
-      ${bar}
-      <div class="pmeta"><span>✍️ 空白页回忆 · 第 ${idx}/${tot} 题</span><span>${meta}</span></div>
-      <div class="cloze-card">
-        <div class="ptitle">${renderTitle(q.title)}</div>
-        ${r.total >= 3 ? coverBlock : selfBlock}
-        <div class="rv show recall-self"><div class="rv-in"><div class="label">✍️ 我的回答</div><div class="cloze-body">${renderAnswer(cloze.answer)}</div></div></div>
-        <div class="rv ref-answer show"><div class="rv-in"><div class="label">参考答案</div><div class="cloze-body">${renderAnswer(q.answer)}</div></div></div>
-      </div>
-      <div class="pcontrols">
-        <button class="btn primary" id="clozeNext">${cloze.index===tot-1?'🏁 完成本轮':'下一题 →'}</button>
-      </div>
-      <div class="pstatus">${r.total >= 3 ? `覆盖率 ${pct}% 已写进本模式的复习计划` : (r.graded ? '自评已记录，复习时间已排好' : '请先在上方自评，复习时间才会排进计划')}<br>关键点由本地规则抽取（术语 / 数字 / 引号词 / 顿号列举），只作参考。本模式的复习计划与「记忆」模式完全独立，互不影响。</div>
-    </div>`;
-  if(r.total < 3 && !r.graded){
-    c.querySelectorAll('.grade-btn[data-g]').forEach(b => b.onclick = () => {
-      if(cloze.result.graded) return;   // 评分只记一次，避免连点重复推进 FSRS
-      cloze.result.graded = true;
-      cloze.result.selfRate = +b.dataset.g;
-      clozeGrade(qid, cloze.result.selfRate);
-      renderAll();
-    });
-  }
-  $('#clozeNext').onclick = () => {
-    cloze.index++; cloze.qid = null; cloze.answer = '';
-    cloze.checked = false; cloze.result = null;
-    renderAll();
-  };
-}
-function renderClozeDone(c){
-  const pct = cloze.statAnchor ? Math.round(cloze.statHit/cloze.statAnchor*100) : 0;
-  c.innerHTML = `
-    <div class="feature-wrap">
-      <div class="done-card">
-        <div class="big">✍️</div>
-        <h3>本轮空白页回忆完成！</h3>
-        <div class="sub">共回忆 <b style="color:var(--accent3)">${cloze.doneCount}</b> 题${cloze.statAnchor?` · 关键点覆盖 <b style="color:var(--accent3)">${pct}%</b>（${cloze.statHit}/${cloze.statAnchor}）`:''}</div>
-        <div class="pcontrols" style="justify-content:center">
-          <button class="btn" id="clozeAgain">🔄 再练一轮</button>
-          <button class="btn" id="clozeBack">返回总览</button>
-        </div>
-      </div>
-      <div class="pstatus">回忆越吃力，记得越牢。没覆盖好的题已经按覆盖率重排了复习时间，下一轮会轮到它们。</div>
-    </div>`;
-  $('#clozeAgain').onclick = () => { cloze.queue = []; _clozeSkipped.clear(); renderAll(); };
-  $('#clozeBack').onclick = () => { view = Views.OVERVIEW; renderAll(); };
 }
 
 /* =========================================================
@@ -4030,7 +4028,7 @@ function renderSearch(c){
       const snip = (q.answer||'').replace(/\n/g,' ').slice(0,90);
       return `<div class="sr-item">
         <div class="src">${renderTitle(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
-        <div class="qt" data-jump="${esc(q.id)}">${renderTitle(q.title)}</div>
+        <div class="qt" role="button" tabindex="0" data-jump="${esc(q.id)}">${renderTitle(q.title)}</div>
         <div class="snip">${esc(snip)}${snip.length>=90?'…':''}</div>
       </div>`;
     }).join('');
@@ -4046,11 +4044,18 @@ function renderSearch(c){
 let _persistedView = null;
 let _inAnimTimer = null;   // 入场动画收尾定时器：连续切视图时先清旧的，否则上一轮的定时器会把新一轮动画从中间掐断
 function renderAll(){
+  const _prevView = _persistedView;   // 记旧视图，用于判断导航方向
+  // 先渲染、再落状态：renderContent 在数据缺失时会把 view 改写（题目/文档被删后回退到总览），
+  // 若先按旧 view 写 sessionStorage 与播报，就会留下"上次视图指向一个不存在的页"的脏值
+  renderContent();
   const viewChanged = _persistedView !== view;
-  // 这里是渲染主入口，sessionStorage 在隐私模式/受限 WebView 下写入会抛异常，
-  // 不加保护会让后面的 renderStatsBar/renderContent 全部不执行（整页停在旧内容）
-  if(viewChanged){ try{ sessionStorage.setItem('lastView', view); }catch(_){} _persistedView = view; }
-  renderStatsBar(); renderContent();
+  if(viewChanged){
+    // sessionStorage 在隐私模式/受限 WebView 下写入会抛异常，包一层避免影响后续渲染
+    try{ sessionStorage.setItem('lastView', view); }catch(_){}
+    _persistedView = view;
+  }
+  // 统计条放在 renderContent 之后：tab 的高亮归属依赖最终视图（可能已被渲染层改写）
+  renderStatsBar();
   const c=$('.content');
   if(c){
     // 列表类视图（文档页/题目浏览页）在原地编辑、删除后要保住滚动位置，
@@ -4058,11 +4063,20 @@ function renderAll(){
     const keepScroll = !viewChanged && (view===Views.DOCS || view===Views.BROWSE);
     if(!keepScroll) c.scrollTop=0;
     if(viewChanged){
+      // 方向性入场：按标签左右顺序决定新页从哪侧滑入（往右切→右侧滑入，往左切→左侧），建立横向空间连续感
+      const NAVORDER = [Views.OVERVIEW,Views.DOCS,Views.ANALYTICS,Views.GRILL,Views.MEMORY,Views.HOT];
+      const navKey = x => x===Views.SEARCH ? Views.OVERVIEW
+                      : x===Views.BROWSE ? (browseFrom||Views.DOCS)
+                      : (x===Views.PRACTICE||x===Views.MOCK) ? (practiceFrom||Views.DOCS) : x;
+      const _from = NAVORDER.indexOf(navKey(_prevView)), _to = NAVORDER.indexOf(navKey(view));
+      c.dataset.nav = (_from<0||_to<0||_from===_to) ? '' : (_to>_from ? 'fwd' : 'back');
+      // 屏幕阅读器播报当前页（视觉隐藏 aria-live 区）
+      const sa = $('#srAnnounce'); if(sa) sa.textContent = (VIEW_NAMES[view]||'') + ' 页面';
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
       c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
       c.classList.add('in');
       // 最长一路动画是 .34s 延迟 + .55s 时长 ≈ .89s，留足余量再摘 class；
-      // 先 clear 上一轮：否则快速连点标签时，旧定时器会在新动画播到一半时移除 class 导致入场被掐断
+      // 先 clear 上一轮：否则快速连点标签时，旧定时器会在新动画播到一半时移除 class 导致入场动画中断
       clearTimeout(_inAnimTimer);
       _inAnimTimer = setTimeout(()=>{ _inAnimTimer = null; c.classList.remove('in'); }, 1000);
     }
@@ -4080,8 +4094,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     // 保留 _history：只是重进标签页，不该把之前的撤销栈丢掉（否则刚评完分切走再回来就没法撤销了）
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:(memory._history||[])}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
-    // 重进回忆页 = 重新开始一轮：队列重建、会话内的跳过记录清空
-    else if(v===Views.CLOZE){ _clozeSkipped.clear(); cloze={queue:[],index:0,qid:null,answer:'',checked:false,result:null,statHit:0,statAnchor:0,doneCount:0}; view=Views.CLOZE; renderAll(); }
+    // 趁热打铁：重开该页 = 用当前热榜重建本轮游标（inPass=false 让 renderHot 重新快照）
+    else if(v===Views.HOT){ hot.inPass=false; hot.index=0; hot.flipped=false; hot.cleared=0; view=Views.HOT; renderAll(); }
     else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
@@ -4243,7 +4257,9 @@ let _uStaticTheme = '';   // 静态主题标记：只画一帧、不进逐帧循
 const STATIC_CANVAS_THEMES = [];
 const _spriteCache = new Map();
 // 「粒子避让区」：数据可视化区域（热力图/预测图等）标记后，粒子进入时渐隐——
-// 星点与图表格子混在一起会被误读成数据点；只隐藏粒子、保留背景光晕，边界留渐隐带避免生硬矩形
+// 星点与图表格子混在一起会被误读成数据点；只隐藏粒子、保留背景光晕，边界留渐隐带避免生硬矩形。
+// 落地方式：blit/blitRot 统一乘 maskFactor()，直接描边填充的粒子（冰晶、星芒、连线）各自取样；
+// 大面积的氛围光（银河带、光柱、纸纹、水波）刻意不参与 —— 它们是画面基底，不是"会被误读成数据"的点
 let _uMaskEls = [], _uMaskRects = [];
 let _uMaskStale = false;   // 遮罩矩形是否需要重算（滚动/窗口变化时置脏，避免每帧 getBoundingClientRect 强制布局）
 const _MASK_FEATHER = 26;   // 边界渐隐带宽度（逻辑像素）
@@ -4263,6 +4279,8 @@ function refreshParticleMaskRects(){
   }
   _uMaskRects = out;
 }
+// 逐粒子用的快速入口：没有遮罩时只做一次 length 判断，不进循环（非进度页零成本）
+function maskFactor(x, y){ return _uMaskRects.length ? maskAlphaAt(x, y) : 1; }
 // 0~1 可见系数：完全落在任一遮罩区内为 0，距边界 _MASK_FEATHER 以上为 1
 function maskAlphaAt(x, y){
   let a = 1;
@@ -4339,8 +4357,9 @@ function applyTheme(name, opts){
   // opts.persist === false：只做"临时应用"，不写偏好（避免解析期用默认主题覆盖用户保存的 img-bg）
   if(!opts || opts.persist !== false) safeLocalSet('learnAppTheme', name);
 
-  // 3.5 状态栏/任务栏颜色跟随主题
+  // 3.5 状态栏/任务栏颜色跟随主题 + 声明 color-scheme（让原生表单控件/滚动条/UA 样式随深浅切换）
   try{
+    document.documentElement.style.colorScheme = isLightColor(t.bg) ? 'light' : 'dark';
     const metaTc = document.querySelector('meta[name="theme-color"]');
     if(metaTc) metaTc.content = (t.bg && t.bg.charAt(0)==='#') ? t.bg : '#0d0e17';
   }catch(e){ warnSilent('同步 theme-color 失败', e); }
@@ -4364,6 +4383,36 @@ function applyTheme(name, opts){
       drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
     }
   }, 50);
+}
+
+// 主题选择：用 View Transitions API 做「从点击点向全屏」的圆形扩散，修掉"背景 .5s 渐变、卡片瞬间硬切"的错位。
+// 不支持 VT（旧内核）或用户开了减动效时，回退为直接应用。
+function pickTheme(id, evt){
+  const root = document.documentElement;
+  const commit = () => { applyTheme(id); hideModal($('#themePopup')); };
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if(typeof document.startViewTransition === 'function' && !reduce){
+    const x = (evt && evt.clientX) || (innerWidth - 30), y = (evt && evt.clientY) || 30;
+    const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    root.classList.add('theme-vt');
+    const vt = document.startViewTransition(commit);
+    if(vt && vt.ready && vt.ready.then){
+      vt.ready.then(() => {
+        try{
+          root.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+            { duration: 520, easing: 'cubic-bezier(.22,.61,.36,1)', pseudoElement: '::view-transition-new(root)' }
+          );
+        }catch(_){}
+      }).catch(()=>{});
+      if(vt.finished && vt.finished.finally) vt.finished.finally(()=>root.classList.remove('theme-vt'));
+      else root.classList.remove('theme-vt');
+    } else {
+      root.classList.remove('theme-vt');
+    }
+  } else {
+    commit();
+  }
 }
 
 // ======== 主题选择器 UI 构建 ========
@@ -4398,6 +4447,7 @@ function buildThemeGrid(filterGroup){
       if(!bgRow || filterGroup==='custom') return;
       const card = document.createElement('div');
       card.className = 'theme-card';
+      card.tabIndex = 0; card.setAttribute('role','button');   // 主题卡是纯 div：不补 tabindex 键盘永远选不了主题
       card.dataset.theme = id;
       const label = safeLocalGet('customBgLabel', '') || cfg.name;
       card.innerHTML = `${themeSwatchHTML(id)}`;
@@ -4405,7 +4455,7 @@ function buildThemeGrid(filterGroup){
       _nameEl.className = 'tc-name';
       _nameEl.textContent = label;
       card.appendChild(_nameEl);
-      card.onclick = ()=>{ applyTheme(id); hideModal($('#themePopup')); };
+      card.onclick = (e)=>{ pickTheme(id, e); };
       if(id===currentTheme) card.classList.add('sel');
       bgRow.appendChild(card);
       return;
@@ -4414,9 +4464,10 @@ function buildThemeGrid(filterGroup){
     if(filterGroup && cfg.group !== filterGroup) return;
     const card = document.createElement('div');
     card.className = 'theme-card';
+    card.tabIndex = 0; card.setAttribute('role','button');
     card.dataset.theme = id;
     card.innerHTML = `${themeSwatchHTML(id)}<span class="tc-name">${cfg.name}</span>`;
-    card.onclick = ()=>{ applyTheme(id); hideModal($('#themePopup')); };
+    card.onclick = (e)=>{ pickTheme(id, e); };
     if(id===currentTheme) card.classList.add('sel');
     grid.appendChild(card);
   });
@@ -4628,6 +4679,15 @@ if(uploadBgBtn){
       applyTheme('aurora', {persist:false});   // 临时兜底主题：不能覆盖用户已保存的 img-bg 偏好
     } else if(saved){
       applyTheme(saved);
+    } else {
+      // 从未手动选过主题：跟随系统深浅给一个默认（浅色系统→素笺，深色→极光），并实时跟随直到用户手动选择
+      const _light = !!(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+      applyTheme(_light ? 'paper' : 'aurora', {persist:false});
+      try{
+        const mq = matchMedia('(prefers-color-scheme: light)');
+        const onSys = () => { if(savedThemeId()) return; applyTheme(mq.matches ? 'paper' : 'aurora', {persist:false}); };
+        if(mq.addEventListener) mq.addEventListener('change', onSys); else if(mq.addListener) mq.addListener(onSys);
+      }catch(_){}
     }
   }catch(e){ warnSilent('应用已保存主题失败', e); }
 })();
@@ -4641,28 +4701,41 @@ function toggleSetPanel(head){
   const isOpen=section.classList.contains('open');
   document.querySelectorAll('.set-section').forEach(s=>{
     s.classList.remove('open');
+    const hd = s.querySelector('.set-head'); if(hd) hd.setAttribute('aria-expanded','false');
     const body=s.querySelector('.rv'); if(body) body.classList.remove('show');
   });
   if(!isOpen){
     section.classList.add('open');
+    if(head) head.setAttribute('aria-expanded','true');
     const body=section.querySelector('.rv'); if(body) body.classList.add('show');
   }
 }
 // 折叠面板的点击绑定：原先写在 HTML 的 onclick 属性里（要依赖 CSP 的 'unsafe-inline'），统一挪到 JS，
 // 与 AI 分析块的按钮保持同一种做法
-document.querySelectorAll('.set-head').forEach(h => { h.onclick = () => toggleSetPanel(h); });
+document.querySelectorAll('.set-head').forEach(h => {
+  h.onclick = () => toggleSetPanel(h);
+  // 原来是纯 div：鼠标点得到、键盘永远到不了（CSS 的 :focus-visible 白名单里列了它，但它不可聚焦）
+  h.tabIndex = 0; h.setAttribute('role','button'); h.setAttribute('aria-expanded','false');
+});
 // 数据弹窗
 $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
 
 // AI API 配置（地址 / Key / 模型名全部手填）
 let _aiCfgSaveTimer=null;   // AI 配置保存防抖
+// 立即落盘：防抖窗口内关页面/切后台时，刚输入的 Key/模型名不会丢（原先只有进度表会 flush）
+function flushAiCfgSave(){
+  if(!_aiCfgSaveTimer) return;
+  clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=null;
+  Store.saveApiConfig(aiConfig);
+}
 // 把三个输入框的当前内容同步到 aiConfig（程序化赋值 .value 不会触发 input 事件，需要时手动调用）
 function syncAiConfigFromUI(){
   if(!$('#aiUrl')) return aiConfig;
   aiConfig={url:$('#aiUrl').value.trim(),key:_safe.encode($('#aiKey').value.trim()),model:$('#aiModel').value.trim()};
   if(!aiConfig.url&&!aiConfig.key&&!aiConfig.model) aiConfig=null;
-  clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=setTimeout(()=>Store.saveApiConfig(aiConfig), 400);
+  clearTimeout(_aiCfgSaveTimer);
+  _aiCfgSaveTimer=setTimeout(()=>{ _aiCfgSaveTimer=null; Store.saveApiConfig(aiConfig); }, 400);
   return aiConfig;
 }
 async function loadApiCfgUI(){
@@ -4694,6 +4767,24 @@ $('#exportMDBtn').onclick = () => {
 };
 
 $('#importBtn').onclick = () => { $('#fileInput').value=''; $('#fileInput').click(); };
+// 读取文本：先严格 UTF-8，失败再试 GBK（Windows 记事本/老笔记软件的常见编码），最后回退宽松 UTF-8。
+// 原来是 readAsText 直接按 UTF-8 解，GBK 的 .md/.txt 会整篇乱码且没有任何提示
+function readFileText(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const buf = r.result;
+      try{ return res(new TextDecoder('utf-8', {fatal:true}).decode(buf)); }catch(_){}
+      try{
+        const t = new TextDecoder('gbk').decode(buf);   // 某些内核不支持该编码，会抛 RangeError
+        if(t && t.indexOf('\uFFFD') === -1) return res(t);
+      }catch(_){}
+      res(new TextDecoder('utf-8').decode(buf));
+    };
+    r.onerror = () => rej(r.error || new Error('读取失败'));
+    r.readAsArrayBuffer(file);
+  });
+}
 $('#fileInput').onchange = async e => {
   const files = [...e.target.files]; if(!files.length) return;
   // 先检查总容量
@@ -4702,25 +4793,25 @@ $('#fileInput').onchange = async e => {
   const ok = await checkStorageLimit(totalSize);
   if(!ok){ $('#fileInput').value=''; return; }
   // 逐个导入
-  let imported=0, failed=0;
+  let imported=0, failed=0; const failedNames=[];
   for(const file of files){
     try{
-      const text = await new Promise((res,rej)=>{
-        const r=new FileReader();
-        r.onload=()=>res(String(r.result));
-        r.onerror=rej;
-        r.readAsText(file);
-      });
+      const text = await readFileText(file);
       const looksJson = /^\s*[[{]/.test(text);
       const isMd = /\.(md|markdown|txt)$/i.test(file.name) || (!looksJson && /\n#{1,6}\s+/.test(text));
       if(isMd) importMarkdownDoc(text, file.name);
       else importJsonDocs(text);
       imported++;
-    }catch(err){ failed++; }
+    }catch(err){
+      // 原先只 failed++ 就吞掉了：用户看到"0 个成功"却不知道是哪个文件、为什么失败
+      failed++; failedNames.push(file.name);
+      warnSilent('导入失败：' + file.name, err);
+    }
   }
   hideModal($('#dataModal'));
   renderAll();
-  toast(`导入完成：${imported} 个文件成功${failed?'，'+failed+' 个失败':''}，共 ${totalQuestions()} 题`);
+  const failInfo = failed ? `，${failed} 个失败（${failedNames.slice(0,3).join('、')}${failedNames.length>3?'…':''}）` : '';
+  toast(`导入完成：${imported} 个文件成功${failInfo}，共 ${totalQuestions()} 题`);
 };
 
 // 导入 JSON（格式 {documents:[{id,title,questions:[{title,answer}]}]}，可含 progress/clears/order）
@@ -4728,33 +4819,37 @@ function importJsonDocs(text){
   const data = JSON.parse(text);
   if(!data.documents || !Array.isArray(data.documents)) throw new Error('JSON 格式不符：缺少 documents 数组');
   const byId = new Map(DOCS.map(d=>[d.id,d]));
-  let added=0, replaced=0;
+  let added=0, replaced=0, skipped=0;
   data.documents.forEach(nd=>{
-    if(!nd.id || !nd.title || !Array.isArray(nd.questions)) return;
+    // 形状不符（缺 id/title/questions）：跳过并计数，不能静默丢 —— 否则用户只看到"新增 0 篇"
+    if(!nd.id || !nd.title || !Array.isArray(nd.questions)){ skipped++; return; }
     const clone = { ...nd, questions: (nd.questions||[]).map((q, qi) => ({ ...q, id: q.id || (nd.id + '#' + (qi+1)) })) };
     if(byId.has(nd.id)){ byId.set(nd.id, clone); replaced++; }
     else { byId.set(nd.id, clone); added++; }
   });
   DOCS = normalizeDocs([...byId.values()]);
   if(data.progress && typeof data.progress==='object'){ PROGRESS = Object.assign({}, PROGRESS, data.progress); }
-  if(data.clozeP && typeof data.clozeP==='object'){ CLOZEP = Object.assign({}, CLOZEP, data.clozeP); }   // 回忆模式的独立计划
   if(data.clears && typeof data.clears==='object'){ CLEARS = Object.assign({}, CLEARS, data.clears); }
   const ids = new Set(DOCS.map(d=>d.id));
-  // 如果导入数据自带顺序且和本地不同，询问是否采用；否则保持本地顺序
+  let orderFromImport = false;
+  // 导入数据自带顺序就采用它，否则保持本地顺序
   if(data.order && Array.isArray(data.order)){
     const importOrder = data.order.filter(id=>ids.has(id));
     const extras = ORDER.filter(id=>ids.has(id)&&!importOrder.includes(id));
-    ORDER = [...new Set([...importOrder, ...extras])];   // 去重：导入的 order 含重复 id 会导致文档重复渲染
+    ORDER = [...new Set([...importOrder, ...extras])];   // 去重：重复 id 会让同一篇文档被渲染两次
+    orderFromImport = true;
   } else {
     ORDER = (ORDER||[]).filter(id=>ids.has(id));
   }
   // 本地 ORDER 中不存在的新文档追加到末尾
   DOCS.forEach(d=>{ if(!ORDER.includes(d.id)) ORDER.push(d.id); });
+  applyOrder();   // 顺序要当场生效，不能只存下来等下次启动
   // 清理孤立进度（同 id 文档被替换后，旧题目的进度残留会让统计虚高）
   {const allIds=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allIds.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allIds.has(qid))delete PROGRESS[qid];});}
-  saveDocs(); Store.saveProgress(PROGRESS); Store.saveClozeP(CLOZEP); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
+  saveDocs(); Store.saveProgress(PROGRESS); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
+  if(orderFromImport) Store.saveOrderCustom(true);   // 记住"顺序由导入数据决定"，下次启动仍按它排（这个开关原来是只读死值）
   invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
-  toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇，现共 ${totalQuestions()} 题`);
+  toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇${skipped?`、跳过 ${skipped} 篇（缺少 id/title/questions）`:''}，现共 ${totalQuestions()} 题`);
 }
 
 // 导入 Markdown：从笔记导出的 .md 直接变成一篇文档
@@ -4825,7 +4920,6 @@ function parseMarkdownToDoc(text, fallbackTitle){
 $('#resetBtn').onclick = async () => {
   if(await confirmDialog('确定仅清除学习进度（已看/掌握标记）？题目数据与通关次数保留。')){
     PROGRESS = {}; await Store.saveProgress(PROGRESS);
-    CLOZEP = {}; await Store.saveClozeP(CLOZEP);   // 回忆训练的独立复习计划一并清掉
     invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
     hideModal($('#dataModal')); renderAll(); toast('学习进度已清除');
   }
@@ -4835,7 +4929,10 @@ $('#resetBtn').onclick = async () => {
 async function deleteDocument(docId){
   const d = docById(docId); if(!d) return;
   if(!await confirmDialog(`确定删除文档「${d.title}」及其全部题目？`)) return;
-  d.questions.forEach(q=>{ delete PROGRESS[q.id]; dropClozePlan(q.id); });
+  // 只在“文档网格页”内删除时做 FLIP 补位；从浏览页删整档会切到总览（视图切换自带入场），无需 FLIP
+  const card = (view===Views.DOCS) ? document.querySelector('.content .q[data-godoc="'+CSS.escape(docId)+'"]') : null;
+  flipAway(card, () => {
+  d.questions.forEach(q=>{ delete PROGRESS[q.id]; });
   DOCS = DOCS.filter(x=>x.id!==docId); saveDocs(); saveProgress();
   delete CLEARS[docId]; Store.saveClears(CLEARS);
   ORDER = ORDER.filter(id=>id!==docId); Store.saveOrder(ORDER);
@@ -4844,13 +4941,12 @@ async function deleteDocument(docId){
   // 如果正在刷该文档的题，重置刷题状态
   if(practice.scope===docId){ practice={order:[],index:0,scope:null,done:false,practiced:new Set(),revealed:new Set()}; }
   hideModal($('#dataModal')); renderAll(); toast('已删除文档「'+d.title+'」');
+  });
 }
 async function clearAllDocs(){
   if(!await confirmDialog('确定删除全部文档和学习数据？此操作不可撤销。')) return;
   DOCS=[]; PROGRESS={}; CLEARS={}; ORDER=[]; saveDocs(); Store.saveProgress(PROGRESS);
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
-  // 题库清空后回忆模式的独立复习计划也失去意义：一并重置（避免下次建库时旧 qid 命中残留进度）
-  CLOZEP = {}; Store.saveClozeP(CLOZEP);
   invalidateMemQueue(); memory._history = [];   // 数据已清空，记忆队列缓存与撤销栈同步重置
   view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
@@ -4866,7 +4962,7 @@ function saveGiteeCfg(){safeLocalSet('giteeToken',_safe.encode($('#giteeToken').
   startAutoSyncTimer();   // 配置变更后立即启用/重置定时自动推送，无需重启页面
 }
 $('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
-$('#dataBtn').onclick = (e) => { e.stopPropagation(); $('#dataModal').classList.add('show'); loadApiCfgUI(); loadGiteeCfg(); renderPaceUI(); updateStorageUsage(); };
+$('#dataBtn').onclick = (e) => { e.stopPropagation(); showModal($('#dataModal')); loadApiCfgUI(); loadGiteeCfg(); renderPaceUI(); updateStorageUsage(); };
 async function updateStorageUsage(){
   const el = $('#storageUsage'); if(!el) return;
   try{
@@ -4880,15 +4976,18 @@ let _pushing = false;   // 推送互斥：弱网挂起时防止定时器再发�
 async function doPushToGist(token, gistId, onSuccess, onError){
   if(_pushing){ if(onError) onError('已有推送正在进行'); return false; }   // 早退也要回调，否则状态栏会一直停在"推送中…"
   _pushing = true;
-  const data={documents:DOCS,progress:PROGRESS,clozeP:CLOZEP,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
+  const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
+  // 趁热打铁：热榜单独一个文件（hot-data.json），与 learn-data.json 分开不混淆；
+  // 每次推送都整包带上两个文件（Gitee/GitHub 更新 gist 时，本次未提及的文件会被删除）
+  const hotStr = JSON.stringify({ hot: HOT, updatedAt: data.updatedAt });
   const dirtyStamp = _dirtyStamp;   // 推送开始时的脏标记快照
   const ctrl = new AbortController();
   const timeout = setTimeout(()=>ctrl.abort(), 30000);   // 30s 超时：弱网不再无限挂起
   try{
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
       method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'token '+token},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr}}}),
+      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr},'hot-data.json':{content:hotStr}}}),
       signal:ctrl.signal
     });
     if(resp.ok){
@@ -4977,13 +5076,17 @@ async function cloudPull(){
     if(!data || !Array.isArray(data.documents)){ $('#cloudStatus').textContent='❌ 云端数据结构异常'; toast('云端数据结构异常，已取消拉取'); return; }
     const newDocs = normalizeDocs(data.documents);
     const newProgress = (data.progress && typeof data.progress==='object') ? data.progress : {};
-    const newClozeP = (data.clozeP && typeof data.clozeP==='object') ? data.clozeP : {};
     const newOrder = Array.isArray(data.order) ? [...new Set(data.order)] : newDocs.map(d=>d.id);
     const newClears = (data.clears && typeof data.clears==='object') ? data.clears : {};
     // 先落库、全部成功后才覆盖内存：避免"提示拉取成功、实际没存进去，重载后回到旧数据"
-    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveClozeP(newClozeP)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
+    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
     if(!ok){ $('#cloudStatus').textContent='❌ 保存失败，本地数据未变'; toast('保存失败，本地数据未改变'); return; }
-    DOCS=newDocs;PROGRESS=newProgress;CLOZEP=newClozeP;ORDER=newOrder;CLEARS=newClears;
+    DOCS=newDocs;PROGRESS=newProgress;ORDER=newOrder;CLEARS=newClears;
+    // 趁热打铁：热榜在独立文件，缺失按空处理（兼容旧 gist）；拉取后重置本轮游标
+    {const _hf = gist.files['hot-data.json'];
+     HOT = [];   // 先清空，避免把本地旧热榜混进云端数据
+     if(_hf && _hf.content){ try{ const _hd = JSON.parse(_hf.content); if(_hd && Array.isArray(_hd.hot)) HOT = _hd.hot.filter(x=>x&&x.qid); }catch(_){ HOT = []; } }
+     saveHot(); hot.inPass = false; hot.index = 0; hot.cleared = 0; }
     // 清理孤立进度
     {const allQids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     buildIndex();
@@ -5023,7 +5126,13 @@ async function autoPush(){
   if(!token || !gistId || !_autoSyncDirty) return;
   if(!navigator.onLine) return;
   await doPushToGist(token, gistId,
-    () => { const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString(); }
+    () => { const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString(); },
+    (errMsg) => {
+      // 原来失败完全静默：弱网/Token 失效时用户会以为"一直在同步"（只在设置面板开着时提示，避免后台打扰）
+      warnSilent('自动推送失败：' + errMsg);
+      const dm = $('#dataModal'), el = $('#cloudStatus');
+      if(el && dm && dm.classList.contains('show')) el.textContent = '❌ 自动推送失败：' + errMsg;
+    }
   );
 }
 function startAutoSyncTimer(){
@@ -5092,15 +5201,13 @@ async function askPullOnStart(){
     if(!remote || !Array.isArray(remote.documents)){ toast('云端数据结构异常，已取消拉取'); return; }
     const newDocs = normalizeDocs(remote.documents);
     const newProgress = (remote.progress && typeof remote.progress==='object') ? remote.progress : {};
-    const newClozeP = (remote.clozeP && typeof remote.clozeP==='object') ? remote.clozeP : {};
     const newOrder = Array.isArray(remote.order) ? [...new Set(remote.order)] : newDocs.map(d=>d.id);
     const newClears = (remote.clears && typeof remote.clears==='object') ? remote.clears : {};
     // 先落库、成功后才覆盖内存
-    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveClozeP(newClozeP)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
+    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
     if(!ok){ toast('保存失败，本地数据未改变'); return; }
     DOCS = newDocs;
     PROGRESS = newProgress;
-    CLOZEP = newClozeP;
     ORDER = newOrder;
     CLEARS = newClears;
     // 清理孤立进度
@@ -5137,13 +5244,38 @@ document.addEventListener('keydown', e => {
     if(tp && tp.classList.contains('show')){ e.preventDefault(); hideModal(tp); return; }
     return;
   }
+  // Tab 焦点捕获：有对话框打开时，把 Tab 循环限制在最上层弹窗内部（aria-modal 的实际落实）
+  if(e.key==='Tab'){
+    const dlg = [$('#addModal'),$('#editModal'),$('#dataModal')].filter(el=>el&&el.classList.contains('show')).pop();
+    if(dlg){
+      const items = Array.from(dlg.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>el.offsetParent!==null);
+      if(items.length){
+        const first=items[0], last=items[items.length-1], cur=document.activeElement;
+        if(e.shiftKey && (cur===first || !dlg.contains(cur))){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && cur===last){ e.preventDefault(); first.focus(); }
+      }
+    }
+    return;
+  }
   // 顶部标签已加 tabindex="0"，支持键盘 Enter / 空格激活。
   // 注意：鼠标点击会让标签获得焦点，若空格一律触发标签，会吃掉记忆/八股/刷题里"空格"的原有快捷键，故此处让位
   const tabEl = e.target.closest && e.target.closest('.tab');
   if(tabEl && (e.key==='Enter' || e.key===' ')){
-    const spaceReserved = e.key===' ' && (view===Views.MEMORY || view===Views.MOCK || view===Views.PRACTICE);
+    const spaceReserved = e.key===' ' && (view===Views.MEMORY || view===Views.MOCK || view===Views.PRACTICE || view===Views.HOT);
     if(!spaceReserved){ e.preventDefault(); if(typeof tabEl.onclick === 'function') tabEl.onclick(); return; }
   }
+  // 通用键盘激活：主题卡 / 设置分区头 / 拷打模式卡与时长按钮 / 搜索结果条目
+  // 它们都是 role="button" + tabindex 的 div/span，浏览器没有原生激活行为，统一在这里补（.tab 已在上方单独处理）
+  const kbdEl = (e.target && e.target.closest) ? e.target.closest('[role="button"][tabindex]:not(.tab)') : null;
+  if(kbdEl && (e.key==='Enter' || e.key===' ')){
+    e.preventDefault();
+    if(typeof kbdEl.click === 'function') kbdEl.click();
+    return;
+  }
+  // 已聚焦在按钮/链接上时让位：否则 Tab 到「下一题」按钮后按空格，触发的是下面的"显示答案"而不是按钮本身。
+  // 顶部标签(.tab)除外 —— 它在上面已按 spaceReserved 规则处理，仍需落到各视图的快捷键分支。
+  const actEl = (e.target && e.target.closest) ? e.target.closest('button,a[href],summary,[role="button"]') : null;
+  if(actEl && !actEl.classList.contains('tab') && (e.key===' ' || e.key==='Enter')) return;
   // 忽略输入框和中文输入法组合输入（避免选字时误触）
   if(e.isComposing || (e.target.closest && e.target.closest('input,textarea,select'))) return;
   // 记忆模式：数字键 1-4 评分（5 兼容映射「简单」），Enter/空格 翻转卡片
@@ -5152,6 +5284,11 @@ document.addEventListener('keydown', e => {
     const rateKey = digit===5 ? Rate.EASY : digit;
     if(rateKey>=1&&rateKey<=4&&memory.flipped){ const btn = document.querySelector('.grade-btn[data-rate="'+rateKey+'"]'); if(btn) btn.click(); }
     else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; try{ applyMemFlip(); }catch(_){} }
+    return;
+  }
+  // 趁热打铁：Enter/空格 翻看答案（评分靠按钮 1=记住、2=还没）
+  if(view===Views.HOT){
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); const _hc=document.querySelector('.memory-card'); if(_hc) _hc.click(); }
     return;
   }
   if(view===Views.MOCK && !mock.done && mock.queue.length){
@@ -5163,13 +5300,12 @@ document.addEventListener('keydown', e => {
   if(!q) return;   // 题目已被删除：交给渲染层清理，这里不处理快捷键
   if(e.code==='Space'){ e.preventDefault(); toggleRevealP(q); }
   else if(e.code==='ArrowRight'){
-    markPracticed(q);
-    if(practice.index < practice.order.length-1){ practice.index++; renderAll(); }
-    else {
+    if(!practiceStep(1)){
+      markPracticed(q);
       if(canCompletePractice()) completeLevel(); else toast('请先用「下一题 / 上一题」把本文档题目都过一遍');
     }
   }
-  else if(e.code==='ArrowLeft'){ if(practice.index>0){ markPracticed(q); practice.index--; renderAll(); } }
+  else if(e.code==='ArrowLeft'){ practiceStep(-1); }
 });
 
 /* =========================================================
@@ -5433,20 +5569,16 @@ introStart();
   }
 
   PROGRESS = await Store.getProgress() || {};
-  CLOZEP = await Store.getClozeP() || {};   // 回忆训练的独立复习计划：与 PROGRESS 各存各的，互不影响
-  // 清理孤立进度：删除对应题目已不存在的进度条目（两个进度表分别清理）
+  HOT = loadHot();   // 趁热打铁：热榜从 localStorage 恢复（独立于记忆进度）
+  // 清理孤立进度：删除对应题目已不存在的进度条目
   (function cleanupOrphanProgress(){
     const allQids = new Set();
     DOCS.forEach(d => (d.questions||[]).forEach(q => allQids.add(q.id)));
-    let cleaned = false, cleanedCloze = false;
+    let cleaned = false;
     Object.keys(PROGRESS).forEach(qid => {
       if(!allQids.has(qid)){ delete PROGRESS[qid]; cleaned = true; }
     });
-    Object.keys(CLOZEP).forEach(qid => {
-      if(!allQids.has(qid)){ delete CLOZEP[qid]; cleanedCloze = true; }
-    });
     if(cleaned) Store.saveProgress(PROGRESS);
-    if(cleanedCloze) Store.saveClozeP(CLOZEP);
   })();
 
   // 一次性清理：旧版「挖空回忆」的 AI 词表缓存已随功能下线（现为纯本地抽关键点），释放存储空间
@@ -5465,9 +5597,8 @@ introStart();
     Store.saveProgress(PROGRESS);
   }
 
-  // 一次性修复：旧版本把"本地规则挑不出锚点"的题永久标记成 clozeNoAnchor，而当时的规则只认 ** 与 ` 
-  // （导入时已被 stripMarkdown 剥掉）→ 大量题被误判"无可挖空"、挖空功能几乎不可用。
-  // 现在只做"本次会话跳过"，这里把历史误标清掉，并把因此变成 {} 的进度条目一并删除。
+  // 一次性修复：清掉旧版挖空功能遗留的 clozeNoAnchor 标记（该标记会把题永久判为"无可挖空"），
+  // 并把因此变成 {} 的进度条目一并删除。
   if(!safeLocalGet('learnAppClozeFix_v1', '')){
     let fixed = 0;
     Object.keys(PROGRESS).forEach(qid => {
@@ -5480,7 +5611,7 @@ introStart();
     safeLocalSet('learnAppClozeFix_v1', '1');
   }
 
-  const custom = await Store.getOrderCustom();
+  const custom = await Store.getOrderCustom();   // 由"导入数据自带 order"置位（见 importJsonDocs）
   let ord = await Store.getOrder();
   if(!custom){
     ORDER = DOCS.map(d=>d.id);
@@ -5491,6 +5622,7 @@ introStart();
     DOCS.forEach(d=>{ if(!ORDER.includes(d.id)) ORDER.push(d.id); });
     await Store.saveOrder(ORDER);
   }
+  applyOrder();   // 顺序数据真正应用到渲染顺序上
   CLEARS = await Store.getClears() || {};
   await loadApiConfig();   // 等 AI 配置就绪：否则刚进页面就点 AI 按钮会误报"请先配置 AI API"
   renderAll();
@@ -5812,7 +5944,9 @@ function glowSprite(key, px, stops){
   return c;
 }
 function blit(ctx, spr, x, y, r, alpha){
-  const a = alpha * _uAlphaBase;
+  // 统一在贴图入口做"图表区避让"：原先只有星闪/松星两个主题自己调 maskAlphaAt，
+  // 其余 8 个动态主题的粒子照旧盖在热力图/预测图上，正是避让区要解决的问题
+  const a = alpha * _uAlphaBase * maskFactor(x, y);
   if(a <= 0.004 || r <= 0) return;
   ctx.globalAlpha = a > 1 ? 1 : a;
   ctx.drawImage(spr, x - r, y - r, r*2, r*2);
@@ -5825,12 +5959,13 @@ function blit(ctx, spr, x, y, r, alpha){
 function drawAurora(ctx,W,H,dt){
   const t = _uTime;
   for(const p of _uParticles){
+    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
     const tw = 0.5+0.5*Math.sin(t*p.speed+p.phase);
     const a = p.alpha*tw*0.9;
     const rgb = p.tint ? '125,207,255' : '192,202,245';
     const spr = glowSprite('aurS'+p.tint, 32, [0,`rgba(${rgb},1)`,0.5,`rgba(${rgb},0.22)`,1,'rgba(0,0,0,0)']);
     blit(ctx, spr, p.x, p.y, p.size*2.6, a);
-    ctx.fillStyle = `rgba(${rgb},${Math.min(1,a*1.25)})`;
+    ctx.fillStyle = `rgba(${rgb},${Math.min(1,a*1.25*ma)})`;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
@@ -5865,8 +6000,9 @@ function drawMidnight(ctx,W,H,dt){
   // 星点：冷白为主，少量淡金；高亮时刻补一圈光晕（比单纯放大更"闪"）
   for(const p of _uParticles){
     if(p.type!=='star') continue;
+    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
     const tw = 0.5+0.5*Math.sin(t*p.speed+p.phase);
-    const a = p.alpha*(0.35+0.65*tw);
+    const a = p.alpha*(0.35+0.65*tw)*ma;
     const rgb = p.tint ? '249,226,175' : '205,214,244';
     ctx.fillStyle = `rgba(${rgb},${a})`;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
@@ -5948,6 +6084,7 @@ function drawSunset(ctx,W,H,dt){
   for(const p of _uParticles){
     p.x += p.vx*f; p.y += p.vy*f;
     if(p.y<-40 || p.x<-40){ p.x = W*(0.35+Math.random()*0.75); p.y = H*(0.75+Math.random()*0.40); }
+    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;   // 星芒是直接描边，不经过 blit，需自己避让
     const X = p.x-bx, Y = p.y-by;
     const lx = SUNSET_CS*X + SUNSET_SN*Y;
     let lit = 0;
@@ -6052,7 +6189,10 @@ function drawParticle(ctx,W,H,dt){
       const d2 = dx*dx+dy*dy;
       if(d2<linkDist2){
         const k = 1-Math.sqrt(d2)/linkDist;   // 0(最远) → 1(最近)
-        if(k>0.03) buckets[k<0.34?0:k<0.67?1:2].push(a.x,a.y,b.x,b.y);
+        if(k<=0.03) continue;
+        // 连线按中点取样避让：落在图表卡片上的一段直接不画（同一条路径批量描边，无法逐段调透明度）
+        if(_uMaskRects.length && maskAlphaAt((a.x+b.x)*0.5, (a.y+b.y)*0.5) <= 0) continue;
+        buckets[k<0.34?0:k<0.67?1:2].push(a.x,a.y,b.x,b.y);
       }
     }
   }
@@ -6072,10 +6212,11 @@ function drawParticle(ctx,W,H,dt){
   // 原来按 sin 呼吸、并在最亮瞬间补一圈十字星芒——实测那两下"闪"观感很像噪点，不如恒定亮度干净。
   // 点与点之间的亮度层次由各自固定的 p.alpha（初始随机）提供，不需要靠时间调制
   for(const p of _uParticles){
+    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
     const rgb = PARTICLE_TINTS[p.tint] || PARTICLE_TINTS[0];
     const spr = glowSprite('parN'+p.tint, 32, [0,`rgba(${rgb},1)`,0.5,`rgba(${rgb},0.25)`,1,'rgba(0,0,0,0)']);
     blit(ctx, spr, p.x, p.y, p.size*2.8, p.alpha);
-    ctx.fillStyle = `rgba(${rgb},${Math.min(1,p.alpha*1.35)})`;
+    ctx.fillStyle = `rgba(${rgb},${Math.min(1,p.alpha*1.35*ma)})`;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.55,0,Math.PI*2); ctx.fill();
   }
 }
@@ -6180,12 +6321,13 @@ function drawGold(ctx,W,H,dt){
     p.y += p.vy*f; p.x += p.vx*f;
     if(p.y<-10){ p.y = H+10; p.x = Math.random()*W; }
     if(p.x<-10)p.x=W+10; if(p.x>W+10)p.x=-10;
+    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
     const pulse = Math.sin(t*p.speed+p.phase);
     const alpha = p.alpha*(0.4+0.6*(pulse+1)/2);
     const c = p.sparkle?'255,240,180':'220,180,100';
     const spr = glowSprite('goldD'+(p.sparkle?1:0),48,[0,`rgba(${c},1)`,0.5,`rgba(${c},0.2)`,1,'rgba(0,0,0,0)']);
     blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
-    ctx.fillStyle = `rgba(${c},${Math.min(1,alpha*1.1)})`;
+    ctx.fillStyle = `rgba(${c},${Math.min(1,alpha*1.1*ma)})`;
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
   }
 }
@@ -6288,7 +6430,8 @@ function drawShuangren(ctx,W,H,dt){
     fl.rot += fl.rotV*f;
     if(fl.y>H+12){ fl.y = -12; fl.x = Math.random()*W; }
     if(fl.x<-12) fl.x = W+12; if(fl.x>W+12) fl.x = -12;
-    const a = fl.alpha*_uAlphaBase;
+    const ma = maskFactor(fl.x, fl.y); if(ma <= 0) continue;   // 冰晶/细雪是直接描边填充，不经过 blit，需自己避让
+    const a = fl.alpha*_uAlphaBase*ma;
     if(a<=0.004) continue;
     if(fl.big){
       // 大晶体：六角骨架（主枝 + 每枝两对小分叉），中心亮核
@@ -6375,9 +6518,10 @@ function sparkleSprite(i){
 }
 // 带旋转的精灵贴图（blit 不支持旋转，而 sparkle 每个点都要各自转）
 function blitRot(ctx, spr, x, y, size, alpha, rot){
-  if(alpha<=0.004 || size<=0.4) return;
+  const a0 = alpha * maskFactor(x, y);
+  if(a0<=0.004 || size<=0.4) return;
   ctx.save();
-  ctx.globalAlpha = Math.min(1, alpha*_uAlphaBase);
+  ctx.globalAlpha = Math.min(1, a0*_uAlphaBase);
   ctx.translate(x,y);
   if(rot) ctx.rotate(rot);
   ctx.drawImage(spr, -size*0.5, -size*0.5, size, size);
@@ -6598,7 +6742,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '53';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v53）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
+const SW_VERSION = '56';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v56）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');

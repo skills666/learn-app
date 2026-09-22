@@ -65,7 +65,8 @@ console.log(`  setInterval: ${(all.match(/setInterval\(/g) || []).length} 处, s
 console.log('  addEventListener: ' + ((all.match(/addEventListener\(/g) || []).length) + ' 处');
 
 // 6. 疑似未被引用的 CSS 类（只报"整个文件里只出现一次"的类名，供人工判断）
-const styleBlock = (html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '';
+// 注释要先剥掉：注释里写的 `.flip-in-*` 这类"泛指写法"会被当成类名，长期留一条假报警
+const styleBlock = ((html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '').replace(/\/\*[\s\S]*?\*\//g, '');
 const body = html.slice(html.indexOf('</style>'));
 const classNames = new Set();
 const clsRe = /\.(-?[_a-zA-Z][\w-]*)/g;

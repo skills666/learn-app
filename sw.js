@@ -1,5 +1,5 @@
-// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '53'）同步递增，否则页面不会触发 SW 更新
-const CACHE = 'learn-v53';
+// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '56'）同步递增，否则页面不会触发 SW 更新
+const CACHE = 'learn-v56';
 
 // 预缓存静态资源，确保离线可用。
 // 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
