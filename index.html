@@ -6742,7 +6742,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '56';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v56）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）
+const SW_VERSION = '57';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v57）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');
