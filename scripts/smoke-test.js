@@ -12,6 +12,7 @@
  *   stripMarkdown —— 代码围栏必须原样保留（否则导入的答案里代码块降级成纯文本）
  *   csvCell —— CSV 公式注入防护
  *   applySm2Grade —— 记忆模式评分入口（含撤销栈、热榜进料）
+ *   昨日战报 —— 按本地自然日归档（23:59 与次日 00:01 必须落在两个桶里）
  *   静态断言 —— 关键实现点 + 历次审查修复的回归护栏
  *
  * 注：回忆训练（cloze）功能已整体下线，对应测试与代码一并移除。
@@ -104,7 +105,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'warLogAdd'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -112,6 +113,11 @@ const parts = funcs.map(n => {
 });
 const rateConst = extractConst('Rate');
 if (!rateConst) throw new Error('提取常量失败：Rate');
+const warlogConsts = ['WARLOG_KEY', 'WARLOG_KEEP'].map(n => {
+  const c = extractConst(n);
+  if (!c) throw new Error('提取常量失败：' + n);
+  return c;
+}).join('\n');
 
 const harness = `
 let PROGRESS = {};
@@ -127,9 +133,14 @@ function hotHas(qid){ return HOT.some(h => h.qid === qid); }
 function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid }); return true; }
 function hotRemove(qid){ const i = HOT.findIndex(h => h.qid === qid); if(i < 0) return false; HOT.splice(i, 1); return true; }
 function feedHotFromMemory(qid, rate){ if(rate >= Rate.EASY) return; hotAdd(qid); }
+let WARLOG = {};
+const LS = {};
+function safeLocalGet(k, f){ return Object.prototype.hasOwnProperty.call(LS, k) ? LS[k] : f; }
+function safeLocalSet(k, v){ LS[k] = v; return true; }
+${warlogConsts}
 ${rateConst}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, feedHotFromMemory, getProgress: () => PROGRESS, getHot: () => HOT });
+({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, dayKeyOf, warLogAdd, feedHotFromMemory, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -199,6 +210,25 @@ console.log('\n[趁热打铁 · 记忆模式进料（零副作用）]');
   ok(!H().some(x => x.qid === 'hE'), '「简单」不入热榜');
 }
 
+console.log('\n[昨日战报 · 按自然日归档]');
+{
+  const W = api.getWarLog;
+  const tLate = new Date(2026, 0, 5, 23, 59, 0).getTime();
+  const tEarly = new Date(2026, 0, 6, 0, 1, 0).getTime();
+  ok(api.dayKeyOf(tLate) === '2026-01-05', '日键 = 本地自然日', api.dayKeyOf(tLate));
+  ok(api.dayKeyOf(tEarly) === '2026-01-06', '跨过午夜就翻篇', api.dayKeyOf(tEarly));
+  api.warLogAdd(tLate, 'w1', 1, {}, 0, false);                              // 忘了
+  api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 简单 → 新增掌握
+  api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 同一题再评
+  api.warLogAdd(tLate, 'w3', 3, { mastered:true, srLevel:3 }, 2, false);    // 已掌握被打回 + 掉级
+  const d = W()['2026-01-05'];
+  ok(d && d.c[0] === 1 && d.c[2] === 1 && d.c[3] === 2, '四档次数分别归档', JSON.stringify(d && d.c));
+  ok(d && d.q.length === 3, '覆盖题数去重（同题重复评分只算一道）', d && d.q.length);
+  ok(d && d.mUp === 2 && d.mDown === 1, '掌握「新增 / 打回」分别计数', JSON.stringify(d && { mUp: d.mUp, mDown: d.mDown }));
+  ok(d && d.up === 2 && d.down === 1, '等级「升 / 降」分别计数', JSON.stringify(d && { up: d.up, down: d.down }));
+  ok(!W()['2026-01-06'], '别的一天不被串味');
+}
+
 const smokeHtmlCsp = (html.match(/Content-Security-Policy[^>]*/) || [''])[0];
 console.log('\n[关键实现点静态断言]');
 {
@@ -230,6 +260,11 @@ console.log('\n[关键实现点静态断言]');
   ok(/canvas\.width !== Math\.round\(cssW\*dpr\)/.test(html), '趋势图按容器宽 × DPR 绘制（不再拉伸发虚）');
   ok(!/memory\.index = 0; memory\.flipped = false; renderAll\(\); \};/.test(html), '总览/趁热入口不再复用过期的记忆队列快照');
   ok(/fresh\+\+; return; \}/.test(html), '统计里单列"未学"题数（与记忆队列口径一致）');
+  // —— 昨日战报：独立存储 + 按自然日归日，绝不碰记忆进度 ——
+  ok(/function warLogAdd\(now, qid, g, pr, newLvl, newMastered\)/.test(html), '战报归档函数签名稳定（applySm2Grade 的埋点依赖它）');
+  ok(/safeLocalSet\(WARLOG_KEY, JSON\.stringify\(WARLOG\)\)/.test(html), '战报日志落独立 localStorage 键（不进 gist 主载荷）');
+  ok(/new Date\(t\.getFullYear\(\), t\.getMonth\(\), t\.getDate\(\)-1\)/.test(html), '「昨天」用日历减法算（夏令时下减 86400000 会错一天）');
+  ok(/safeLocalGet\(WARREPORT_SEEN,''\) === todayKey/.test(html), '战报每天只弹一次：标记值 = 当天日期键，跨天自然失效');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');

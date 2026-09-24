@@ -337,6 +337,37 @@
   .pace-desc{font-size:12px;color:var(--muted);line-height:1.5}
   .pace-meta{font-size:11px;color:var(--faint);font-weight:600}
 
+  /* ===== 昨日战报（.season-modal）======
+     每天首次进入只弹一次（见 maybeShowWarReport），所以它必须一眼看完、不出现滚动条：
+     大数字 → 四档分布 → 关键变化 → 一句话点评，纵向层级本身就是阅读顺序。
+     颜色一律走主题变量（四档色由 JS 从 RATE_META 取，与评分按钮同源），换主题不掉色。 */
+  .modal.season-modal{width:min(560px,92vw);padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .season-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 22px;
+    background:linear-gradient(135deg,rgba(var(--accent-rgb),.20),rgba(var(--accent2-rgb),.10));border-bottom:1px solid var(--line)}
+  .season-badge{font-size:15px;font-weight:800;letter-spacing:2px;color:var(--accent)}
+  .season-date{font-size:12px;color:var(--muted);font-weight:600}
+  .season-body{padding:20px 22px 6px}
+  .season-hero{display:flex;align-items:baseline;justify-content:center;gap:8px}
+  /* 数字用等宽数字：从 9 变到 10 时整组不会左右抖 */
+  .season-hero b{font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .season-hero span{font-size:13px;color:var(--muted);font-weight:600}
+  .season-sub{text-align:center;font-size:13px;color:var(--muted);margin-top:9px;line-height:1.6}
+  .season-bar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);margin:18px 0 12px}
+  .season-bar i{display:block;height:100%}
+  .season-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+  .season-legend div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .season-legend i{width:8px;height:8px;border-radius:3px;flex:none}
+  .season-legend b{color:var(--text);font-size:14px;font-variant-numeric:tabular-nums;margin-left:auto}
+  .season-rows{margin-top:16px;border-top:1px solid var(--line)}
+  .season-rows div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;
+    border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+  .season-rows b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .season-quip{margin-top:14px;padding:11px 14px;border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
+    background:var(--bg2);font-size:13px;line-height:1.65;color:var(--text)}
+  .season-foot{display:flex;gap:10px;justify-content:center;padding:14px 22px 18px}
+  .season-foot .btn{min-width:132px;justify-content:center}
+
   .hidden{display:none!important}
   .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(20px);
          max-width:calc(100vw - 32px);background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:12px;
@@ -818,6 +849,28 @@
   </div>
 </div>
 
+<!-- 昨日战报 MODAL：结构写死、内容由 renderWarReport 填充；每天首次进入弹一次（见 maybeShowWarReport） -->
+<div class="modal-bg" id="warReportModal" role="dialog" aria-modal="true" aria-label="昨日战报">
+  <div class="modal season-modal">
+    <div class="season-head">
+      <span class="season-badge">昨日战报</span>
+      <span class="season-date" id="warDate"></span>
+    </div>
+    <div class="season-body">
+      <div class="season-hero"><b id="warTotal">0</b><span>次复习</span></div>
+      <div class="season-sub" id="warSub"></div>
+      <div class="season-bar" id="warBar"></div>
+      <div class="season-legend" id="warLegend"></div>
+      <div class="season-rows" id="warRows"></div>
+      <div class="season-quip" id="warQuip"></div>
+    </div>
+    <div class="season-foot">
+      <button class="btn primary" id="warGo" type="button">开始今天的复习</button>
+      <button class="btn" id="warClose" type="button">知道了</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD QUESTION MODAL -->
 <div class="modal-bg" id="addModal" role="dialog" aria-modal="true" aria-label="添加题目">
   <div class="modal qmodal">
@@ -1062,6 +1115,9 @@ let grill = { resume:'', messages:[], started:false, loading:false, mode:'', end
 let cloze = { queue:[], index:0, qid:null, answer:'', checked:false, result:null, statHit:0, statAnchor:0, doneCount:0 };
 // 趁热打铁：HOT = 持久化热榜 [{qid, addedAt}]（localStorage + 独立 gist 文件）；hot = 趁热页本轮游标
 let HOT = [];
+// 昨日战报：WARLOG = 按本地自然日归档的答题日志 { 'yyyy-mm-dd': {c:[四档次数], q:[当天题id], …} }，
+// 与热榜同款"独立 localStorage"，由 init 里的 loadWarLog() 恢复
+let WARLOG = {};
 let hot = { queue:[], index:0, flipped:false, cleared:0, inPass:false };
 /* ===== 撒花庆祝（纯手写 Canvas 粒子，无依赖）=====
    用于「简单」评分、通关完成、手动标记掌握等时刻 */
@@ -1271,6 +1327,8 @@ function applySm2Grade(qid, rate, historyArr){
   // 「简单」标记已掌握，「忘了」清除掌握标记，其余保持
   const newMastered = g===Rate.EASY ? true : (g===Rate.AGAIN ? false : (pr.mastered||false));
   PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card, ef:+fsrsEfOf(res.card.d).toFixed(2)};
+  // 昨日战报：归档这一次评分。pr 仍是评分前的旧对象（上面用了展开赋值），新旧对比正好是战报要的"变化"
+  if(typeof warLogAdd === 'function'){ try{ warLogAdd(now, qid, g, pr, newLvl, newMastered); }catch(_){} }
   saveProgress();
   markDirty();
 }
@@ -1290,6 +1348,123 @@ function hotLiveQueue(){
   const kept = HOT.filter(h => questionById(h.qid));
   if(kept.length !== HOT.length){ HOT = kept; saveHot(); markDirty(); }   // 删了隐藏数据也要推上去，否则多设备各留一份孤儿
   return HOT.map(h => h.qid);
+}
+
+/* ===== 昨日战报：按自然日归档的答题日志（零副作用 · 不参与排期/统计/打卡） =====
+   为什么不复用现成数据：PROGRESS 每题只留"最后一次练习时间"，同一天对同一道题的多次评分会被后一次覆盖，
+   推不出"昨天四档各评了多少"（热力图里写过同样的口径说明）；而把日志并进 PROGRESS 又会被导入、
+   云端拉取、「仅清除学习进度」整份抹掉 —— 一个统计功能反过来污染记忆进度，代价太大。
+   所以走趁热打铁的同款先例：独立 localStorage 键、不进 gist 主载荷。
+   口径：键 = 本地自然日 yyyy-mm-dd，不是滚动 24 小时窗口 —— 23:50 与次日 00:10 评的题算两天，
+   与"昨天"这个词在用户心里的含义一致，也和 streak / 热力图的归日方式一致。 */
+const WARLOG_KEY = 'learnAppWarLog';
+const WARLOG_KEEP = 45;   // 只留最近 45 天：战报只读「昨天」和「前天」（做对比），多留就是无效存储
+// 本地自然日键：由年月日拼出，不经 UTC，跨时区/夏令时都不会错位
+function dayKeyOf(ts){
+  const d = new Date(ts), p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function loadWarLog(){
+  try{
+    const o = JSON.parse(safeLocalGet(WARLOG_KEY,'') || '{}');
+    return (o && typeof o === 'object') ? o : {};
+  }catch(_){ return {}; }
+}
+// 归档一次评分：pr / newLvl / newMastered 都是 applySm2Grade 里现成的值，这里只记录，不重算任何调度
+function warLogAdd(now, qid, g, pr, newLvl, newMastered){
+  const k = dayKeyOf(now);
+  const d = WARLOG[k] || (WARLOG[k] = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0 });
+  d.c[g-1]++;
+  if(d.q.indexOf(qid) === -1) d.q.push(qid);   // 同一题当天反复刷：次数照加，但"覆盖题数"只算一道
+  if(!pr.lastPracticed) d.nw++;                // 首次接触：此前从没有过练习时间戳
+  if(newMastered && !pr.mastered) d.mUp++;     // 本次评「简单」把题推成已掌握
+  if(!newMastered && pr.mastered) d.mDown++;   // 本次评「忘了」把已掌握的题打回
+  const oldLvl = pr.srLevel || 0;
+  if(newLvl > oldLvl) d.up++; else if(newLvl < oldLvl) d.down++;
+  // 日期键定长零填充 → 字典序即时间序，降序保留最近 WARLOG_KEEP 天
+  const keys = Object.keys(WARLOG).sort();
+  keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP)).forEach(x => delete WARLOG[x]);
+  safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+}
+// 「昨天」的日期键用日历减法 Date(y,m,d-1) 而不是 now-86400000：夏令时那两天不是整 24 小时，
+// 减毫秒会把战报指到前天或今天（热力图里踩过同样的坑）
+function warDayKeys(now){
+  const t = new Date(now);
+  return {
+    today: dayKeyOf(t),
+    yest: dayKeyOf(new Date(t.getFullYear(), t.getMonth(), t.getDate()-1)),
+    before: dayKeyOf(new Date(t.getFullYear(), t.getMonth(), t.getDate()-2))
+  };
+}
+// 汇总「昨天」这一个自然日；昨天没学过（或日志缺失）返回 null —— 不弹空战报
+function buildWarReport(now){
+  const k = warDayKeys(now);
+  const d = WARLOG[k.yest];
+  if(!d || !d.c) return null;
+  const total = d.c.reduce((a,b)=>a+b, 0);
+  if(!total) return null;
+  const prev = WARLOG[k.before];
+  return {
+    dateKey: k.yest, total, uniq: (d.q||[]).length, c: d.c,
+    newQ: d.nw||0, mUp: d.mUp||0, mDown: d.mDown||0, up: d.up||0, down: d.down||0,
+    recall: Math.round((d.c[Rate.GOOD-1] + d.c[Rate.EASY-1]) / total * 100),   // 记得率 =（记得+简单）/ 总次数
+    prevTotal: (prev && prev.c) ? prev.c.reduce((a,b)=>a+b, 0) : null
+  };
+}
+// 一句话点评：按「记得率 × 题量」给实话。不灌鸡汤 —— 值得夸的事得真的发生过
+function warQuip(r){
+  const q = r.uniq || r.total;
+  if(r.recall >= 85 && r.total >= 20) return '记得率 ' + r.recall + '%，状态在线。这批题的排期会整体往后推，今天的待复习量会明显变轻。';
+  if(r.recall >= 85) return '正确率很高（' + r.recall + '%），只是题量偏少 —— 质量已经有了，缺的是"坐下来那五分钟"。';
+  if(r.recall < 50) return '记得率 ' + r.recall + '%，遗忘偏多。别急着自责：这些题已经回到短间隔队列，今天就会再见，见一次牢一层。';
+  if(r.newQ * 2 >= r.total) return '昨天主要在铺新题（' + r.newQ + ' 道首刷），这个阶段记得率本来就低，属于正常成本。';
+  if(q >= 60) return '覆盖 ' + q + ' 道题的复盘量，节奏很稳。按这个速度，到期队列不会堆起来。';
+  return '记得率 ' + r.recall + '%，节奏稳。今天的任务是别让到期队列堆到 50 以上。';
+}
+const WEEK_CN = ['周日','周一','周二','周三','周四','周五','周六'];
+function renderWarReport(r){
+  const p = r.dateKey.split('-').map(Number);   // 拆开比 new Date('yyyy-mm-dd') 稳：日期串会被当 UTC 解析，跨时区差一天
+  const dt = new Date(p[0], p[1]-1, p[2]);
+  $('#warDate').textContent = (p[1]) + '月' + p[2] + '日 · ' + WEEK_CN[dt.getDay()] + ' 全天';
+  $('#warTotal').textContent = String(r.total);
+  const st = computeAllStats();
+  const seenPct = st.tq ? Math.round(st.tm / st.tq * 100) : 0;
+  $('#warSub').innerHTML = '覆盖 <b style="color:var(--text)">' + r.uniq + '</b> 道题'
+    + (r.newQ ? ' · 其中首刷 ' + r.newQ + ' 道' : '')
+    + (st.streak > 0 ? '<br>🔥 连续打卡第 <b style="color:var(--accent3)">' + st.streak + '</b> 天' : '');
+  // 四档占比条：宽度按次数占比，颜色直接取 RATE_META（与评分按钮同源，改一处两处都对）
+  $('#warBar').innerHTML = [1,2,3,4].map(g => r.c[g-1]
+    ? '<i style="width:' + (r.c[g-1]/r.total*100).toFixed(2) + '%;background:' + RATE_META[g].color + '"></i>' : '').join('');
+  $('#warLegend').innerHTML = [1,2,3,4].map(g =>
+    '<div><i style="background:' + RATE_META[g].color + '"></i>' + RATE_META[g].label + '<b>' + r.c[g-1] + '</b></div>').join('');
+  // 与「前天」对比：游戏赛季报告里最有信息量的一行，也是唯一能说明"势头"的数字
+  let trend = '前天没有记录';
+  if(r.prevTotal !== null){
+    const diff = r.total - r.prevTotal;
+    trend = diff === 0 ? '与前天持平' : (diff > 0 ? '比前天多 ' + diff + ' 次' : '比前天少 ' + (-diff) + ' 次');
+  }
+  const rows = [
+    ['记得率（记得 + 简单）', r.recall + '%'],
+    ['掌握变化', (r.mUp || r.mDown) ? '新增 ' + r.mUp + ' 题' + (r.mDown ? ' · 打回 ' + r.mDown + ' 题' : '') : '无变化'],
+    ['等级变化', (r.up || r.down) ? '↑ ' + r.up + ' 题 · ↓ ' + r.down + ' 题' : '无变化'],
+    ['全库掌握', st.tm + ' / ' + st.tq + ' 题（' + seenPct + '%）'],
+    ['题量', trend]
+  ];
+  $('#warRows').innerHTML = rows.map(x => '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>').join('');
+  $('#warQuip').textContent = warQuip(r);
+}
+/* 每天首次进入弹一次。标记值 = 当天日期键，跨天自然失效，不需要任何清理逻辑；
+   昨天没数据时既不弹也不写标记 —— 今天学了，明天的战报照常有。 */
+const WARREPORT_SEEN = 'learnAppWarReportSeen';
+function maybeShowWarReport(now){
+  const ts = now || Date.now();
+  const todayKey = warDayKeys(ts).today;
+  if(safeLocalGet(WARREPORT_SEEN,'') === todayKey) return;
+  const r = buildWarReport(ts);
+  if(!r) return;
+  safeLocalSet(WARREPORT_SEEN, todayKey);   // 先落标记再渲染：万一渲染异常也不会每次进页面都弹
+  try{ renderWarReport(r); }catch(e){ warnSilent('战报渲染失败', e); }
+  showModal($('#warReportModal'));
 }
 
 /* ===== 复习节奏切换（设置面板） ===== */
@@ -4720,6 +4895,15 @@ document.querySelectorAll('.set-head').forEach(h => {
 // 数据弹窗
 $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
+// 昨日战报弹窗：点遮罩或「知道了」关闭；「开始今天的复习」关掉后直接切到记忆队列
+$('#warClose').onclick = (e) => { e.stopPropagation(); hideModal($('#warReportModal')); };
+$('#warReportModal').onclick = e => { if(e.target.id==='warReportModal'){ e.stopPropagation(); hideModal($('#warReportModal')); } };
+$('#warGo').onclick = (e) => {
+  e.stopPropagation(); hideModal($('#warReportModal'));
+  // 复用标签自身的 onclick：记忆队列的初始化与视图切换都在里面，别在这里重写一份
+  const tab = document.querySelector('.tab[data-view="memory"]');
+  if(tab && typeof tab.onclick === 'function') tab.onclick();
+};
 
 // AI API 配置（地址 / Key / 模型名全部手填）
 let _aiCfgSaveTimer=null;   // AI 配置保存防抖
@@ -5238,7 +5422,8 @@ document.addEventListener('keydown', e => {
   if(e.key==='Escape'){
     // 确认框是最高层（z-index 9999）：优先交给它，否则会先命中下面打开的弹窗分支
     if(_confirmCancel){ e.preventDefault(); _confirmCancel(); return; }
-    const modals = [$('#addModal'), $('#editModal'), $('#dataModal')].filter(el => el && el.classList.contains('show'));
+    // 战报排在最后：它每天首次进入时自动弹出，是"最上层"的那个
+    const modals = [$('#addModal'), $('#editModal'), $('#dataModal'), $('#warReportModal')].filter(el => el && el.classList.contains('show'));
     if(modals.length){ e.preventDefault(); hideModal(modals[modals.length-1]); return; }
     const tp = $('#themePopup');
     if(tp && tp.classList.contains('show')){ e.preventDefault(); hideModal(tp); return; }
@@ -5246,7 +5431,7 @@ document.addEventListener('keydown', e => {
   }
   // Tab 焦点捕获：有对话框打开时，把 Tab 循环限制在最上层弹窗内部（aria-modal 的实际落实）
   if(e.key==='Tab'){
-    const dlg = [$('#addModal'),$('#editModal'),$('#dataModal')].filter(el=>el&&el.classList.contains('show')).pop();
+    const dlg = [$('#addModal'),$('#editModal'),$('#dataModal'),$('#warReportModal')].filter(el=>el&&el.classList.contains('show')).pop();
     if(dlg){
       const items = Array.from(dlg.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>el.offsetParent!==null);
       if(items.length){
@@ -5570,6 +5755,7 @@ introStart();
 
   PROGRESS = await Store.getProgress() || {};
   HOT = loadHot();   // 趁热打铁：热榜从 localStorage 恢复（独立于记忆进度）
+  WARLOG = loadWarLog();   // 昨日战报：按天归档的答题日志（同款独立存储，同样不吃导入/云端的覆盖）
   // 清理孤立进度：删除对应题目已不存在的进度条目
   (function cleanupOrphanProgress(){
     const allQids = new Set();
@@ -5629,6 +5815,13 @@ introStart();
   hideAppLoader();
 // 页面加载时询问是否拉取云端数据
   askPullOnStart();
+  // 昨日战报：每天首次进入弹一次。要等两件事同时结束 —— 入场星空的遮罩已被移除（它 z-index 9999，
+  // 会整个压住弹层），且云端确认框不在屏上（confirmDialog 同为 9999，同屏会抢层）。
+  // 每 250ms 看一眼、上限 12 次：正常路径下不与动画撞车，异常路径下也不会永远不弹。
+  (function whenScreenClear(tries){
+    if((!document.getElementById('appLoader') && !_confirmOpen) || tries >= 12){ maybeShowWarReport(); return; }
+    setTimeout(() => whenScreenClear(tries + 1), 250);
+  })(0);
   // 启动定时自动推送（每 10 分钟，在线且有变更才推）
   startAutoSyncTimer();
   // 初始主题如果是陨石，启动 Canvas
@@ -6742,7 +6935,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '57';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v57）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '59';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v59）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');
