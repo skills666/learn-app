@@ -105,7 +105,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'warLogAdd'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'warLogAdd', 'T', 'applyCopyStatic'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -114,6 +114,11 @@ const parts = funcs.map(n => {
 const rateConst = extractConst('Rate');
 if (!rateConst) throw new Error('提取常量失败：Rate');
 const warlogConsts = ['WARLOG_KEY', 'WARLOG_KEEP'].map(n => {
+  const c = extractConst(n);
+  if (!c) throw new Error('提取常量失败：' + n);
+  return c;
+}).join('\n');
+const copyConsts = ['COPY_THEMES', 'COPY_BACK', 'copyTheme'].map(n => {
   const c = extractConst(n);
   if (!c) throw new Error('提取常量失败：' + n);
   return c;
@@ -134,13 +139,20 @@ function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid }); return tr
 function hotRemove(qid){ const i = HOT.findIndex(h => h.qid === qid); if(i < 0) return false; HOT.splice(i, 1); return true; }
 function feedHotFromMemory(qid, rate){ if(rate >= Rate.EASY) return; hotAdd(qid); }
 let WARLOG = {};
+// applyCopyStatic 的最小 DOM 替身：两个选择器各给一份元素表
+const COPY_ELS = [];
+const COPY_TITLE_ELS = [];
+const document = {
+  querySelectorAll(sel){ return sel === '[data-copy]' ? COPY_ELS : sel === '[data-copy-title]' ? COPY_TITLE_ELS : []; }
+};
 const LS = {};
 function safeLocalGet(k, f){ return Object.prototype.hasOwnProperty.call(LS, k) ? LS[k] : f; }
 function safeLocalSet(k, v){ LS[k] = v; return true; }
 ${warlogConsts}
+${copyConsts}
 ${rateConst}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, dayKeyOf, warLogAdd, feedHotFromMemory, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG });
+({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, dayKeyOf, warLogAdd, T, applyCopyStatic, setCopyTheme: v => { copyTheme = v; }, getCopyTheme: () => copyTheme, feedHotFromMemory, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, COPY_ELS, COPY_TITLE_ELS });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -229,6 +241,45 @@ console.log('\n[昨日战报 · 按自然日归档]');
   ok(!W()['2026-01-06'], '别的一天不被串味');
 }
 
+console.log('\n[文案主题 · 词表回译]');
+{
+  const T = api.T;
+  ok(T('秘境试炼') === '秘境试炼', '仙侠主题下不做替换', T('秘境试炼'));
+  api.setCopyTheme('classic');
+  ok(T('秘境试炼') === '刷题', '秘境试炼 → 刷题', T('秘境试炼'));
+  ok(T('洞府 · 典籍 · 修为') === '总览 · 文档 · 进度', '整句里的词逐个回译', T('洞府 · 典籍 · 修为'));
+  ok(T('连续修行') === '连续打卡', '长词优先：「连续修行」不被「修行」拆开', T('连续修行'));
+  ok(T('修行录') === '记忆进度', '特例优先于通词：「修行录」≠「打卡录」', T('修行录'));
+  ok(T('修行数据') === '学习数据', '特例优先于通词：「修行数据」≠「打卡数据」', T('修行数据'));
+  ok(T('已悟率') === '掌握率', '「已悟率」先于「已悟」匹配', T('已悟率'));
+  ok(T('万法归元') === '万法归元' && T('题目') === '题目', '无关文案原样返回', T('万法归元'));
+  const once = T('秘境试炼 · 已悟 · 连续修行 · 典籍');
+  ok(once === '刷题 · 掌握 · 连续打卡 · 文档', '一句话里多个词同时回译', once);
+  ok(T(once) === once, 'T 幂等：对已回译的文案再调用不会二次改写', T(once));
+  api.setCopyTheme('xianxia');
+  ok(T('温故') === '温故', '切回仙侠后不再替换', T('温故'));
+}
+
+console.log('\n[文案主题 · 静态文案切换（applyCopyStatic）]');
+{
+  api.COPY_ELS.push({ innerHTML: '洞府', dataset: {}, title: '' },
+                    { innerHTML: '连续修行第 <b>3</b> 天', dataset: {}, title: '' });
+  api.COPY_TITLE_ELS.push({ dataset: { copyTitle: '回炉淬炼：把闭关模式里没答简单的题再过一遍' }, title: '' });
+  const setTheme = api.setCopyTheme;
+  setTheme('xianxia'); api.applyCopyStatic();
+  ok(api.COPY_ELS[0].innerHTML === '洞府', '仙侠主题下静态文案保持原样', api.COPY_ELS[0].innerHTML);
+  setTheme('classic'); api.applyCopyStatic();
+  ok(api.COPY_ELS[0].innerHTML === '总览', '切经典：页签 洞府 → 总览', api.COPY_ELS[0].innerHTML);
+  ok(api.COPY_ELS[1].innerHTML === '连续打卡第 <b>3</b> 天', '带标签的文案只换词、不破坏内部结构', api.COPY_ELS[1].innerHTML);
+  ok(api.COPY_TITLE_ELS[0].title === '趁热打铁：把记忆模式里没答简单的题再过一遍', 'tooltip（title 属性）也一起回译', api.COPY_TITLE_ELS[0].title);
+  setTheme('xianxia'); api.applyCopyStatic();
+  ok(api.COPY_ELS[0].innerHTML === '洞府' && api.COPY_TITLE_ELS[0].title === '回炉淬炼：把闭关模式里没答简单的题再过一遍',
+     '切回仙侠按原文重算，不会"叠着翻译"', api.COPY_ELS[0].innerHTML + ' / ' + api.COPY_TITLE_ELS[0].title);
+  setTheme('classic'); api.applyCopyStatic(); api.applyCopyStatic();
+  ok(api.COPY_ELS[0].innerHTML === '总览', '重复切换 / 重复应用结果稳定（幂等）', api.COPY_ELS[0].innerHTML);
+  setTheme('xianxia'); api.applyCopyStatic();
+}
+
 const smokeHtmlCsp = (html.match(/Content-Security-Policy[^>]*/) || [''])[0];
 console.log('\n[关键实现点静态断言]');
 {
@@ -265,6 +316,12 @@ console.log('\n[关键实现点静态断言]');
   ok(/safeLocalSet\(WARLOG_KEY, JSON\.stringify\(WARLOG\)\)/.test(html), '战报日志落独立 localStorage 键（不进 gist 主载荷）');
   ok(/new Date\(t\.getFullYear\(\), t\.getMonth\(\), t\.getDate\(\)-1\)/.test(html), '「昨天」用日历减法算（夏令时下减 86400000 会错一天）');
   ok(/safeLocalGet\(WARREPORT_SEEN,''\) === todayKey/.test(html), '战报每天只弹一次：标记值 = 当天日期键，跨天自然失效');
+  // —— 文案主题：两套用词可切，题库内容永不参与替换 ——
+  ok(/function T\(s\)\{/.test(html) && /const COPY_BACK = \[/.test(html), '文案主题词表就位（T + COPY_BACK）');
+  ok(/safeLocalSet\('learnAppCopyTheme', id\)/.test(html), '文案主题选择只落本地键（不进题库 / 进度 / 云端载荷）');
+  ok(/<span data-copy>洞府<\/span>/.test(html), '静态文案（顶栏页签）标了 data-copy，切换时能跟着变');
+  // 用 [\s\S] 而不是 .*\n：文件是 CRLF 行尾，而 JS 正则里的 . 不匹配 \r
+  ok(/applyCopyStatic\(\);[\s\S]{0,200}?renderAll\(\);/.test(html), 'init 先落静态文案、再渲染动态文案');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');
