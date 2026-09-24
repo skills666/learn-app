@@ -322,6 +322,11 @@ console.log('\n[关键实现点静态断言]');
   ok(/<span data-copy>洞府<\/span>/.test(html), '静态文案（顶栏页签）标了 data-copy，切换时能跟着变');
   // 用 [\s\S] 而不是 .*\n：文件是 CRLF 行尾，而 JS 正则里的 . 不匹配 \r
   ok(/applyCopyStatic\(\);[\s\S]{0,200}?renderAll\(\);/.test(html), 'init 先落静态文案、再渲染动态文案');
+  // 这两条来自一次真实事故：设置页的「界面文案」分区被编辑工具的并发写覆盖掉了，
+  // 而当时没有任何检查会失败（check 的选择器引用核对只是"提示"）。现在缺一即测试红
+  ok(/id="copyGrid"/.test(html), '设置页「界面文案」分区还在（分区被误删时这里会红）');
+  ok(/\$\('#copyGrid'\)/.test(html), 'renderCopyUI 的 copyGrid 引用有对应的字面量 id（不留悬空选择器）');
+  ok(/T\(VIEW_NAMES\[view\]/.test(html), '屏幕阅读器播报的页名也走词表');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');

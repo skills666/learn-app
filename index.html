@@ -797,6 +797,14 @@
     </div>
     <div class="modal-scroll">
     <div class="set-list">
+      <!-- 0. 界面文案（文案主题）：只换显示用词，不习惯这套词的同学可切回另一套 -->
+      <div class="set-section">
+        <div class="set-head"><span data-copy>✍️ 界面文案</span> <span class="set-arrow">▾</span></div>
+        <div class="rv"><div class="rv-in"><div class="set-body">
+          <div class="set-hint">只换界面上的用词：题库内容、学习进度与复习排期完全不受影响。<br>两套文案说的是同一件事，随时可切换。</div>
+          <div class="pace-grid" id="copyGrid"></div>
+        </div></div></div>
+      </div>
       <!-- 1. 温故节奏 -->
       <div class="set-section">
         <div class="set-head"><span data-copy>🗓️ 温故节奏</span> <span class="set-arrow">▾</span></div>
@@ -4316,7 +4324,7 @@ function renderAll(){
       const _from = NAVORDER.indexOf(navKey(_prevView)), _to = NAVORDER.indexOf(navKey(view));
       c.dataset.nav = (_from<0||_to<0||_from===_to) ? '' : (_to>_from ? 'fwd' : 'back');
       // 屏幕阅读器播报当前页（视觉隐藏 aria-live 区）
-      const sa = $('#srAnnounce'); if(sa) sa.textContent = (VIEW_NAMES[view]||'') + ' 页面';
+      const sa = $('#srAnnounce'); if(sa) sa.textContent = T(VIEW_NAMES[view]||'') + ' 页面';
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
       c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
       c.classList.add('in');
