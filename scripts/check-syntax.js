@@ -11,8 +11,10 @@ const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
-// 匹配不带 src 的内联 script
-const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+// 匹配不带 src 的内联 script。
+// 负向前瞻用 [\s"'/]src= 而不是 \bsrc=：后者会误伤 data-src="…"（- 是非词字符，\b 成立），
+// 把真·内联块整体当作"外链脚本"跳过，静默漏检
+const re = /<script(?![^>]*[\s"'/]src=)[^>]*>([\s\S]*?)<\/script>/gi;
 let m, blocks = [];
 while ((m = re.exec(html)) !== null) {
   const before = html.slice(0, m.index);
@@ -30,6 +32,10 @@ const targets = blocks.map((b, i) => {
 });
 targets.push({ name: 'sw.js', file: path.join(ROOT, 'sw.js') });
 targets.push({ name: 'sync-www.js', file: path.join(ROOT, 'sync-www.js') });
+// 仓库自带的工具脚本一并纳入：它们语法出错会直接让 check / test / 构建全链路挂掉
+fs.readdirSync(path.join(ROOT, 'scripts')).filter(f => f.endsWith('.js')).sort().forEach(f => {
+  targets.push({ name: 'scripts/' + f, file: path.join(ROOT, 'scripts', f) });
+});
 
 let fail = 0;
 for (const t of targets) {

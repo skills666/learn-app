@@ -98,12 +98,14 @@
   @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
   @media (prefers-reduced-motion: reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+    /* 延迟也要清零：交错入场（.content.in > * 的阶梯延迟）只压时长会变成"逐项闪现" */
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;animation-delay:0s !important}
   }
   .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
   .doc-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:.5px}
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
-  .bigbar{height:10px;border-radius:8px;background:#0c0f1a;overflow:hidden;margin-top:12px;max-width:420px}
+  /* 槽底用主题文字色分量：写死深色在素笺/潮线/子良/子荣这类浅底主题下会变成白卡片上的一条黑槽 */
+  .bigbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb),.14);overflow:hidden;margin-top:12px;max-width:420px}
   .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
   /* 二级页返回按钮（典籍浏览 / 秘境试炼） */
   .back-btn{color:var(--muted)}
@@ -494,7 +496,7 @@
   .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
   .flash-empty .big{font-size:60px;margin-bottom:16px}
   /* 主题选择器 */
-  .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
+  .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
   .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn .15s ease}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
@@ -1800,6 +1802,9 @@ function _showConfirm(msg, resolve){
     };
     const ov=document.createElement('div');
     ov.className='confirm-ov';
+    // 无障碍：确认框也是对话框，补上语义（Tab 焦点循环见 keydown 里的 .confirm-ov 分支）
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
     const dlg=document.createElement('div');
     dlg.className='confirm-dlg';
@@ -1926,7 +1931,8 @@ function computeAllStats(){
   // 今天没刷则从前一天起算；前一天也没有记录则连续天数为 0
   if(reviewed.has(check.getTime()) || reviewed.has(prevDay.getTime())){
     if(!reviewed.has(check.getTime())) check.setTime(prevDay.getTime());
-    for(let i=0;i<365;i++){
+    // 上限 3650 天（约 10 年）：原来的 365 会让连续修行满一年的用户恒定显示 365
+    for(let i=0;i<3650;i++){
       if(reviewed.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
       else break;
     }
@@ -4499,6 +4505,8 @@ function renderBgLayer(layer, url){
 // 必须声明在 applyTheme() 之前：initTheme() 会在脚本解析期就调用 applyTheme()，而 applyTheme 内部会
 // 调 startUnifiedCanvas()，若这些 let/const 声明在文件更后面，就会命中 TDZ 抛 ReferenceError
 // （原来被一个空 catch 吞掉，表现为"粒子延迟到 init 才启动"）
+// _bgColorStyle 同理：applyTheme 的非 img-bg 分支会 remove() 它，声明晚于调用点迟早踩同一类 TDZ
+let _bgColorStyle = null;
 let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
 let _uTheme = '';
 let _uParticles = [];
@@ -4731,10 +4739,18 @@ buildThemeGrid('canvas');
 
 // 标签切换
 document.querySelectorAll('#themeTabs .theme-tab').forEach(tab=>{
+  // 与 .set-head / 模式卡同款：纯 div 必须补 tabindex + role，否则键盘用户切不了分组
+  // （全局 keydown 里已有 [role="button"][tabindex] 的 Enter/Space 激活分支）
+  tab.tabIndex = 0; tab.setAttribute('role','button');
+  tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
   tab.onclick = (e)=>{
     e.stopPropagation();
-    document.querySelectorAll('#themeTabs .theme-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('#themeTabs .theme-tab').forEach(t=>{
+      t.classList.remove('active');
+      t.setAttribute('aria-selected','false');
+    });
     tab.classList.add('active');
+    tab.setAttribute('aria-selected','true');
     const group = tab.dataset.tab;
     buildThemeGrid(group==='all'?null:group);
   };
@@ -4812,8 +4828,7 @@ function detectImageColors(img, callback){
   callback({accent, accent2, isBright});
 }
 
-// 根据保存的颜色配置设置文字颜色
-let _bgColorStyle = null;
+// 根据保存的颜色配置设置文字颜色（_bgColorStyle 的声明已提前到 applyTheme 之前，避免 TDZ）
 function applyBgTextMode(){
   const colorsStr = safeLocalGet('customBgColors', '');
   // 先移除旧的内联样式
@@ -4879,7 +4894,8 @@ if(uploadBgBtn){
         createImageBitmap(file).then(function(full){
           const scale = Math.min(1, 2048 / Math.max(full.width, full.height));
           detectImageColors(full, function(colors){
-            if(scale >= 1 && file.size <= 4 * 1024 * 1024){ afterSaved(file, colors); return; }
+            // 小图快路径直接复用原文件，但位图已解码完必须显式释放，否则要一直挂到 GC
+            if(scale >= 1 && file.size <= 4 * 1024 * 1024){ try{ full.close(); }catch(_){} afterSaved(file, colors); return; }
             const tw = Math.max(1, Math.round(full.width * scale)), th = Math.max(1, Math.round(full.height * scale));
             full.close();
             createImageBitmap(file, {resizeWidth: tw, resizeHeight: th}).then(function(bmp){
@@ -5076,6 +5092,17 @@ $('#fileInput').onchange = async e => {
   toast(`导入完成：${imported} 个文件成功${failInfo}，共 ${totalQuestions()} 题`);
 };
 
+// 修为对象归一化：丢掉非对象的畸形值（null / 数字 / 数组 / 字符串），
+// 否则统计与排期会读到 undefined 字段，出现"有记录但不参与统计"的幽灵条目
+function sanitizeProgressMap(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object') return out;
+  Object.keys(raw).forEach(k => {
+    const v = raw[k];
+    if(v && typeof v === 'object' && !Array.isArray(v)) out[k] = v;
+  });
+  return out;
+}
 // 导入 JSON（格式 {documents:[{id,title,questions:[{title,answer}]}]}，可含 progress/clears/order）
 function importJsonDocs(text){
   const data = JSON.parse(text);
@@ -5090,7 +5117,7 @@ function importJsonDocs(text){
     else { byId.set(nd.id, clone); added++; }
   });
   DOCS = normalizeDocs([...byId.values()]);
-  if(data.progress && typeof data.progress==='object'){ PROGRESS = Object.assign({}, PROGRESS, data.progress); }
+  if(data.progress) PROGRESS = Object.assign({}, PROGRESS, sanitizeProgressMap(data.progress));
   if(data.clears && typeof data.clears==='object'){ CLEARS = Object.assign({}, CLEARS, data.clears); }
   const ids = new Set(DOCS.map(d=>d.id));
   let orderFromImport = false;
@@ -5167,16 +5194,19 @@ function parseMarkdownToDoc(text, fallbackTitle){
   if(l1.length===1 && heads.length>1 && heads[0].level===1 && heads.some(h=>h.level>1)){
     docTitle = heads[0].title; qHeads = heads.slice(1);
   }
+  // 典籍标题先剥 Markdown 再往下用：id / tags 一律用剥离后的干净标题，
+  // 否则标题里的 ** 会被带进 qid（而 title 是剥过的，两边对不上）
+  const cleanTitle = stripMarkdown(docTitle || '') || (fallbackTitle||T('导入典籍'));
   if(qHeads.length===0){
-    return { title: fallbackTitle||T('导入典籍'),
-      questions:[{ id:(fallbackTitle||T('导入典籍'))+'#1', title: fallbackTitle||T('导入典籍'), answer: text.trim(), tags:[fallbackTitle||T('导入典籍')] }] };
+    return { title: cleanTitle,
+      questions:[{ id:cleanTitle+'#1', title: cleanTitle, answer: text.trim(), tags:[cleanTitle] }] };
   }
   const questions = qHeads.map((h,idx)=>{
     const next = qHeads[idx+1] ? qHeads[idx+1].start : lines.length;
     const body = lines.slice(h.start+1, next).join('\n').trim();
     return { title:stripMarkdown(h.title), answer:stripMarkdown(body) };
-  }).map((q,i)=>({ id:`${docTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[docTitle] }));
-  return { title: stripMarkdown(docTitle), questions };
+  }).map((q,i)=>({ id:`${cleanTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[cleanTitle] }));
+  return { title: cleanTitle, questions };
 }
 
 $('#resetBtn').onclick = async () => {
@@ -5337,7 +5367,7 @@ async function cloudPull(){
     // 形状校验：畸形云端数据不能污染内存
     if(!data || !Array.isArray(data.documents)){ $('#cloudStatus').textContent='❌ 云端数据结构异常'; toast('云端数据结构异常，已取消拉取'); return; }
     const newDocs = normalizeDocs(data.documents);
-    const newProgress = (data.progress && typeof data.progress==='object') ? data.progress : {};
+    const newProgress = sanitizeProgressMap(data.progress);
     const newOrder = Array.isArray(data.order) ? [...new Set(data.order)] : newDocs.map(d=>d.id);
     const newClears = (data.clears && typeof data.clears==='object') ? data.clears : {};
     // 先落库、全部成功后才覆盖内存：避免"提示拉取成功、实际没存进去，重载后回到旧数据"
@@ -5462,7 +5492,7 @@ async function askPullOnStart(){
     // 形状校验：畸形云端数据不能污染内存
     if(!remote || !Array.isArray(remote.documents)){ toast('云端数据结构异常，已取消拉取'); return; }
     const newDocs = normalizeDocs(remote.documents);
-    const newProgress = (remote.progress && typeof remote.progress==='object') ? remote.progress : {};
+    const newProgress = sanitizeProgressMap(remote.progress);
     const newOrder = Array.isArray(remote.order) ? [...new Set(remote.order)] : newDocs.map(d=>d.id);
     const newClears = (remote.clears && typeof remote.clears==='object') ? remote.clears : {};
     // 先落库、成功后才覆盖内存
@@ -5508,8 +5538,10 @@ document.addEventListener('keydown', e => {
     return;
   }
   // Tab 焦点捕获：有对话框打开时，把 Tab 循环限制在最上层弹窗内部（aria-modal 的实际落实）
+  // 确认框（.confirm-ov）层级最高，且不在下面那份 modal 名单里：漏掉它 Tab 会跑到它背后的设置弹窗上
   if(e.key==='Tab'){
-    const dlg = [$('#addModal'),$('#editModal'),$('#dataModal'),$('#warReportModal')].filter(el=>el&&el.classList.contains('show')).pop();
+    const confirmOv = document.querySelector('.confirm-ov:not(.closing)');
+    const dlg = confirmOv || [$('#addModal'),$('#editModal'),$('#dataModal'),$('#warReportModal')].filter(el=>el&&el.classList.contains('show')).pop();
     if(dlg){
       const items = Array.from(dlg.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>el.offsetParent!==null);
       if(items.length){
@@ -7014,7 +7046,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '60';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v60）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '61';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v61）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');

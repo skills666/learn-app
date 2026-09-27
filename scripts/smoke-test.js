@@ -211,6 +211,42 @@ console.log('\n[applySm2Grade · 记忆模式入口]');
   ok(hist.length === 1 && hist[0].qid === 'q6', '撤销栈正常记录');
 }
 
+console.log('\n[FSRS 调度数学 · 独立沙箱]');
+{
+  // 主沙箱里 fsrsStep 是替身，调度数学本身没有任何断言覆盖 —— 这里用独立沙箱把它真正跑起来
+  const fsrsConsts = ['FSRS_W','FSRS_DECAY','FSRS_MIN_STABILITY','FSRS_AGAIN_INTERVAL','PACES','DEFAULT_PACE','Rate','SM2_INIT_EF'].map(n => {
+    const c = extractConst(n);
+    if (!c) throw new Error('提取常量失败：' + n);
+    return c;
+  }).join('\n');
+  const fsrsFuncs = ['fsrsClamp','fsrsInitStability','fsrsInitDifficulty','fsrsIntervalDays','fsrsRetrievability',
+    'fsrsNextDifficulty','fsrsRecallStability','fsrsForgetStability','fsrsShortTermStability','fsrsStateOf','fsrsStep',
+    'paceCfg','fsrsRetention','fsrsMaxInterval'].map(n => {
+    const f = extractFunction(n);
+    if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
+    return f;
+  }).join('\n');
+  const fsrsHarness = `${fsrsConsts}\nlet fsrsPace = DEFAULT_PACE;\n${fsrsFuncs}\n({ fsrsStep, fsrsIntervalDays, setPace: v => { fsrsPace = v; } });`;
+  const fsrs = vm.runInContext(fsrsHarness, vm.createContext({}), { filename: 'fsrs-extracted.js' });
+  const NOW = Date.now();
+  const iv = g => fsrs.fsrsStep(null, g, NOW).interval;
+  ok(iv(1) === 0.5, '首次「忘了」→ 半天后再来', iv(1));
+  ok(iv(2) >= 1 && iv(3) >= 2, '首次「困难 / 记得」→ 至少 1 / 2 天', iv(2) + ' / ' + iv(3));
+  ok(iv(4) > iv(3) && iv(3) > iv(2), '首次评分：间隔随评分单调递增', iv(2) + ' < ' + iv(3) + ' < ' + iv(4));
+  ok(iv(4) <= 14, '间隔不超过当前档位上限（14 天）', iv(4));
+  ok([0.5, 1, 5, 30, 365].every(s => { const d = fsrs.fsrsIntervalDays(s); return Number.isInteger(d) && d >= 1 && d <= 14; }),
+     '间隔恒为 [1, 档位上限] 内的整数（不出现 0 天或 NaN）');
+  const forget = fsrs.fsrsStep({ interval:5, ef:2.5, srLevel:3, srNext:NOW, lastPracticed:NOW - 5*86400000 }, 1, NOW);
+  ok(forget.interval === 0.5 && forget.card.lapses === 1, '已排程题「忘了」→ 回到半天档且遗忘数 +1', JSON.stringify(forget.card));
+  const recall = fsrs.fsrsStep({ interval:3, ef:2.5, srLevel:2, srNext:NOW, lastPracticed:NOW - 86400000 }, 3, NOW);
+  ok(recall.interval > 3, '隔 1 天「记得」→ 间隔比上次更长（稳定性增长）', recall.interval);
+  const sameDay = fsrs.fsrsStep({ interval:2, ef:2.5, srLevel:1, srNext:NOW, lastPracticed:NOW - 2*3600*1000 }, 3, NOW);
+  ok(sameDay.interval >= 1, '同日再练走短期记忆公式，间隔仍 ≥ 1 天', sameDay.interval);
+  fsrs.setPace('3d');
+  ok(iv(4) <= 3, '切到 3 天档后最长间隔被压到 3 天', iv(4));
+  fsrs.setPace('14d');
+}
+
 console.log('\n[趁热打铁 · 记忆模式进料（零副作用）]');
 {
   const H = api.getHot;

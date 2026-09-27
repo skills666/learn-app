@@ -128,3 +128,41 @@ if (!unused) console.log('  (无)');
   console.log('\n=== 疑似未使用的函数（同名标识符仅出现 1 次，需人工确认）===');
   console.log(unusedFns.length ? unusedFns.map(n => '  ' + n).join('\n') : '  (无)');
 }
+
+/* ---------- 门禁：以上"应为 0"的硬指标任一命中即非零退出 ----------
+   原先本脚本没有退出码，无论发现什么都是 exit 0 —— npm run check 与 CI 里的这条门禁形同虚设。
+   这里只收"确定性回归"（重复 id / console.log / eval / document.write / 裸 localStorage），
+   "疑似未使用"这类需人工判断的项仍只打印、不 gate，避免误报把正常改动卡死。 */
+const _dupIdHits = (() => {
+  const seen = new Set(), dup = new Set();
+  const re = /\bid="([A-Za-z][\w:-]*)"/g;
+  let x;
+  while ((x = re.exec(all)) !== null) { if (seen.has(x[1])) dup.add(x[1]); seen.add(x[1]); }
+  return dup.size;
+})();
+const _nakedLsHits = (() => {
+  const rows = all.split('\n');
+  let tryNear = -99, n = 0;
+  rows.forEach((ln, i) => {
+    if (/\btry\s*\{/.test(ln)) tryNear = i;
+    if (!/localStorage\.(getItem|setItem|removeItem)\(/.test(ln)) return;
+    if (/function\s+safeLocal\w*/.test(ln)) return;
+    if (i - tryNear <= 8) return;
+    n++;
+  });
+  return n;
+})();
+const _hardFailed = [
+  ['重复字面量 id', _dupIdHits],
+  ['console.log 残留', (all.match(/console\.log\(/g) || []).length],
+  ['eval() 调用', (all.match(/\beval\(/g) || []).length],
+  ['document.write 调用', (all.match(/document\.write\(/g) || []).length],
+  ['裸 localStorage 调用（未走 safeLocal* 且就近无 try）', _nakedLsHits]
+].filter(([, n]) => n > 0);
+if (_hardFailed.length) {
+  console.log('\n=== 门禁未通过（硬指标出现回归）===');
+  _hardFailed.forEach(([k, n]) => console.log('  ✗ ' + k + '：' + n));
+  process.exitCode = 1;
+} else {
+  console.log('\n=== 门禁通过：硬指标全为 0 ===');
+}

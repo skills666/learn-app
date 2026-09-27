@@ -1,6 +1,6 @@
-// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '60'）同步递增，否则页面不会触发 SW 更新
+// ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION（当前 '61'）同步递增，否则页面不会触发 SW 更新
 // 图标等预缓存资源变更时同样要递增，否则老用户会一直用缓存里的旧图标
-const CACHE = 'learn-v60';
+const CACHE = 'learn-v61';
 
 // 预缓存静态资源，确保离线可用。
 // 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
@@ -9,9 +9,13 @@ const PRE_CACHE = ['index.html', 'manifest.json', 'img-bg-dark.jpg', 'icon-192.p
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    // 逐个 add 并容错：单个资源 404 只跳过它自己，不让 addAll 的原子失败拖垮整个离线首开
+    // 逐个抓取并容错：单个资源 404 只跳过它自己，不让原子失败拖垮整个离线首开。
+    // 用 {cache:'reload'} 绕开 HTTP 缓存：否则重装 SW 时可能把浏览器缓存里的旧 index.html / 旧图标存进新缓存
     caches.open(CACHE).then(c => Promise.all(
-      PRE_CACHE.map(u => c.add(u).catch(err => console.warn('[SW] 预缓存资源失败:', u, err)))
+      PRE_CACHE.map(u => fetch(u, { cache: 'reload' }).then(resp => {
+        if (resp.ok) return c.put(u, resp);
+        console.warn('[SW] 预缓存响应异常，已跳过:', u, resp.status);
+      }).catch(err => console.warn('[SW] 预缓存资源失败:', u, err)))
     ))
   );
   self.skipWaiting();
@@ -21,6 +25,8 @@ self.addEventListener('install', e => {
 // - 同源静态资源：Network First（先网络，失败回退缓存），仅缓存 GET 请求
 // - 第三方 API 请求：Network Only，不缓存（避免缓存敏感数据或过期响应）
 self.addEventListener('fetch', e => {
+  // only-if-cached 请求不能走 fetch()（会抛错），直接放行交给浏览器自己处理（SW cookbook 的标准短路）
+  if (e.request.cache === 'only-if-cached' && e.request.mode !== 'no-store') return;
   const url = new URL(e.request.url);
 
   // 第三方请求（Gitee API、AI API 等）：仅走网络，不缓存

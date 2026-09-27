@@ -21,9 +21,11 @@ const FILES = [
 
 /* 版本号一致性校验：index.html 的 SW_VERSION 与 sw.js 的 CACHE 必须同步递增，
    漏改会表现为"页面更新了但离线缓存不刷新"，排查起来很费劲，这里在打包前拦一道。 */
+// 正则锚定到行首的声明语句：原来的 /SW_VERSION\s*=\s*'…'/ 会被注释里的一行示例（如 // SW_VERSION = '99'）
+// 抢先命中，版本校验就静默失效了
 const readVer = (file, re) => (fs.readFileSync(path.join(ROOT, file), 'utf8').match(re) || [])[1];
-const swVer = readVer('index.html', /SW_VERSION\s*=\s*'([^']+)'/);
-const cacheVer = readVer('sw.js', /CACHE\s*=\s*'learn-v([^']+)'/);
+const swVer = readVer('index.html', /^const SW_VERSION = '([^']+)'/m);
+const cacheVer = readVer('sw.js', /^const CACHE = 'learn-v([^']+)'/m);
 if(!swVer || !cacheVer || swVer !== cacheVer){
   console.error(`版本号不一致：index.html SW_VERSION='${swVer}'，sw.js CACHE='learn-v${cacheVer}'。请两处同步递增后再打包。`);
   process.exit(1);
@@ -40,4 +42,17 @@ for(const f of FILES){
   console.log('  [sync] ' + f);
   copied++;
 }
-console.log(`www/ 同步完成：更新 ${copied} 个；跳过 ${skipped} 个（内容一致或缺源文件）`);
+// 清理 www/ 里的遗留文件：上一版被移除的资源（如已删掉的 1024 图标）若留着，
+// cap sync 会一并打进 APK，白白增大体积
+let cleaned = 0;
+if(fs.existsSync(DEST)){
+  for(const f of fs.readdirSync(DEST)){
+    if(FILES.includes(f)) continue;
+    const p = path.join(DEST, f);
+    if(fs.statSync(p).isDirectory()) continue;
+    fs.unlinkSync(p);
+    console.log('  [clean] ' + f);
+    cleaned++;
+  }
+}
+console.log(`www/ 同步完成：更新 ${copied} 个；跳过 ${skipped} 个（内容一致或缺源文件）` + (cleaned ? `；清理遗留 ${cleaned} 个` : ''));
