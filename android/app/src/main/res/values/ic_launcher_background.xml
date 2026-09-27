@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 自适应图标背景层：图标已改为「纯文字 + 白底」，前景是透明底上的黑字，这里必须是白色 -->
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- 自适应图标背景层：前景已换成仙侠立绘（满铺），这里取插画四边的平均色 ——
+         启动器视差动效把前景推走时露出的就是这一层，取同色系才不会突兀 -->
+    <color name="ic_launcher_background">#323044</color>
 </resources>

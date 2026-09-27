@@ -7,3 +7,5 @@ ocr-review-result.json
 # www/ 是 sync-www.js 从根目录生成的产物（Capacitor 的 webDir），逐字节副本不入库：
 # npm run cap:sync / build:android 都会先重新生成它，根目录才是唯一源
 www/
+# 图标流水线（scripts/icon-build.py）替换下来的旧图标备份：只在换图标时当临时回滚用，不入库
+generated-images/selected/_backup-icons/
