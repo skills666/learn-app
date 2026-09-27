@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0d0e17">
-<meta http-equiv="Content-Security-Policy" id="cspMeta" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http:; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http:; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self';">
 <title>万法归元</title>
 <style>
   :root{
@@ -56,7 +56,7 @@
   .tab:hover{background:var(--panel);color:var(--text)}
   .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2)}
   .tab .ic{margin-right:3px}
-  /* min-height：评分后统计项（待温故/今日已练/连续）会增减，固定最小高度避免未换行时高度跳动；
+  /* min-height：评分后统计项（待复习/今日已刷/连续）会增减，固定最小高度避免未换行时高度跳动；
      tabular-nums：数字等宽，评分后数字变化（23→22）不再让居中的整组统计项左右微移 */
   .stats-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:5px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;font-size:11.5px;color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
   .stats-bar .bar{flex:1;max-width:300px;height:6px;border-radius:4px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden}
@@ -91,7 +91,7 @@
   .content.in > *:nth-child(7){animation-delay:.26s}
   .content.in > *:nth-child(8){animation-delay:.30s}
   .content.in > *:nth-child(n+9){animation-delay:.34s}
-  /* 超长列表（寻踪最多 200 条 .sr-item）只让首批入场：一屏最多看到十来条，
+  /* 超长列表（搜索结果最多 200 条 .sr-item）只让首批入场：一屏最多看到十来条，
      第 25 条往后全部同时做 transform+opacity 动画只是白白拖慢低端机，直接显示观感无差别 */
   .content.in > *:nth-child(n+25){animation:none}
   @keyframes riseIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -107,7 +107,7 @@
   /* 槽底用主题文字色分量：写死深色在素笺/潮线/子良/子荣这类浅底主题下会变成白卡片上的一条黑槽 */
   .bigbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb),.14);overflow:hidden;margin-top:12px;max-width:420px}
   .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
-  /* 二级页返回按钮（典籍浏览 / 秘境试炼） */
+  /* 二级页返回按钮（题目浏览 / 刷题） */
   .back-btn{color:var(--muted)}
   .back-btn:hover{color:var(--text)}
   .doc-head .back-btn{margin-bottom:10px}
@@ -157,11 +157,11 @@
   .empty{text-align:center;color:var(--text);opacity:.62;padding:60px 20px;font-size:14px}
   .empty .big{font-size:40px;margin-bottom:10px}
 
-  /* ---------- 典籍视图：块形（网格）展示 ---------- */
+  /* ---------- 文档视图：块形（网格）展示 ---------- */
   .docs-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
   .docs-toolbar .dt-count{color:var(--muted);font-size:13px;font-weight:600}
   .docs-toolbar .dt-count b{color:var(--accent)}
-  /* 每张卡片等高等宽，标题撑开、修为与按钮贴底 */
+  /* 每张卡片等高等宽，标题撑开、进度与按钮贴底 */
   .docs-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;align-items:stretch}
   .docs-wrap .q{margin-bottom:0;display:flex;flex-direction:column;height:100%;padding:14px 15px}
   .docs-wrap .q .qhead{display:contents}   /* 让 编号/标题/按钮 直接参与卡片纵向排列 */
@@ -178,7 +178,7 @@
   .practice-wrap{max-width:820px;margin:0 auto}
   .pbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin:6px 0 4px;display:flex}
   .pbar > i{display:block;height:100%;min-width:2px;transition:width .3s;border-radius:3px}
-  /* 境界色板走 CSS 变量：applyTheme 按主题底色深浅给两套值 —— 原先硬编码的深色主题色板在纸白底上，
+  /* 等级色板走 CSS 变量：applyTheme 按主题底色深浅给两套值 —— 原先硬编码的深色主题色板在纸白底上，
      lv0（#3a3f55）会变成一块突兀的脏斑、lv1/lv2（黄/绿）对比又不足，是"方块和主题格格不入"的主因之一 */
   .pbar > i.lv0,.an-dot.lv0{background:var(--lv0,#3a3f55)}
   .pbar > i.lv1,.an-dot.lv1{background:var(--lv1,#d0b030)}
@@ -235,7 +235,7 @@
   .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .ov-card .t{color:var(--muted);font-size:13px;margin-top:4px}
-  /* 洞府：待温故行动卡 —— 纯色数字要覆盖 .n 的渐变文字填充；有到期题时轻微脉冲提示 */
+  /* 总览：待复习行动卡 —— 纯色数字要覆盖 .n 的渐变文字填充；有到期题时轻微脉冲提示 */
   .ov-card .n.plain{background:none;-webkit-text-fill-color:currentColor}
   .ov-card.ov-act{border-color:rgba(246,168,91,.5)}
   .ov-card.ov-act .n{animation:duePulse 2.2s ease-in-out infinite}
@@ -263,7 +263,7 @@
   .sr-item .qt{font-weight:650;cursor:pointer}
   .sr-item .snip{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.6}
 
-  /* 秘境试炼完成卡片 */
+  /* 刷题完成卡片 */
   .done-card{text-align:center;padding:40px 20px}
   .done-card .big{font-size:54px;margin-bottom:10px}
   .done-card h3{font-size:22px;margin:0 0 8px}
@@ -329,15 +329,6 @@
   .set-col{display:flex;flex-direction:column;gap:18px}
   .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
   .set-status{font-size:12px;color:var(--muted);margin-top:2px;width:100%;text-align:center}
-  /* 温故节奏选择卡（设置面板）：3 档并排；窄屏见下方 media query（2 列 + 第三档独占整行） */
-  .pace-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .pace-btn{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);color:var(--text);cursor:pointer;transition:border-color .15s,background .15s,transform .15s;font-family:inherit}
-  .pace-btn:hover{border-color:var(--accent2);transform:translateY(-1px)}
-  .pace-btn.on{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.16),rgba(var(--accent2-rgb),.12))}
-  .pace-name{font-size:14px;font-weight:700}
-  .pace-btn.on .pace-name{color:var(--accent)}
-  .pace-desc{font-size:12px;color:var(--muted);line-height:1.5}
-  .pace-meta{font-size:11px;color:var(--faint);font-weight:600}
 
   /* ===== 昨日战报（.season-modal）======
      每天首次进入只弹一次（见 maybeShowWarReport），所以它必须一眼看完、不出现滚动条：
@@ -419,7 +410,7 @@
                      box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(var(--accent2-rgb),.2)}
   .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
-  /* 闭关卡牌堆视觉：卡片下方露出两层「余牌」，暗示还有一摞题待温故 */
+  /* 记忆卡牌堆视觉：卡片下方露出两层「余牌」，暗示还有一摞题待复习 */
   .mem-stack{position:relative;margin-bottom:16px}
   .mem-stack::before,.mem-stack::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-7px;width:calc(100% - 22px);height:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);z-index:-1;opacity:.58}
   .mem-stack::after{bottom:-13px;width:calc(100% - 44px);opacity:.3}
@@ -452,10 +443,12 @@
   .grade-btn{flex:1;min-width:120px;border:1px solid var(--line2);background:var(--panel);color:var(--text);
     padding:12px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;transition:.15s;display:flex;
     align-items:center;justify-content:center;gap:8px}
-  /* 闭关模式四档评分：纵向两行（档位 + 下次间隔预览），一行放下不换行 */
-  .grade-row.mem-grade-row{gap:8px}
+  /* 记忆模式四档评分：纵向两行（档位 + 下次间隔预览）。
+     用网格排一行四个：最长文案 4 字（😰 完全忘了 ≈ 72px），320px 窄屏也放得下，不需要折行 */
+  .grade-row.mem-grade-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
   .grade-btn.mem-grade{flex-direction:column;gap:3px;padding:10px 6px;min-width:0;background:var(--panel)}
-  .grade-btn.mem-grade .gb-main{font-size:14px;font-weight:700;white-space:nowrap}
+  /* 兜底：万一窄到文案仍放不下，宁可省略号也不要文字溢出到隔壁按钮上 */
+  .grade-btn.mem-grade .gb-main{font-size:14px;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   .grade-btn.mem-grade .gb-int{font-size:11px;font-weight:600;color:var(--muted)}
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
   .grade-btn.mem-grade:hover{background:var(--panel2)}
@@ -512,7 +505,7 @@
   .theme-card .tc-swatch .tc-band{position:absolute;left:0;right:0;top:0;height:9px}
   .theme-card .tc-swatch .tc-dot{position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-radius:50%;border:1px solid rgba(0,0,0,.18)}
   .theme-card .tc-name{font-size:10.5px;font-weight:600;color:var(--text);line-height:1}
-  /* 论道台 */
+  /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
   .grill-mode-card{flex:1;min-width:140px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 12px;cursor:pointer;transition:.18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
   .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
@@ -575,8 +568,6 @@
     .set-row2{gap:10px;flex-direction:column}
     .set-row2 .set-field{flex:1 1 auto}
     /* 3 档在窄屏挤成一列太窄：前两档并排，第三档独占整行 */
-    .pace-grid{grid-template-columns:repeat(2,1fr)}
-    .pace-grid .pace-btn:last-child{grid-column:1/-1}
     .settings-modal .modal-head{padding:14px 18px}
     .settings-modal .modal-scroll{padding:14px 18px}
     .modal-title{font-size:16px}
@@ -628,7 +619,7 @@
     .btn.primary:hover{box-shadow:0 2px 8px rgba(0,0,0,.25)}
   }
 
-  /* ---------- 修为页：打卡热力图 / 到期预测 / 境界条筛选 ----------
+  /* ---------- 进度页：打卡热力图 / 到期预测 / 等级条筛选 ----------
      三块都只用 CSS + 已有数据渲染，不引任何外部依赖（CSP 与离线优先都不允许外链） */
 
   /* 打卡热力图（年度视图 1/1~12/31）：列宽自适应（minmax(11px,1fr)）——宽屏铺满、与上下内容同宽，窄屏保持 11px 并横向滚动。
@@ -650,8 +641,8 @@
   .hm-cell.l2{background:rgba(var(--accent-rgb),.46)}
   .hm-cell.l3{background:rgba(var(--accent-rgb),.72)}
   .hm-cell.l4{background:var(--accent);box-shadow:0 0 7px rgba(var(--accent-rgb),.5)}
-  /* 未秘境试炼 / 今年还没到的日期 / 1/1 前与 12/31 后的域外余格：统一走 .hm-cell 的同一个灰底，
-     年度图是一整块完整的矩形、不留空洞；三者的区别只在悬停提示（未秘境试炼 / 未开始 / 无提示） */
+  /* 未刷题 / 今年还没到的日期 / 1/1 前与 12/31 后的域外余格：统一走 .hm-cell 的同一个灰底，
+     年度图是一整块完整的矩形、不留空洞；三者的区别只在悬停提示（未刷题 / 未开始 / 无提示） */
 
   .stat-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
     margin-top:10px;font-size:11.5px;color:var(--muted)}
@@ -693,7 +684,7 @@
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
 
-  /* 修为条/热力图/境界条/预测柱等数据块：全主题统一用圆角（不再为某个主题特殊收成方角）。 */
+  /* 进度条/热力图/等级条/预测柱等数据块：全主题统一用圆角（不再为某个主题特殊收成方角）。 */
 
   /* =========================================================
      ===== 增强层（主题 / 动效 / 过渡 / 外观 / 无障碍）=====
@@ -705,7 +696,7 @@
      顶栏标签/主题卡等用了 tabindex，但此前没有 :focus-visible 样式，暗色下浏览器默认焦点环几乎看不见。
      用 --accent 画环、:where() 保持零特异度（不抢既有样式的优先级），只在键盘导航时出现。 */
   :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.theme-tab,.q,.memory-card,.iconbtn,
-         .pace-btn,.grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt):focus-visible{
+         .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt):focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
   /* 屏幕阅读器专用（视觉隐藏，供 aria-live 播报切页） */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -719,9 +710,9 @@
   @keyframes slideInFwd{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
   @keyframes slideInBack{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
 
-  /* ---------- 换题翻卡：秘境试炼 / 回炉（复用闭关模式已验证的「飞出 + 入场」手感） ----------
-     旧卡用 WAAPI 飞出（见 practiceStep / 回炉评分），新卡在模板里挂 .flip-in-* / .card-enter 做入场；
-     memCardIn 复用闭关卡牌堆入场的关键帧（全局定义）。均不加 fill，动画结束后自然交还 hover 位移。 */
+  /* ---------- 换题翻卡：刷题 / 趁热（复用记忆模式已验证的「飞出 + 入场」手感） ----------
+     旧卡用 WAAPI 飞出（见 practiceStep / 趁热评分），新卡在模板里挂 .flip-in-* / .card-enter 做入场；
+     memCardIn 复用记忆卡牌堆入场的关键帧（全局定义）。均不加 fill，动画结束后自然交还 hover 位移。 */
   @keyframes cardInFwd{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
   @keyframes cardInBack{from{opacity:0;transform:translateX(-48px)}to{opacity:1;transform:none}}
   .pcard.flip-in-fwd{animation:cardInFwd .3s cubic-bezier(.22,.61,.36,1)}
@@ -761,13 +752,13 @@
 <div class="app">
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="tabs" id="tabs">
-      <div class="tab active" data-view="overview" role="button" tabindex="0" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/></svg></span> <span data-copy>洞府</span></div>
-      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> <span data-copy>典籍</span></div>
-      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/></svg></span> <span data-copy>修为</span></div>
-      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> <span data-copy>论道</span></div>
-      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> <span data-copy>闭关</span></div>
-      <div class="tab" data-view="hot" role="button" tabindex="0" title="回炉淬炼：把闭关模式里没答简单的题再过一遍" data-copy-title="回炉淬炼：把闭关模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span data-copy>回炉</span></div>
+    <div class="tabs">
+      <div class="tab active" data-view="overview" role="button" tabindex="0" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/></svg></span> <span>总览</span></div>
+      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> <span>文档</span></div>
+      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/></svg></span> <span>进度</span></div>
+      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> <span>拷打</span></div>
+      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> <span>记忆</span></div>
+      <div class="tab" data-view="hot" role="button" tabindex="0" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span>趁热</span></div>
     </div>
     <div class="search">
       <svg class="search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
@@ -780,7 +771,7 @@
 </div>
 
 <!-- THEME POPUP -->
-<div class="theme-popup" id="themePopup" style="right:12px;top:48px">
+<div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:48px">
   <div class="theme-tabs" id="themeTabs">
     <div class="theme-tab active" data-tab="canvas">✨ 动态</div>
     <div class="theme-tab" data-tab="custom">💎 定制</div>
@@ -799,24 +790,7 @@
     </div>
     <div class="modal-scroll">
     <div class="set-list">
-      <!-- 0. 界面文案（文案主题）：只换显示用词，不习惯这套词的同学可切回另一套 -->
-      <div class="set-section">
-        <div class="set-head"><span data-copy>✍️ 界面文案</span> <span class="set-arrow">▾</span></div>
-        <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-hint">只换界面上的用词：题库内容、学习进度与复习排期完全不受影响。<br>两套文案说的是同一件事，随时可切换。</div>
-          <div class="pace-grid" id="copyGrid"></div>
-        </div></div></div>
-      </div>
-      <!-- 1. 温故节奏 -->
-      <div class="set-section">
-        <div class="set-head"><span data-copy>🗓️ 温故节奏</span> <span class="set-arrow">▾</span></div>
-        <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-hint" data-copy>按「距离渡劫还有多久」选择：档位越短，温故越密，保证临考前每个题都能覆盖到。<br>切换后立即按新节奏重排全部题目的入队时间，可随时切回。</div>
-          <div class="pace-grid" id="paceGrid"></div>
-          <div id="paceStatus" class="set-status"></div>
-        </div></div></div>
-      </div>
-      <!-- 2. 云同步 -->
+      <!-- 0. 云同步 -->
       <div class="set-section">
         <div class="set-head">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
@@ -830,7 +804,7 @@
           <div id="cloudStatus" class="set-status"></div>
         </div></div></div>
       </div>
-      <!-- 2. 数据备份 -->
+      <!-- 1. 数据备份 -->
       <div class="set-section">
         <div class="set-head">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
@@ -838,7 +812,7 @@
           <div class="set-btns"><button class="btn primary" id="exportMDBtn">📄 导出全部题库（Markdown）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
         </div></div></div>
       </div>
-      <!-- 3. AI 设置 -->
+      <!-- 2. AI 设置 -->
       <div class="set-section">
         <div class="set-head">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
@@ -847,11 +821,11 @@
           <div class="set-row2"><div class="set-field" style="flex:1"><label>API Key</label><input placeholder="sk-..." id="aiKey" type="password" aria-label="AI API Key"></div><div class="set-field" style="flex:1"><label>模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel" aria-label="AI 模型名"></div></div>
         </div></div></div>
       </div>
-      <!-- 4. 进阶操作 -->
+      <!-- 3. 进阶操作 -->
       <div class="set-section">
         <div class="set-head">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-btns"><button class="btn danger" id="resetBtn" data-copy>🗑️ 仅清除修为</button> <button class="btn danger" id="clearAllBtn" data-copy>🗑️ 清空全部典籍</button></div>
+          <div class="set-btns"><button class="btn danger" id="resetBtn">🗑️ 仅清除进度</button> <button class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button></div>
         </div></div></div>
       </div>
     </div>
@@ -867,7 +841,7 @@
       <span class="season-date" id="warDate"></span>
     </div>
     <div class="season-body">
-      <div class="season-hero"><b id="warTotal">0</b><span data-copy>次温故</span></div>
+      <div class="season-hero"><b id="warTotal">0</b><span>次复习</span></div>
       <div class="season-sub" id="warSub"></div>
       <div class="season-bar" id="warBar"></div>
       <div class="season-legend" id="warLegend"></div>
@@ -875,7 +849,7 @@
       <div class="season-quip" id="warQuip"></div>
     </div>
     <div class="season-foot">
-      <button class="btn primary" id="warGo" type="button" data-copy>开始今天的温故</button>
+      <button class="btn primary" id="warGo" type="button">开始今天的复习</button>
       <button class="btn" id="warClose" type="button">知道了</button>
     </div>
   </div>
@@ -1058,7 +1032,7 @@ const Store = (() => {
     getOrder: () => get('order').then(v => v || null),
     saveOrder: v => set('order', v),
     getOrderCustom: () => get('orderCustom').then(v => !!v),
-    // 原来只有读、没有写：orderCustom 永远是 false，init 里"按存档顺序排典籍"的分支根本不可达
+    // 原来只有读、没有写：orderCustom 永远是 false，init 里"按存档顺序排文档"的分支根本不可达
     saveOrderCustom: v => set('orderCustom', !!v),
     getClears: () => get('clears').then(v => v || {}),
     saveClears: v => set('clears', v),
@@ -1095,71 +1069,45 @@ const Store = (() => {
   };
 })();
 
-/* ===== 文案主题（文本皮肤）：只换"显示用词"，不碰逻辑、存储键、题库内容 =====
-   场景：自己用仙侠皮（万法归元），同学要用时一键切回原本的面试术语。
-   设计：键就是仙侠文案本身，回译靠一张词表 —— 于是"接词表"的成本只是把中文字面量包一层 T()，
-   不必给每处发明语义 key，将来加词也只改这一处。
-   安全性：T() 只作用于 UI 文案字面量。渲染时插值进去的题目/答案等一律不进 T()，所以题库正文
-   永远不会被改写（这也是不用「渲染完再整体替换 innerHTML」的原因，那会连带改写题目内容）。
-   匹配按长度降序（先长后短），避免「秘境试炼」被更短的词拆坏；T 是幂等的 ——
-   回译后的经典文案里不再含仙侠词，重复调用是空操作。 */
-const COPY_THEMES = { xianxia:'仙侠', classic:'经典' };
-const COPY_BACK = [   // [仙侠, 经典]：还原成原本的面试用词
-  ['秘境试炼','刷题'], ['闭关修行','记忆复习'], ['回炉淬炼','趁热打铁'],
-  ['典籍浏览','题目浏览'], ['修行热力图','打卡热力图'], ['修行数据','学习数据'], ['修行录','记忆进度'],
-  ['距离渡劫','距离面试'], ['斗法台','模拟面试'], ['论道台','项目拷打'],
-  ['今日已练','今日已刷'], ['连续修行','连续打卡'], ['待温故','待复习'], ['已悟率','掌握率'],
-  ['洞府','总览'], ['典籍','文档'], ['修为','进度'], ['论道','拷打'], ['闭关','记忆'], ['回炉','趁热'],
-  ['温故','复习'], ['已悟','掌握'], ['境界','等级'], ['未启','未学'], ['修行','打卡'],
-  ['寻踪','搜索结果'], ['渡劫','面试']
-];
-function T(s){
-  if(copyTheme === 'xianxia' || !s) return s;
-  let o = s;
-  for(let i=0;i<COPY_BACK.length;i++){ const p = COPY_BACK[i]; if(o.indexOf(p[0]) !== -1) o = o.split(p[0]).join(p[1]); }
-  return o;
-}
-// 文案主题本身不进 PROGRESS / 云端载荷，只占一个 localStorage 键（与主题色 learnAppTheme 并列）
-let copyTheme = 'xianxia';
-const _savedCopy = safeLocalGet('learnAppCopyTheme','');
-if(COPY_THEMES[_savedCopy]) copyTheme = _savedCopy;
-
 /* =========================================================
    应用状态
    ========================================================= */
 let DOCS = [];
 let PROGRESS = {};                 // qid -> {seen, mastered}
-let ORDER = [];                   // 典籍顺序（doc id 数组，用于导入/同步数据维护）
+let ORDER = [];                   // 文档顺序（doc id 数组，用于导入/同步数据维护）
 let CLEARS = {};                  // docId -> 通关次数
 
 // 视图常量
 const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', HOT:'hot' };
-// ↑ 原 CLOZE:'cloze'（回忆模式）已下线；故意从 Views 中移除，旧存档 lastView='cloze' 会在下方启动检查里回退到洞府，不会残留进入不存在的页
+// ↑ 原 CLOZE:'cloze'（回忆模式）已下线；故意从 Views 中移除，旧存档 lastView='cloze' 会在下方启动检查里回退到总览，不会残留进入不存在的页
 // 视图中文名：供切页时给屏幕阅读器播报（aria-live）
-const VIEW_NAMES = { overview:T('洞府'), docs:T('典籍'), search:T('寻踪'), practice:T('秘境试炼'), mock:T('斗法台'), memory:T('闭关修行'), grill:T('论道台'), browse:T('典籍浏览'), analytics:T('修为'), hot:T('回炉淬炼') };
+const VIEW_NAMES = { overview:'总览', docs:'文档', search:'搜索结果', practice:'刷题', mock:'模拟面试', memory:'记忆复习', grill:'项目拷打', browse:'题目浏览', analytics:'进度', hot:'趁热打铁' };
 
 let view; try{ view = sessionStorage.getItem('lastView') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
 if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
 let currentDocId = null;
 let searchTerm = '';
 let highlightQid = null;   // 搜索跳转时高亮指定题目
-let browseLimit = 200;     // 典籍浏览页单次渲染的题目数（超出用「显示更多」翻页，避免大题库一次渲染上千张卡片卡死页面）
-let browseFrom = Views.DOCS;     // 进入「典籍浏览」前所在的一级标签：决定返回目标 + 目录高亮归属
-let practiceFrom = Views.DOCS;   // 进入「秘境试炼」前所在页面：决定退出秘境试炼回到哪里
+let browseLimit = 200;     // 题目浏览页单次渲染的题目数（超出用「显示更多」翻页，避免大题库一次渲染上千张卡片卡死页面）
+let browseFrom = Views.DOCS;     // 进入「题目浏览」前所在的一级标签：决定返回目标 + 目录高亮归属
+let practiceFrom = Views.DOCS;   // 进入「刷题」前所在页面：决定退出刷题回到哪里
 let practice = { order: [], index: 0, scope: null, done: false, practiced: new Set(), revealed: new Set() };
 let mock = { cfg:{count:10, scope:'all'}, queue:[], index:0, answers:{}, scopeName:'全部题目', revealed:false, done:false };
 let aiConfig = null, aiGrading = null, aiGradingLoading = false, aiAnswer = {}, aiCodeAnswer = {}, aiCodeStreaming = {}, aiCodeHidden = {};
 let memory = { queue:[], index:0, flipped:false, _history:[] };
+/* 评分飞出动画期间的锁：必须是模块级的，不能是 renderMemory 里的局部变量 ——
+   放在渲染闭包里时，动画未结束就切走再切回会渲染出"看起来可点"的同一张卡（评分还没落账），
+   于是同一题被评两次、索引多跳一格。入口重建 memory 也不会碰到它，锁的生命周期与评分本身绑定。 */
+let _memGradeBusy = false;
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false };
-let cloze = { queue:[], index:0, qid:null, answer:'', checked:false, result:null, statHit:0, statAnchor:0, doneCount:0 };
-// 回炉淬炼：HOT = 持久化热榜 [{qid, addedAt}]（localStorage + 独立 gist 文件）；hot = 回炉页本轮游标
+// 趁热打铁：HOT = 持久化热榜 [{qid, addedAt}]（localStorage + 独立 gist 文件）；hot = 趁热页本轮游标
 let HOT = [];
 // 昨日战报：WARLOG = 按本地自然日归档的答题日志 { 'yyyy-mm-dd': {c:[四档次数], q:[当天题id], …} }，
 // 与热榜同款"独立 localStorage"，由 init 里的 loadWarLog() 恢复
 let WARLOG = {};
 let hot = { queue:[], index:0, flipped:false, cleared:0, inPass:false };
 /* ===== 撒花庆祝（纯手写 Canvas 粒子，无依赖）=====
-   用于「简单」评分、通关完成、手动标记已悟等时刻 */
+   用于「简单」评分、通关完成、手动标记掌握等时刻 */
 let _confettiCanvas = null;
 function celebrateConfetti(opts){
   opts = opts || {};
@@ -1221,7 +1169,7 @@ function celebrateConfetti(opts){
   requestAnimationFrame(frame);
 }
 
-/* ===== 数字滚动动画：洞府页薪资与统计数字从旧值滚到新值 ===== */
+/* ===== 数字滚动动画：总览页薪资与统计数字从旧值滚到新值 ===== */
 function countUpNum(el, to, from, dur, fmt){
   if(!el) return;
   const a = +from || 0, b = +to || 0;
@@ -1240,11 +1188,10 @@ function countUpNum(el, to, from, dur, fmt){
 /* =========================================================
    FSRS 调度（Free Spaced Repetition Scheduler）
    参考 open-spaced-repetition/ts-fsrs（MIT）的默认权重与公式内联实现，
-   保持「离线 / 零依赖 / 单文件」定位。相比原 SM-2 的「间隔 × EF」经验规则，
-   FSRS 用 DSR（难度 D / 稳定性 S / 可提取性 R）建模记忆状态：
-   间隔随个人遗忘曲线自适应，同样正确率下温故量明显更省。
-   旧数据无需手动迁移：首次评分时用 interval≈S（保留率 0.9 时二者相等）、
-   EF 反推 D 做一次近似换算，之后完全走 FSRS。
+   保持「离线 / 零依赖 / 单文件」定位。用 DSR（难度 D / 稳定性 S / 可提取性 R）
+   建模记忆状态：间隔随个人遗忘曲线自适应，同样正确率下复习量更省。
+   旧记录无需手动迁移：首次评分时由 fsrsStateOf 按 interval≈S、EF→D 换算一次，
+   之后完全走 FSRS（新数据不再写 EF）。
    ========================================================= */
 // FSRS-5 默认权重（19 个参数）
 const FSRS_W = [0.40255,1.18385,3.173,15.69105,7.1949,0.5345,1.4604,0.0046,1.54575,0.1192,1.01925,1.9395,0.11,0.29605,2.2698,0.2315,2.9898,0.51655,0.6621];
@@ -1253,43 +1200,34 @@ const FSRS_AGAIN_INTERVAL = 0.5;                // 「忘了」的间隔（天�
 const FSRS_MIN_STABILITY = 0.01, FSRS_MAX_STABILITY = 36500;
 const Rate = { AGAIN:1, HARD:2, GOOD:3, EASY:4 };   // 四档评分（与 Anki / ts-fsrs 的 Rating 对齐）
 const RATE_META = {
-  1:{label:'忘了', icon:'😰', color:'var(--bad)',    cls:'g-again'},
-  2:{label:'困难', icon:'🤔', color:'#e09040',       cls:'g-hard'},
-  3:{label:'记得', icon:'😐', color:'var(--accent)', cls:'g-good'},
-  4:{label:'简单', icon:'😎', color:'var(--good)',   cls:'g-easy'}
+  1:{label:'完全忘了', icon:'😰', color:'var(--bad)',    cls:'g-again'},
+  2:{label:'记得一点', icon:'🤔', color:'#e09040',       cls:'g-hard'},
+  3:{label:'差不多',   icon:'😐', color:'var(--accent)', cls:'g-good'},
+  4:{label:'倒背如流', icon:'😎', color:'var(--good)',   cls:'g-easy'}
 };
-/* 温故节奏档位（设置页可选）：按「距渡劫还有多久」预设 FSRS 参数。
-   retention 越高 → 间隔压得越短（温故越密、临考覆盖越全），代价是每日温故量更大；
-   maxInterval 为间隔上限（天）；masteredMin 为已悟题的最小温故间隔（天）。
-   只保留 3 档（最长 14 天）：面试备考里超过两周才见的题等于没温故，
-   原「长期备考」档（cap 30 天）已下线，老数据的迁移见 init 里的 _paceStale 分支。
-   切换档位时 rescheduleAllProgress() 会按新参数重排全部题目的入队时间。 */
-const PACES = {
-  '3d':  { name:'3 天内冲刺', desc:'每题 1–3 天一轮，临考全覆盖', retention:0.96, maxInterval:3,  masteredMin:1 },
-  '7d':  { name:'1 周内突击', desc:'一周内每题至少过一遍',        retention:0.94, maxInterval:7,  masteredMin:2 },
-  '14d': { name:'2 周内稳扎', desc:'两周内覆盖全部题目',          retention:0.92, maxInterval:14, masteredMin:4 }
-};
-const DEFAULT_PACE = '14d';
-let fsrsPace = DEFAULT_PACE;
-let _paceStale = false;   // 存档里的档位已下线（long）→ 首次加载后按新档位重排一次
-try{
-  const _savedPace = localStorage.getItem('learnAppPace');
-  if(_savedPace && PACES[_savedPace]) fsrsPace = _savedPace;
-  else if(_savedPace) _paceStale = true;
-}catch(_){}
-function paceCfg(){ return PACES[fsrsPace] || PACES[DEFAULT_PACE]; }
-function fsrsRetention(){ return paceCfg().retention; }
-function fsrsMaxInterval(){ return paceCfg().maxInterval; }
-function masteredMinDays(){ return paceCfg().masteredMin; }
-// SM-2 遗留常量：调度已由 FSRS 接管，仅 EF 展示与旧数据迁移换算仍在引用
+/* 记忆模式的评分档位 = FSRS 的四档，一一对应（按钮的 data-rate 就是 FSRS 的 Rating 值）。
+   不要再引入"UI 档位 → 调度档位"的换算层：FSRS 只有四档，多出来的档必然与某一档等价，
+   而两层刻度脱节过一次（点「简单」既不涨掌握、间隔也按「记得」排）—— 同刻度是这里的设计约束。 */
+/* 排期参数（三项都刻意偏离 fsrs 库的默认值，直接决定用户看到的间隔天数）。
+   不做成设置项：改它等于换一套复习节奏，属于产品决策，不该让用户自己操心： */
+const FSRS_RETENTION = 0.92;    // 目标保留率：库里默认 0.9；0.92 让间隔乘 ~0.77（复习更密、临考覆盖更全）
+const FSRS_MAX_INTERVAL = 14;   // 间隔上限（天）：库里默认 36500。压得住"熟练题越排越远"，代价是硬截断——S 越大被压得越狠
+const MASTERED_MIN_DAYS = 4;    // 掌握题的最小复习间隔（天）：FSRS 里没有这个概念，是纯产品规则
+/* 老存档里可能还留着「复习节奏」键（早期版本用它选间隔上限）。它已经没有任何作用，
+   但键还在就说明入队时间是按别的参数排的：首屏加载后按现行参数重排一次再删掉它 ——
+   不删的话每次启动都会重排一遍，到期时间反复漂移（见 init 里的 _paceStale 分支）。 */
+let _paceStale = false;
+try{ _paceStale = !!localStorage.getItem('learnAppPace'); }catch(_){}
+// 老记录换算用的 EF 常量：只在 fsrsStateOf 把「只有 SM-2 字段的旧进度」换算成 DSR 状态时读一次，
+// 新数据不再写 EF（进度页展示的是 FSRS 的稳定性/难度）
 const SM2_INIT_EF = 2.5, SM2_MIN_EF = 1.3;
 function fsrsClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
 // g 越界（非 1-4）时 FSRS_W[g-1] 取值会产出 NaN 并污染整个调度链，越界一律回退到 AGAIN 位
 function fsrsInitStability(g){ const gg = (g>=1 && g<=4) ? g : 1; return Math.max(FSRS_MIN_STABILITY, FSRS_W[gg-1]); }
 function fsrsInitDifficulty(g){ const gg = (g>=1 && g<=4) ? g : 1; return fsrsClamp(FSRS_W[4] - Math.exp(FSRS_W[5]*(gg-1)) + 1, 1, 10); }
-// 间隔（天）：I(r,S) = S/FACTOR · (r^(1/DECAY) − 1)；r 与上限取自当前温故节奏档位
-function fsrsIntervalDays(s){ return fsrsClamp(Math.round(s / FSRS_FACTOR * (Math.pow(fsrsRetention(), 1/FSRS_DECAY) - 1)), 1, fsrsMaxInterval()); }
-// 可提取性：距上次温故 elapsed 天后成功回忆的概率
+// 间隔（天）：I(r,S) = S/FACTOR · (r^(1/DECAY) − 1)；r 与上限是上面的固定参数（r=0.9 时 I 恰好等于 S）
+function fsrsIntervalDays(s){ return fsrsClamp(Math.round(s / FSRS_FACTOR * (Math.pow(FSRS_RETENTION, 1/FSRS_DECAY) - 1)), 1, FSRS_MAX_INTERVAL); }
+// 可提取性：距上次复习 elapsed 天后成功回忆的概率
 function fsrsRetrievability(elapsed, s){ return Math.pow(1 + FSRS_FACTOR * elapsed / s, FSRS_DECAY); }
 function fsrsNextDifficulty(d, g){ return fsrsClamp(FSRS_W[7]*fsrsInitDifficulty(Rate.EASY) + (1-FSRS_W[7])*(d - FSRS_W[6]*(g-3)), 1, 10); }
 function fsrsRecallStability(d, s, r, g){
@@ -1299,16 +1237,15 @@ function fsrsRecallStability(d, s, r, g){
 }
 function fsrsForgetStability(d, s, r){ return FSRS_W[11] * Math.pow(d, -FSRS_W[12]) * (Math.pow(s+1, FSRS_W[13]) - 1) * Math.exp(FSRS_W[14]*(1-r)); }
 function fsrsShortTermStability(s, g){ return s * Math.exp(FSRS_W[17]*(g-3+FSRS_W[18])); }
-// 旧修为 → FSRS 状态：老数据没有 DSR 字段，用 interval 近似 S、EF 反推 D（一次性换算）
+// 旧进度 → FSRS 状态：老数据没有 DSR 字段，用 interval 近似 S、EF 反推 D（一次性换算）
 function fsrsStateOf(p, now){
   if(p && p.fsrs && typeof p.fsrs.s === 'number' && p.fsrs.s > 0) return p.fsrs;
   if(!p || (!p.srNext && !p.interval && !p.ef && !p.srLevel)) return null;   // 全新题
   const ef = fsrsClamp(+p.ef || SM2_INIT_EF, SM2_MIN_EF, 3);
   return { d: fsrsClamp(5 - (ef - 2.5)*5, 1, 10), s: Math.max(FSRS_MIN_STABILITY, +p.interval || 1), last: p.lastPracticed || now, reps: Math.max(1, p.srLevel || 1), lapses: 0 };
 }
-// D → EF 反推：分析页/CSV 仍以 EF 展示，保持旧表结构不变
-function fsrsEfOf(d){ return fsrsClamp(2.5 - (d-5)/5, SM2_MIN_EF, 3); }
-// 核心调度：给定旧修为与评分，算出新卡片状态、间隔与下次温故时间
+
+// 核心调度：给定旧进度与评分，算出新卡片状态、间隔与下次复习时间
 function fsrsStep(prev, g, now){
   const st = fsrsStateOf(prev, now);
   let d, s, reps, lapses;
@@ -1338,62 +1275,84 @@ function fsrsPreview(prev, now){
   return out;
 }
 // 说明：原 fmtInterval() 已无调用方（评分按钮的间隔文案改为内联表达式），故删除
-// 覆盖率 / 旧 5 档评分 → FSRS 四档：1⇒忘了 2⇒困难 3/4⇒记得 5⇒简单
+// 评分入参归一化：UI 档位与 FSRS 档位是同一套刻度，这里只负责挡住脏数据
+// （越界值一律归到最近的一端，宁可排得远也不要让 NaN/未定义污染整条调度链）
 function fsrsFromRate(rate){
   const r = Math.round(+rate || 3);
   if(r <= 1) return Rate.AGAIN;
   if(r === 2) return Rate.HARD;
-  if(r >= 5) return Rate.EASY;
-  return Rate.GOOD;
+  if(r === 3) return Rate.GOOD;
+  return Rate.EASY;
 }
-// 闭关模式评分入口：只写 PROGRESS（含 FSRS 调度状态）。
-// historyArr 非 null 时记录撤销栈（闭关模式传 memory._history）
+// 记忆模式评分入口：只写 PROGRESS（含 FSRS 调度状态）。
+// historyArr 非 null 时记录撤销栈（记忆模式传 memory._history）
 function applySm2Grade(qid, rate, historyArr){
   const now = Date.now();
   const pr = PROGRESS[qid] || {};
   const g = fsrsFromRate(rate);
-  // 回炉进料：闭关模式评「非简单」且不在热榜 → 入队一次。
+  // 趁热进料：记忆模式评「非简单」且不在热榜 → 入队一次。
   // 用 typeof 守卫 + try 兜住：让离线冒烟测试的沙箱（无 HOT/localStorage）不因这一行而失败。
-  if(typeof feedHotFromMemory === 'function'){ try{ feedHotFromMemory(qid, rate); }catch(_){} }
-  if(historyArr){
-    historyArr.push({qid, oldProgress:{...pr}});
-    if(historyArr.length > 50) historyArr.splice(0, historyArr.length - 50);   // 撤销栈封顶 50 步，长会话不再无限累积
-  }
+  // 记下"这次是否真的把它加进榜"：撤销评分时要把这条副作用一起回滚（旧记录本来就在榜上则不动）
+  let hotAdded = false;
+  if(typeof feedHotFromMemory === 'function'){ try{ hotAdded = feedHotFromMemory(qid, rate) === true; }catch(_){} }
   const res = fsrsStep(pr, g, now);
   const curLvl = pr.srLevel || 0;
-  // 境界：记得/简单 +1，困难保持，忘了清零（沿用原 SM-2 的境界语义，修为条不受算法切换影响）
+  // 等级：记得/简单 +1，困难保持，忘了清零（纯展示刻度：进度条与统计读它，不参与排期）
   const newLvl = g>=Rate.GOOD ? Math.min(5, curLvl+1) : (g===Rate.HARD ? curLvl : 0);
-  // 「简单」标记已悟，「忘了」清除已悟标记，其余保持
-  const newMastered = g===Rate.EASY ? true : (g===Rate.AGAIN ? false : (pr.mastered||false));
-  PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card, ef:+fsrsEfOf(res.card.d).toFixed(2)};
+  // 掌握：复习阶段答到最高档才算数 —— 新题第一次评分即使点「倒背如流」也不点亮（排期照旧按简单档，尊重自评）。
+  // 依据：只看过一遍答案时的"记住了"最不可靠（流畅性错觉），而掌握数是要用来判断"能不能推进下一步"的，
+  // 宁可要求"至少复习过一次还答得出来"。手动 ★ 标记过的题不因此被降级（|| pr.mastered）。
+  // 「忘了」清除掌握标记，其余档位保持原样。
+  const newMastered = g===Rate.EASY ? (!!pr.fsrs || !!pr.mastered)
+    : (g===Rate.AGAIN ? false : (pr.mastered||false));
+  if(historyArr){
+    // 撤销要能完整回滚这次评分：除了旧进度，还要记住档位/等级/掌握变化、入榜与否、以及评分时刻
+    // （战报按自然日归档，跨天撤销得回到当时那个桶里反向计数）
+    historyArr.push({qid, oldProgress:{...pr}, at:now, g, newLvl, newMastered, hotAdded});
+    if(historyArr.length > 50) historyArr.splice(0, historyArr.length - 50);   // 撤销栈封顶 50 步，长会话不再无限累积
+  }
+  PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card};
   // 昨日战报：归档这一次评分。pr 仍是评分前的旧对象（上面用了展开赋值），新旧对比正好是战报要的"变化"
   if(typeof warLogAdd === 'function'){ try{ warLogAdd(now, qid, g, pr, newLvl, newMastered); }catch(_){} }
   saveProgress();
   markDirty();
 }
 
-/* ===== 回炉淬炼：闭关模式的伴生"热榜"（零副作用 · 独立同步） =====
-   规则：闭关模式某题评「非简单」且不在榜 → 入队一次（去重，不重复加、不插队）；
-   评「简单」不改动热榜。只有「回炉页里点记住了」才会消减。
-   本队列绝不写 PROGRESS、不改排期/统计/打卡；数据单独存 localStorage + 单独 gist 文件，不与修行数据混。 */
+/* ===== 趁热打铁：记忆模式的伴生"热榜"（零副作用 · 独立同步） =====
+   规则：记忆模式某题评「非简单」且不在榜 → 入队一次（去重，不重复加、不插队）；
+   评「倒背如流」（四档自评里的最高档 = FSRS 的 EASY）不改动热榜。
+   只有「趁热页里点记住了」才会消减。
+   本队列绝不写 PROGRESS、不改排期/统计/打卡；数据单独存 localStorage + 单独 gist 文件，不与学习数据混。 */
 function saveHot(){ try{ localStorage.setItem('learnAppHot', JSON.stringify(HOT)); }catch(_){ console.warn('[hot] 热榜持久化失败'); } }
 function loadHot(){ try{ const a = JSON.parse(localStorage.getItem('learnAppHot') || '[]'); return Array.isArray(a) ? a.filter(x => x && x.qid) : []; }catch(_){ return []; } }
 function hotHas(qid){ return HOT.some(h => h.qid === qid); }
 function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid, addedAt: Date.now() }); saveHot(); markDirty(); return true; }
 function hotRemove(qid){ const i = HOT.findIndex(h => h.qid === qid); if(i < 0) return false; HOT.splice(i, 1); saveHot(); markDirty(); return true; }
-function feedHotFromMemory(qid, rate){ if(rate >= Rate.EASY) return; hotAdd(qid); }   // 按原始评分判断：简单(≥Rate.EASY=4)→不动；非简单→去重入队
+// 按原始评分判断：倒背如流(4)→不动；其余三档→去重入队。
+// 返回值 = "这次是否真的加进了榜"，供撤销评分时决定要不要回滚（已在榜上则返回 false，不能误删）
+function feedHotFromMemory(qid, rate){ if(rate >= Rate.EASY) return false; return hotAdd(qid) === true; }
 function hotLiveQueue(){
   // 解析热榜为真实存在的题目，顺带回收被删题遗留的孤立 qid
   const kept = HOT.filter(h => questionById(h.qid));
   if(kept.length !== HOT.length){ HOT = kept; saveHot(); markDirty(); }   // 删了隐藏数据也要推上去，否则多设备各留一份孤儿
   return HOT.map(h => h.qid);
 }
+// 云端热榜落库：手动拉取与启动自动拉取共用同一段逻辑。
+// 原先只有手动拉取会处理 hot-data.json，自动拉取完全忽略它 —— 同一份云端数据，
+// 从哪条路径进来会得到不同的热榜（本地旧榜残留 / 被旧数据覆盖），行为不可预期。
+function applyHotFromGist(gist){
+  const f = gist && gist.files && gist.files['hot-data.json'];
+  HOT = [];   // 先清空，避免把本地旧热榜混进云端数据
+  if(f && f.content){ try{ const hd = JSON.parse(f.content); if(hd && Array.isArray(hd.hot)) HOT = hd.hot.filter(x=>x&&x.qid); }catch(_){ HOT = []; } }
+  saveHot();
+  hot.inPass = false; hot.index = 0; hot.cleared = 0;
+}
 
 /* ===== 昨日战报：按自然日归档的答题日志（零副作用 · 不参与排期/统计/打卡） =====
    为什么不复用现成数据：PROGRESS 每题只留"最后一次练习时间"，同一天对同一道题的多次评分会被后一次覆盖，
    推不出"昨天四档各评了多少"（热力图里写过同样的口径说明）；而把日志并进 PROGRESS 又会被导入、
-   云端拉取、「仅清除修为」整份抹掉 —— 一个统计功能反过来污染修行数据，代价太大。
-   所以走回炉淬炼的同款先例：独立 localStorage 键、不进 gist 主载荷。
+   云端拉取、「仅清除进度」整份抹掉 —— 一个统计功能反过来污染学习数据，代价太大。
+   所以走趁热打铁的同款先例：独立 localStorage 键、不进 gist 主载荷。
    口径：键 = 本地自然日 yyyy-mm-dd，不是滚动 24 小时窗口 —— 23:50 与次日 00:10 评的题算两天，
    与"昨天"这个词在用户心里的含义一致，也和 streak / 热力图的归日方式一致。 */
 const WARLOG_KEY = 'learnAppWarLog';
@@ -1402,6 +1361,14 @@ const WARLOG_KEEP = 45;   // 只留最近 45 天：战报只读「昨天」和�
 function dayKeyOf(ts){
   const d = new Date(ts), p = n => String(n).padStart(2,'0');
   return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+// 自然日序号（当地年月日 → UTC 零点 ÷ 一天）：两个序号相减恒为整数天。
+// 用于"欠了多少天"这类按日计算的场景 —— 直接 (a-b)/86400000 在夏令时切换的那两天会差一小时，
+// 配合 Math.round/floor 就会把"昨天到期"算成 0 天。记忆队列与进度页必须共用这一个口径，
+// 否则同一道题在记忆卡上说"欠 1 天"、在进度页说"0 天"，用户看到的是自相矛盾的两份数据。
+function dayIndexOf(ts){
+  const d = new Date(ts);
+  return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
 }
 function loadWarLog(){
   try{
@@ -1415,15 +1382,32 @@ function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   const d = WARLOG[k] || (WARLOG[k] = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0 });
   d.c[g-1]++;
   if(d.q.indexOf(qid) === -1) d.q.push(qid);   // 同一题当天反复刷：次数照加，但"覆盖题数"只算一道
-  if(!pr.lastPracticed) d.nw++;                // 首次接触：此前从没有过练习时间戳
-  if(newMastered && !pr.mastered) d.mUp++;     // 本次评「简单」把题推成已悟
-  if(!newMastered && pr.mastered) d.mDown++;   // 本次评「忘了」把已悟的题打回
+  if(!(pr && pr.fsrs)) d.nw++;                 // 首次作答：此前从未评分过。不能用 lastPracticed 判定 ——
+                                               // 刷题模式翻页（markPracticed）也会写它，"首刷"会被算漏
+  if(newMastered && !pr.mastered) d.mUp++;     // 本次评「简单」把题推成掌握
+  if(!newMastered && pr.mastered) d.mDown++;   // 本次评「忘了」把掌握的题打回
   const oldLvl = pr.srLevel || 0;
   if(newLvl > oldLvl) d.up++; else if(newLvl < oldLvl) d.down++;
   // 日期键定长零填充 → 字典序即时间序，降序保留最近 WARLOG_KEEP 天
   const keys = Object.keys(WARLOG).sort();
   keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP)).forEach(x => delete WARLOG[x]);
   safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+}
+// 撤销一次评分 → 回填战报：按归档时的同一套条件反向计数（用当时的时间戳定位自然日，跨天撤销也不会记错桶）。
+// 「覆盖题数」d.q 不回收：同一题当天可能评过多次，日志里没有逐题次数可依据，宁可多算一道覆盖也不漏。
+function warLogUndo(at, qid, g, pr, newLvl, newMastered){
+  const d = WARLOG[dayKeyOf(at)];
+  if(!d || !d.c || !(g >= 1 && g <= 4)) return false;   // 那天没有日志（或档位异常）→ 什么都不做
+  const dec = v => Math.max(0, (v || 0) - 1);           // 钳到 0：宁可少减也不要出现负数
+  d.c[g-1] = dec(d.c[g-1]);
+  if(!(pr && pr.fsrs)) d.nw = dec(d.nw);   // 与 warLogAdd 的判定保持一致
+  if(newMastered && !pr.mastered) d.mUp = dec(d.mUp);
+  if(!newMastered && pr.mastered) d.mDown = dec(d.mDown);
+  const oldLvl = pr.srLevel || 0;
+  if(newLvl > oldLvl) d.up = dec(d.up);
+  else if(newLvl < oldLvl) d.down = dec(d.down);
+  safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+  return true;
 }
 // 「昨天」的日期键用日历减法 Date(y,m,d-1) 而不是 now-86400000：夏令时那两天不是整 24 小时，
 // 减毫秒会把战报指到前天或今天（热力图里踩过同样的坑）
@@ -1453,7 +1437,7 @@ function buildWarReport(now){
 // 一句话点评：按「记得率 × 题量」给实话。不灌鸡汤 —— 值得夸的事得真的发生过
 function warQuip(r){
   const q = r.uniq || r.total;
-  if(r.recall >= 85 && r.total >= 20) return '记得率 ' + r.recall + T('%，状态在线。这批题的排期会整体往后推，今天的待温故量会明显变轻。');
+  if(r.recall >= 85 && r.total >= 20) return '记得率 ' + r.recall + '%，状态在线。这批题的排期会整体往后推，今天的待复习量会明显变轻。';
   if(r.recall >= 85) return '正确率很高（' + r.recall + '%），只是题量偏少 —— 质量已经有了，缺的是"坐下来那五分钟"。';
   if(r.recall < 50) return '记得率 ' + r.recall + '%，遗忘偏多。别急着自责：这些题已经回到短间隔队列，今天就会再见，见一次牢一层。';
   if(r.newQ * 2 >= r.total) return '昨天主要在铺新题（' + r.newQ + ' 道首刷），这个阶段记得率本来就低，属于正常成本。';
@@ -1467,10 +1451,10 @@ function renderWarReport(r){
   $('#warDate').textContent = (p[1]) + '月' + p[2] + '日 · ' + WEEK_CN[dt.getDay()] + ' 全天';
   $('#warTotal').textContent = String(r.total);
   const st = computeAllStats();
-  const seenPct = st.tq ? Math.round(st.tm / st.tq * 100) : 0;
+  const masteryPct = st.tq ? Math.round(st.tm / st.tq * 100) : 0;
   $('#warSub').innerHTML = '覆盖 <b style="color:var(--text)">' + r.uniq + '</b> 道题'
     + (r.newQ ? ' · 其中首刷 ' + r.newQ + ' 道' : '')
-    + (st.streak > 0 ? T('<br>🔥 连续修行第 <b style="color:var(--accent3)">') + st.streak + '</b> 天' : '');
+    + (st.streak > 0 ? '<br>🔥 连续打卡第 <b style="color:var(--accent3)">' + st.streak + '</b> 天' : '');
   // 四档占比条：宽度按次数占比，颜色直接取 RATE_META（与评分按钮同源，改一处两处都对）
   $('#warBar').innerHTML = [1,2,3,4].map(g => r.c[g-1]
     ? '<i style="width:' + (r.c[g-1]/r.total*100).toFixed(2) + '%;background:' + RATE_META[g].color + '"></i>' : '').join('');
@@ -1484,9 +1468,9 @@ function renderWarReport(r){
   }
   const rows = [
     ['记得率（记得 + 简单）', r.recall + '%'],
-    ['悟性变化', (r.mUp || r.mDown) ? '新增 ' + r.mUp + ' 题' + (r.mDown ? ' · 打回 ' + r.mDown + ' 题' : '') : '无变化'],
-    [T('境界变化'), (r.up || r.down) ? '↑ ' + r.up + ' 题 · ↓ ' + r.down + ' 题' : '无变化'],
-    [T('全库已悟'), st.tm + ' / ' + st.tq + ' 题（' + seenPct + '%）'],
+    ['掌握变化', (r.mUp || r.mDown) ? '新增 ' + r.mUp + ' 题' + (r.mDown ? ' · 打回 ' + r.mDown + ' 题' : '') : '无变化'],
+    ['等级变化', (r.up || r.down) ? '↑ ' + r.up + ' 题 · ↓ ' + r.down + ' 题' : '无变化'],
+    ['全库掌握', st.tm + ' / ' + st.tq + ' 题（' + masteryPct + '%）'],
     ['题量', trend]
   ];
   $('#warRows').innerHTML = rows.map(x => '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>').join('');
@@ -1506,15 +1490,15 @@ function maybeShowWarReport(now){
   showModal($('#warReportModal'));
 }
 
-/* ===== 温故节奏切换（设置面板） ===== */
-// 按新档位重排所有已排程题目：下次温故 = 上次温故 + f(稳定性 S)；
-// 「忘了」的题（半天间隔）保持原节奏，不因切档被推迟到次日
+/* ===== 按现行参数重排全部已排程题目 =====
+   用于老存档迁移（旧档位下线、上限/保留率变化后把入队时间拉回新参数）：
+   下次复习 = 上次复习 + f(稳定性 S)；「忘了」的题（半天间隔）保持原样，不被推迟到次日 */
 function rescheduleAllProgress(){
   const now = Date.now();
   let changed = 0;
   Object.keys(PROGRESS).forEach(qid=>{
     const p = PROGRESS[qid]; if(!p) return;
-    const st = fsrsStateOf(p, now); if(!st) return;   // 只标记过「已看/已悟」、无记忆状态的题不参与排程
+    const st = fsrsStateOf(p, now); if(!st) return;   // 只标记过「已看/掌握」、无记忆状态的题不参与排程
     const wasAgain = p.srNext && p.lastPracticed && (p.srNext - p.lastPracticed) < 86400000;
     const iv = wasAgain ? FSRS_AGAIN_INTERVAL : fsrsIntervalDays(st.s);
     const last = p.lastPracticed || st.last || now;
@@ -1523,69 +1507,6 @@ function rescheduleAllProgress(){
   });
   return changed;
 }
-function renderPaceUI(){
-  const grid = $('#paceGrid'); if(!grid) return;
-  grid.innerHTML = Object.keys(PACES).map(k=>{
-    const c2 = PACES[k], on = k===fsrsPace;
-    return `<button type="button" class="pace-btn${on?' on':''}" data-pace="${k}">
-      <span class="pace-name">${c2.name}</span>
-      <span class="pace-desc">${c2.desc}</span>
-      <span class="pace-meta">最长 ${c2.maxInterval} 天 · 回忆率 ${Math.round(c2.retention*100)}%</span>
-    </button>`;
-  }).join('');
-  grid.querySelectorAll('[data-pace]').forEach(b=>b.onclick=()=>setPace(b.dataset.pace));
-}
-/* ---------- 文案主题（文本皮肤）切换 ----------
-   静态 HTML 里的文案（页签 / 设置面板 / 战报弹层）不会重新生成，所以把原文先存在 dataset 里，
-   每次切换都「按原文重算」而不是在当前文本上再翻一遍 —— 否则第二次切回仙侠会变成叠着翻译的乱码。 */
-function applyCopyStatic(){
-  document.querySelectorAll('[data-copy]').forEach(el=>{
-    if(el.dataset.copy0 === undefined) el.dataset.copy0 = el.innerHTML;
-    el.innerHTML = T(el.dataset.copy0);
-  });
-  document.querySelectorAll('[data-copy-title]').forEach(el=>{ el.title = T(el.dataset.copyTitle); });
-}
-// 文案主题选择卡：与复习节奏同款卡片（复用 .pace-* 样式，不为两个按钮再加一套 CSS）
-// 卡片描述里放的是该风格自己的用词样例，所以两套词都不套 T()，永远各显示各的
-function renderCopyUI(){
-  const grid = $('#copyGrid'); if(!grid) return;
-  const sample = { xianxia:T('洞府 · 典籍 · 修为 · 闭关 · 已悟'), classic:'总览 · 文档 · 进度 · 记忆 · 掌握' };
-  grid.innerHTML = Object.keys(COPY_THEMES).map(k=>{
-    const on = k===copyTheme;
-    return `<button type="button" class="pace-btn${on?' on':''}" data-copy-theme="${k}">
-      <span class="pace-name">${T(COPY_THEMES[k])}</span>
-      <span class="pace-desc">${sample[k]}</span>
-    </button>`;
-  }).join('');
-  grid.querySelectorAll('[data-copy-theme]').forEach(b=>b.onclick=()=>applyCopyTheme(b.dataset.copyTheme));
-}
-function applyCopyTheme(id){
-  if(!COPY_THEMES[id] || id === copyTheme) return;
-  copyTheme = id;
-  safeLocalSet('learnAppCopyTheme', id);
-  applyCopyStatic();
-  renderCopyUI();
-  renderAll();   // 动态文案（统计条/各页/战报）全部重渲染一次
-  toast(T('界面文案已切换：') + COPY_THEMES[id]);
-}
-function setPace(pace){
-  if(!PACES[pace]) return;
-  if(pace === fsrsPace){ renderPaceUI(); return; }
-  fsrsPace = pace;
-  safeLocalSet('learnAppPace', fsrsPace);
-  const changed = rescheduleAllProgress();
-  saveProgress();                      // 落盘 + 失效闭关队列缓存 + 标记云端待同步
-  memory.flipped = false;
-  renderPaceUI();
-  const c2 = paceCfg();
-  const st = $('#paceStatus');
-  if(st) st.textContent = changed
-    ? `已切换：${changed} 道题的入队时间已按「${c2.name}」重排（最长 ${c2.maxInterval} 天）`
-    : '已切换：当前没有需要重排的题目';
-  toast(T('温故节奏：') + c2.name);
-  renderAll();
-}
-
 const $ = s => document.querySelector(s);
 const content = () => $('#content');
 
@@ -1594,30 +1515,40 @@ const content = () => $('#content');
 if(!CSS.escape){CSS.escape=function(s){s=String(s);var r='';for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(c===0){r+='\uFFFD'}else if((c>=0x0001&&c<=0x001f)||c===0x007f||(c>=0x0030&&c<=0x0039&&(i===0||(i===1&&s.charCodeAt(0)===0x002d)))){r+='\\'+c.toString(16)+' '}else if(c>=0x0080||c===0x002d||c===0x005f||(c>=0x0030&&c<=0x0039)||(c>=0x0041&&c<=0x005a)||(c>=0x0061&&c<=0x007a)){r+=s.charAt(i)}else{r+='\\'+s.charAt(i)}}return r};}
 let QINDEX = new Map();   // qid -> question
 let DINDEX = new Map();   // docId -> doc
-let QDOC = new Map();     // qid -> docId（反向查典籍）
+let QDOC = new Map();     // qid -> docId（反向查文档）
 // 外部数据（存储/导入/云端）统一归一化 questions 数组，避免旧数据缺字段时统计/渲染崩溃
 function normalizeDocs(docs){
   // 存储 / 导入 / 云端数据统一归一化：
-  // - 丢掉非对象典籍，保证 DINDEX/QINDEX 的键值始终可读
+  // - 丢掉非对象文档，保证 DINDEX/QINDEX 的键值始终可读
   // - questions 必须是数组，且题目必须是对象
   // - title/answer 强制为字符串：搜索页与分析页会直接 title.toLowerCase()，字段缺失会整页崩溃
+  // - id 必须有值且全局唯一：QINDEX/QDOC/PROGRESS 全部以 qid 为键，缺 id 会让多道题共用
+  //   一份进度与一个文档归属（评一道动一片、删一道连带删进度）。导入 JSON 会补 id，
+  //   但存储读取 / 云端拉取 / 种子等路径都直接走这里，所以兜底必须放在归一化层。
+  const usedIds = new Set();
   return (Array.isArray(docs) ? docs : [])
     .filter(d => d && typeof d === 'object')
     .map(d => {
       if(!Array.isArray(d.questions)) d.questions = [];
       d.questions = d.questions
         .filter(q => q && typeof q === 'object')
-        .map(q => Object.assign({}, q, {
-          title: (q.title == null || q.title === '') ? '（未命名题目）' : String(q.title),
-          answer: q.answer == null ? '' : String(q.answer)
-        }));
+        .map((q, qi) => {
+          let id = (q.id == null || q.id === '') ? String(d.id || 'doc') + '#' + (qi + 1) : String(q.id);
+          if(usedIds.has(id)){ let n = 2; while(usedIds.has(id + '_' + n)) n++; id = id + '_' + n; }
+          usedIds.add(id);
+          return Object.assign({}, q, {
+            id: id,
+            title: (q.title == null || q.title === '') ? '（未命名题目）' : String(q.title),
+            answer: q.answer == null ? '' : String(q.answer)
+          });
+        });
       return d;
     });
 }
-// 按 ORDER 重排 DOCS —— 典籍顺序唯一的落地处。
+// 按 ORDER 重排 DOCS —— 文档顺序唯一的落地处。
 // 原先 ORDER 只是被维护/落库/同步，从没参与渲染：导入数据里带的 order 下次启动就被丢弃，
 // 列表顺序完全取决于数组插入顺序（本地原有的在前、新导入的追加在后）。
-// 不在 ORDER 里的典籍一律补在末尾，绝不允许因为顺序数据缺失而丢典籍。
+// 不在 ORDER 里的文档一律补在末尾，绝不允许因为顺序数据缺失而丢文档。
 function applyOrder(){
   if(!Array.isArray(ORDER) || !ORDER.length || !DOCS.length) return;
   const byId = new Map(DOCS.map(d => [d.id, d]));
@@ -1724,10 +1655,10 @@ function estimateDataSize(data){
 async function estimateTotalStorage(){
   // 估算 IndexedDB 中已存储的题库数据大小
   let size = 0;
-  // 题库典籍数据
+  // 题库文档数据
   const docs = await Store.getDocs();
   if(docs && docs.length) size += estimateDataSize(docs);
-  // 修为数据
+  // 进度数据
   const progress = await Store.getProgress();
   if(progress && Object.keys(progress).length) size += estimateDataSize(progress);
   // 通关数据
@@ -1892,9 +1823,9 @@ function setupErrorHandler(){
 /* =========================================================
    渲染：侧边栏
    ========================================================= */
-// 一次性汇总统计（含连续修行/今日已练），避免多次全量遍历；闭关/修为页也复用此结果
+// 一次性汇总统计（含连续打卡/今日已刷），避免多次全量遍历；记忆/进度页也复用此结果
 // 结果缓存 10s：renderAll 每次都会调用它，题量大时全量遍历代价明显；
-// 修为/典籍一旦变更都会经 invalidateMemQueue() 清空缓存，所以数据"变更即准"，只有纯时间流逝最多滞后 10s
+// 进度/文档一旦变更都会经 invalidateMemQueue() 清空缓存，所以数据"变更即准"，只有纯时间流逝最多滞后 10s
 let _statsCache = null;
 function computeAllStats(){
   if(_statsCache && Date.now() - _statsCache.at < 10000) return _statsCache.data;
@@ -1906,9 +1837,9 @@ function computeAllStats(){
   DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
-    // 只统计"真实修为"：导入/云端同步可能带进来 {} 这类空条目，当待温故算会让统计虚高。
-    // 但"从没刷过"的题必须单列出来（fresh）：闭关队列会把它们全部入队（见 buildMemoryQueue），
-    // 若这里只报"到期"，就会出现"待温故 0、点进闭关却有 500 题"的口径错位
+    // 只统计"真实进度"：导入/云端同步可能带进来 {} 这类空条目，当待复习算会让统计虚高。
+    // 但"从没刷过"的题必须单列出来（fresh）：记忆队列会把它们全部入队（见 buildMemoryQueue），
+    // 若这里只报"到期"，就会出现"待复习 0、点进记忆却有 500 题"的口径错位
     if(!p || !(p.practiced || p.seen || p.mastered || p.srLevel || p.srNext || p.lastPracticed)){ fresh++; return; }
     if(p.practiced || p.seen) ts++;
     if(p.mastered) tm++;
@@ -1918,7 +1849,7 @@ function computeAllStats(){
       if(p.lastPracticed >= today0) todayDone++;
     }
     if(p.mastered){
-      const minNext = (p.lastPracticed||0) + masteredMinDays()*86400000;
+      const minNext = (p.lastPracticed||0) + MASTERED_MIN_DAYS*86400000;
       const effectiveNext = Math.max(p.srNext||0, minNext);
       if(!isNaN(effectiveNext) && now >= effectiveNext) due++;
     } else {
@@ -1931,7 +1862,7 @@ function computeAllStats(){
   // 今天没刷则从前一天起算；前一天也没有记录则连续天数为 0
   if(reviewed.has(check.getTime()) || reviewed.has(prevDay.getTime())){
     if(!reviewed.has(check.getTime())) check.setTime(prevDay.getTime());
-    // 上限 3650 天（约 10 年）：原来的 365 会让连续修行满一年的用户恒定显示 365
+    // 上限 3650 天（约 10 年）：原来的 365 会让连续打卡满一年的用户恒定显示 365
     for(let i=0;i<3650;i++){
       if(reviewed.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
       else break;
@@ -1945,19 +1876,22 @@ function renderStatsBar(){
   const s = computeAllStats();
   const tq = s.tq, ts = s.ts, tm = s.tm, due = s.due, fresh = s.fresh, streak = s.streak, todayDone = s.todayDone;
   const seenPct = tq ? Math.round(ts/tq*100) : 0;
-  // 钳位：导入/云端同步进来的修为可能只有 mastered 没有 seen，两段宽度叠加就会超过 100% 导致修为条溢出
+  // 钳位：导入/云端同步进来的进度可能只有 mastered 没有 seen，两段宽度叠加就会超过 100% 导致进度条溢出
   const masteredPct = Math.min(seenPct, tq ? Math.round(tm/tq*100) : 0);
   $('#statsBar').innerHTML = `
-    <span>总${T('修为')} <b>${seenPct}%</b></span>
+    <span>总进度 <b>${seenPct}%</b></span>
     <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent)"></i></div>
-    <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>${T('已悟')} <b>${tm}</b></span>
+    <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
     ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
-    ${todayDone>0?`<span>${T('今日已练')} <b>${todayDone}</b> 题</span>`:''}
-    ${due>0?`<span class="urg">🧠 ${T('闭关')} <b>${due}</b> 题${T('待温故')}</span>`:''}
-    ${fresh>0?`<span>🌱 ${T('未启')} <b>${fresh}</b></span>`:''}
+    ${todayDone>0?`<span title="按每题「最后一次练习时间」归日：刷题模式里翻看过的题也算在内，不等于答题次数">今日已刷 <b>${todayDone}</b> 题</span>`:''}
+    ${due>0?`<span class="urg">🧠 记忆 <b>${due}</b> 题待复习</span>`:''}
+    ${fresh>0?`<span>🌱 未学 <b>${fresh}</b></span>`:''}
   `;
-  // Tab 激活态：二级页（典籍浏览）沿用进入时的标签，避免点进典籍后高亮跳回「洞府」
-  const owner = view===Views.BROWSE ? browseFrom : view;
+  // Tab 激活态：二级页沿用进入时的标签，避免点进文档后高亮跳回「总览」。
+  // PRACTICE / MOCK 也必须映射：它们不在标签表里，漏掉就会让所有标签一起熄灭（连 aria-current 一起丢）
+  const owner = view===Views.BROWSE ? browseFrom
+              : (view===Views.PRACTICE || view===Views.MOCK) ? (practiceFrom || Views.DOCS)
+              : view;
   document.querySelectorAll('.tab').forEach(t=>{
     const v = t.dataset.view;
     const on =
@@ -1978,7 +1912,7 @@ function renderStatsBar(){
    ========================================================= */
 function renderContent(){
   const c = content();
-  // 离开修为页后清空粒子避让区：否则 _uMaskEls 一直留着已失效的元素，粒子引擎每帧仍要遍历它们
+  // 离开进度页后清空粒子避让区：否则 _uMaskEls 一直留着已失效的元素，粒子引擎每帧仍要遍历它们
   if(view !== Views.ANALYTICS && _uMaskEls.length) setParticleMask([]);
   if(view===Views.OVERVIEW) return renderOverview(c);
   if(view===Views.DOCS) return renderDocs(c);
@@ -1988,17 +1922,46 @@ function renderContent(){
   if(view===Views.MEMORY) return renderMemory(c);
   if(view===Views.ANALYTICS) return renderAnalytics(c);
   if(view===Views.GRILL) return renderGrill(c);
-  if(view===Views.HOT) return renderHot(c);   // 回炉淬炼（原「回忆」位）
+  if(view===Views.HOT) return renderHot(c);   // 趁热打铁（原「回忆」位）
   if(view===Views.BROWSE) return renderBrowse(c);
 }
 
+/* ===== 就绪度（总览页结论卡）=====
+   为什么不是只看掌握率：掌握来自"你点过最高档"的自我判断，容易虚高（而且新题点最高档已经不标掌握了）。
+   三条判据都要求"可验证"，缺哪条就报哪条：
+   ① 趁热榜清零：榜上只剩"没答到最高档"的题，清零 = 没有让自己心里没底的题
+   ② 待复习为 0：没有逾期堆积（堆着说明该复习的没复习，掌握度会虚）
+   ③ 近两周验证过的掌握题 ≥ READY_MASTERY：防止"两个月没碰过的题也算掌握"的假安全感
+   阈值是产品参数：想更稳就把 READY_MASTERY 调高（例如 0.9），想早点推进就调低。 */
+const READY_MASTERY = 0.8;
+const READY_VERIFY_DAYS = 14;
+function computeReadiness(stats, now){
+  const tq = stats.tq || 0;
+  const cut = now - READY_VERIFY_DAYS*86400000;
+  // 「验证过」= 已掌握 + 近两周内真的复习过（lastPracticed 在窗口内）
+  const verified = Object.keys(PROGRESS).filter(id => {
+    const p = PROGRESS[id];
+    return !!(p && p.mastered && (p.lastPracticed || 0) >= cut);
+  }).length;
+  const hotLeft = hotLiveQueue().length;
+  const masteryPct = tq ? Math.round(stats.tm / tq * 100) : 0;
+  const verifiedPct = tq ? Math.round(verified / tq * 100) : 0;
+  const missing = [];
+  if(!tq) missing.push('还没有任何练习记录');
+  if(hotLeft > 0) missing.push('趁热榜还有 ' + hotLeft + ' 题没答到最高档');
+  if(stats.due > 0) missing.push('还有 ' + stats.due + ' 题待复习');
+  if(tq && verified / tq < READY_MASTERY) missing.push('近 ' + READY_VERIFY_DAYS + ' 天验证过的掌握题只有 ' + verifiedPct + '%（目标 ' + Math.round(READY_MASTERY*100) + '%）');
+  return { tq, tm: stats.tm, due: stats.due, hotLeft, verified, masteryPct, verifiedPct, missing, ready: missing.length === 0 };
+}
+
 function renderOverview(c){
-  // FSRS 的「今日待温故」：洞府页唯一带行动指向的指标（可直接点进闭关模式）
+  // FSRS 的「今日待复习」：总览页唯一带行动指向的指标（可直接点进记忆模式）
   // tq/ts/tm 与 due 同源取自缓存，省去三次无缓存的全量遍历
   const _ovStats = computeAllStats();
   const tq = _ovStats.tq, ts = _ovStats.ts, tm = _ovStats.tm;
   const due = _ovStats.due, fresh = _ovStats.fresh;
-  const todo = due + fresh;   // 闭关队列实际会排给你的题量（到期 + 从没刷过）
+  const todo = due + fresh;   // 记忆队列实际会排给你的题量（到期 + 从没刷过）
+  const ready = computeReadiness(_ovStats, Date.now());   // 就绪度（三条可验证的判据）
   const salary = tm * 100;
   const chartDays = (window._ovChartDays||7);
   c.innerHTML = `
@@ -2007,23 +1970,35 @@ function renderOverview(c){
       <div class="salary-inner">
         <div class="salary-label">💼 预计月薪</div>
         <div class="salary-num" id="ovSalary">¥ ${salary.toLocaleString()}</div>
-        <div class="salary-sub">每悟通 1 道面试题 = <b>+¥100</b> · ${T('已悟')} <b>${tm}</b> 题 · 目标 ¥${(tq*100).toLocaleString()}</div>
+        <div class="salary-sub">每掌握 1 道面试题 = <b>+¥100</b> · 掌握 <b>${tm}</b> 题 · 目标 ¥${(tq*100).toLocaleString()}</div>
         <div class="salary-bar"><i style="width:${tq?Math.round(tm/tq*100):0}%;background:linear-gradient(90deg,#f5c542,#f6a85b,#f5c542)"></i></div>
       </div>
     </div>
     <div class="ov-grid">
       <div class="ov-card"><div class="n" id="ovTotal">${tq}</div><div class="t">总数</div></div>
       <div class="ov-card"><div class="n" id="ovSeen">${ts}</div><div class="t">已学</div></div>
-      <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">${T('已悟')}</div></div>
-      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` style="cursor:pointer" title="点击进入${T('闭关')}模式，开始${T('温故')}${fresh?`（另有 ${fresh} 道${T('未启')}）`:''}"`:''}>
+      <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
+      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` style="cursor:pointer" title="点击进入记忆模式，开始复习${fresh?`（另有 ${fresh} 道未学）`:''}"`:''}>
         <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
-        <div class="t">${T('待温故')}${fresh>0?` · ${T('未启')} ${fresh}`:''}</div>
+        <div class="t">待复习${fresh>0?` · 未学 ${fresh}`:''}</div>
       </div>
-      <div class="ov-card"><div class="n" id="ovDocs">${DOCS.length}</div><div class="t">${T('典籍')}</div></div>
+      <div class="ov-card"><div class="n" id="ovDocs">${DOCS.length}</div><div class="t">文档</div></div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:14px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="font-weight:700;font-size:15px">🎯 就绪度</span>
+        <span style="font-size:13px;font-weight:700;color:${ready.ready?'var(--good)':'var(--muted)'}">${ready.ready?'✅ 已就绪':'还不能 —— 见下面'+ready.missing.length+'条'}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--text)">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span>${ready.tq && ready.hotLeft===0?'✅':'⬜'} 趁热榜无遗留</span><b style="color:${ready.tq && ready.hotLeft===0?'var(--good)':'var(--warn)'}">${ready.hotLeft} 题</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px"><span>${ready.tq && ready.due===0?'✅':'⬜'} 待复习清空</span><b style="color:${ready.tq && ready.due===0?'var(--good)':'var(--warn)'}">${ready.due} 题</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px"><span>${ready.tq && ready.verified/ready.tq>=READY_MASTERY?'✅':'⬜'} 近 ${READY_VERIFY_DAYS} 天验证过的掌握题</span><b style="color:${ready.tq && ready.verified/ready.tq>=READY_MASTERY?'var(--good)':'var(--warn)'}">${ready.verifiedPct}%<span style="color:var(--muted);font-weight:600"> / 掌握 ${ready.masteryPct}%</span></b></div>
+      </div>
+      ${ready.ready?'':`<div style="margin-top:12px;font-size:12.5px;color:var(--muted);line-height:1.6">还差：${ready.missing.join('；')}</div>`}
     </div>
     <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-weight:700;font-size:15px">📈 ${T('秘境试炼')}趋势</span>
+        <span style="font-weight:700;font-size:15px">📈 刷题趋势</span>
         <div style="display:flex;gap:4px">
           <button class="btn sm ${chartDays===7?'primary':''}" id="chartBtn7">7天</button>
           <button class="btn sm ${chartDays===30?'primary':''}" id="chartBtn30">30天</button>
@@ -2032,6 +2007,7 @@ function renderOverview(c){
         </div>
       </div>
       <canvas id="chartCanvas" style="width:100%;height:auto;border-radius:8px;aspect-ratio:1080/260"></canvas>
+      <div class="stat-foot"><span>口径：按每题「最后一次练习时间」归日 → 当天推进过的题量（同题当天只计一次，不是答题次数；与下方进度页的打卡热力图同源）</span></div>
     </div>
   `;
   // Draw chart
@@ -2049,11 +2025,11 @@ function renderOverview(c){
     roll('ovMastered', tm, 'mastered'); roll('ovDue', due, 'due');
     roll('ovDocs', DOCS.length, 'docs');
   }, 30);
-  // 待温故卡：点击直接进闭关模式开始温故（无到期题时不可点）
+  // 待复习卡：点击直接进记忆模式开始复习（无到期题时不可点）
   const dueCard = c.querySelector('#ovDueCard');
   if(dueCard && todo>0) dueCard.onclick = () => {
     // 必须整体重建 memory：memory.queue 是上一轮快照（可能含刚评完、已排到明天的题），
-    // 只把 index 归 0 会让人二次温故同一题并二次推进 FSRS。与顶部标签入口同一套语义（保留撤销栈）
+    // 只把 index 归 0 会让人二次复习同一题并二次推进 FSRS。与顶部标签入口同一套语义（保留撤销栈）
     memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };
     view = Views.MEMORY; renderAll();
   };
@@ -2199,36 +2175,42 @@ window.addEventListener('resize', () => {
   }, 200);
 }, {passive:true});
 
-/* ---------- 典籍视图 ---------- */
+/* ---------- 文档视图 ---------- */
 function renderDocs(c){
   const totalQ = DOCS.reduce((n,d)=>n+((d.questions||[]).length),0);
   const cards = DOCS.map(d => {
     if(!d.questions.length){
-      // 空典籍同样可点进去：否则在浏览页删光题目后，典籍会变成"死典籍"（进不去、也没法再添加题目）
+      // 空文档同样可点进去：否则在浏览页删光题目后，文档会变成"死文档"（进不去、也没法再添加题目）
       return `<div class="q" data-godoc="${esc(d.id)}" style="opacity:.55;cursor:pointer">
         <div class="qhead"><div class="qnum">—</div><div class="qtitle">${renderTitle(d.title)} <span style="font-size:11px;color:var(--warn)">（待导入）</span></div>
-        <div class="qacts"><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本${T('典籍')}">🗑</button></div></div></div>`;
+        <div class="qacts"><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档">🗑</button></div></div></div>`;
     }
     const seen=docSeen(d),tot=d.questions.length,dp=tot?Math.round(seen/tot*100):0;
     const m=docMastered(d),cl=docClears(d.id);
     return `<div class="q" data-godoc="${esc(d.id)}" style="cursor:pointer">
       <div class="qhead"><div class="qnum">${tot}</div>
       <div class="qtitle">${renderTitle(d.title)} ${cl?`<span style="font-size:11px;color:var(--accent)">刷过 ${cl} 次</span>`:''}</div>
-      <div class="qacts"><button class="btn sm" data-goprac="${esc(d.id)}">🎯 ${T('秘境试炼')}</button><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本${T('典籍')}及其全部题目">🗑</button></div></div>
+      <div class="qacts"><button class="btn sm" data-goprac="${esc(d.id)}">🎯 刷题</button><button class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档及其全部题目">🗑</button></div></div>
       <div class="mini" style="margin-top:10px"><i style="width:${dp}%;height:5px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
-      <div class="pct" style="font-size:11px;color:var(--muted);margin-top:4px">${dp}% 已看（${seen}/${tot}）${m?` · ${m} ${T('已悟')}`:' · 已开干'}</div>
+      <div class="pct" style="font-size:11px;color:var(--muted);margin-top:4px">${dp}% 已看（${seen}/${tot}）${m?` · ${m} 掌握`:' · 已开干'}</div>
     </div>`;
   }).join('');
+  // 空题库引导：新装后这里以前只有一行"共 0 个文档 · 0 道题目"，没有任何入口，
+  // 用户会以为是应用坏了或数据丢了（导入入口原本埋在设置面板里）
+  const docsEmpty = DOCS.length ? '' : `<div class="empty"><div class="big">📚</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
+    <div style="text-align:center;margin:0 0 18px"><button class="btn primary" id="docsImport">⬆️ 导入题库（JSON / Markdown）</button></div>`;
   c.innerHTML = `
     <div class="docs-toolbar">
-      <div class="dt-count">共 <b>${DOCS.length}</b> 个${T('典籍')} · <b>${totalQ}</b> 道题目</div>
+      <div class="dt-count">共 <b>${DOCS.length}</b> 个文档 · <b>${totalQ}</b> 道题目</div>
     </div>
+    ${docsEmpty}
     <div class="docs-wrap">${cards}</div>`;
+  const dImp = c.querySelector('#docsImport'); if(dImp) dImp.onclick = () => openImportPicker();
   c.querySelectorAll('[data-del-doc]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); deleteDocument(el.dataset.delDoc); });
   c.querySelectorAll('[data-godoc]').forEach(el=>el.onclick=e=>{
     if(e.target.closest('[data-goprac]')||e.target.closest('[data-del-doc]')) return;
     browseFrom = Views.DOCS;
-    browseLimit = 200;   // 每次进入典籍都从第一页开始渲染
+    browseLimit = 200;   // 每次进入文档都从第一页开始渲染
     currentDocId=el.dataset.godoc; view=Views.BROWSE; renderAll();
   });
   c.querySelectorAll('[data-goprac]').forEach(el=>el.onclick=()=>startPractice(el.dataset.goprac));
@@ -2240,45 +2222,45 @@ function renderBrowse(c){
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
   const seen=docSeen(d), tot=d.questions.length, dp=tot?Math.round(seen/tot*100):0;
   const mastered=docMastered(d);
-  // 从搜索跳进来的，返回寻踪；否则回典籍列表（搜索词已被清空时也回典籍列表）
+  // 从搜索跳进来的，返回搜索结果；否则回文档列表（搜索词已被清空时也回文档列表）
   const backToSearch = browseFrom===Views.SEARCH && !!searchTerm.trim();
   let html = `
     <div class="doc-head">
       <div>
-        <button class="btn sm back-btn" id="browseBack">⬅ ${backToSearch?T('返回寻踪'):T('返回典籍列表')}</button>
+        <button class="btn sm back-btn" id="browseBack">⬅ ${backToSearch?'返回搜索结果':'返回文档列表'}</button>
         <h2>${renderTitle(d.title)}</h2>
         <div class="meta">共 ${tot} 题 · 已看 ${seen} 题（${dp}%）${
-          mastered?` · ${T('已悟')} ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'本地')}</div>
+          mastered?` · 掌握 ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'本地')}</div>
         <div class="bigbar"><i style="width:${dp}%"></i></div>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn" id="addQBtn">➕ 添加题目</button>
-        <button class="btn primary" data-prac="${esc(d.id)}">🎯 进入${T('秘境试炼')}</button>
-        <button class="btn danger" data-deldir="${esc(d.id)}" title="删除本${T('典籍')}及其全部题目">🗑️ 删除${T('典籍')}</button>
+        <button class="btn primary" data-prac="${esc(d.id)}">🎯 进入刷题</button>
+        <button class="btn danger" data-deldir="${esc(d.id)}" title="删除本文档及其全部题目">🗑️ 删除文档</button>
       </div>
     </div>`;
   if(!d.questions.length){
-    html += `<div class="empty"><div class="big">📭</div>该${T('典籍')}暂无题目。可点「➕ 添加题目」，或在「⚙️ 设置」中导入 JSON / Markdown。</div>`;
+    html += `<div class="empty"><div class="big">📭</div>该文档暂无题目。可点「➕ 添加题目」，或在「⚙️ 设置」中导入 JSON / Markdown。</div>`;
   } else {
-    // 大典籍分页渲染：单次最多 browseLimit 张卡片，避免上千题时一次性建 DOM 卡死页面
+    // 大文档分页渲染：单次最多 browseLimit 张卡片，避免上千题时一次性建 DOM 卡死页面
     const hi = highlightQid ? d.questions.findIndex(x=>x.id===highlightQid) : -1;
     if(hi >= browseLimit) browseLimit = Math.ceil((hi+1)/200)*200;   // 搜索跳转的目标必须落在渲染窗口内
     const shown = Math.min(d.questions.length, browseLimit);
     html += d.questions.slice(0, shown).map((q,i)=>{
       const p = PROGRESS[q.id]||{};
       return `<div class="q" data-qid="${esc(q.id)}">
-        <div class="qhead" data-toggle="${esc(q.id)}">
+        <div class="qhead" data-toggle="${esc(q.id)}" role="button" tabindex="0" aria-expanded="false">
           <div class="qnum">${i+1}</div>
           <div class="qtitle">${renderTitle(q.title)}</div>
           <div class="qacts">
-            <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记${T('已悟')}" aria-label="标记${T('已悟')}">★</button>
+            <button class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记掌握" aria-label="标记掌握">★</button>
             <button class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">👁</button>
             <button class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">✏️</button>
             <button class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">🗑</button>
           </div>
         </div>
         <div class="answer" data-ans="${esc(q.id)}">
-          <div class="inner"><div class="label">答 案</div>${renderAnswer(q.answer)}</div>
+          <div class="inner"><div class="label">答 案</div>${renderAnswer(q.answer)}${Array.isArray(q.tags)&&q.tags.length?`<div class="label" style="margin-top:14px;color:var(--accent2)">标 签</div><div style="font-size:13px;color:var(--muted)">${esc(q.tags.join(' · '))}</div>`:''}</div>
         </div>
       </div>`;
     }).join('');
@@ -2306,15 +2288,17 @@ function renderBrowse(c){
   c.querySelectorAll('[data-master]').forEach(el=>el.onclick=()=>toggleMaster(el.dataset.master));
   c.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>openEditModal(d.id, el.dataset.edit));
   c.querySelectorAll('[data-del]').forEach(el=>el.onclick=()=>deleteQuestion(d.id, el.dataset.del));
-  // 搜索跳转：自动展开高亮题目并滚动到它
-  if(highlightQid && d.questions.some(q=>q.id===highlightQid)){
-    const targetQid = highlightQid;
-    highlightQid = null;  // 消费掉，避免下次浏览还自动展开
+  // 搜索跳转：自动展开高亮题目并滚动到它。
+  // highlightQid 必须无条件消费：只在"命中"时才清掉的话，数据被云端拉取/导入替换后会留下一个
+  // 悬空的高亮目标，下次从任意入口进入浏览页都可能意外展开一道同 id 的题
+  const jumpQid = (highlightQid && d.questions.some(q=>q.id===highlightQid)) ? highlightQid : null;
+  highlightQid = null;
+  if(jumpQid){
     // 展开答案（toggleAnswer 会自动判断当前状态）
-    toggleAnswer(targetQid);
+    toggleAnswer(jumpQid);
     // 滚动到目标题目
     setTimeout(()=>{
-      const card = c.querySelector(`[data-qid="${CSS.escape(targetQid)}"]`);
+      const card = c.querySelector(`[data-qid="${CSS.escape(jumpQid)}"]`);
       if(card){
         card.scrollIntoView({behavior:'smooth',block:'center'});
         card.style.boxShadow = '0 0 0 2px var(--accent)';
@@ -2335,7 +2319,10 @@ function toggleAnswer(qid){
     eye.title = nowOpen?'隐藏答案':'显示答案';                 // 按钮换了图标，语义也要跟着换
     eye.setAttribute('aria-label', nowOpen?'隐藏答案':'显示答案');
   }
-  // 浏览模式下展开答案不记修为（可能是在查资料或编辑内容）
+  // 折叠状态同步到题头（它是 role=button 的折叠开关，只改 .show 的话读屏用户读不到状态变化）
+  const head = content().querySelector(`[data-toggle="${CSS.escape(qid)}"]`);
+  if(head) head.setAttribute('aria-expanded', nowOpen?'true':'false');
+  // 浏览模式下展开答案不记进度（可能是在查资料或编辑内容）
 }
 function toggleMaster(qid){
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
@@ -2353,14 +2340,18 @@ function flipAway(itemEl, commit){
   const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   if(reduce || !itemEl || typeof itemEl.animate!=='function'){ commit(); return; }
   const keyAttr = itemEl.hasAttribute('data-qid') ? 'data-qid' : 'data-godoc';
+  // 选择器必须限定成 .q[...]：data-qid 不只出现在卡片上（练习/记忆页的 .ai-answer[data-qid]、
+  // #memAICodeOut[data-qid] 也带同名属性），通配取元素会让 before 映射被同 id 的非卡片元素覆盖，
+  // FLIP 位移就算在错误的元素上（卡片会跳一下）
+  const cardSel = '.q[' + keyAttr + ']';
   const root = itemEl.closest('.content') || document;
   const before = new Map();
-  root.querySelectorAll('['+keyAttr+']').forEach(el=>{ if(el!==itemEl){ const r=el.getBoundingClientRect(); before.set(el.getAttribute(keyAttr), {x:r.left, y:r.top}); } });
+  root.querySelectorAll(cardSel).forEach(el=>{ if(el!==itemEl){ const r=el.getBoundingClientRect(); before.set(el.getAttribute(keyAttr), {x:r.left, y:r.top}); } });
   const a = itemEl.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.97)'}], { duration:200, easing:'cubic-bezier(.4,0,.2,1)', fill:'forwards' });
   let done=false;
   const once = () => { if(done) return; done=true; commit();
     const cont = document.querySelector('.content') || document;
-    cont.querySelectorAll('['+keyAttr+']').forEach(el=>{
+    cont.querySelectorAll(cardSel).forEach(el=>{
       const b = before.get(el.getAttribute(keyAttr)); if(!b) return;
       const r = el.getBoundingClientRect(); const dx = b.x - r.left, dy = b.y - r.top;
       if(Math.abs(dx)<1 && Math.abs(dy)<1) return;
@@ -2372,7 +2363,7 @@ function flipAway(itemEl, commit){
 async function deleteQuestion(docId, qid){
   if(!await confirmDialog('确定删除这道题目？此操作不可撤销。')) return;
   const d = docById(docId);
-  if(!d){ toast(T('典籍已不存在')); return; }   // 确认框排队等待期间典籍可能已被导入/拉取替换
+  if(!d){ toast('文档已不存在'); return; }   // 确认框排队等待期间文档可能已被导入/拉取替换
   // qid 来自导入/云端数据，必须转义后再拼选择器（含引号会抛 SyntaxError，异常被 async 吞掉后只表现为"删不掉"）
   const card = document.querySelector('.content .q[data-qid="'+CSS.escape(qid)+'"]');
   flipAway(card, () => {
@@ -2383,7 +2374,7 @@ async function deleteQuestion(docId, qid){
     renderAll();
   });
 }
-// 修为落盘节流：翻题/评分每次都整份写 IndexedDB，修为上万条时代价明显；
+// 进度落盘节流：翻题/评分每次都整份写 IndexedDB，进度上万条时代价明显；
 // 内存态立即更新（统计/队列都是内存数据），磁盘写入合并到 600ms 后，页面隐藏或卸载时强制 flush
 let _progWriteTimer = null;
 function flushProgressWrite(){
@@ -2399,14 +2390,14 @@ function saveProgress(){
 // 页面隐藏/卸载时把所有带防抖的落盘项立即 flush（各 600ms 防抖，不 flush 会丢掉最后一次评分/最后一次输入）
 window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); });
 document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); } });
-// 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致秘境试炼崩溃
-// 同时失效闭关队列缓存：否则新增/删除题目后，闭关模式最长 30 分钟看不到变化
+// 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
+// 同时失效记忆队列缓存：否则新增/删除题目后，记忆模式最长 30 分钟看不到变化
 async function saveDocs(){ buildIndex(); markDirty(); invalidateMemQueue(); await Store.saveDocs(DOCS); }
 
 /* ---------- 添加题目弹窗 ---------- */
 function openAddModal(docId){
   const d = docById(docId);
-  if(!d){ toast(T('典籍已不存在')); return; }
+  if(!d){ toast('文档已不存在'); return; }
   $('#addModal').dataset.docid = docId;
   $('#addDocName').textContent = d.title;
   $('#aqTitle').value = '';
@@ -2439,7 +2430,7 @@ function submitAddQuestion(){
 /* ---------- 编辑题目弹窗 ---------- */
 function openEditModal(docId, qid){
   const d = docById(docId);
-  if(!d){ toast(T('典籍已不存在')); return; }
+  if(!d){ toast('文档已不存在'); return; }
   const q = (d.questions||[]).find(x=>x.id===qid);
   if(!q) return;
   $('#editModal').dataset.docid = docId;
@@ -2456,7 +2447,7 @@ function openEditModal(docId, qid){
 function submitEditQuestion(){
   const docId = $('#editModal').dataset.docid;
   const d = docById(docId);
-  if(!d){ toast(T('典籍已不存在')); hideModal($('#editModal')); return; }
+  if(!d){ toast('文档已不存在'); hideModal($('#editModal')); return; }
   const qid = $('#editModal').dataset.qid;
   const q = (d.questions||[]).find(x=>x.id===qid);
   if(!q) return;
@@ -2475,7 +2466,7 @@ function submitEditQuestion(){
 
 
 /* =========================================================
-   秘境试炼模式
+   刷题模式
    ========================================================= */
 function startPractice(scope){
   const order = (scope==='all'
@@ -2488,7 +2479,7 @@ function startPractice(scope){
   const newOnes = order.filter(isNew);
   const doneOnes = order.filter(qid=>!isNew(qid));
   const sorted = [...newOnes, ...doneOnes];
-  // 起点：有新题就从第一道新题开始；无新题则恢复上次位置（最后一道已秘境试炼的下一题），全刷完则从头
+  // 起点：有新题就从第一道新题开始；无新题则恢复上次位置（最后一道已刷题的下一题），全刷完则从头
   let startIdx = 0;
   if(!newOnes.length && !practice.done){
     for(let i=sorted.length-1; i>=0; i--){
@@ -2497,9 +2488,9 @@ function startPractice(scope){
     if(startIdx >= sorted.length) startIdx = 0;
   }
   practice = { order: sorted, index:startIdx, scope, done:false, practiced:new Set(), revealed:new Set() };
-  // 标记已悟的题不再出现在秘境试炼列表
+  // 标记掌握的题不再出现在刷题列表
   sorted.forEach(qid=>{ if(PROGRESS[qid]?.mastered) practice.practiced.add(qid); });
-  practiceFrom = (view===Views.BROWSE) ? Views.BROWSE : Views.DOCS;   // 记录入口：退出秘境试炼时回到原处
+  practiceFrom = (view===Views.BROWSE) ? Views.BROWSE : Views.DOCS;   // 记录入口：退出刷题时回到原处
   view=Views.PRACTICE; renderAll();
 }
 function pQuestion(){ return QINDEX.get(practice.order[practice.index]); }
@@ -2516,7 +2507,7 @@ function completeLevel(){
   practice.done = true;
   renderAll();   // 用 renderAll 而非 renderContent，确保顶部统计条同步刷新
 }
-// 秘境试炼模式换题：与闭关模式同款「旧卡横向飞出 → 新卡反向滑入」的翻卡动效，消除同视图内换题的硬跳变。
+// 刷题模式换题：与记忆模式同款「旧卡横向飞出 → 新卡反向滑入」的翻卡动效，消除同视图内换题的硬跳变。
 // 返回 true 表示已发起换题（含动画中吞掉多余点击），false 表示已到边界（交给调用方处理“完成/提示”）。
 let _pBusy = false;
 function practiceStep(delta){
@@ -2576,9 +2567,9 @@ function renderPractice(c){
         <button class="btn ${revealed?'':'primary'}" id="revealBtn">${revealed?'🙈 隐藏答案':'👁 显示答案'}</button>
         <button class="btn" id="aiAskBtn" title="AI 深度讲解此题：校验参考答案 + 必要补充 + 追问预测">🔬 精讲</button>
         <button class="btn" id="editAnswerBtn" title="修改本题答案">✏️ 编辑</button>
-        <button class="btn ${p.mastered?'primary':''}" id="masterBtn">${p.mastered?T('★ 已悟'):T('☆ 标记已悟')}</button>
+        <button class="btn ${p.mastered?'primary':''}" id="masterBtn">${p.mastered?'★ 掌握':'☆ 标记掌握'}</button>
         <div class="spacer"></div>
-        <button class="btn ${atLast?'primary':''}" id="nextBtn" ${atLast && !canComplete ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${atLast ? (canComplete?T('🎉 完成秘境试炼'):'需先刷过前面的题目') : '下一题 →'}</button>
+        <button class="btn ${atLast?'primary':''}" id="nextBtn" ${atLast && !canComplete ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${atLast ? (canComplete?'🎉 完成刷题':'需先把本关题目过一遍') : '下一题 →'}</button>
       </div>
       ${renderAIBlock(q.id)}
       <div class="reveal-hint">需用「下一题 / 上一题」走完全部题目才算刷完，只看答案不算。快捷键：空格 显示/隐藏答案 · ← → 切换题目</div>
@@ -2598,14 +2589,14 @@ function renderPractice(c){
     markPracticed(q.id);
     if(atLast){
       if(canComplete){ completeLevel(); }
-      else { toast(T('请先用「下一题 / 上一题」把本典籍题目都过一遍')); }
+      else { toast('请先用「下一题 / 上一题」把本关题目都过一遍（不只是当前题之前的那几道）'); }
     }
   };
   $('#revealBtn').onclick = () => { toggleRevealP(q.id); };
   $('#masterBtn').onclick = () => { toggleMasterP(q.id); };
   $('#aiAskBtn').onclick = () => { askAI(q.id); };
   $('#editAnswerBtn').onclick = () => {
-    // 找到题目所在的典籍
+    // 找到题目所在的文档
     const docId = QDOC.get(q.id);
     const doc = docId ? DINDEX.get(docId) : null;
     if(!doc) return;
@@ -2628,10 +2619,10 @@ function renderDone(c){
     <div class="practice-wrap">
       <div class="done-card">
         <div class="big">🎉</div>
-        <h3>${T('秘境试炼')}完成！</h3>
+        <h3>刷题完成！</h3>
         <div class="sub">「${esc(d?d.title:'')}」已完成，累计刷过 <b style="color:var(--accent3)">${docClears(docId)}</b> 次</div>
         <div class="pcontrols" style="justify-content:center">
-          <button class="btn" id="backDocs">📁 返回${T('典籍')}</button>
+          <button class="btn" id="backDocs">📁 返回文档</button>
           <button class="btn" id="replayAgain">🔄 再刷一次</button>
         </div>
       </div>
@@ -2645,14 +2636,14 @@ function toggleMasterP(qid){
   p.mastered = !p.mastered; if(p.mastered){ p.seen=true; p.lastPracticed = Date.now(); celebrateConfetti({count:100}); } saveProgress();
   renderAll();
 }
-// 秘境试炼里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
+// 刷题里"刷过这道题"：离开该题（上一题/下一题）时标记，作为通关门槛
 function markPracticed(qid){
   if(!practice.practiced) practice.practiced = new Set();
   practice.practiced.add(qid);
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.practiced = true; p.lastPracticed = Date.now(); saveProgress();
 }
-// 秘境试炼里的"显示/隐藏答案"只在本次会话内生效，不污染"已看"修为，也不影响通关
+// 刷题里的"显示/隐藏答案"只在本次会话内生效，不污染"已看"进度，也不影响通关
 function toggleRevealP(qid){
   if(!practice.revealed) practice.revealed = new Set();
   if(practice.revealed.has(qid)) practice.revealed.delete(qid);
@@ -2664,7 +2655,7 @@ function toggleRevealP(qid){
   if(answerEl) answerEl.classList.toggle('show', revealed);
   if(btnEl){ btnEl.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
 }
-// 通关门槛：本关所有题目都需"刷过"（在秘境试炼里用「下一题/上一题」过一遍）；
+// 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
 // 仅 1 题的关卡则要求至少查看过一次答案，避免点一下就通关。按钮与键盘快捷键共用此判定。
 function canCompletePractice(){
   const tot = practice.order.length;
@@ -2748,7 +2739,7 @@ function renderMockConfig(c){
     <div class="feature-wrap">
       <div class="cfg-card">
         <h2>🎤 八股练习</h2>
-        <div class="desc">随机抽题、自由作答、自评悟性；交卷后可导出复盘 MD 交给 AI 阅卷。</div>
+        <div class="desc">随机抽题、自由作答、自评掌握；交卷后可导出复盘 MD 交给 AI 阅卷。</div>
         <div class="cfg-grid">
           <div class="cfg-field"><label>题目数量</label><input type="number" id="mockCount" min="1" max="50" value="${mock.cfg.count}"></div>
           <div class="cfg-field"><label>题目范围</label><select id="mockScope">${opts}</select></div>
@@ -2778,8 +2769,14 @@ function mockGrade(qid, rate){
   const a = mock.answers[qid] || (mock.answers[qid]={answer:'',selfRate:null});
   a.selfRate = rate;
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
-  p.selfRate = rate; p.lastPracticed = Date.now();
-  if(rate==='good'){ p.seen = true; p.mastered = true; }
+  p.lastPracticed = Date.now();
+  // 掌握与记忆模式同一套语义（见 applySm2Grade）：只有"复习阶段"的最高档才点亮，答不会要清掉。
+  // 八股练习只是一次自评，若点一次"熟练"就直接算掌握，就绕过了"复习验证过才算数"的设计，
+  // 而就绪度（computeReadiness）正是拿掌握率当门槛 —— 等于给"能不能去面试"开了后门；
+  // 反过来，明明自评了"不会"却仍是掌握题，也和记忆模式"忘了清掌握"自相矛盾。
+  // 注意这里不写 p.selfRate：该字段没有任何读取方，写进 PROGRESS 只会跟着题库一起同步上云。
+  if(rate==='good'){ p.seen = true; p.mastered = !!(p.fsrs || p.mastered); }
+  else if(rate==='bad'){ p.mastered = false; }
   saveProgress();
   renderAll();
 }
@@ -2806,7 +2803,7 @@ function renderMockResult(c){
           <button class="btn primary" id="mockAIGrade" style="background:linear-gradient(135deg,#f5c542,#f59e42);border:none;color:#1a1a2e">🤖 AI 阅卷</button>
           <div class="spacer"></div>
           <button class="btn" id="mockRedo">🔄 再来一次</button>
-          <button class="btn ghost" id="mockExit">返回${T('洞府')}</button>
+          <button class="btn ghost" id="mockExit">返回总览</button>
         </div>
       </div>
       ${(aiGrading || aiGradingLoading) ? '<div class="ai-grading" id="aiGradingBox">'+(aiGrading || '<div class="ai-loading">AI 阅卷中…</div>')+'</div>' : ''}
@@ -2825,13 +2822,13 @@ function renderMockResult(c){
   $('#mockExit').onclick = () => { view=Views.OVERVIEW; renderAll(); };
   $('#mockAIGrade').onclick = () => gradeInterview();
 }
-// 闭关队列缓存，避免每次进入闭关模式全量遍历
+// 记忆队列缓存，避免每次进入记忆模式全量遍历
 let _memQueueCache = null;
 let _memQueueBuiltAt = 0;   // 队列构建时间：超过阈值即使无数据变更也视为脏（长时间挂机后新到期题要能出现）
 let _memQueueDirty = true;
-let _lvCountsCache = null;   // 境界分布缓存，修为变更时失效
+let _lvCountsCache = null;   // 等级分布缓存，进度变更时失效
 function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; _statsCache = null; }
-// 全库境界分布（闭关模式修为条用），缓存避免每次评分都全量遍历
+// 全库等级分布（记忆模式进度条用），缓存避免每次评分都全量遍历
 function computeLvCounts(){
   if(_lvCountsCache) return _lvCountsCache;
   const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
@@ -2843,33 +2840,35 @@ function computeLvCounts(){
   _lvCountsCache = lvCounts;
   return lvCounts;
 }
-// FSRS 闭关队列：获取今日待温故题目
+// FSRS 记忆队列：获取今日待复习题目
 function buildMemoryQueue(useCache){
   if(useCache && !_memQueueDirty && _memQueueCache){
     if(Date.now() - _memQueueBuiltAt < 30*60*1000) return _memQueueCache;   // 缓存新鲜
     _memQueueDirty = true;   // 缓存在时间维度过期：挂机期间新到期的题不能漏
   }
   const now=Date.now();
-  const today=new Date(now);today.setHours(0,0,0,0);const today0=today.getTime();
+  const todayNo=dayIndexOf(now);   // 自然日序号：逾期天数与进度页共用同一口径（见 dayIndexOf）
   const queue=[];
   DOCS.forEach(d=>d.questions.forEach((q,i)=>{
     const p=PROGRESS[q.id]||{};
     if(p.mastered){
-      // 已悟：用 srNext 判断是否到期（和普通题一致），但应用「已悟最小间隔」（随温故节奏档位变化）。
-      // 无 srNext 的（手动/八股标记已悟）也按 lastPracticed + 最小间隔 进入温故队列，保证所有题都能温故。
-      const minNext = (p.lastPracticed||0) + masteredMinDays()*86400000;
+      // 掌握：用 srNext 判断是否到期（和普通题一致），但应用「掌握最小间隔」（MASTERED_MIN_DAYS，固定 4 天）。
+      // 无 srNext 的（手动/八股标记掌握）也按 lastPracticed + 最小间隔 进入复习队列，保证所有题都能复习。
+      const minNext = (p.lastPracticed||0) + MASTERED_MIN_DAYS*86400000;
       const effectiveNext = Math.max(p.srNext||0, minNext);
       if(isNaN(effectiveNext)) return;
       if(now < effectiveNext) return;  // 未到期
-      const masteredDays=Math.max(0, Math.floor((now - effectiveNext)/86400000));
+      // 逾期只按"真实的上次练习时间"算：导入/云端数据可能只有 mastered 标记而没有 lastPracticed，
+      // 那时 minNext 会落在 1970 年，算出"最久欠两万天"这种离谱数字（会显示在卡片头部）
+      const masteredDays = p.lastPracticed ? Math.max(0, todayNo - dayIndexOf(effectiveNext)) : 0;
       queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,isNew:false,docOrder:i});
       return;
     }
     const level=p.srLevel||0;
     const next=p.srNext||0;
     const isNew = !next;  // srNext为0才是真新题
-    const nextDate=new Date(next);nextDate.setHours(0,0,0,0);
-    const days=next?Math.floor((today0-nextDate.getTime())/86400000):0;
+    // 逾期天数走自然日序号相减（与进度页同一口径，见 dayIndexOf）
+    const days=next?Math.max(0, todayNo - dayIndexOf(next)):0;
     if(next===0||now>=next) queue.push({q,d,level,overdue:days,mastered:false,isNew,docOrder:i});
   }));
   queue.sort((a,b)=>(b.isNew-a.isNew)||(b.overdue-a.overdue)||(a.level-b.level)||(a.docOrder-b.docOrder));
@@ -2878,25 +2877,35 @@ function buildMemoryQueue(useCache){
   _memQueueBuiltAt = Date.now();
   return queue;
 }
-// 境界分布 → 修为条段 + 图例 HTML（闭关模式与修为页共用，纯展示）
+// 等级分布 → 进度条段 + 图例 HTML（记忆模式与进度页共用，纯展示）
 function buildLvBarHtml(lvCounts){
   const LV_ORDER = ['M',5,4,3,2,1,0];
   const stacked = LV_ORDER.filter(lv=>lvCounts[lv]>0).map(lv=>
     `<i class="lv${lv}" style="flex:${lvCounts[lv]} 1 0" title="Lv${lv}: ${lvCounts[lv]}题"></i>`
   ).join('');
   const legend = LV_ORDER.map(lv=>
-    `<span style="display:inline-flex;align-items:center;font-size:12px;color:var(--muted)"><i class="an-dot lv${lv}"></i>${lv==='M'?T('已悟'):'Lv'+lv} ${lvCounts[lv]||0}</span>`
+    `<span style="display:inline-flex;align-items:center;font-size:12px;color:var(--muted)"><i class="an-dot lv${lv}"></i>${lv==='M'?'掌握':'Lv'+lv} ${lvCounts[lv]||0}</span>`
   ).join('');
   return { stacked, legend };
 }
-// 撤销闭关模式上一步评分：恢复旧修为并定位回被撤销的题目
+// 数据被整体替换（导入 / 云拉取 / 清除进度 / 清空全部）后，记忆模式的队列快照与撤销栈同时失效：整块重置。
+// 只清缓存标志是不够的 —— 记忆页里旧快照的 item.q 指向的已是丢弃对象，卡面会显示旧题面，
+// 评分还会给一个已不存在的 qid 写进度（孤儿数据）。四个数据替换入口统一走这里。
+function resetMemoryState(){
+  memory = { queue: [], index: 0, flipped: false, _history: [] };
+}
+// 撤销记忆模式上一步评分：恢复旧进度、回滚这次评分带出的副作用（趁热榜 / 战报），并定位回被撤销的题目
 function undoMemoryGrade(){
   if(!memory._history || !memory._history.length) return;
   const last = memory._history.pop();
   const undoneQid = last.qid;
+  // 趁热榜：这次评分刚把题加进去的，撤销时一并撤掉（榜单是"没答到最高档"的集合，评分撤销后它就不该在榜上）
+  if(last.hotAdded && typeof hotRemove === 'function'){ try{ hotRemove(undoneQid); }catch(_){} }
+  // 战报：按归档时的同一套条件反向计数（跨天撤销也安全 —— 用的是当时的时间戳，不是"现在"）
+  if(typeof warLogUndo === 'function'){ try{ warLogUndo(last.at, undoneQid, last.g, last.oldProgress || {}, last.newLvl, last.newMastered); }catch(_){} }
   if(last.oldProgress && Object.keys(last.oldProgress).length) PROGRESS[undoneQid] = last.oldProgress;
-  else delete PROGRESS[undoneQid];   // 该题原本无修为，撤销后恢复为"无记录"，避免残留空对象
-  saveProgress();   // 内部已含 markDirty 与闭关队列缓存失效，无需重复调用
+  else delete PROGRESS[undoneQid];   // 该题原本无进度，撤销后恢复为"无记录"，避免残留空对象
+  saveProgress();   // 内部已含 markDirty 与记忆队列缓存失效，无需重复调用
   memory.flipped = false;
   memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
   // 撤销后定位到被撤销的那道题
@@ -2905,12 +2914,13 @@ function undoMemoryGrade(){
   if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
   renderAll();
 }
-// 展开/收起闭关卡的答案区（点击卡片与键盘 Enter/空格 共用）：
+// 展开/收起记忆卡的答案区（点击卡片与键盘 Enter/空格 共用）：
 // 答案本体交给 CSS 的 .rv 做高度过渡（grid-rows 0fr→1fr），评分栏与撤销栏补一个上浮淡入，
 // 避免原来 display 一开一关"啪"地整块出现
 function applyMemFlip(){
   const show = !!memory.flipped;
   const ma=$('#memAnswer'), mh=$('#memHint'), mg=$('#memGradeRow'), mc=$('#memControls');
+  const cardEl = $('#memCard'); if(cardEl) cardEl.setAttribute('aria-expanded', show?'true':'false');
   if(ma) ma.classList.toggle('show', show);
   if(mh) mh.style.display = show ? 'none' : '';
   if(mg){
@@ -2922,15 +2932,15 @@ function applyMemFlip(){
     if(show){ mc.classList.remove('anim-in'); void mc.offsetWidth; mc.classList.add('anim-in'); }
   }
 }
-/* ===== 回炉淬炼页：只认题、只动热榜（零副作用） ===== */
+/* ===== 趁热打铁页：只认题、只动热榜（零副作用） ===== */
 let _hBusy = false;   // 换题飞出期间的锁，防连点双跳
 function renderHot(c){
   if(!hot.inPass){
     const list = hotLiveQueue();
     if(!list.length){
-      c.innerHTML = `<div class="flash-empty"><div class="big">🔥</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">热榜是空的</div><div style="color:var(--muted)">在「${T('闭关')}」模式里没答<em>简单</em>的题会自动进这里，${T('回炉')}再过一遍。</div><div style="margin-top:16px"><button class="btn primary" id="hotGoMemory">🧠 去${T('闭关')}模式</button></div></div>`;
+      c.innerHTML = `<div class="flash-empty"><div class="big">🔥</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">热榜是空的</div><div style="color:var(--muted)">在「记忆」模式里没答<em>简单</em>的题会自动进这里，趁热再过一遍。</div><div style="margin-top:16px"><button class="btn primary" id="hotGoMemory">🧠 去记忆模式</button></div></div>`;
       const gb = $('#hotGoMemory'); if(gb) gb.onclick = () => {
-        memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };   // 同洞府入口：不复用旧队列快照
+        memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };   // 同总览入口：不复用旧队列快照
         view = Views.MEMORY; renderAll();
       };
       return;
@@ -2947,7 +2957,7 @@ function renderHot(c){
   const hotEnter = hot._flip ? ' card-enter' : ''; hot._flip = false;
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 ${T('回炉淬炼')}${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${HOT.length} 题</span></div>
+      <div class="pmeta"><span>🔥 趁热打铁${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${HOT.length} 题</span></div>
       <div class="memory-card${hotEnter}" id="hotCard">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
@@ -2955,7 +2965,7 @@ function renderHot(c){
         <div class="reveal-hint" id="hotHint" style="${hot.flipped?'display:none':''}">👆 点击卡片翻看答案</div>
         <div class="grade-row" id="hotGradeRow" style="${hot.flipped?'':'display:none'}"><div class="grade-btn g-good" data-hot="done">✅ 记住了 · 移出热榜</div><div class="grade-btn g-bad" data-hot="again">🔁 还没 · 留在榜上</div></div>
       </div>
-      <div class="pstatus">这里只是把${T('闭关')}模式里没答简单的题再认一遍，<b>不改动${T('境界')}、排期与统计</b>；点「记住了」= 从热榜移出。</div>
+      <div class="pstatus">这里只是把记忆模式里没答简单的题再认一遍，<b>不改动等级、排期与统计</b>；点「记住了」= 从热榜移出。</div>
     </div>`;
   const card = c.querySelector('#hotCard');
   card.onclick = (e) => {
@@ -2992,32 +3002,39 @@ function renderHotDone(c){
   const passed = hot.queue.length, cleared = hot.cleared||0, remain = HOT.length;
   c.innerHTML = `
     <div class="feature-wrap"><div class="done-card">
-      <div class="big">🔥</div><h3>本轮${T('回炉淬炼')}完成</h3>
+      <div class="big">🔥</div><h3>本轮趁热打铁完成</h3>
       <div class="sub">过了一遍 ${passed} 题 · 移出热榜 ${cleared} · 仍需练 ${remain}</div>
       <div class="pcontrols" style="justify-content:center">
         ${remain>0?`<button class="btn primary" id="hotAgain">🔁 再来一轮</button>`:''}
         <button class="btn" id="hotBack">返回</button>
       </div>
     </div>
-    <div class="pstatus">没移出的题还在热榜，下轮可继续。它们在${T('闭关')}模式里也会被各自排期正常召回。</div></div>`;
+    <div class="pstatus">没移出的题还在热榜，下轮可继续。它们在记忆模式里也会被各自排期正常召回。</div></div>`;
   hot.inPass = false;
   const ag = $('#hotAgain'); if(ag) ag.onclick = () => { hot.index = 0; hot.cleared = 0; renderAll(); };
   const bk = $('#hotBack'); if(bk) bk.onclick = () => { view = Views.OVERVIEW; renderAll(); };
 }
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
-    // 评分越界（队列非空）时保留撤销历史；全新进入（队列空）才清空
-    const hadQueue = memory.queue.length > 0;
+    // 队列空（含刚进页面）或索引越界 → 重建队列并回到第一张。
+    // 撤销栈一律保留：三个入口（总览待复习卡 / 趁热空态 / 顶部标签）都是"置空队列 + 保留历史"的语义，
+    // 在这里清掉会让"评完分切走再回来就撤不了上一步"。真正该整块失效的场合（导入 / 云拉取 / 清空数据）
+    // 由 resetMemoryState() 显式处理。
     memory.queue = buildMemoryQueue(true);
     memory.index = 0; memory.flipped = false;
-    if(!hadQueue) memory._history = [];
     if(!memory.queue.length){
       const _ms = computeAllStats();
+      // 题库为空（新装 / 清空后）不能说"全部掌握！"：那是"复习已完成"的结论，对空库是假结论
+      if(!_ms.tq){
+        c.innerHTML = `<div class="flash-empty"><div class="big">📚</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">题库还是空的</div><div style="color:var(--muted)">记忆模式按 FSRS 给题目排期。先导入 JSON / Markdown 题库（或新建文档），再回到这里。</div><div style="margin-top:16px"><button class="btn primary" id="memImport">⬆️ 导入题库（JSON / Markdown）</button></div></div>`;
+        const mi = $('#memImport'); if(mi) mi.onclick = () => openImportPicker();
+        return;
+      }
       const streak = _ms.streak;
       const todayDone = _ms.todayDone;
       const canUndo = !!(memory._history && memory._history.length);
       const hotLive = hotLiveQueue().length;   // 真实可练题数：会顺带回收被删题遗留的孤儿 qid，不能直接用 HOT.length
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部${T('已悟')}！</div><div style="color:var(--muted)">所有题目都在艾宾浩斯${T('温故')}计划中，暂无需要${T('温故')}的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 ${T('连续修行')} <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已${T('温故')} <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button class="btn primary" id="memGoHot">🔥 ${T('回炉淬炼')}：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
+      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在 FSRS 复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button class="btn primary" id="memGoHot">🔥 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
       const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
       const gh = $('#memGoHot'); if(gh) gh.onclick = () => { hot.inPass = false; hot.index = 0; hot.cleared = 0; view = Views.HOT; renderAll(); };
       return;
@@ -3031,30 +3048,34 @@ function renderMemory(c){
   const sinceLastDays = p.lastPracticed ? Math.max(0, Math.round((Date.now()-p.lastPracticed)/86400000)) : 0;
   const tot = memory.queue.length, idx = memory.index+1;
   const maxOverdue = memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
-  // 一根总修为条：全部典籍所有题目的境界分布
+  // 一根总进度条：全部文档所有题目的等级分布
   const lvCounts = computeLvCounts();
   const lvBar = buildLvBarHtml(lvCounts);
-  // FSRS 四档评分的下次间隔预览：把「这次评分 = 下次几天后」直接标在按钮上
+  // 四档评分的下次间隔预览：把「这一档 = 下次几天后」直接标在按钮上（四档与调度器一一对应）
   const pv = fsrsPreview(p, Date.now());
   const enterCls = memory._justGraded ? ' card-enter' : '';   // 评分后新卡入场：滑入 + 淡入
   memory._justGraded = false;
+  // 新题的「倒背如流」提示：排期照常按简单档走，但掌握标记要等复习阶段再答一次（见 applySm2Grade）
+  const isFreshQ = !(p.fsrs && p.fsrs.s > 0);
   const gradeBtns = [Rate.AGAIN, Rate.HARD, Rate.GOOD, Rate.EASY].map(g=>{
     const m = RATE_META[g];
-    return `<div class="grade-btn mem-grade ${m.cls}" data-rate="${g}" style="border-color:${m.color};color:${m.color}"><span class="gb-main">${m.icon} ${m.label}</span><span class="gb-int">${pv[g]<1?'半天后':pv[g]+' 天后'}</span></div>`;
+    const days = pv[g];
+    const hint = (isFreshQ && g===Rate.EASY) ? ' title="新题：排期照常按「倒背如流」走，掌握标记要等下一轮复习再评一次"' : '';
+    return `<div class="grade-btn mem-grade ${m.cls}" data-rate="${g}"${hint} style="border-color:${m.color};color:${m.color}"><span class="gb-main">${m.icon} ${m.label}</span><span class="gb-int">${days<1?'半天后':days+' 天后'}</span></div>`;
   }).join('');
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pbar">${lvBar.stacked}</div>
       <div class="pmeta">
-        <span>${item.mastered?'✅ 复查':T('🧠 闭关')} · ${renderTitle(d.title)}</span>
+        <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
           <span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
           ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${sinceLastDays} 天`}
-          ${maxOverdue>0?` · <span style="color:var(--bad)">⚠ 最久欠 ${maxOverdue} 天</span>`:''}
+          ${maxOverdue>0?` · <span style="color:var(--bad)" title="这是整个队列里最久的逾期天数，不是当前这道题">⚠ 队列最久欠 ${maxOverdue} 天</span>`:''}
         </span>
       </div>
       <div class="mem-stack${enterCls}" id="memStack">
-      <div class="memory-card" id="memCard">
+      <div class="memory-card" id="memCard" role="button" tabindex="0" aria-expanded="${memory.flipped?'true':'false'}">
         <div class="ptag" style="display:flex;align-items:center;justify-content:space-between">
           <span>题目</span>
           <button class="btn sm" id="flashEdit">✏️ 编辑</button>
@@ -3092,35 +3113,34 @@ function renderMemory(c){
     memory.flipped = !memory.flipped;
     applyMemFlip();
   };
-  let _memBusy = false;   // 飞出动画期间锁住评分：连点不再连跳两题
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   c.querySelectorAll('.grade-btn[data-rate]').forEach(r=>r.onclick=(e)=>{
     e.stopPropagation();
-    if(_memBusy) return;
+    if(_memGradeBusy) return;   // 模块级锁：动画期间连点、以及"切走再切回"都点不动（见 _memGradeBusy 声明处）
     const rate=parseInt(r.dataset.rate);
     if(isNaN(rate)) return;
     if(!memory._history) memory._history = [];
     const stack = c.querySelector('#memStack') || c.querySelector('.mem-stack');
     const finish = () => {
-      _memBusy = false;
+      _memGradeBusy = false;
       applySm2Grade(q.id, rate, memory._history);
       memory.index++; memory.flipped=false;
-      if(rate===Rate.EASY) celebrateConfetti({count:80});   // 「简单」：撒花庆祝
+      if(rate===Rate.EASY) celebrateConfetti({count:80});   // 「倒背如流」：撒花庆祝
       // 动画期间用户可能已切换标签：评分已记录（上面两行），此时不再重渲染当前页面，
-      // 否则会把用户已经切到的页面重建一次（画面闪动），下次进闭关页自然衔接
+      // 否则会把用户已经切到的页面重建一次（画面闪动），下次进记忆页自然衔接
       if(view === Views.MEMORY){ memory._justGraded = true; renderAll(); }
     };
     if(!stack || reduceMotion || typeof stack.animate !== 'function'){ finish(); return; }
-    _memBusy = true;
+    _memGradeBusy = true;
     // 新题从顶部开始：先把滚动位置平滑归位，避免动画结束时内容重建造成位置瞬跳
     if(c.scrollTop > 8){
       try{ c.scrollTo({ top:0, behavior:'smooth' }); }catch(_){ c.scrollTop = 0; }
     }
-    // 卡片按评分方向飞出：忘了 → 下坠、简单 → 上浮，中间两档小幅位移后淡出
-    const dy = rate===Rate.AGAIN ? 70 : rate===Rate.HARD ? 24 : rate===Rate.GOOD ? -30 : -80;
+    // 卡片按评分方向飞出：忘了 → 下坠、倒背如流 → 上浮，四档逐级递进（缺省的兜底取中间档）
+    const dy = ({1:70, 2:24, 3:-30, 4:-80})[rate] || -30;
     // fill:'forwards' —— 动画结束后保持"已飞出"状态：否则 onfinish 与 DOM 重建之间的空档里
     // 卡片会闪回原位（触屏 hover 粘滞时还会跳到 hover 位移），这一帧闪烁在位移最大的「简单」档最明显。
-    // 中点关键帧让透明度先于位移衰减：卡片不会以半透明状态"穿过"上方的修为条/标题，飞出更干净
+    // 中点关键帧让透明度先于位移衰减：卡片不会以半透明状态"穿过"上方的进度条/标题，飞出更干净
     const anim = stack.animate([
       { transform:'translateY(0) scale(1) rotate(0deg)', opacity:1 },
       { transform:'translateY('+(dy*.4)+'px) scale('+(dy<0?1.012:.982)+') rotate('+(dy>0?.5:-.5)+'deg)', opacity:.25, offset:.55 },
@@ -3135,28 +3155,37 @@ function renderMemory(c){
   const editBtn = $('#flashEdit'); if(editBtn) editBtn.onclick = (e) => { e.stopPropagation(); openEditModal(d.id, q.id); };
   const aiCodeBtn = $('#memAICodeBtn'); if(aiCodeBtn) aiCodeBtn.onclick = (e) => { e.stopPropagation(); askAICode(q.id); };
 }
-// 统计条中的待温故数
+// 统计条中的待复习数
 
 function buildAnalyticsData(){
   const now = Date.now();
+  const todayNo = dayIndexOf(now);   // 逾期天数与记忆队列共用同一口径（见 dayIndexOf）
   const rows = [];
   const docStats = [];
   DOCS.forEach(d=>{
     const qs = d.questions||[];
-    const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, sumInterval:0, sumEf:0, overdueMax:0, levels:{0:0,1:0,2:0,3:0,4:0,5:0,'M':0} };
+    const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, overdueMax:0, levels:{0:0,1:0,2:0,3:0,4:0,5:0,'M':0} };
     qs.forEach(q=>{
       const p = PROGRESS[q.id]||{};
       if(!(p.seen||p.mastered||p.practiced||p.srLevel||p.srNext)) return;
       const mastered = !!p.mastered;
       const lv = mastered ? 'M' : (p.srLevel||0);
       const next = p.srNext||0;
-      const minNext = (p.lastPracticed||0) + masteredMinDays()*86400000;
+      const minNext = (p.lastPracticed||0) + MASTERED_MIN_DAYS*86400000;
       const effectiveNext = mastered ? Math.max(next, minNext) : next;
       const due = mastered ? (now>=effectiveNext) : (!next||now>=next);
-      const overdue = effectiveNext ? Math.max(0, Math.round((now-effectiveNext)/86400000)) : 0;
-      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, ef:p.ef||SM2_INIT_EF, lastPracticed:p.lastPracticed||0, due, overdue });
+      // 掌握题缺 lastPracticed（导入/云端旧数据）时 minNext 落在 1970 年：按"没有逾期"处理，
+      // 否则报表/CSV 里会出现"逾期两万天"
+      // 逾期天数按自然日算（不再用 Math.round((now-next)/86400000)）：与记忆卡头部的"最久欠 N 天"必须一致，
+      // 否则昨天 23:00 到期的题会在这里显示 0 天、在记忆页显示 1 天
+      const overdue = (mastered && !p.lastPracticed) ? 0
+        : (effectiveNext ? Math.max(0, todayNo - dayIndexOf(effectiveNext)) : 0);
+      // 展示 FSRS 原生的 DSR 状态，不再展示 SM-2 的 EF（EF 在 FSRS 里没有位置，之前只是拿它当展示字段）。
+      // 老记录没有 fsrs 字段时由 fsrsStateOf 一次性换算（interval≈S、EF→D），所以历史数据同样有值
+      const state = fsrsStateOf(p, now);
+      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, s:state?state.s:0, d:state?state.d:0, lastPracticed:p.lastPracticed||0, due, overdue });
       st.levels[lv]++; if(mastered) st.mastered++; if(due) st.due++;
-      st.cnt++; st.sumInterval += (p.interval||0); st.sumEf += (p.ef||SM2_INIT_EF);
+      st.cnt++;
       st.overdueMax = Math.max(st.overdueMax, overdue);
     });
     if(st.cnt>0) docStats.push(st);
@@ -3166,26 +3195,26 @@ function buildAnalyticsData(){
 
 function buildAnalyticsReport(o){
   const lvLine = ['M','5','4','3','2','1','0'].map(lv=>`Lv${lv}: ${o.lvCounts[lv]}`).join('  ');
-  const docLines = o.docStats.slice().sort((a,b)=>b.due-a.due).map(d=>`  - ${d.title}: ${T('闭关')}题 ${d.cnt} / ${T('已悟')} ${d.mastered} / ${T('待温故')} ${d.due}${d.overdueMax>0?` / 最久逾期 ${d.overdueMax}天`:''}`).join('\n');
-  const top = (o.maxOverdue>0 && o.topOverdue) ? `  - 最久逾期：${o.maxOverdue} 天（${o.topOverdue.doc} · ${o.topOverdue.title}）` : T('  - 无逾期，温故节奏良好');
-  return `【${T('修为')}分析报告】生成于 ${new Date().toLocaleString('zh-CN')}
+  const docLines = o.docStats.slice().sort((a,b)=>b.due-a.due).map(d=>`  - ${d.title}: 记忆题 ${d.cnt} / 掌握 ${d.mastered} / 待复习 ${d.due}${d.overdueMax>0?` / 最久逾期 ${d.overdueMax}天`:''}`).join('\n');
+  const top = (o.maxOverdue>0 && o.topOverdue) ? `  - 最久逾期：${o.maxOverdue} 天（${o.topOverdue.doc} · ${o.topOverdue.title}）` : '  - 无逾期，复习节奏良好';
+  return `【进度分析报告】生成于 ${new Date().toLocaleString('zh-CN')}
 ================================
-${T('闭关')}题目总数：${o.total}
-${T('已悟')}：${o.mastered}（${o.total?Math.round(o.mastered/o.total*100):0}%）
-${T('待温故')}（今日需刷）：${o.due}
-平均${T('温故')}间隔：${o.avgInterval} 天
-平均难易因子 EF：${o.avgEf}
-${T('连续修行')}：${o.streak} 天 · ${T('今日已练')}：${o.todayDone} 题
+记忆题目总数：${o.total}
+掌握：${o.mastered}（${o.total?Math.round(o.mastered/o.total*100):0}%）
+待复习（今日需刷）：${o.due}
+平均复习间隔：${o.avgInterval} 天
+平均记忆稳定性 S：${o.avgS} 天 · 平均难度 D：${o.avgD}
+连续打卡：${o.streak} 天 · 今日已刷：${o.todayDone} 题
 
-${T('境界')}分布：${lvLine}
+等级分布（全库题目，含从未学过的 Lv0）：${lvLine}
 
-${T('典籍')}${T('修为')}（按${T('待温故')}降序）：
+文档进度（按待复习降序）：
 ${docLines}
 
 逾期情况：
 ${top}
 
-（把这段文本复制发给 AI，即可获得个性化${T('修为')}分析与${T('温故')}建议）
+（把这段文本复制发给 AI，即可获得个性化进度分析与复习建议）
 `;
 }
 
@@ -3196,14 +3225,15 @@ function csvCell(v){
   return '"' + s.replace(/"/g,'""') + '"';
 }
 function exportAnalyticsCSV(rows){
-  const header = ['qid','题目',T('典籍'),T('境界'),T('已悟'),T('下次温故'),'间隔(天)','EF','逾期(天)',T('待温故')];
+  // 稳定性/难度是 FSRS 的 DSR 状态（老记录由 fsrsStateOf 换算）；没有状态的行留空，不写 0 以免被当成真实值
+  const header = ['qid','题目','文档','等级','掌握','下次复习','间隔(天)','稳定性(天)','难度','逾期(天)','待复习'];
   const lines = [header.join(',')];
   rows.forEach(r=>{
-    const row = [csvCell(r.qid), csvCell(r.title), csvCell(r.doc), r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, (+r.ef).toFixed(2), r.overdue, r.due?'是':'否'];
+    const row = [csvCell(r.qid), csvCell(r.title), csvCell(r.doc), r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, r.s?r.s.toFixed(1):'', r.d?r.d.toFixed(1):'', r.overdue, r.due?'是':'否'];
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
-  downloadBlob(blob, `${T('修行录')}_${dateStr()}.csv`);   // 本地日期，避免东八区凌晨文件名差一天
+  downloadBlob(blob, `记忆进度_${dateStr()}.csv`);   // 本地日期，避免东八区凌晨文件名差一天
 }
 
 function copyText(t){
@@ -3212,7 +3242,7 @@ function copyText(t){
 }
 function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); return ok; }
 
-/* ---------- 修为页：打卡热力图（对标 GitHub 贡献图） ----------
+/* ---------- 进度页：打卡热力图（对标 GitHub 贡献图） ----------
    口径说明：PROGRESS 每题只保留"最后一次练习时间"，所以按 lastPracticed 归日得到的是
    "当天推进过的题量"，不是精确的当日答题次数。要精确就得新增答题日志（每答一题追一条），
    存储与迁移成本都不划算；而这张图要回答的是"哪天在学、密度如何"，现有数据完全够用。 */
@@ -3253,8 +3283,8 @@ function buildHeatmapHtml(){
     // 域外余格（1/1 前的去年末、12/31 后的次年头）：不属于今年，不挂提示，只把版面补满成完整矩形
     if(no < startNo || no > endNo){ cells.push('<i class="hm-cell"></i>'); continue; }
     const d = civil(no), n = counts[i], md = `${d.getUTCMonth()+1}月${d.getUTCDate()}日`;
-    // 还没到的日期与"未秘境试炼"同色（都是 .hm-cell 灰底），只靠悬停提示区分；今天加 hm-today 供渲染后定位
-    const hint = no > todayNo ? '未开始' : (n > 0 ? n+' 题' : T('未秘境试炼'));
+    // 还没到的日期与"未刷题"同色（都是 .hm-cell 灰底），只靠悬停提示区分；今天加 hm-today 供渲染后定位
+    const hint = no > todayNo ? '未开始' : (n > 0 ? n+' 题' : '未刷题');
     cells.push(`<i class="hm-cell l${lvOf(n)}${i === todayIdx ? ' hm-today' : ''}" title="${md} · ${hint}"></i>`);
   }
   // 月份刻度：标在「含该月 1 号的那一列」，而不是列首日（周日）所在的月份 ——
@@ -3286,28 +3316,38 @@ function buildHeatmapHtml(){
     </div>`;
 }
 
-/* ---------- 修为页：未来到期预测 ----------
-   把每道题的"下次温故时间"归到当天，提前看到哪天会积压（对标 fsrs4anki 的到期预测图）。
-   逾期题统一并入第 0 天：它们本来就该现在处理，摊到未来任何一天都会失真。 */
+/* ---------- 进度页：未来到期预测 ----------
+   把每道题的"下次复习时间"归到当天，提前看到哪天会积压（对标 fsrs4anki 的到期预测图）。
+   逾期题统一并入第 0 天：它们本来就该现在处理，摊到未来任何一天都会失真。
+   窗口列数由调用方传（= FSRS_MAX_INTERVAL）：排期上限就是最远的入队时间，多画出来的列
+   必然是空柱 —— 这里曾写死 30 天，而题最多排到 14 天后，于是图右半截永远是一排空基线。 */
 function buildForecastHtml(rows, days){
   const dayMs = 86400000;
   const today = new Date(); today.setHours(0,0,0,0);
   const today0 = today.getTime();
+  const todayNo = dayIndexOf(today0);
   const buckets = new Array(days).fill(0);
   let overdue = 0;
+  let later = 0;   // 排在窗口之外的题（只有带长间隔的老/导入数据才可能命中）
   rows.forEach(r=>{
     const n = r.next;
-    if(!n || n <= today0){ overdue++; return; }
-    const idx = Math.round((n - today0) / dayMs);
-    if(idx < days) buckets[idx]++;
+    if(!n){ overdue++; return; }
+    // 按自然日归柱（不能用 Math.round((n-today0)/dayMs)）：今天 18:00 到期的题会被四舍五入进"明天"那一列，
+    // 而第 0 列的口径是"今天到期 + 逾期"，两列的语义就互相矛盾了
+    const idx = dayIndexOf(n) - todayNo;
+    if(idx < 0){ overdue++; return; }
+    // 窗口外的题不能静默丢弃：它不出柱子，但下面"共 N 题"的总数必须仍然诚实
+    if(idx < days) buckets[idx]++; else later++;
   });
   buckets[0] += overdue;
   const max = Math.max(1, ...buckets);
   const sum = buckets.reduce((a,b)=>a+b, 0);
   const peakIdx = buckets.indexOf(max);
-  const pd = new Date(today0 + peakIdx*dayMs);
+  // 列日期同样走日历加法：today0 + i*dayMs 在夏令时切换那天会落到前一天/后一天
+  const dayDate = i => { const d = new Date(today0); d.setDate(d.getDate() + i); return d; };
+  const pd = dayDate(peakIdx);
   const cells = buckets.map((n,i)=>{
-    const d = new Date(today0 + i*dayMs);
+    const d = dayDate(i);
     const h = n > 0 ? Math.max(8, Math.round(n/max*100)) : 4;   // 空日 4% ≈ 2.4px 基线
     // 类名用 fc-empty 而不是 empty：empty 会命中全局空状态样式（.empty{padding:60px 20px}），
     // 在 box-sizing:border-box 下把空柱撑到最小 120px 高，直接冲出 60px 高的容器
@@ -3317,8 +3357,8 @@ function buildForecastHtml(rows, days){
   return `
     <div class="fc-strip">${cells}</div>
     <div class="stat-foot">
-      <span>未来 ${days} 天共 <b>${sum}</b> 题${T('待温故')}${overdue>0?` · <span style="color:var(--bad);font-weight:700">含逾期 ${overdue} 题</span>`:''}</span>
-      ${sum>0?`<span class="hm-peak">📅 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${max} 题</span>`:'<span style="color:var(--good);font-weight:700">✅ 未来无排期</span>'}
+      <span>未来 ${days} 天共 <b>${sum}</b> 题待复习${overdue>0?` · <span style="color:var(--bad);font-weight:700">含逾期 ${overdue} 题</span>`:''}${later>0?` · <span style="color:var(--muted)">另有 ${later} 题排在 ${days} 天以后</span>`:''}</span>
+      ${sum>0?`<span class="hm-peak">📅 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${max} 题</span>`:`<span style="color:var(--good);font-weight:700">✅ ${days} 天内无排期</span>`}
     </div>`;
 }
 
@@ -3328,12 +3368,17 @@ function renderAnalytics(c){
   const total = rows.length;
   const mastered = rows.filter(r=>r.mastered).length;
   const due = rows.filter(r=>r.due).length;
-  const avgInterval = total ? (rows.reduce((s,r)=>s+r.interval,0)/total).toFixed(1) : '0';
-  const avgEf = total ? (rows.reduce((s,r)=>s+r.ef,0)/total).toFixed(2) : '2.50';
+  // 只对"已排期"的题求平均：只标记过已看/掌握的题没有 DSR 状态、间隔为 0，算进去会把均值拉低
+  // （旧实现在分母里塞了全部题，于是"平均间隔"永远比真实排期短）
+  const rated = rows.filter(r=>r.s>0);
+  const avgInterval = rated.length ? (rated.reduce((s,r)=>s+r.interval,0)/rated.length).toFixed(1) : '—';
+  const avgS = rated.length ? (rated.reduce((s,r)=>s+r.s,0)/rated.length).toFixed(1) : '—';
+  const avgD = rated.length ? (rated.reduce((s,r)=>s+r.d,0)/rated.length).toFixed(1) : '—';
   const maxOverdue = rows.reduce((m,r)=>Math.max(m,r.overdue),0);
   const topOverdue = rows.slice().sort((a,b)=>b.overdue-a.overdue)[0];
-  const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
-  rows.forEach(r=>lvCounts[r.lv]++);
+  // 等级分布与记忆页共用 computeLvCounts()（统计全部题目，含从未学过的 Lv0）。
+  // 原先只统计 rows（有进度的题）：同一根"Lv0 新 → Lv5 熟 → M 掌握"的条子在两页的 Lv0 含义与总数都不一样
+  const lvCounts = Object.assign({}, computeLvCounts());
   const lvBar = buildLvBarHtml(lvCounts);
   const docRows = docStats.slice().sort((a,b)=>b.due-a.due).slice(0,12);
   const _an = computeAllStats();
@@ -3348,28 +3393,28 @@ function renderAnalytics(c){
   </tr>`).join('');
   c.innerHTML = `
   <div class="an-wrap">
-    <div class="an-h">📈 ${T('修为')}分析</div>
-    <div class="an-sub">${T('温故')}计划由 FSRS 间隔重复算法调度（旧版 SM-2 数据已自动迁移），数据仅存于本机浏览器。</div>
-    ${total===0 ? `<div class="flash-empty"><div class="big">📭</div><div style="font-weight:700;margin-bottom:6px">还没有${T('修行')}记录</div><div style="color:var(--muted)">去「🧠 ${T('闭关')}」或「📝 八股」练过之后，这里会展示你的全部${T('修为')}。</div></div>`
+    <div class="an-h">📈 进度分析</div>
+    <div class="an-sub">复习计划由 FSRS 间隔重复算法调度，数据仅存于本机浏览器。</div>
+    ${total===0 ? `<div class="flash-empty"><div class="big">📭</div><div style="font-weight:700;margin-bottom:6px">还没有打卡记录</div><div style="color:var(--muted)">去「🧠 记忆」或「📝 八股」练过之后，这里会展示你的全部进度。</div></div>`
     : `
     <div class="an-grid">
-      <div class="an-card"><div class="n">${total}</div><div class="t">${T('闭关')}题目</div></div>
-      <div class="an-card"><div class="n" style="color:var(--good)">${mastered}</div><div class="t">${T('已悟')}</div></div>
-      <div class="an-card"><div class="n" style="color:var(--bad)">${due}</div><div class="t">${T('待温故')}</div></div>
+      <div class="an-card"><div class="n">${total}</div><div class="t">记忆题目</div></div>
+      <div class="an-card"><div class="n" style="color:var(--good)">${mastered}</div><div class="t">掌握</div></div>
+      <div class="an-card"><div class="n" style="color:var(--bad)">${due}</div><div class="t">待复习</div></div>
       <div class="an-card"><div class="n">${avgInterval}</div><div class="t">平均间隔(天)</div></div>
-      <div class="an-card"><div class="n">${avgEf}</div><div class="t">平均 EF</div></div>
+      <div class="an-card"><div class="n">${avgS}</div><div class="t">平均稳定性(天)</div></div>
       <div class="an-card"><div class="n" style="color:${maxOverdue>0?'var(--bad)':'var(--good)'}">${maxOverdue}</div><div class="t">最久逾期(天)</div></div>
     </div>
     <div class="an-sec">🗓️ 打卡热力图<span style="font-weight:500;font-size:12px;color:var(--muted)">（今年 1/1 - 12/31）</span></div>
     <div class="an-chart-card">${buildHeatmapHtml()}</div>
-    <div class="an-sec">🔮 未来 30 天到期预测<span style="font-weight:500;font-size:12px;color:var(--muted)">（提前看到哪天会积压）</span></div>
-    <div class="an-chart-card">${buildForecastHtml(rows, 30)}</div>
-    <div class="an-sec">🎚️ ${T('境界')}分布（Lv0 新 → Lv5 熟 → M ${T('已悟')}）</div>
+    <div class="an-sec">🔮 未来 ${FSRS_MAX_INTERVAL} 天到期预测<span style="font-weight:500;font-size:12px;color:var(--muted)">（排期上限 ${FSRS_MAX_INTERVAL} 天，提前看到哪天会积压）</span></div>
+    <div class="an-chart-card">${buildForecastHtml(rows, FSRS_MAX_INTERVAL)}</div>
+    <div class="an-sec">🎚️ 等级分布（Lv0 新 → Lv5 熟 → M 掌握）</div>
     <div class="pbar">${lvBar.stacked}</div>
     <div class="an-legend">${lvBar.legend}</div>
-    <div class="an-sec">📁 ${T('典籍')}${T('修为')}（按${T('待温故')}降序，前 12）</div>
+    <div class="an-sec">📁 文档进度（按待复习降序，前 12）</div>
     <div class="an-tbl-wrap"><table class="an-table">
-      <thead><tr><th>${T('典籍')}</th><th style="text-align:right">${T('闭关')}题</th><th style="text-align:right">${T('已悟')}</th><th style="text-align:right">${T('待温故')}</th><th style="text-align:right">${T('已悟率')}</th><th style="text-align:right">最久逾期</th></tr></thead>
+      <thead><tr><th>文档</th><th style="text-align:right">记忆题</th><th style="text-align:right">掌握</th><th style="text-align:right">待复习</th><th style="text-align:right">掌握率</th><th style="text-align:right">最久逾期</th></tr></thead>
       <tbody>${docTable}</tbody>
     </table></div>
     <div class="an-toolbar">
@@ -3391,9 +3436,9 @@ function renderAnalytics(c){
       hmWrap.scrollLeft += (tr.left - wr.left) - (hmWrap.clientWidth - tr.width) / 2;
     }
   }
-  // 数据工具条：导出 CSV（全部题目明细，没有了表格后仍可用于 Excel/备份）、复制统计报告（发给 AI）、刷新
+  // 数据工具条：导出 CSV（全部题目明细，可用于 Excel/备份）、复制统计报告（发给 AI）、刷新
   $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
-  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgEf,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
+  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgS,avgD,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
   $('#anRefresh').onclick = ()=> renderAnalytics(c);
 }
 
@@ -3444,12 +3489,12 @@ function renderGrill(c){
     const resetGrill = () => { if(grill._abort){ try{grill._abort.abort();}catch(_){} } const _r=grill.resume; grill={resume:_r,messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };   // 中止在途流；保留简历避免重新粘贴
     // 直接退出：不生成总结
     $('#grillQuit').onclick = async () => {
-      if(!await confirmDialog(T('退出本场论道？对话记录将清空，不生成总结。'))) return;
+      if(!await confirmDialog('退出本场拷打？对话记录将清空，不生成总结。')) return;
       resetGrill();
     };
     // 退出并总结：向 AI 索取 [FEEDBACK] 总结反馈（无 AI 配置则直接退出）
     $('#grillQuitSum').onclick = async () => {
-      if(!await confirmDialog(T('退出本场论道并生成一份总结反馈？'))) return;
+      if(!await confirmDialog('退出本场拷打并生成一份总结反馈？')) return;
       if(!aiConfig){ toast('未配置 AI，无法生成总结，已直接退出'); resetGrill(); return; }
       grill.forceEnd = true;
       grill.messages.push({role:'user', content:'我想结束本场面试，请停止出题，并输出本次面试的总结反馈（必须以 [FEEDBACK] 开头，标记用英文半角方括号、原样大写、不加粗、前后不加空格）。'});
@@ -3462,7 +3507,7 @@ function renderGrillConfig(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
-        <h2>🔥 面试${T('论道')}</h2>
+        <h2>🔥 面试拷打</h2>
         <div class="grill-mode-row" id="grillModeRow">
           <div class="grill-mode-card" data-mode="project">
             <div class="gm-icon">📂</div>
@@ -3494,7 +3539,7 @@ function renderGrillConfig(c){
         <label id="grillResumeLabel" style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
         <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性" aria-label="简历内容"></textarea>
         <div style="margin-top:14px">
-          <button class="btn primary" id="grillStart" disabled>🔥 开始${T('论道')}</button>
+          <button class="btn primary" id="grillStart" disabled>🔥 开始拷打</button>
           <button class="btn ghost" id="grillUpload" data-resume-ctl>📎 上传简历（txt/md/pdf）</button>
           <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
@@ -3556,9 +3601,11 @@ function renderGrillConfig(c){
     };
   });
   $('#grillStart').onclick = () => {
-    if(!selectedMode){ toast(T('请先选择一种论道模式')); return; }
+    if(!selectedMode){ toast('请先选择一种拷打模式'); return; }
     // 本地题库：直接进入现有八股练习流程（抽题→自评→复盘 MD）
     if(selectedMode==='theory' && selectedSrc==='local'){
+      // 记下入口：八股练习是二级页，顶部标签要沿用进入时的标签（renderStatsBar 的 owner 映射）
+      practiceFrom = Views.GRILL;
       mock.queue=[]; mock.done=false; view=Views.MOCK; renderAll(); return;
     }
     const resume = $('#grillResume').value.trim();
@@ -3774,9 +3821,12 @@ ${RESUME_NOTE}`
     hist.push({ role:'user', content: grill.mode==='theory'?'开始出题':'开始面试' });
   }
   // 简历作为资料注入到第一条 user 消息里：既不进 system（会被当指令执行），
-  // 也不单独发一条 user 消息（会与下一条形成连续同角色消息，部分模型直接报错）
-  if(grill.resume && hist.length){
-    hist[0].content = '<resume>\n' + grill.resume + '\n</resume>\n\n' + hist[0].content;
+  // 也不单独发一条 user 消息（会与下一条形成连续同角色消息，部分模型直接报错）。
+  // 注意必须定位到 role==='user' 而不是 hist[0]：项目深挖 / 高压实战会先 push 一条 assistant 问候语，
+  // 注入 hist[0] 会让简历变成"模型自己说过的话" —— 与 RESUME_NOTE 声明（资料在 user 消息里）相反。
+  if(grill.resume){
+    const uMsg = hist.find(m => m.role === 'user');
+    if(uMsg) uMsg.content = '<resume>\n' + grill.resume + '\n</resume>\n\n' + uMsg.content;
   }
   for(const m of hist) msgs.push(m);
   // 流式渲染：先塞一个空消息占位
@@ -3869,7 +3919,7 @@ async function extractPdfText(buf){
       pages.push(pageText);
     }
   } finally {
-    try{ await pdf.destroy(); }catch(_){}   // 释放典籍对象，避免多次上传内存累积
+    try{ await pdf.destroy(); }catch(_){}   // 释放文档对象，避免多次上传内存累积
   }
   return pages.join(' ').trim();
 }
@@ -3897,9 +3947,11 @@ function estimateYears(resume){
   if(cohortMatch){ const y = parseInt(cohortMatch[1]); if(y>2000) return Math.max(0, new Date().getFullYear() - y); }
   // 匹配"应届"/"实习"/"校招"
   if(/应届|校招|实习/.test(t)) return 0;
-  // 匹配初级/高级
-  if(/高级|资深|senior|专家/.test(t)) return 6;
-  if(/中级|mid/.test(t)) return 3;
+  // 匹配职级：注意"高级"必须搭配职称才算数 —— 简历里出现"参与过高级 X 项目"这类描述时，
+  // 只凭"高级"两个字就判成 6 年经验，会直接把面试难度与追问深度拉满
+  if(/资深|senior|技术专家|专家工程师/.test(t)) return 6;
+  if(/高级(工程师|开发|架构师|程序员)/.test(t)) return 6;
+  if(/中级|intermediate|mid\s*level/.test(t)) return 3;
   if(/初级|junior/.test(t)) return 1;
   // 默认中等
   return 3;
@@ -4143,11 +4195,13 @@ function pruneFlagMap(map, softLimit){
 function formatAI(text){
   if(!text) return '';
   // 剥离角色前缀后统一交给 md2html 渲染（正确提取代码块，避免换行/**/`被误伤）
-  const s = text.replace(/^(user|assistant|system|human)[：:\s]*/gi,'');   // 只剥整串开头；带 m 标志会误伤正文行
+  // 只剥整串开头的「角色标签」，且必须带冒号才算：原实现允许没有冒号，
+  // 正文恰好以"user 表的设计…"、"system 调用链路…"开头时会被吃掉第一个词
+  const s = text.replace(/^(?:user|assistant|system|human)\s*[:：]\s*/i,'');
   return md2html(s);
 }
 
-/* ---------- 闭关模式：AI 生成代码分析 ---------- */
+/* ---------- 记忆模式：AI 生成代码分析 ---------- */
 // 先校验答案正误，再判断题目是否需要代码，然后讲解；最后提炼一句「记忆锚点」（不盲信参考答案）
 async function askAICode(qid){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
@@ -4208,7 +4262,7 @@ async function askAICode(qid){
   pruneFlagMap(aiCodeStreaming);
   pruneFlagMap(aiCodeHidden);
 }
-// 渲染闭关模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）；
+// 渲染记忆模式的 AI 代码分析块（用 md2html 以正确保留代码块换行）；
 // 内容放在 320px 内滚窗口（.mem-ai-scroll）里，标题行与隐藏按钮固定在盒子顶部，不随内容滚动
 function renderAICodeBlock(qid){
   const v = aiCodeAnswer[qid];
@@ -4231,7 +4285,7 @@ function renderAICodeBlock(qid){
     + '<button class="btn sm" data-hide-qid="'+esc(qid)+'">🙈 隐藏</button></div>'
     + '<div class="mem-ai-scroll">'+md2html(v)+'</div></div>';
 }
-// 折叠/展开闭关模式的 AI 代码分析生成内容
+// 折叠/展开记忆模式的 AI 代码分析生成内容
 function toggleAICodeHidden(el){
   const qid = el.getAttribute('data-hide-qid');
   if(!qid) return;
@@ -4284,11 +4338,19 @@ function renderSearch(c){
   const truncInfo = results.length>MAX_RESULTS ? `（仅显示前${MAX_RESULTS}条，建议输入更精确的关键词）` : '';
   c.innerHTML = `<div class="doc-head"><div><h2>找到 ${results.length} 道相关题目</h2><div class="meta" style="margin-top:4px;color:var(--warn)">${truncInfo}</div></div></div>` +
     showResults.map(({doc,q})=>{
-      const snip = (q.answer||'').replace(/\n/g,' ').slice(0,90);
+      // 摘要围绕命中位置截取：只截答案前 90 字时，命中在答案中段的关键词在卡片上根本看不到，
+      // 用户只能点进去逐题找
+      const raw = q.answer||'';
+      const hit = raw.toLowerCase().indexOf(term);
+      const from = hit > 30 ? hit - 30 : 0;
+      const snip = (from > 0 ? '…' : '') + raw.slice(from, from + 90).replace(/\n/g,' ') + (from + 90 < raw.length ? '…' : '');
+      // 标签也参与匹配（见上方 hitTag），那就得让它可见，否则用户不知道这条为什么被命中
+      const tagLine = (Array.isArray(q.tags) && q.tags.length)
+        ? `<div class="snip" style="margin-top:4px">🏷 ${esc(q.tags.join(' · '))}</div>` : '';
       return `<div class="sr-item">
         <div class="src">${renderTitle(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
         <div class="qt" role="button" tabindex="0" data-jump="${esc(q.id)}">${renderTitle(q.title)}</div>
-        <div class="snip">${esc(snip)}${snip.length>=90?'…':''}</div>
+        <div class="snip">${esc(snip)}</div>${tagLine}
       </div>`;
     }).join('');
   c.querySelectorAll('[data-jump]').forEach(el=>el.onclick=()=>{
@@ -4304,7 +4366,7 @@ let _persistedView = null;
 let _inAnimTimer = null;   // 入场动画收尾定时器：连续切视图时先清旧的，否则上一轮的定时器会把新一轮动画从中间掐断
 function renderAll(){
   const _prevView = _persistedView;   // 记旧视图，用于判断导航方向
-  // 先渲染、再落状态：renderContent 在数据缺失时会把 view 改写（题目/典籍被删后回退到洞府），
+  // 先渲染、再落状态：renderContent 在数据缺失时会把 view 改写（题目/文档被删后回退到总览），
   // 若先按旧 view 写 sessionStorage 与播报，就会留下"上次视图指向一个不存在的页"的脏值
   renderContent();
   const viewChanged = _persistedView !== view;
@@ -4317,8 +4379,8 @@ function renderAll(){
   renderStatsBar();
   const c=$('.content');
   if(c){
-    // 列表类视图（典籍页/典籍浏览页）在原地编辑、删除后要保住滚动位置，
-    // 否则题多的典籍一删题就被弹回顶部；切视图/翻题/评分仍然回顶部
+    // 列表类视图（文档页/题目浏览页）在原地编辑、删除后要保住滚动位置，
+    // 否则题多的文档一删题就被弹回顶部；切视图/翻题/评分仍然回顶部
     const keepScroll = !viewChanged && (view===Views.DOCS || view===Views.BROWSE);
     if(!keepScroll) c.scrollTop=0;
     if(viewChanged){
@@ -4330,7 +4392,7 @@ function renderAll(){
       const _from = NAVORDER.indexOf(navKey(_prevView)), _to = NAVORDER.indexOf(navKey(view));
       c.dataset.nav = (_from<0||_to<0||_from===_to) ? '' : (_to>_from ? 'fwd' : 'back');
       // 屏幕阅读器播报当前页（视觉隐藏 aria-live 区）
-      const sa = $('#srAnnounce'); if(sa) sa.textContent = T(VIEW_NAMES[view]||'') + ' 页面';
+      const sa = $('#srAnnounce'); if(sa) sa.textContent = (VIEW_NAMES[view]||'') + ' 页面';
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
       c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
       c.classList.add('in');
@@ -4353,7 +4415,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     // 保留 _history：只是重进标签页，不该把之前的撤销栈丢掉（否则刚评完分切走再回来就没法撤销了）
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:(memory._history||[])}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
-    // 回炉淬炼：重开该页 = 用当前热榜重建本轮游标（inPass=false 让 renderHot 重新快照）
+    // 趁热打铁：重开该页 = 用当前热榜重建本轮游标（inPass=false 让 renderHot 重新快照）
     else if(v===Views.HOT){ hot.inPass=false; hot.index=0; hot.flipped=false; hot.cleared=0; view=Views.HOT; renderAll(); }
     else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
@@ -4454,7 +4516,7 @@ const BODY_BG_MAP = {
   particle: `radial-gradient(1000px 560px at 15% 6%, rgba(94,234,212,.11) 0%, transparent 55%), radial-gradient(900px 520px at 85% 4%, rgba(167,139,250,.13) 0%, transparent 55%), radial-gradient(700px 400px at 50% 98%, rgba(56,189,248,.06) 0%, transparent 60%), var(--bg)`,
   songxing: `radial-gradient(1200px 700px at 25% 10%, #a78bfa1a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #d4a85412 0%, transparent 50%), var(--bg)`,
   gold:     `radial-gradient(1100px 560px at 28% 10%, rgba(246,193,119,.16) 0%, transparent 55%), radial-gradient(900px 480px at 76% 2%, rgba(224,163,74,.12) 0%, transparent 55%), radial-gradient(800px 400px at 50% 92%, rgba(255,230,176,.06) 0%, transparent 60%), var(--bg)`,
-  // 素笺：光晕压到极淡——它要当"纸"，任何明显的光晕都会变成秘境试炼时的干扰源
+  // 素笺：光晕压到极淡——它要当"纸"，任何明显的光晕都会变成刷题时的干扰源
   paper:    `radial-gradient(1100px 620px at 28% 4%, rgba(36,131,123,.055) 0%, transparent 60%), radial-gradient(1000px 560px at 80% 2%, rgba(32,94,166,.045) 0%, transparent 58%), radial-gradient(900px 500px at 50% 100%, rgba(188,82,21,.032) 0%, transparent 62%), var(--bg)`,
   shuangren:`radial-gradient(1100px 600px at 22% 4%, rgba(137,184,194,.14) 0%, transparent 55%), radial-gradient(900px 520px at 82% 0%, rgba(143,176,224,.12) 0%, transparent 55%), radial-gradient(800px 440px at 50% 100%, rgba(195,232,240,.06) 0%, transparent 60%), var(--bg)`,
   night:    `radial-gradient(1000px 560px at 70% 8%, rgba(115,208,255,.09) 0%, transparent 55%), radial-gradient(900px 500px at 25% 10%, rgba(255,204,102,.07) 0%, transparent 55%), radial-gradient(800px 420px at 50% 100%, rgba(149,230,203,.05) 0%, transparent 60%), var(--bg)`,
@@ -4510,12 +4572,17 @@ let _bgColorStyle = null;
 let _uCanvas = null, _uCtx = null, _uRaf = null, _uTime = 0, _uLastTs = 0;
 let _uTheme = '';
 let _uParticles = [];
-let _uRipples = [];
 let _uFadeIn = 1;
 let _uAlphaBase = 1;
 let _uStaticTheme = '';   // 静态主题标记：只画一帧、不进逐帧循环（子良山水这类"画面"型主题，不需要也不该有流动动画）
 // 静态主题名单（只画一帧、不进逐帧循环）。子良已改为「网格 + 高亮格子明灭」的动态画面，故此处为空
 const STATIC_CANVAS_THEMES = [];
+// 落日主题光柱的角度常量。必须声明在 applyTheme 之前：initThemeParticles() 在解析期就可能被调用
+// （保存的主题正好是 sunset 时），而 applyTheme 最早在 initTheme() 里执行 —— 常量留在 drawSunset
+// 旁边会命中 TDZ。原先为了绕开 TDZ，initThemeParticles 里手抄了一份 -0.60 的字面量，
+// 改一处忘一处就会让尘埃方向与光柱错位。
+const SUNSET_ROT = -0.60;
+const SUNSET_CS = Math.cos(SUNSET_ROT), SUNSET_SN = Math.sin(SUNSET_ROT);
 const _spriteCache = new Map();
 // 「粒子避让区」：数据可视化区域（热力图/预测图等）标记后，粒子进入时渐隐——
 // 星点与图表格子混在一起会被误读成数据点；只隐藏粒子、保留背景光晕，边界留渐隐带避免生硬矩形。
@@ -4540,7 +4607,7 @@ function refreshParticleMaskRects(){
   }
   _uMaskRects = out;
 }
-// 逐粒子用的快速入口：没有遮罩时只做一次 length 判断，不进循环（非修为页零成本）
+// 逐粒子用的快速入口：没有遮罩时只做一次 length 判断，不进循环（非进度页零成本）
 function maskFactor(x, y){ return _uMaskRects.length ? maskAlphaAt(x, y) : 1; }
 // 0~1 可见系数：完全落在任一遮罩区内为 0，距边界 _MASK_FEATHER 以上为 1
 function maskAlphaAt(x, y){
@@ -4574,9 +4641,9 @@ function applyTheme(name, opts){
   const ar = hexToRgbStr(t.accent), a2 = hexToRgbStr(t.accent2), tr = hexToRgbStr(t.text);
   if(ar) cssVars += ';--accent-rgb:'+ar;
   if(a2) cssVars += ';--accent2-rgb:'+a2;
-  // 中性底色（未秘境试炼格子/空柱/修为槽）用文字色分量：写死白色在浅色主题（素笺/潮线/子良/子荣）下会隐形
+  // 中性底色（未刷题格子/空柱/进度槽）用文字色分量：写死白色在浅色主题（素笺/潮线/子良/子荣）下会隐形
   if(tr) cssVars += ';--text-rgb:'+tr;
-  // 境界色板（lv0~lv4）：深底沿用原配色；浅底换一版明度适配的（原 lv0 深灰蓝在纸白底上就是一块脏斑）
+  // 等级色板（lv0~lv4）：深底沿用原配色；浅底换一版明度适配的（原 lv0 深灰蓝在纸白底上就是一块脏斑）
   const lvPal = isLightColor(t.bg)
     ? ['#C3CBD1','#C08A18','#2F8A55','#1E8894','#3A5FC4']
     : ['#3a3f55','#d0b030','#50a050','#30a0a0','#4068c0'];
@@ -4989,19 +5056,19 @@ document.querySelectorAll('.set-head').forEach(h => {
 // 数据弹窗
 $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
-// 昨日战报弹窗：点遮罩或「知道了」关闭；「开始今天的温故」关掉后直接切到闭关队列
+// 昨日战报弹窗：点遮罩或「知道了」关闭；「开始今天的复习」关掉后直接切到记忆队列
 $('#warClose').onclick = (e) => { e.stopPropagation(); hideModal($('#warReportModal')); };
 $('#warReportModal').onclick = e => { if(e.target.id==='warReportModal'){ e.stopPropagation(); hideModal($('#warReportModal')); } };
 $('#warGo').onclick = (e) => {
   e.stopPropagation(); hideModal($('#warReportModal'));
-  // 复用标签自身的 onclick：闭关队列的初始化与视图切换都在里面，别在这里重写一份
+  // 复用标签自身的 onclick：记忆队列的初始化与视图切换都在里面，别在这里重写一份
   const tab = document.querySelector('.tab[data-view="memory"]');
   if(tab && typeof tab.onclick === 'function') tab.onclick();
 };
 
 // AI API 配置（地址 / Key / 模型名全部手填）
 let _aiCfgSaveTimer=null;   // AI 配置保存防抖
-// 立即落盘：防抖窗口内关页面/切后台时，刚输入的 Key/模型名不会丢（原先只有修为表会 flush）
+// 立即落盘：防抖窗口内关页面/切后台时，刚输入的 Key/模型名不会丢（原先只有进度表会 flush）
 function flushAiCfgSave(){
   if(!_aiCfgSaveTimer) return;
   clearTimeout(_aiCfgSaveTimer); _aiCfgSaveTimer=null;
@@ -5044,7 +5111,10 @@ $('#exportMDBtn').onclick = () => {
   toast('已导出 Markdown 题库');
 };
 
-$('#importBtn').onclick = () => { $('#fileInput').value=''; $('#fileInput').click(); };
+// 统一导入入口：设置面板的按钮与各视图空态里的引导按钮共用
+// （空态按钮是渲染期才生成的，不能让每个渲染点各自绑一份，否则迟早漏改）
+function openImportPicker(){ const fi = $('#fileInput'); if(!fi) return; fi.value=''; fi.click(); }
+$('#importBtn').onclick = () => openImportPicker();
 // 读取文本：先严格 UTF-8，失败再试 GBK（Windows 记事本/老笔记软件的常见编码），最后回退宽松 UTF-8。
 // 原来是 readAsText 直接按 UTF-8 解，GBK 的 .md/.txt 会整篇乱码且没有任何提示
 function readFileText(file){
@@ -5088,11 +5158,12 @@ $('#fileInput').onchange = async e => {
   }
   hideModal($('#dataModal'));
   renderAll();
+  updateStorageUsage();   // 刚写入一大批数据：用量显示必须当场刷新，否则还是导入前的旧值
   const failInfo = failed ? `，${failed} 个失败（${failedNames.slice(0,3).join('、')}${failedNames.length>3?'…':''}）` : '';
   toast(`导入完成：${imported} 个文件成功${failInfo}，共 ${totalQuestions()} 题`);
 };
 
-// 修为对象归一化：丢掉非对象的畸形值（null / 数字 / 数组 / 字符串），
+// 进度对象归一化：丢掉非对象的畸形值（null / 数字 / 数组 / 字符串），
 // 否则统计与排期会读到 undefined 字段，出现"有记录但不参与统计"的幽灵条目
 function sanitizeProgressMap(raw){
   const out = {};
@@ -5125,25 +5196,25 @@ function importJsonDocs(text){
   if(data.order && Array.isArray(data.order)){
     const importOrder = data.order.filter(id=>ids.has(id));
     const extras = ORDER.filter(id=>ids.has(id)&&!importOrder.includes(id));
-    ORDER = [...new Set([...importOrder, ...extras])];   // 去重：重复 id 会让同一篇典籍被渲染两次
+    ORDER = [...new Set([...importOrder, ...extras])];   // 去重：重复 id 会让同一篇文档被渲染两次
     orderFromImport = true;
   } else {
     ORDER = (ORDER||[]).filter(id=>ids.has(id));
   }
-  // 本地 ORDER 中不存在的新典籍追加到末尾
+  // 本地 ORDER 中不存在的新文档追加到末尾
   DOCS.forEach(d=>{ if(!ORDER.includes(d.id)) ORDER.push(d.id); });
   applyOrder();   // 顺序要当场生效，不能只存下来等下次启动
-  // 清理孤立修为（同 id 典籍被替换后，旧题目的修为残留会让统计虚高）
+  // 清理孤立进度（同 id 文档被替换后，旧题目的进度残留会让统计虚高）
   {const allIds=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allIds.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allIds.has(qid))delete PROGRESS[qid];});}
   saveDocs(); Store.saveProgress(PROGRESS); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
   if(orderFromImport) Store.saveOrderCustom(true);   // 记住"顺序由导入数据决定"，下次启动仍按它排（这个开关原来是只读死值）
-  invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
+  invalidateMemQueue(); resetMemoryState();   // 直接调 Store 保存不会走 saveProgress 包装：缓存与记忆快照都得手动重置
   toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇${skipped?`、跳过 ${skipped} 篇（缺少 id/title/questions）`:''}，现共 ${totalQuestions()} 题`);
 }
 
-// 导入 Markdown：从笔记导出的 .md 直接变成一篇典籍
+// 导入 Markdown：从笔记导出的 .md 直接变成一篇文档
 function importMarkdownDoc(text, fileName){
-  const name = (fileName||T('导入典籍')).replace(/\.[^.]+$/,'');
+  const name = (fileName||'导入文档').replace(/\.[^.]+$/,'');
   const doc = parseMarkdownToDoc(text, name);
   if(!doc.questions.length) throw new Error('未能从 Markdown 解析出题目（需要以 # / ## 开头的标题作为每道题）');
   doc.id = doc.title; doc.imported = true; doc.source = 'md导入';
@@ -5151,7 +5222,7 @@ function importMarkdownDoc(text, fileName){
   if(existing){
     const have = new Set((existing.questions||[]).map(q=>q.title));
     const fresh = doc.questions.filter(q=>!have.has(q.title));
-    // 合并时以目标典籍现有题数续编 qid：同名典籍二次导入若沿用 标题#n 会与旧题碰撞（共享修为、删题误删）
+    // 合并时以目标文档现有题数续编 qid：同名文档二次导入若沿用 标题#n 会与旧题碰撞（共享进度、删题误删）
     const base = (existing.questions||[]).length;
     fresh.forEach((q,i)=>{ q.id = existing.id + '#' + (base+i+1) + '_' + Date.now(); });
     existing.questions = (existing.questions||[]).concat(fresh);
@@ -5168,8 +5239,8 @@ function importMarkdownDoc(text, fileName){
 // 把一篇 Markdown 解析成 {title, questions}
 // 约定（兼容常见笔记导出格式）：
 //   - 以 # / ## 等标题开头的行 = 一道题（标题为题目，直到下个标题前的正文为答案）
-//   - 若第一个标题是 H1 且后面还有其它标题，则第一个 H1 视为典籍标题，其余标题为题目
-//   - 典籍 id = 文件名（去扩展名）；题目 id = 典籍标题#序号
+//   - 若第一个标题是 H1 且后面还有其它标题，则第一个 H1 视为文档标题，其余标题为题目
+//   - 文档 id = 文件名（去扩展名）；题目 id = 文档标题#序号
 function parseMarkdownToDoc(text, fallbackTitle){
   const lines = String(text).replace(/\r\n/g,'\n').split('\n');
   const heads = [];
@@ -5188,15 +5259,15 @@ function parseMarkdownToDoc(text, fallbackTitle){
     const m = ln.match(/^(#{1,6})\s+(.*\S)\s*$/); if(m) heads.push({level:m[1].length, title:m[2].trim(), start:i});
   });
   let docTitle = fallbackTitle, qHeads = heads;
-  // 仅当"唯一一个 H1 且后面还有更深的标题(## 等)"时，才把该 H1 视为典籍标题；
-  // 否则（如笔记里每道题都是 # 开头）所有标题都按"题目"处理，典籍标题取文件名。
+  // 仅当"唯一一个 H1 且后面还有更深的标题(## 等)"时，才把该 H1 视为文档标题；
+  // 否则（如笔记里每道题都是 # 开头）所有标题都按"题目"处理，文档标题取文件名。
   const l1 = heads.filter(h=>h.level===1);
   if(l1.length===1 && heads.length>1 && heads[0].level===1 && heads.some(h=>h.level>1)){
     docTitle = heads[0].title; qHeads = heads.slice(1);
   }
-  // 典籍标题先剥 Markdown 再往下用：id / tags 一律用剥离后的干净标题，
+  // 文档标题先剥 Markdown 再往下用：id / tags 一律用剥离后的干净标题，
   // 否则标题里的 ** 会被带进 qid（而 title 是剥过的，两边对不上）
-  const cleanTitle = stripMarkdown(docTitle || '') || (fallbackTitle||T('导入典籍'));
+  const cleanTitle = stripMarkdown(docTitle || '') || (fallbackTitle||'导入文档');
   if(qHeads.length===0){
     return { title: cleanTitle,
       questions:[{ id:cleanTitle+'#1', title: cleanTitle, answer: text.trim(), tags:[cleanTitle] }] };
@@ -5210,18 +5281,19 @@ function parseMarkdownToDoc(text, fallbackTitle){
 }
 
 $('#resetBtn').onclick = async () => {
-  if(await confirmDialog(T('确定仅清除修为（已看/已悟标记）？题目数据与通关次数保留。'))){
+  if(await confirmDialog('确定仅清除进度（已看/掌握标记）？题目数据与通关次数保留。')){
     PROGRESS = {}; await Store.saveProgress(PROGRESS);
-    invalidateMemQueue(); memory._history = [];   // 直接调 Store 保存不会走 saveProgress 包装，须手动失效缓存
-    hideModal($('#dataModal')); renderAll(); toast(T('修为已清除'));
+    markDirty();   // 清进度也是数据变更：不标脏的话定时自动推送不会上传，云端会一直是旧进度
+    invalidateMemQueue(); resetMemoryState();   // 直接调 Store 保存不会走 saveProgress 包装：缓存与记忆快照都得手动重置
+    hideModal($('#dataModal')); renderAll(); toast('进度已清除');
   }
 };
 
 // 删除 / 打包
 async function deleteDocument(docId){
   const d = docById(docId); if(!d) return;
-  if(!await confirmDialog(`确定删除${T('典籍')}「${d.title}」及其全部题目？`)) return;
-  // 只在“典籍网格页”内删除时做 FLIP 补位；从浏览页删整档会切到洞府（视图切换自带入场），无需 FLIP
+  if(!await confirmDialog(`确定删除文档「${d.title}」及其全部题目？`)) return;
+  // 只在“文档网格页”内删除时做 FLIP 补位；从浏览页删整档会切到总览（视图切换自带入场），无需 FLIP
   const card = (view===Views.DOCS) ? document.querySelector('.content .q[data-godoc="'+CSS.escape(docId)+'"]') : null;
   flipAway(card, () => {
   d.questions.forEach(q=>{ delete PROGRESS[q.id]; });
@@ -5230,16 +5302,16 @@ async function deleteDocument(docId){
   ORDER = ORDER.filter(id=>id!==docId); Store.saveOrder(ORDER);
   Store.saveSeedOff(true);
   if(currentDocId===docId){ currentDocId=null; view=Views.OVERVIEW; }
-  // 如果正在刷该典籍的题，重置秘境试炼状态
+  // 如果正在刷该文档的题，重置刷题状态
   if(practice.scope===docId){ practice={order:[],index:0,scope:null,done:false,practiced:new Set(),revealed:new Set()}; }
-  hideModal($('#dataModal')); renderAll(); toast(T('已删除典籍「')+d.title+'」');
+  hideModal($('#dataModal')); renderAll(); toast('已删除文档「'+d.title+'」');
   });
 }
 async function clearAllDocs(){
-  if(!await confirmDialog(T('确定删除全部典籍和修行数据？此操作不可撤销。'))) return;
+  if(!await confirmDialog('确定删除全部文档和学习数据？此操作不可撤销。')) return;
   DOCS=[]; PROGRESS={}; CLEARS={}; ORDER=[]; saveDocs(); Store.saveProgress(PROGRESS);
   Store.saveClears(CLEARS); Store.saveOrder(ORDER); Store.saveSeedOff(true);
-  invalidateMemQueue(); memory._history = [];   // 数据已清空，闭关队列缓存与撤销栈同步重置
+  invalidateMemQueue(); resetMemoryState();   // 数据已清空：队列缓存与记忆快照一并重置
   view=Views.OVERVIEW; currentDocId=null; hideModal($('#dataModal')); renderAll(); toast('已清空');
 }
 $('#clearAllBtn').onclick = clearAllDocs;
@@ -5254,7 +5326,7 @@ function saveGiteeCfg(){safeLocalSet('giteeToken',_safe.encode($('#giteeToken').
   startAutoSyncTimer();   // 配置变更后立即启用/重置定时自动推送，无需重启页面
 }
 $('#giteeToken').onchange=saveGiteeCfg;$('#giteeGistId').onchange=saveGiteeCfg;
-$('#dataBtn').onclick = (e) => { e.stopPropagation(); showModal($('#dataModal')); loadApiCfgUI(); loadGiteeCfg(); renderPaceUI(); renderCopyUI(); updateStorageUsage(); };
+$('#dataBtn').onclick = (e) => { e.stopPropagation(); showModal($('#dataModal')); loadApiCfgUI(); loadGiteeCfg(); updateStorageUsage(); };
 async function updateStorageUsage(){
   const el = $('#storageUsage'); if(!el) return;
   try{
@@ -5270,7 +5342,7 @@ async function doPushToGist(token, gistId, onSuccess, onError){
   _pushing = true;
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
-  // 回炉淬炼：热榜单独一个文件（hot-data.json），与 learn-data.json 分开不混淆；
+  // 趁热打铁：热榜单独一个文件（hot-data.json），与 learn-data.json 分开不混淆；
   // 每次推送都整包带上两个文件（Gitee/GitHub 更新 gist 时，本次未提及的文件会被删除）
   const hotStr = JSON.stringify({ hot: HOT, updatedAt: data.updatedAt });
   const dirtyStamp = _dirtyStamp;   // 推送开始时的脏标记快照
@@ -5296,6 +5368,17 @@ async function doPushToGist(token, gistId, onSuccess, onError){
     }
   }catch(e){ if(onError) onError('网络错误'); return false; }
   finally{ clearTimeout(timeout); _pushing = false; }
+}
+
+// 把一份云端数据落库。四处写入必须全部执行 —— 原先用 `A && B && C && D` 短路求值：
+// 第一项成功后第二项失败就会留下"文档已覆盖、进度没写"的半更新状态，调用方却统一提示
+// "本地数据未变"，与事实相反，重载后才暴露。这里如实返回结果，由调用方给出准确提示。
+async function saveCloudPayload(newDocs, newProgress, newOrder, newClears){
+  const r1 = await Store.saveDocs(newDocs);
+  const r2 = await Store.saveProgress(newProgress);
+  const r3 = await Store.saveOrder(newOrder);
+  const r4 = await Store.saveClears(newClears);
+  return !!(r1 && r2 && r3 && r4);
 }
 
 async function cloudPush(){
@@ -5371,18 +5454,18 @@ async function cloudPull(){
     const newOrder = Array.isArray(data.order) ? [...new Set(data.order)] : newDocs.map(d=>d.id);
     const newClears = (data.clears && typeof data.clears==='object') ? data.clears : {};
     // 先落库、全部成功后才覆盖内存：避免"提示拉取成功、实际没存进去，重载后回到旧数据"
-    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
-    if(!ok){ $('#cloudStatus').textContent='❌ 保存失败，本地数据未变'; toast('保存失败，本地数据未改变'); return; }
+    if(!await saveCloudPayload(newDocs, newProgress, newOrder, newClears)){
+      $('#cloudStatus').textContent='❌ 保存失败（部分写入可能已生效），内存未更新，建议刷新页面确认';
+      toast('保存失败：本地存储可能处于半更新状态，请刷新页面确认');
+      return;
+    }
     DOCS=newDocs;PROGRESS=newProgress;ORDER=newOrder;CLEARS=newClears;
-    // 回炉淬炼：热榜在独立文件，缺失按空处理（兼容旧 gist）；拉取后重置本轮游标
-    {const _hf = gist.files['hot-data.json'];
-     HOT = [];   // 先清空，避免把本地旧热榜混进云端数据
-     if(_hf && _hf.content){ try{ const _hd = JSON.parse(_hf.content); if(_hd && Array.isArray(_hd.hot)) HOT = _hd.hot.filter(x=>x&&x.qid); }catch(_){ HOT = []; } }
-     saveHot(); hot.inPass = false; hot.index = 0; hot.cleared = 0; }
-    // 清理孤立修为
+    // 趁热打铁：热榜在独立文件，缺失按空处理（兼容旧 gist）；拉取后重置本轮游标
+    applyHotFromGist(gist);
+    // 清理孤立进度
     {const allQids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     buildIndex();
-    invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
+    invalidateMemQueue(); resetMemoryState();   // 数据已被云端覆盖：队列缓存与记忆快照一并重置
     // 用数据内容中的时间戳（更可靠），回退到 Gist 文件时间
     const t = data.updatedAt ? new Date(data.updatedAt).getTime() : (gist.updated_at ? new Date(gist.updated_at).getTime() : Date.now());
     _lastKnownRemoteTime = t;
@@ -5457,7 +5540,7 @@ async function askPullOnStart(){
     // 先检查是否有 learn-data.json 文件，没有就跳过
     const file = gist.files['learn-data.json'];
     if(!file || !file.content) return;
-    if(gist.public && !askPullOnStart._pubWarned){ askPullOnStart._pubWarned=true; toast(T('⚠️ 你的同步 Gist 是公开的，题库和修行记录对任何知道地址的人可见，建议改为私有')); }
+    if(gist.public && !askPullOnStart._pubWarned){ askPullOnStart._pubWarned=true; toast('⚠️ 你的同步 Gist 是公开的，题库和打卡记录对任何知道地址的人可见，建议改为私有'); }
     let rawContent = file.content || '';
     // Gitee 对 content 按字节截断（1MB）：按字节数比较，被截断时从 raw_url 获取完整内容
     let contentBytes = rawContent.length;
@@ -5496,16 +5579,20 @@ async function askPullOnStart(){
     const newOrder = Array.isArray(remote.order) ? [...new Set(remote.order)] : newDocs.map(d=>d.id);
     const newClears = (remote.clears && typeof remote.clears==='object') ? remote.clears : {};
     // 先落库、成功后才覆盖内存
-    const ok = (await Store.saveDocs(newDocs)) && (await Store.saveProgress(newProgress)) && (await Store.saveOrder(newOrder)) && (await Store.saveClears(newClears));
-    if(!ok){ toast('保存失败，本地数据未改变'); return; }
+    if(!await saveCloudPayload(newDocs, newProgress, newOrder, newClears)){
+      toast('保存失败：本地存储可能处于半更新状态，请刷新页面确认');
+      return;
+    }
     DOCS = newDocs;
     PROGRESS = newProgress;
     ORDER = newOrder;
     CLEARS = newClears;
-    // 清理孤立修为
+    // 热榜与手动拉取走同一段逻辑：否则同一份云端数据，从这里（启动自动拉取）进来会忽略云端热榜
+    applyHotFromGist(gist);
+    // 清理孤立进度
     {const qids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>qids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!qids.has(qid))delete PROGRESS[qid];});}
     buildIndex();
-    invalidateMemQueue(); memory._history = [];   // 数据已被云端覆盖，队列缓存与撤销栈同步重置
+    invalidateMemQueue(); resetMemoryState();   // 数据已被云端覆盖：队列缓存与记忆快照一并重置
     _autoSyncDirty = false;
     safeLocalSet('lastRemoteTime', String(remoteTime));
     safeLocalSet('lastPushTime', remote.updatedAt || '');
@@ -5524,7 +5611,7 @@ $('#addSubmit').onclick = submitAddQuestion;
 $('#editCancel').onclick = () => hideModal($('#editModal'));
 $('#editSubmit').onclick = submitEditQuestion;
 
-// 键盘快捷键（秘境试炼模式）
+// 键盘快捷键（刷题模式）
 document.addEventListener('keydown', e => {
   // Esc 关闭最上层弹窗/面板（放在输入框判断之前，输入框里按 Esc 也能关）
   if(e.key==='Escape'){
@@ -5541,7 +5628,8 @@ document.addEventListener('keydown', e => {
   // 确认框（.confirm-ov）层级最高，且不在下面那份 modal 名单里：漏掉它 Tab 会跑到它背后的设置弹窗上
   if(e.key==='Tab'){
     const confirmOv = document.querySelector('.confirm-ov:not(.closing)');
-    const dlg = confirmOv || [$('#addModal'),$('#editModal'),$('#dataModal'),$('#warReportModal')].filter(el=>el&&el.classList.contains('show')).pop();
+    // 主题弹窗也算浮层：它和 modal 不会同时打开（主题按钮被遮罩挡住），所以排在最后无歧义
+    const dlg = confirmOv || [$('#addModal'),$('#editModal'),$('#dataModal'),$('#warReportModal'),$('#themePopup')].filter(el=>el&&el.classList.contains('show')).pop();
     if(dlg){
       const items = Array.from(dlg.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>el.offsetParent!==null);
       if(items.length){
@@ -5553,13 +5641,13 @@ document.addEventListener('keydown', e => {
     return;
   }
   // 顶部标签已加 tabindex="0"，支持键盘 Enter / 空格激活。
-  // 注意：鼠标点击会让标签获得焦点，若空格一律触发标签，会吃掉闭关/八股/秘境试炼里"空格"的原有快捷键，故此处让位
+  // 注意：鼠标点击会让标签获得焦点，若空格一律触发标签，会吃掉记忆/八股/刷题里"空格"的原有快捷键，故此处让位
   const tabEl = e.target.closest && e.target.closest('.tab');
   if(tabEl && (e.key==='Enter' || e.key===' ')){
     const spaceReserved = e.key===' ' && (view===Views.MEMORY || view===Views.MOCK || view===Views.PRACTICE || view===Views.HOT);
     if(!spaceReserved){ e.preventDefault(); if(typeof tabEl.onclick === 'function') tabEl.onclick(); return; }
   }
-  // 通用键盘激活：主题卡 / 设置分区头 / 论道模式卡与时长按钮 / 寻踪条目
+  // 通用键盘激活：主题卡 / 设置分区头 / 拷打模式卡与时长按钮 / 搜索结果条目
   // 它们都是 role="button" + tabindex 的 div/span，浏览器没有原生激活行为，统一在这里补（.tab 已在上方单独处理）
   const kbdEl = (e.target && e.target.closest) ? e.target.closest('[role="button"][tabindex]:not(.tab)') : null;
   if(kbdEl && (e.key==='Enter' || e.key===' ')){
@@ -5573,15 +5661,14 @@ document.addEventListener('keydown', e => {
   if(actEl && !actEl.classList.contains('tab') && (e.key===' ' || e.key==='Enter')) return;
   // 忽略输入框和中文输入法组合输入（避免选字时误触）
   if(e.isComposing || (e.target.closest && e.target.closest('input,textarea,select'))) return;
-  // 闭关模式：数字键 1-4 评分（5 兼容映射「简单」），Enter/空格 翻转卡片
+  // 记忆模式：数字键 1-4 评分（与按钮 data-rate 同一套编号：1 完全忘了 … 4 倒背如流），Enter/空格 翻转卡片
   if(view===Views.MEMORY){
     const digit = parseInt(e.key);
-    const rateKey = digit===5 ? Rate.EASY : digit;
-    if(rateKey>=1&&rateKey<=4&&memory.flipped){ const btn = document.querySelector('.grade-btn[data-rate="'+rateKey+'"]'); if(btn) btn.click(); }
+    if(digit>=1&&digit<=4&&memory.flipped){ const btn = document.querySelector('.grade-btn[data-rate="'+digit+'"]'); if(btn) btn.click(); }
     else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); memory.flipped=!memory.flipped; try{ applyMemFlip(); }catch(_){} }
     return;
   }
-  // 回炉淬炼：Enter/空格 翻看答案（评分靠按钮 1=记住、2=还没）
+  // 趁热打铁：Enter/空格 翻看答案（评分靠按钮 1=记住、2=还没）
   if(view===Views.HOT){
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); const _hc=document.querySelector('.memory-card'); if(_hc) _hc.click(); }
     return;
@@ -5597,7 +5684,7 @@ document.addEventListener('keydown', e => {
   else if(e.code==='ArrowRight'){
     if(!practiceStep(1)){
       markPracticed(q);
-      if(canCompletePractice()) completeLevel(); else toast(T('请先用「下一题 / 上一题」把本典籍题目都过一遍'));
+      if(canCompletePractice()) completeLevel(); else toast('请先用「下一题 / 上一题」把本关题目都过一遍（不只是当前题之前的那几道）');
     }
   }
   else if(e.code==='ArrowLeft'){ practiceStep(-1); }
@@ -5606,9 +5693,9 @@ document.addEventListener('keydown', e => {
 /* =========================================================
    启动
    ========================================================= */
-// 自动合并种子数据：升级"待导入"(空典籍)为已导入，并补上种子里新增的典籍。
-// 不会覆盖用户已有内容的典籍，避免误删手动编辑。
-// 深拷贝种子典籍：{...sd} 与 SEED 共享 questions 数组，后续编辑/一次性清理会反向污染 SEED
+// 自动合并种子数据：升级"待导入"(空文档)为已导入，并补上种子里新增的文档。
+// 不会覆盖用户已有内容的文档，避免误删手动编辑。
+// 深拷贝种子文档：{...sd} 与 SEED 共享 questions 数组，后续编辑/一次性清理会反向污染 SEED
 function cloneSeedDoc(sd, seedSource){
   return { ...sd, source: seedSource, questions: (sd.questions||[]).map(q => ({ ...q, tags: Array.isArray(q.tags) ? q.tags.slice() : q.tags })) };
 }
@@ -5864,9 +5951,9 @@ introStart();
   }
 
   PROGRESS = await Store.getProgress() || {};
-  HOT = loadHot();   // 回炉淬炼：热榜从 localStorage 恢复（独立于修行数据）
+  HOT = loadHot();   // 趁热打铁：热榜从 localStorage 恢复（独立于学习数据）
   WARLOG = loadWarLog();   // 昨日战报：按天归档的答题日志（同款独立存储，同样不吃导入/云端的覆盖）
-  // 清理孤立修为：删除对应题目已不存在的修为条目
+  // 清理孤立进度：删除对应题目已不存在的进度条目
   (function cleanupOrphanProgress(){
     const allQids = new Set();
     DOCS.forEach(d => (d.questions||[]).forEach(q => allQids.add(q.id)));
@@ -5883,18 +5970,22 @@ introStart();
     safeLocalSet('learnAppClozeCacheDrop_v1', '1');
   }
 
-  // 档位迁移：存档里是已下线的 long 档 → 落回默认档并重排一次。
-  // 不重排的话，旧数据里排到 30 天后才回来的题在新档位（最长 14 天）下不会自己提前，
-  // 而「按最短档切一次再切回来」这种手动补救对用户不可见。
+  // 已下线的「界面文案」双皮：清掉残留的偏好键（界面现在只有一套用词，留着它只会让人以为还能切）
+  try{ localStorage.removeItem('learnAppCopyTheme'); }catch(_){}
+
+  // 节奏迁移：存档里还留着「复习节奏」键（3d/7d/long 或已移除的 14d）→ 按现行固定参数重排一次。
+  // 不重排的话，旧数据里按别的档位排出去的入队时间不会自己收回：比如 3d 档排到 3 天后的题，
+  // 在上限 14 天的新参数下本该更晚才回来，却会一直提前到期。
   if(_paceStale){
     _paceStale = false;
-    safeLocalSet('learnAppPace', fsrsPace);   // 落回新档位，避免每次启动重复迁移
+    try{ localStorage.removeItem('learnAppPace'); }catch(_){}   // 键已废弃，删掉才能避免每次启动重复迁移
     rescheduleAllProgress();
     Store.saveProgress(PROGRESS);
+    markDirty();   // 排期被重算也是数据变更：不标脏的话云端仍是旧排期，换设备拉回来会提前到期
   }
 
   // 一次性修复：清掉旧版挖空功能遗留的 clozeNoAnchor 标记（该标记会把题永久判为"无可挖空"），
-  // 并把因此变成 {} 的修为条目一并删除。
+  // 并把因此变成 {} 的进度条目一并删除。
   if(!safeLocalGet('learnAppClozeFix_v1', '')){
     let fixed = 0;
     Object.keys(PROGRESS).forEach(qid => {
@@ -5921,7 +6012,6 @@ introStart();
   applyOrder();   // 顺序数据真正应用到渲染顺序上
   CLEARS = await Store.getClears() || {};
   await loadApiConfig();   // 等 AI 配置就绪：否则刚进页面就点 AI 按钮会误报"请先配置 AI API"
-  applyCopyStatic();   // 静态文案（页签 / 设置面板 / 战报弹层）按文案主题落一次；动态文案由 renderAll 负责
   renderAll();
   hideAppLoader();
 // 页面加载时询问是否拉取云端数据
@@ -5944,7 +6034,7 @@ introStart();
 }).finally(hideAppLoader);
 
 // ======== 统一 Canvas 2D 引擎（所有动态主题） ========
-// 引擎状态（_uCanvas/_uCtx/_uRef/_uTheme/_uParticles/_uRipples/_uFadeIn/_uAlphaBase/_spriteCache）
+// 引擎状态（_uCanvas/_uCtx/_uRaf/_uTheme/_uParticles/_uFadeIn/_uAlphaBase/_spriteCache 等）
 // 已在 applyTheme 之前声明，这里只保留绘制逻辑
 function startUnifiedCanvas(theme){
   // 系统开启「减少动态效果」时，不启动粒子引擎（无障碍降级）
@@ -6030,7 +6120,6 @@ if(window.matchMedia){
 }
 function initThemeParticles(theme){
   _uParticles = [];
-  _uRipples = [];
   // 用逻辑像素，与 tickUnified 的坐标系统保持一致
   const W = window.innerWidth, H = window.innerHeight;
   const isMobile = W < 768;
@@ -6073,9 +6162,9 @@ function initThemeParticles(theme){
   // ── sunset: 受光微尘（光柱群由 drawSunset 画，粒子沿柱向浮升，进柱才被点亮）──
   else if(theme==='sunset'){
     const n = isMobile?34:64;
-    // 沿光柱向上的世界方向 = rotate(SUNSET_ROT) 作用在 (0,-1) 上：(sinθ, -cosθ)，θ 取常量字面量
-    // （此处不能引用 SUNSET_CS/SUNSET_SN：initThemeParticles 可能在顶层解析期就被调用，那时它们还在 TDZ 里）
-    const bus = Math.sin(-0.60), buy = -Math.cos(-0.60);
+    // 沿光柱向上的世界方向 = rotate(SUNSET_ROT) 作用在 (0,-1) 上：(sinθ, -cosθ)
+    // （SUNSET_CS/SUNSET_SN 已提前声明到引擎状态区，解析期可安全引用）
+    const bus = SUNSET_SN, buy = -SUNSET_CS;
     for(let i=0;i<n;i++){
       const sp = 0.05+Math.random()*0.20;
       _uParticles.push({
@@ -6344,8 +6433,6 @@ function drawMidnight(ctx,W,H,dt){
 //   ③ 落地回光：屏幕下缘的暖色反照（光打在"地面"上）
 //   ④ 空气尘埃：沿柱向缓缓上浮的微粒，只有投影落进柱体带内才被点亮 —— 出柱即隐，光柱因此"看得见"
 // 性能：光柱与亮带都是预渲染柔光精灵（softBandSprite）+ drawImage；尘埃的柱内判定为 1 次投影 + 5 次比较。
-const SUNSET_ROT = -0.60;
-const SUNSET_CS = Math.cos(SUNSET_ROT), SUNSET_SN = Math.sin(SUNSET_ROT);
 const SUNSET_BEAMS = [
   { off:-0.66, w:0.24, a:0.26, sway:0.030, speed:0.055, rgb:'255,196,130' },
   { off:-0.32, w:0.13, a:0.30, sway:0.040, speed:0.040, rgb:'255,222,170' },
@@ -6644,7 +6731,7 @@ const SIN_K = 1024/(Math.PI*2);
 function sinLut(x){ return SIN_LUT[((x*SIN_K)|0) & 1023]; }
 
 // ── paper: 素笺（Paper）──
-// 设计前提：这是一张「秘境试炼时一直铺在眼睛底下的纸」。上一版点阵把三千多个高对比墨点铺满全屏，
+// 设计前提：这是一张「刷题时一直铺在眼睛底下的纸」。上一版点阵把三千多个高对比墨点铺满全屏，
 // 每个点都在和正文抢注意力 —— 小尺寸、高对比的实体（点/线/格子）本质上都会变成视觉噪音。
 // 所以这一版只用大尺度、低对比的柔光，全层峰值透明度 ≤ 6%：看得出纸在"呼吸"，但绝不与文字竞争。
 // 四层（由底到面）：
@@ -6994,9 +7081,9 @@ function drawZirong(ctx,W,H,dt){
 // ── ziliang: 网格（Magic UI「Grid Pattern / Animated Grid Pattern」的 canvas 版）──
 // 细网格线打底 + 一批位置固定的格子缓慢明灭；四周径向淡出（等效 Magic UI 的 mask-image）。
 // 针对"和前景数据方块格格不入"做了两处刻意对齐：
-//   ① 步长 28px = 数据方块的 2 倍节拍（热力图/境界格 11px + 3px 间隙 = 14px）—— 背景与前景同频
+//   ① 步长 28px = 数据方块的 2 倍节拍（热力图/等级格 11px + 3px 间隙 = 14px）—— 背景与前景同频
 //   ② 高亮格改成「1px 描边 + 极淡填充」而不是整格实心填充 —— 原先 44px 的实心块会和热力图、
-//      境界条的实心数据块混成一片；描边则明确表达"这是背景秩序，不是数据"
+//      等级条的实心数据块混成一片；描边则明确表达"这是背景秩序，不是数据"
 const ZL_STEP = { desktop:28, mobile:22 };
 const ZL_TINT = '47,111,120';     // 青黛（子良主色的暗调）
 function drawZiliang(ctx,W,H,dt){
@@ -7046,7 +7133,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '61';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v61）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '64';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v64）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');
@@ -7056,12 +7143,16 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
         const keys = await caches.keys();
         await Promise.all(keys.filter(k => k.indexOf('learn-') === 0).map(k => caches.delete(k)));
       }catch(_){}
+      // 只注销"管着当前页面"的那一个注册（按 scope 前缀判断）：getRegistrations() 返回的是整个 origin
+      // 的注册，原先按 scriptURL 里是否含 'sw.js' 判断，会把同域其它应用（如 /other/sw.js）的
+      // Service Worker 一并注销 —— 与"只清理本应用"的本意相反
       try{
+        const here = location.href.split('#')[0].split('?')[0];
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => {
           try{
-            const scriptUrl = (r.active && r.active.scriptURL) || (r.waiting && r.waiting.scriptURL) || (r.installing && r.installing.scriptURL) || '';
-            return (!scriptUrl || scriptUrl.indexOf('sw.js') !== -1) ? r.unregister() : Promise.resolve();
+            const inScope = !!r.scope && here.indexOf(r.scope) === 0;
+            return inScope ? r.unregister() : Promise.resolve();
           }catch(_){ return Promise.resolve(); }
         }));
       }catch(_){}

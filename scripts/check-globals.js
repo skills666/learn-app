@@ -129,6 +129,151 @@ if (!unused) console.log('  (无)');
   console.log(unusedFns.length ? unusedFns.map(n => '  ' + n).join('\n') : '  (无)');
 }
 
+// 9. 调用了但没定义的函数（改名只改了一半的典型事故：定义改了、调用点没改 → 运行时 ReferenceError）
+let _undefinedCallHits = 0;
+//    为什么必须有这条：单文件项目没有打包器/类型检查，改名靠手改，漏一处就是线上白屏级别的故障；
+//    而语法检查抓不到它（`foo()` 语法完全合法）。只扫主内联脚本，避免把 CSS 里的 rgba()/translateY() 算进来。
+{
+  const mainScript = (() => {
+    const scripts = [];
+    const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+    let mm;
+    while ((mm = re.exec(html)) !== null) scripts.push(mm[1]);
+    return scripts.find(s => s.indexOf('function renderAnswer(') !== -1) || '';
+  })();
+  // 语言/浏览器内置：不是"本文件定义的函数"，显式放行
+  const BUILTINS = new Set(['Math', 'Number', 'String', 'Boolean', 'Array', 'Object', 'JSON', 'Date', 'Promise', 'Set', 'Map',
+    'WeakMap', 'WeakSet', 'RegExp', 'Error', 'TypeError', 'RangeError', 'Symbol', 'BigInt', 'Proxy', 'Reflect',
+    'isNaN', 'isFinite', 'parseInt', 'parseFloat', 'encodeURIComponent', 'decodeURIComponent', 'encodeURI', 'decodeURI',
+    'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame',
+    'alert', 'confirm', 'prompt', 'fetch', 'Blob', 'File', 'FileReader', 'URL', 'TextDecoder', 'TextEncoder', 'AbortController',
+    'Image', 'Audio', 'AudioContext', 'HTMLElement', 'CustomEvent', 'Event', 'DOMParser', 'XMLSerializer',
+    'IntersectionObserver', 'ResizeObserver', 'MutationObserver', 'getComputedStyle', 'matchMedia', 'structuredClone',
+    'atob', 'btoa', 'escape', 'unescape', 'crypto', 'performance', 'navigator', 'document', 'window', 'console',
+    'indexedDB', 'localStorage', 'sessionStorage', 'CSS', 'Request', 'Response', 'Headers', 'FormData',
+    'Uint8Array', 'Int32Array', 'Float32Array', 'ArrayBuffer', 'DataView', 'Number', 'BigInt64Array',
+    'createImageBitmap', 'queueMicrotask', 'reportError',
+    'if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'function', 'new', 'delete', 'void', 'in', 'of', 'do', 'else',
+    'async', 'await', 'yield']);
+  // 先把注释与字符串/模板的"文本段"抹成空白（模板里的 ${...} 保留为代码），否则
+  // 'var(--bad)'、'rgba(...)' 这类样式字符串、以及注释里提到的旧函数名全会变成误报
+  const maskCode = (s) => {
+    const out = s.split('');
+    const blank = (a, b) => { for (let k = a; k < b && k < out.length; k++){ if (out[k] !== '\n') out[k] = ' '; } };
+    const skipStr = (i) => {                       // 普通字符串：' 或 "
+      const q = s[i];
+      let j = i + 1;
+      while (j < s.length){ if (s[j] === '\\'){ j += 2; continue; } if (s[j] === q) return j + 1; j++; }
+      return s.length;
+    };
+    // 正则字面量必须先于字符串判断：/[&<>"]/ 里的引号会被当成字符串起点，一路吞到下一个引号 → 遮蔽错位
+    const isRegexStart = (i) => {
+      let j = i - 1;
+      while (j >= 0 && /\s/.test(s[j])) j--;
+      if (j < 0) return true;
+      return '([{,;:=!&|?+*-<>%~^'.indexOf(s[j]) !== -1;
+    };
+    const skipRegex = (i) => {
+      let j = i + 1, inClass = false;
+      while (j < s.length){
+        const ch = s[j];
+        if (ch === '\\'){ j += 2; continue; }
+        if (ch === '[') inClass = true;
+        else if (ch === ']') inClass = false;
+        else if (ch === '/' && !inClass) return j + 1;
+        else if (ch === '\n') return j;
+        j++;
+      }
+      return s.length;
+    };
+    const scanCode = (i, stopBrace) => {
+      while (i < s.length){
+        const ch = s[i], nx = s[i + 1];
+        if (ch === '/' && nx === '/'){ const nl = s.indexOf('\n', i); const e = nl < 0 ? s.length : nl; blank(i, e); i = e; continue; }
+        if (ch === '/' && nx === '*'){ const e0 = s.indexOf('*/', i); const e = e0 < 0 ? s.length : e0 + 2; blank(i, e); i = e; continue; }
+        // 正则字面量要抹掉而不是只跳过：它的内容（如 /\u0001MD(\d+)\u0001/）会被当成代码扫出假调用
+        if (ch === '/' && isRegexStart(i)){ const e = skipRegex(i); blank(i, e); i = e; continue; }
+        if (ch === '"' || ch === "'"){ const e = skipStr(i); blank(i + 1, e - 1); i = e; continue; }
+        if (ch === '`'){ i = scanTpl(i); continue; }
+        if (stopBrace && ch === '}') return i;
+        i++;
+      }
+      return i;
+    };
+    const scanTpl = (i) => {
+      let j = i + 1, segStart = j;
+      while (j < s.length){
+        const ch = s[j];
+        if (ch === '\\'){ j += 2; continue; }
+        if (ch === '`'){ blank(segStart, j); return j + 1; }
+        if (ch === '$' && s[j + 1] === '{'){
+          blank(segStart, j);                       // 文本段抹掉，插值内部继续按代码扫
+          const end = scanCode(j + 2, true);
+          j = end + 1; segStart = j; continue;
+        }
+        j++;
+      }
+      blank(segStart, s.length);
+      return s.length;
+    };
+    scanCode(0, false);
+    return out.join('');
+  };
+
+  const undefinedCalls = [];
+  if (mainScript){
+    const code = maskCode(mainScript);
+    const escName = n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const callRe = /(^|[^\w$.\u4e00-\u9fa5])([A-Za-z_$][\w$]*)\s*\(/g;
+    const seen = new Set();
+    let cm;
+    while ((cm = callRe.exec(code)) !== null){
+      const name = cm[2];
+      if (BUILTINS.has(name) || seen.has(name)) continue;
+      seen.add(name);
+      const n = escName(name);
+      const declared = new RegExp('(?:^|[^\\w$])(?:function|const|let|var|class)\\s+' + n + '(?![\\w$])').test(code)
+        || new RegExp('[(,]\\s*' + n + '\\s*[,)=]').test(code)                        // 形参（含箭头函数）
+        || new RegExp('(?:^|[^\\w$])' + n + '\\s*[:=]\\s*(?:function\\b|\\()').test(code);   // 赋值为函数
+      if (!declared) undefinedCalls.push(name);
+    }
+  }
+  console.log('\n=== 调用了但本文件没有定义的函数（应为 0：改名漏改调用点会显示在这里）===');
+  console.log(undefinedCalls.length ? undefinedCalls.map(n => '  ' + n).join('\n') : '  (无)');
+  _undefinedCallHits = undefinedCalls.length;
+}
+
+// 10. 未被任何 JS/CSS 引用的字面量 id（全文件只出现一次 = 只有 id="x" 那一处）
+//     只打印、不 gate：id 也可能是留给外部工具/锚点用的，需人工判断
+{
+  const lone = [];
+  for (const id of idMap.keys()) {
+    const cnt = (all.match(new RegExp(id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+    if (cnt <= 1) lone.push(id);
+  }
+  console.log('\n=== 未被任何 JS/CSS 引用的字面量 id（疑似死属性，人工确认）===');
+  console.log(lone.length ? lone.map(n => '  ' + n).join('\n') : '  (无)');
+}
+
+// 11. 顶层声明但全文件只出现一次的标识符：改名 / 删功能后遗留的死变量
+//     （历史上真出现过：_uRipples、已下线功能的 cloze 状态对象）
+//     只打印、不 gate：解构、形参等场景会误报
+{
+  const declRe = /^[ \t]*(?:const|let|var)[ \t]+([A-Za-z_$][\w$]*)[ \t]*=/gm;
+  const names = new Set();
+  let dm;
+  while ((dm = declRe.exec(all)) !== null) names.add(dm[1]);
+  const lone = [];
+  for (const n of names) {
+    // 用前后向断言而不是 \b：标识符里可能含 $（项目里的 $ 选择器函数就是），
+    // \b 在两个非单词字符之间不成立，会把 $() 的每次调用都漏掉、误报成死变量
+    const cnt = (all.match(new RegExp('(^|[^\\w$])' + n.replace(/\$/g, '\\$') + '(?![\\w$])', 'g')) || []).length;
+    if (cnt <= 1) lone.push(n);
+  }
+  console.log('\n=== 顶层声明但全文件只出现一次（疑似死变量，人工确认）===');
+  console.log(lone.length ? lone.map(n => '  ' + n).join('\n') : '  (无)');
+}
+
 /* ---------- 门禁：以上"应为 0"的硬指标任一命中即非零退出 ----------
    原先本脚本没有退出码，无论发现什么都是 exit 0 —— npm run check 与 CI 里的这条门禁形同虚设。
    这里只收"确定性回归"（重复 id / console.log / eval / document.write / 裸 localStorage），
@@ -157,7 +302,8 @@ const _hardFailed = [
   ['console.log 残留', (all.match(/console\.log\(/g) || []).length],
   ['eval() 调用', (all.match(/\beval\(/g) || []).length],
   ['document.write 调用', (all.match(/document\.write\(/g) || []).length],
-  ['裸 localStorage 调用（未走 safeLocal* 且就近无 try）', _nakedLsHits]
+  ['裸 localStorage 调用（未走 safeLocal* 且就近无 try）', _nakedLsHits],
+  ['调用了但本文件没定义的函数（改名漏改调用点 → 运行时 ReferenceError）', _undefinedCallHits]
 ].filter(([, n]) => n > 0);
 if (_hardFailed.length) {
   console.log('\n=== 门禁未通过（硬指标出现回归）===');

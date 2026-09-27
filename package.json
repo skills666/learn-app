@@ -1,7 +1,7 @@
 {
   "name": "learn-app",
   "version": "1.0.0",
-  "description": "万法归元 - 本地·离线·私有·艾宾浩斯闪卡记忆",
+  "description": "万法归元 - 本地·离线·私有·FSRS 间隔重复闪卡记忆",
   "private": true,
   "scripts": {
     "sync:www": "node sync-www.js",
