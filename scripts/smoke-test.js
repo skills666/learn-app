@@ -125,7 +125,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'computeReadiness', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'computeReadiness', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -148,11 +148,18 @@ const readyConsts = ['READY_MASTERY', 'READY_VERIFY_DAYS', 'MASTERED_MIN_DAYS', 
   if (!c) throw new Error('提取常量失败：' + n);
   return c;
 }).join('\n');
+// 展示等级的分档阈值与排序权重 + 等级条的展示顺序/名称（levelOf / lvRank / buildLvBarHtml 依赖）
+const lvConsts = ['LV_S_TH', 'LV_RANK', 'LV_ORDER', 'LV_NAME'].map(n => {
+  const c = extractConst(n);
+  if (!c) throw new Error('提取常量失败：' + n);
+  return c;
+}).join('\n');
 
 
 const harness = `
 let PROGRESS = {};
-function saveProgress(){}
+// 透传 keepLv：验证"评分路径不清等级分布缓存"这条链路（见 applySm2Grade / invalidateMemQueue）
+function saveProgress(keepLv){ invalidateMemQueue(keepLv); }
 function markDirty(){}
 function fsrsStep(){ return { interval: 1, next: Date.now() + 86400000, card: { d: 5, s: 1, last: Date.now(), reps: 1, lapses: 0 } }; }
 let HOT = [];
@@ -166,6 +173,7 @@ let WARLOG = {};
 // 复习队列的依赖替身：题库 + 队列缓存标志 + 记忆模式状态（undoMemoryGrade 会读它）
 let DOCS = [];
 let _memQueueCache = null, _memQueueDirty = true, _memQueueBuiltAt = 0;
+let _lvCountsCache = null, _statsCache = null;
 let memory = { queue: [], index: 0, flipped: false, _history: [] };
 function renderAll(){}
 const LS = {};
@@ -175,8 +183,9 @@ ${warlogConsts}
 ${rateConst}
 ${rateMetaConst}
 ${readyConsts}
+${lvConsts}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, Rate, RATE_META, READY_MASTERY, READY_VERIFY_DAYS, MASTERED_MIN_DAYS, feedHotFromMemory, hotLiveQueue, computeReadiness, buildMemoryQueue, undoMemoryGrade, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getMemory: () => memory, getDocs: () => DOCS });
+({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, Rate, RATE_META, READY_MASTERY, READY_VERIFY_DAYS, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, computeReadiness, buildMemoryQueue, undoMemoryGrade, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -232,7 +241,7 @@ console.log('\n[applySm2Grade · 记忆模式入口（入参 = 评分档位 1-4�
   api.applySm2Grade('q3', 1, null);
   ok(P().q3 && P().q3.mastered === false, '「完全忘了」(1) 清除掌握标记', JSON.stringify(P().q3));
   api.applySm2Grade('q5', 3, null);
-  ok(P().q5 && P().q5.srLevel === 1, '「差不多」(3) → 等级 +1 并排程', JSON.stringify(P().q5));
+  ok(P().q5 && P().q5.srLevel === 1, '「差不多」(3) → srLevel 计数器 +1 并排程（展示等级已改由 levelOf 派生，见下）', JSON.stringify(P().q5));
   const hist = [];
   api.applySm2Grade('q6', 3, hist);
   ok(hist.length === 1 && hist[0].qid === 'q6', '撤销栈正常记录');
@@ -381,6 +390,84 @@ console.log('\n[趁热打铁 · 记忆模式进料（零副作用）]');
   ok(!H().some(x => x.qid === 'hE'), '「倒背如流」(4) 不入热榜');
   api.applySm2Grade('hM', 3, null);            // 差不多 → 仍属"没答到最高档"，要趁热
   ok(H().some(x => x.qid === 'hM'), '「差不多」(3) 属于没答到最高档 → 进热榜');
+}
+
+console.log('\n[展示等级 · 由 FSRS 稳定性 S 派生（不再数"连续答对几次"）]');
+{
+  const lv = api.levelOf;
+  ok(lv(null) === 0 && lv({}) === 0, '无进度 / 空进度 → Lv0', String(lv(null)) + ' / ' + String(lv({})));
+  ok(lv({ fsrs: { s: 2 } }) === 1, 'S=2 天 → Lv1（不到 3 天）', lv({ fsrs: { s: 2 } }));
+  ok(lv({ fsrs: { s: 3 } }) === 2 && lv({ fsrs: { s: 7 } }) === 3, 'S=3 / 7 天 → Lv2 / Lv3（含边界）');
+  ok(lv({ fsrs: { s: 21 } }) === 4 && lv({ fsrs: { s: 60 } }) === 5, 'S=21 / 60 天 → Lv4 / Lv5（含边界）');
+  ok(lv({ fsrs: { s: 5000 } }) === 5, '再稳也封顶在 Lv5', lv({ fsrs: { s: 5000 } }));
+  ok(lv({ mastered: true }) === 'M' && lv({ mastered: true, fsrs: { s: 1 } }) === 'M',
+     '掌握标记优先于 S（手动/八股标记的题没有 fsrs 状态也算 M）');
+  ok(api.lvRank('M') > api.lvRank(5) && api.lvRank(0) < api.lvRank(1),
+     '排序权重：M 排在 Lv5 之上（战报升降比较必须用它，直接拿 M 与数字比大小恒为 false）');
+  ok(lv({ interval: 8, ef: 2.5, srLevel: 2, srNext: 1, lastPracticed: 0 }) === 3,
+     '只有 SM-2 字段的老记录：靠 fsrsStateOf 换算出的 S(=interval 8 天) 分档，不会集体掉到 Lv0',
+     lv({ interval: 8, ef: 2.5, srLevel: 2, srNext: 1, lastPracticed: 0 }));
+  ok(lv({ seen: true }) === 0, '只看过、没评过分的题没有 S，仍是 Lv0', lv({ seen: true }));
+  // 旧口径脱节的两个实证：同一道题，计数器说 Lv5，稳定性说 Lv3；很稳的题忘一次计数器归零、稳定性仍有 7 天
+  ok(api.levelOf({ srLevel: 5, fsrs: { s: 12.5 } }) === 3,
+     '同一天连点堆出的 srLevel=5（S 仅 12.5 天）→ 展示等级修正为 Lv3', api.levelOf({ srLevel: 5, fsrs: { s: 12.5 } }));
+  ok(api.levelOf({ srLevel: 0, fsrs: { s: 7 } }) === 3,
+     '刚「忘了」的稳题（计数器归零、S 仍有 7 天）→ Lv3，不再被打成 Lv0', api.levelOf({ srLevel: 0, fsrs: { s: 7 } }));
+  // 排期上限 14 天把间隔压平（S≥18 天一律"14 天后"），所以分档只能看 S：这是等级条存在的意义
+  const a = { interval: 14, fsrs: { s: 22 } }, b = { interval: 14, fsrs: { s: 900 } };
+  ok(a.interval === b.interval && api.levelOf(a) !== api.levelOf(b),
+     '排期同为 14 天的两道题，等级仍能区分 S=22 与 S=900（用 interval 分档就会挤成一坨）');
+}
+
+console.log('\n[等级条 · HTML 生成（段宽 / 悬停提示 / 读屏描述）]');
+{
+  const bar = api.buildLvBarHtml({ 0: 88, 1: 6, 2: 3, 3: 2, 4: 1, 5: 0, M: 0 });
+  ok(/class="lv0" data-lv="0" data-n="88"/.test(bar.stacked), '段上带 data-lv / data-n（animateLvBar 补帧要读）', bar.stacked);
+  ok(/flex:88 1 0/.test(bar.stacked) && !/class="lv5"/.test(bar.stacked) && !/class="lvM"/.test(bar.stacked),
+     '段宽按题数分配；0 题的等级不渲染空段');
+  ok(bar.stacked.indexOf('title="Lv0 · 88 题（88.0%）"') !== -1, '悬停提示 = 等级名 + 题数 + 占比', bar.stacked);
+  ok(bar.legend.indexOf('掌握 0') !== -1, '图例列出全部 7 档（含 0 题的档位，便于对照）');
+  const withM = api.buildLvBarHtml({ 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, M: 1 });
+  ok(withM.stacked.indexOf('title="掌握 · 1 题（50.0%）"') !== -1, 'M 档悬停提示写「掌握」，不再拼出"LvM"', withM.stacked);
+  ok(bar.label === '全库 100 题等级分布：Lv0 88 题，Lv1 6 题，Lv2 3 题，Lv3 2 题，Lv4 1 题，Lv5 0 题，掌握 0 题',
+     '读屏描述按 Lv0 → 掌握的顺序念出各档题数', bar.label);
+  const empty = api.buildLvBarHtml({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, M: 0 });
+  ok(empty.stacked === '' && empty.label.indexOf('%') === -1, '空题库：不渲染段、也不出现除零的百分比', empty.label);
+}
+
+console.log('\n[等级分布 · 评分走单题增量（不再为一道题把全库重数一遍）]');
+{
+  const D = api.getDocs, P = api.getProgress;
+  D().length = 0;   // 本段自造题库，避免受前面测试的残留影响
+  D().push({ id: 'lv', title: '等级分布', questions: [{ id: 'lvq1' }, { id: 'lvq2' }, { id: 'lvq3' }] });
+  const sum = o => ['M',0,1,2,3,4,5].reduce((n,k)=>n+(o[k]||0), 0);
+  const c0 = api.computeLvCounts();
+  ok(c0[0] === 3 && sum(c0) === 3, '三道新题 → Lv0 三道', JSON.stringify(c0));
+  // 造一道"很稳"的题（S=40 天 → Lv4）后重建缓存（模拟另一条路径改完等级并正确失效）
+  P().lvq1 = { seen: true, srNext: Date.now() + 1000, lastPracticed: Date.now(),
+               fsrs: { d: 5, s: 40, last: Date.now(), reps: 3, lapses: 0 } };
+  api.invalidateMemQueue();
+  api.computeLvCounts();
+  api.applySm2Grade('lvq2', 3, null);   // 沙箱的 fsrsStep 替身固定返回 S=1 → 派生等级 Lv1
+  const cache = api.getLvCache();
+  ok(cache !== null, '评分后等级分布缓存没被整体作废（saveProgress(true) 透传生效）', String(cache));
+  ok(cache && cache[1] === 1 && cache[0] === 1 && cache[4] === 1,
+     '增量按单题增减：新评分的进 Lv1、Lv0 减一、那道稳稳的 Lv4 没被误动', JSON.stringify(cache));
+  ok(sum(cache) === 3, '分布总数始终等于题目总数（没算漏也没算重）', sum(cache));
+  // 最重要的一条守卫：再怎么评，增量结果必须与"清缓存后全量重算"逐档一致（防止误差累积）
+  api.applySm2Grade('lvq3', 1, null);   // 忘了：新题 → Lv1（沙箱替身的 S 恒为 1）
+  api.applySm2Grade('lvq2', 4, null);   // 简单：已有 fsrs 状态 → 点亮掌握，等级变 'M'
+  const fast = Object.assign({}, api.getLvCache());
+  api.invalidateMemQueue();
+  const slow = api.computeLvCounts();
+  const KEYS = ['M',0,1,2,3,4,5];
+  const dump = o => KEYS.map(k=>k+':'+(o[k]||0)).join(' ');
+  ok(KEYS.every(k=>(fast[k]||0) === (slow[k]||0)),
+     '连评两道后，增量缓存与全量重算逐档一致', dump(fast) + '  vs  ' + dump(slow));
+  // 非评分路径必须照旧整体作废，否则手动改掌握标记之类的改动会让缓存悄悄过期
+  api.invalidateMemQueue();
+  ok(api.getLvCache() === null, '其他入口（不传 keepLv）照旧整体作废缓存');
+  ok(api.bumpLvCounts(0, 3) === false, '缓存未建立时增量安全跳过（下次全量算出来的就是对的）');
 }
 
 console.log('\n[进度页 · 数据行带 FSRS 的 DSR 状态（不是 SM-2 的 EF）]');
@@ -601,6 +688,60 @@ console.log('\n[关键实现点静态断言]');
      'SW 修复只注销"管着当前页面"的注册（不再误伤同域其它应用）');
   const _mf = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
   ok(!/艾宾浩斯/.test(_mf.description || ''), 'PWA 清单描述与当前算法（FSRS）口径一致');
+  // —— 等级条：展示等级改由 FSRS 稳定性 S 派生（旧口径是"连续答对几次"的 srLevel 计数器）——
+  ok(/function levelOf\(p[,)]/.test(html) && !/pp\.mastered \? 'M' : pp\.srLevel \|\| 0/.test(html)
+     && /levelOf\(PROGRESS\[dq\.id\]\)/.test(html),
+     '等级分布统计走 levelOf 派生等级，不再读 srLevel 计数器');
+  ok(/const level=levelOf\(p\);/.test(html) && /const lv = levelOf\(p\);/.test(html),
+     '记忆队列排序与进度页数据行同步改用派生等级（与进度条同一把尺子）');
+  ok(/const oldRank = lvRank\(levelOf\(pr\)\), newRank = lvRank\(newLvl\);/.test(html),
+     '战报的等级升降按排序权重比较（拿 M 与数字直接比大小会漏计"掌握被打回"）');
+  ok(/function invalidateMemQueue\(keepLv\)\{[\s\S]{0,140}?if\(!keepLv\) _lvCountsCache = null;/.test(html),
+     '等级分布缓存只在"非评分路径"整体作废（评分路径自行增量，见 bumpLvCounts）');
+  ok(/bumpLvCounts\(lvBefore, lvShown\);/.test(html) && /saveProgress\(true\);/.test(html),
+     'applySm2Grade 对等级分布做单题增减，并把 keepLv 透传给 saveProgress');
+  ok(/\.pbar\.lvbar\{gap:2px\}/.test(html) && /\.pbar\.lvbar > i\{min-width:4px;border-radius:0/.test(html),
+     '等级条段间留缝、圆角交给容器裁（逐段圆角会把 2px 的极小段压成怪胶囊）');
+  ok(/\.pbar\.lvbar:hover > i\{opacity:\.32\}/.test(html), '等级条支持悬停高亮单段、其余变淡');
+  ok(/@media \(hover:hover\)\{\s*\.pbar\.lvbar:hover > i\{opacity:\.32\}/.test(html),
+     '悬停高亮包在 hover:hover 里（触屏点过的那段不会一直粘在高亮态）');
+  ok(/\.pbar > i\{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0\}/.test(html)
+     && /\.bigbar > i\{[^}]*border-radius:0 5px 5px 0/.test(html),
+     '单段条（刷题 / 文档页）填充统一为"左端交给容器裁 + 右端 5px 前沿圆角"（原先只有 .pbar 自带 3px，左右不对称）');
+  ok(!/\.pbar > i\{[^}]*border-radius:3px/.test(html), '不再有"填充自带 3px 圆角"的孤例');
+  // —— 顶部全局进度条（总进度）也归入同一套：段不自带圆角 ——
+  ok(/\.stats-bar \.bar>i\{display:block;height:100%;background:/.test(html)
+     && !/\.stats-bar \.bar>i\{[^}]*border-radius/.test(html),
+     '全局进度条（总进度）的段不再自带圆角，改由容器裁（原先两段接缝处会有两个背靠背圆角的豁口）');
+  ok(/\.stats-bar \.bar\{[^}]*min-width:72px/.test(html),
+     '总进度条带 min-width（flex:1 展开是 flex-basis:0%，缺它时窄屏会被右侧统计项挤成一条线）');
+  ok(/\.stats-bar \.bar>i:last-child\{border-radius:0 3px 3px 0\}/.test(html),
+     '全局进度条的末段保留同半径前沿圆角（6px 高 ⇒ 3px）');
+  ok(/\(masteredPct>0 \? `/.test(html) && /\(seenOnlyPct>0 \? `/.test(html),
+     '宽度为 0 的段不渲染，避免 0 宽段占住 :last-child、让真正可见的末段丢掉前沿圆角');
+  ok(!/transition:width \.\ds/.test(html),
+     '全站不再有"声明了却永远不触发"的 width 过渡（每次渲染都重建节点）');
+  ok(/function animateSegBar\(scope, sel, key\)/.test(html)
+     && /animateSegBar\(c, '\.bigbar > i', 'browse:'\+d\.id\)/.test(html)
+     && /animateSegBar\(c, '\.salary-bar > i', 'salary'\)/.test(html),
+     '单段条（浏览页文档进度 / 总览月薪条）的宽度变化改走 WAAPI 补间（换文档时不动画）');
+  ok(/_segBarPrev\.clear\(\);/.test(html) && /const _segBarPrev = new Map\(\);/.test(html),
+     '数据整体替换后清空各单段条的补间基线');
+  ok(!/levels:\{0:0,1:0,2:0,3:0,4:0,5:0,'M':0\}/.test(html) && !/st\.levels\[lv\]\+\+/.test(html),
+     'docStats 的 levels 死字段已删除（只写不读，没有任何消费方）');
+  ok(/const lvLine = LV_ORDER\.map\(lv=>`\$\{LV_NAME\[lv\]\}: \$\{o\.lvCounts\[lv\]\|\|0\}`\)/.test(html),
+     '复制给 AI 的报告里掌握档写作「掌握」，不再拼出 "LvM"');
+  ok(/<div class="an-legend" aria-hidden="true">/.test(html),
+     '进度页图例对读屏隐藏（条的 aria-label 已含同一信息，避免同一份数据听两遍）');
+  ok(!/transition:width \.3s/.test(html), '清掉从未生效的 transition:width（段宽由 flex 分配，且每次渲染都重建节点）');
+  ok(/function animateLvBar\(scope\)/.test(html) && /data-n="\$\{n\}"/.test(html),
+     '等级条段宽变化走 WAAPI 补帧（innerHTML 重建后 CSS 过渡无法触发）');
+  ok(/@media \(prefers-reduced-motion: no-preference\)\{\s*\.pbar > i\.lvM\{animation:/.test(html),
+     'lvM 流光包进 no-preference（reduced-motion 下不再"闪一下再停"）');
+  ok(/role="img" aria-label="\$\{esc\(lvBar\.label\)\}"/.test(html),
+     '等级条对读屏暴露一句话描述（纯色块否则等于没有信息）');
+  ok(/title="\$\{LV_NAME\[lv\]\} · \$\{n\} 题（\$\{pct\(n\)\}%）"/.test(html),
+     '悬停提示用等级名 + 题数 + 占比（原先 M 档会被拼成莫名其妙的"LvM"）');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');

@@ -59,8 +59,14 @@
   /* min-height：评分后统计项（待复习/今日已刷/连续）会增减，固定最小高度避免未换行时高度跳动；
      tabular-nums：数字等宽，评分后数字变化（23→22）不再让居中的整组统计项左右微移 */
   .stats-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:5px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;font-size:11.5px;color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
-  .stats-bar .bar{flex:1;max-width:300px;height:6px;border-radius:4px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden}
-  .stats-bar .bar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+  /* min-width 是必需的，不是保险：flex:1 展开等于 flex-basis:0%，换行计算时这根条被当成 0 宽的项，
+     于是它只能吃所在行的残余空间 —— 手机上统计项一多，残余就剩几像素，条"缩成一条线"看不见了。
+     给了 min-width，flex 才会按固定宽度给它排版，当前行放不下就整根换到下一行，窄屏上始终可见 */
+  .stats-bar .bar{flex:1;min-width:72px;max-width:300px;height:6px;border-radius:4px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden}
+  /* 与全站其它条统一：段不自带圆角，左端交给容器 overflow:hidden 裁、末段右端描一个同半径（6px 高 ⇒ 3px）圆角。
+     原先每段都自带 4px 圆角，两段接缝处是两个圆角背靠背，会露出底下的槽色形成一道豁口 */
+  .stats-bar .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .stats-bar .bar>i:last-child{border-radius:0 3px 3px 0}
   .stats-bar b{color:var(--text);font-weight:700}
   .stats-bar .urg{color:var(--warn);font-weight:700}
   .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;color:var(--muted);flex:none}
@@ -106,7 +112,9 @@
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
   /* 槽底用主题文字色分量：写死深色在素笺/潮线/子良/子荣这类浅底主题下会变成白卡片上的一条黑槽 */
   .bigbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb),.14);overflow:hidden;margin-top:12px;max-width:420px}
-  .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+  /* 前沿圆角与单段 .pbar 统一（左端同样交给容器裁）：10px 高度下容器 8px 圆角的实际半径是 5px。
+     宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点，过渡不触发） */
+  .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:0 5px 5px 0}
   /* 二级页返回按钮（题目浏览 / 刷题） */
   .back-btn{color:var(--muted)}
   .back-btn:hover{color:var(--text)}
@@ -177,7 +185,23 @@
   /* practice mode */
   .practice-wrap{max-width:820px;margin:0 auto}
   .pbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin:6px 0 4px;display:flex}
-  .pbar > i{display:block;height:100%;min-width:2px;transition:width .3s;border-radius:3px}
+  /* 段宽由 inline 的 flex:N 1 0 分配、不是 width：原先那条 transition:width 从来没生效过
+     （何况每次评分都重建 innerHTML，节点是全新的，CSS 过渡本来也触发不了）。变化动画见 animateLvBar() */
+  /* 单段条（刷题 / 模拟面试）的填充：左端直角交给容器 overflow:hidden 裁、右端自己描一个同半径圆角，
+     两端半径都是 5px（10px 高度下容器 8px 圆角的实际半径），不会出现"左边圆右边方"。
+     原先是孤零零的 border-radius:3px —— 左端被容器裁成 5px、右端只有 3px，两端不对称，
+     也是全站唯一一处"填充自带圆角"的地方（.bigbar 与等级条都是交给容器裁） */
+  .pbar > i{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0}
+  /* 等级条（分布条）专属：段间留 2px 缝让等级分界看得见，圆角改由容器 overflow:hidden 裁
+     —— 逐段 3px 圆角会把 2px 宽的极小段压成怪胶囊，首尾圆角也接不上容器 */
+  .pbar.lvbar{gap:2px}
+  .pbar.lvbar > i{min-width:4px;border-radius:0;transition:opacity .18s}
+  /* 悬停某一段：该段保持原色、其余变淡（GitHub 语言条的可读性做法），从条上就能读出单个等级的占比。
+     包在 hover:hover 里：触屏没有真 hover，手指点过的那段会一直粘在高亮态 */
+  @media (hover:hover){
+    .pbar.lvbar:hover > i{opacity:.32}
+    .pbar.lvbar > i:hover{opacity:1}
+  }
   /* 等级色板走 CSS 变量：applyTheme 按主题底色深浅给两套值 —— 原先硬编码的深色主题色板在纸白底上，
      lv0（#3a3f55）会变成一块突兀的脏斑、lv1/lv2（黄/绿）对比又不足，是"方块和主题格格不入"的主因之一 */
   .pbar > i.lv0,.an-dot.lv0{background:var(--lv0,#3a3f55)}
@@ -187,8 +211,13 @@
   .pbar > i.lv4,.an-dot.lv4{background:var(--lv4,#4068c0)}
   .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
   .an-dot.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc)}
-  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 7px rgba(255,224,102,.6),0 0 9px rgba(255,224,102,.7);animation:lvM-flow 12s linear infinite,lvM-arc 1.4s ease-in-out infinite}
+  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 7px rgba(255,224,102,.6),0 0 9px rgba(255,224,102,.7)}
   .an-dot.lvM{background:linear-gradient(90deg,#f5d0fe,#93c5fd,#86efac,#fde68a,#f472b6)}
+  /* 流光与呼吸是纯装饰：包进 no-preference，系统开了「减少动态效果」时连 animation 声明都不存在。
+     原先靠全局那条 .01ms !important 兜底，效果是"闪一下再停"，比干脆不动更糟 */
+  @media (prefers-reduced-motion: no-preference){
+    .pbar > i.lvM{animation:lvM-flow 12s linear infinite,lvM-arc 1.4s ease-in-out infinite}
+  }
   @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
   @keyframes lvM-arc{0%,100%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 5px rgba(255,224,102,.4),0 0 6px rgba(255,224,102,.55)}50%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 10px rgba(255,224,102,.75),0 0 15px rgba(255,224,102,1)}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
@@ -254,7 +283,9 @@
   .salary-card .salary-sub{font-size:12px;color:var(--muted);margin-top:4px}
   .salary-card .salary-sub b{color:var(--accent3)}
   .salary-card .salary-bar{height:8px;border-radius:6px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
-  .salary-card .salary-bar>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent3),var(--accent));transition:width .6s}
+  /* 圆角两端都是 4px（= 8px 高度下容器 6px 圆角的实际半径），与容器吻合，故保留自带写法；
+     宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点） */
+  .salary-card .salary-bar>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent3),var(--accent))}
   .mini i{display:block}
 
   /* search results */
@@ -1284,6 +1315,29 @@ function fsrsFromRate(rate){
   if(r === 3) return Rate.GOOD;
   return Rate.EASY;
 }
+/* 展示等级（Lv0-Lv5 / M）由 FSRS 稳定性 S 派生，不再用「连续答对次数」计数器 srLevel。
+   原因：计数器只跟"最近连对几次"有关，与"记得多牢"脱节 —— 同一天连点 5 次「简单」能把计数器堆到 Lv5，
+   而一道很稳的题（S=87 天）忘一次计数器就归 0（S 仍有 7 天），于是出现「Lv0 的题比 Lv3 的题更牢」。
+   又因为 FSRS_MAX_INTERVAL=14 把排期硬截断（S≥18 天的题一律显示"14 天后"），等级条是界面上唯一
+   能区分高稳定性题的展示位，它必须跟着 S 走而不是跟着打卡次数走。
+   分档只能用 S：p.interval 被 14 天截断，拿它分档会把最稳的一批挤成一坨。
+   阈值单位是天（S 的物理含义就是"能稳多久"）；调松紧改这一组数字即可。 */
+const LV_S_TH = [3, 7, 21, 60];
+function levelOf(p, now){
+  if(!p) return 0;
+  if(p.mastered) return 'M';                              // 掌握标记优先：手动/八股标记的题可能没有 fsrs 状态
+  // 已有 FSRS 状态走快路径；只有 SM-2 字段的老记录交给 fsrsStateOf 换算（S≈interval）——
+  // 少了这一步，历史数据会因为读不到 fsrs.s 而集体掉到 Lv0，进度条会变成"几乎全没学过"
+  const st = (p.fsrs && p.fsrs.s > 0) ? p.fsrs : fsrsStateOf(p, now || Date.now());
+  const s = st ? st.s : 0;
+  if(s <= 0) return 0;                                    // 没排期 = Lv0
+  let lv = 1;
+  LV_S_TH.forEach((t,i)=>{ if(s >= t) lv = i+2; });       // ≥3/7/21/60 天 → Lv2/Lv3/Lv4/Lv5
+  return Math.min(5, lv);
+}
+// 等级排序权重：'M' 排在 Lv5 之上。战报的"升级/降级"要比较等级，不能拿 'M' 与数字直接比大小（结果恒为 false）
+const LV_RANK = {0:0,1:1,2:2,3:3,4:4,5:5,'M':6};
+function lvRank(lv){ return LV_RANK[lv] || 0; }
 // 记忆模式评分入口：只写 PROGRESS（含 FSRS 调度状态）。
 // historyArr 非 null 时记录撤销栈（记忆模式传 memory._history）
 function applySm2Grade(qid, rate, historyArr){
@@ -1297,7 +1351,8 @@ function applySm2Grade(qid, rate, historyArr){
   if(typeof feedHotFromMemory === 'function'){ try{ hotAdded = feedHotFromMemory(qid, rate) === true; }catch(_){} }
   const res = fsrsStep(pr, g, now);
   const curLvl = pr.srLevel || 0;
-  // 等级：记得/简单 +1，困难保持，忘了清零（纯展示刻度：进度条与统计读它，不参与排期）
+  // srLevel：连续答对次数计数器。保留写入但已不再是展示等级 —— 老记录的 reps 换算（fsrsStateOf）
+  // 与 computeAllStats 的"有没有进度"判定仍在读它，删字段要连带改那两处，不划算
   const newLvl = g>=Rate.GOOD ? Math.min(5, curLvl+1) : (g===Rate.HARD ? curLvl : 0);
   // 掌握：复习阶段答到最高档才算数 —— 新题第一次评分即使点「倒背如流」也不点亮（排期照旧按简单档，尊重自评）。
   // 依据：只看过一遍答案时的"记住了"最不可靠（流畅性错觉），而掌握数是要用来判断"能不能推进下一步"的，
@@ -1305,16 +1360,21 @@ function applySm2Grade(qid, rate, historyArr){
   // 「忘了」清除掌握标记，其余档位保持原样。
   const newMastered = g===Rate.EASY ? (!!pr.fsrs || !!pr.mastered)
     : (g===Rate.AGAIN ? false : (pr.mastered||false));
+  const lvBefore = levelOf(pr);   // 评分前的展示等级：给下面的等级分布增量更新做差
+  PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card};
+  // 展示等级走派生口径（levelOf）：撤销栈与战报存的都是派生值，不是上面写进 srLevel 的计数器
+  const lvShown = levelOf(PROGRESS[qid]);
+  // 等级分布按单题增减：评分是最热的路径，没必要为一道题把全库等级重数一遍
+  bumpLvCounts(lvBefore, lvShown);
   if(historyArr){
-    // 撤销要能完整回滚这次评分：除了旧进度，还要记住档位/等级/掌握变化、入榜与否、以及评分时刻
+    // 撤销要能完整回滚这次评分：除了旧进度，还要记住档位/等级变化、掌握变化、入榜与否、以及评分时刻
     // （战报按自然日归档，跨天撤销得回到当时那个桶里反向计数）
-    historyArr.push({qid, oldProgress:{...pr}, at:now, g, newLvl, newMastered, hotAdded});
+    historyArr.push({qid, oldProgress:{...pr}, at:now, g, newLvl:lvShown, newMastered, hotAdded});
     if(historyArr.length > 50) historyArr.splice(0, historyArr.length - 50);   // 撤销栈封顶 50 步，长会话不再无限累积
   }
-  PROGRESS[qid]={...pr, interval:res.interval, srNext:res.next, srLevel:newLvl, lastPracticed:now, seen:true, mastered:newMastered, fsrs:res.card};
   // 昨日战报：归档这一次评分。pr 仍是评分前的旧对象（上面用了展开赋值），新旧对比正好是战报要的"变化"
-  if(typeof warLogAdd === 'function'){ try{ warLogAdd(now, qid, g, pr, newLvl, newMastered); }catch(_){} }
-  saveProgress();
+  if(typeof warLogAdd === 'function'){ try{ warLogAdd(now, qid, g, pr, lvShown, newMastered); }catch(_){} }
+  saveProgress(true);   // true = 等级分布的增量上面已自行维护，别把它整体作废
   markDirty();
 }
 
@@ -1376,7 +1436,8 @@ function loadWarLog(){
     return (o && typeof o === 'object') ? o : {};
   }catch(_){ return {}; }
 }
-// 归档一次评分：pr / newLvl / newMastered 都是 applySm2Grade 里现成的值，这里只记录，不重算任何调度
+// 归档一次评分：pr / newLvl / newMastered 都是 applySm2Grade 里现成的值，这里只记录，不重算任何调度。
+// newLvl 是派生展示等级（levelOf），旧等级由 pr 现算 —— 不用 pr.srLevel，那个计数器与展示等级已不是一个口径
 function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   const k = dayKeyOf(now);
   const d = WARLOG[k] || (WARLOG[k] = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0 });
@@ -1386,8 +1447,9 @@ function warLogAdd(now, qid, g, pr, newLvl, newMastered){
                                                // 刷题模式翻页（markPracticed）也会写它，"首刷"会被算漏
   if(newMastered && !pr.mastered) d.mUp++;     // 本次评「简单」把题推成掌握
   if(!newMastered && pr.mastered) d.mDown++;   // 本次评「忘了」把掌握的题打回
-  const oldLvl = pr.srLevel || 0;
-  if(newLvl > oldLvl) d.up++; else if(newLvl < oldLvl) d.down++;
+  // 用排序权重比较：等级可能是 'M'，与数字直接比大小恒为 false，掌握被打回（M → Lv0）会漏计
+  const oldRank = lvRank(levelOf(pr)), newRank = lvRank(newLvl);
+  if(newRank > oldRank) d.up++; else if(newRank < oldRank) d.down++;
   // 日期键定长零填充 → 字典序即时间序，降序保留最近 WARLOG_KEEP 天
   const keys = Object.keys(WARLOG).sort();
   keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP)).forEach(x => delete WARLOG[x]);
@@ -1403,9 +1465,9 @@ function warLogUndo(at, qid, g, pr, newLvl, newMastered){
   if(!(pr && pr.fsrs)) d.nw = dec(d.nw);   // 与 warLogAdd 的判定保持一致
   if(newMastered && !pr.mastered) d.mUp = dec(d.mUp);
   if(!newMastered && pr.mastered) d.mDown = dec(d.mDown);
-  const oldLvl = pr.srLevel || 0;
-  if(newLvl > oldLvl) d.up = dec(d.up);
-  else if(newLvl < oldLvl) d.down = dec(d.down);
+  const oldRank = lvRank(levelOf(pr)), newRank = lvRank(newLvl);   // 与 warLogAdd 同一套比较（含 'M' 的权重）
+  if(newRank > oldRank) d.up = dec(d.up);
+  else if(newRank < oldRank) d.down = dec(d.down);
   safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
   return true;
 }
@@ -1878,9 +1940,13 @@ function renderStatsBar(){
   const seenPct = tq ? Math.round(ts/tq*100) : 0;
   // 钳位：导入/云端同步进来的进度可能只有 mastered 没有 seen，两段宽度叠加就会超过 100% 导致进度条溢出
   const masteredPct = Math.min(seenPct, tq ? Math.round(tm/tq*100) : 0);
+  // 宽度为 0 的段不渲染：留着它会占住 :last-child，让真正可见的末段拿不到前沿圆角（见 .stats-bar .bar>i:last-child）
+  const seenOnlyPct = seenPct - masteredPct;
+  const barSegs = (masteredPct>0 ? `<i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i>` : '')
+                + (seenOnlyPct>0 ? `<i style="width:${seenOnlyPct}%;background:var(--accent)"></i>` : '');
   $('#statsBar').innerHTML = `
     <span>总进度 <b>${seenPct}%</b></span>
-    <div class="bar" style="display:flex"><i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i><i style="width:${seenPct-masteredPct}%;background:var(--accent)"></i></div>
+    <div class="bar" style="display:flex">${barSegs}</div>
     <span>题目 <b>${tq}</b></span><span>已看 <b>${ts}</b></span><span>掌握 <b>${tm}</b></span>
     ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b>${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span title="按每题「最后一次练习时间」归日：刷题模式里翻看过的题也算在内，不等于答题次数">今日已刷 <b>${todayDone}</b> 题</span>`:''}
@@ -2024,6 +2090,7 @@ function renderOverview(c){
     roll('ovTotal', tq, 'total'); roll('ovSeen', ts, 'seen');
     roll('ovMastered', tm, 'mastered'); roll('ovDue', due, 'due');
     roll('ovDocs', DOCS.length, 'docs');
+    animateSegBar(c, '.salary-bar > i', 'salary');   // 月薪条与数字同步滑到新值（同一会话内数值未变则不动）
   }, 30);
   // 待复习卡：点击直接进记忆模式开始复习（无到期题时不可点）
   const dueCard = c.querySelector('#ovDueCard');
@@ -2269,6 +2336,7 @@ function renderBrowse(c){
     }
   }
   c.innerHTML = html;
+  animateSegBar(c, '.bigbar > i', 'browse:'+d.id);   // 头部那根文档进度条：宽度从上次的值滑过来（见 animateSegBar）
   const moreBtn = c.querySelector('#browseMore');
   if(moreBtn) moreBtn.onclick = () => { browseLimit += 200; renderContent(); };
   const backBtn = c.querySelector('#browseBack');
@@ -2382,8 +2450,8 @@ function flushProgressWrite(){
   clearTimeout(_progWriteTimer); _progWriteTimer = null;
   Store.saveProgress(PROGRESS);
 }
-function saveProgress(){
-  markDirty(); invalidateMemQueue();
+function saveProgress(keepLv){   // keepLv 透传给 invalidateMemQueue：只有 applySm2Grade 会传 true（它已自行增量维护等级分布）
+  markDirty(); invalidateMemQueue(keepLv);
   clearTimeout(_progWriteTimer);
   _progWriteTimer = setTimeout(flushProgressWrite, 600);
 }
@@ -2827,14 +2895,29 @@ let _memQueueCache = null;
 let _memQueueBuiltAt = 0;   // 队列构建时间：超过阈值即使无数据变更也视为脏（长时间挂机后新到期题要能出现）
 let _memQueueDirty = true;
 let _lvCountsCache = null;   // 等级分布缓存，进度变更时失效
-function invalidateMemQueue(){ _memQueueDirty = true; _lvCountsCache = null; _statsCache = null; }
-// 全库等级分布（记忆模式进度条用），缓存避免每次评分都全量遍历
+// keepLv=true 时保留等级分布缓存：评分路径（applySm2Grade）已经对那一道题做了增量维护
+// （见 bumpLvCounts），这里再全量作废就白做了。其余所有入口一律默认作废 —— 题目增删、
+// 数据整体替换、手动改掌握标记、撤销评分都靠这条兜底，宁可多算一次也不能算错。
+function invalidateMemQueue(keepLv){
+  _memQueueDirty = true;
+  if(!keepLv) _lvCountsCache = null;
+  _statsCache = null;
+}
+// 单题等级变化 → 增量维护等级分布缓存。返回是否真的改到了缓存
+// （缓存还没建立、或等级没变时返回 false，调用方无需在意：下次全量算出来的就是对的）
+function bumpLvCounts(oldLv, newLv){
+  if(!_lvCountsCache || oldLv === newLv) return false;
+  _lvCountsCache[oldLv] = Math.max(0, (_lvCountsCache[oldLv]||0) - 1);   // 钳到 0：宁可少减也不要出现负数
+  _lvCountsCache[newLv] = (_lvCountsCache[newLv]||0) + 1;
+  return true;
+}
+// 全库等级分布（记忆模式进度条用），缓存避免每次评分都全量遍历。
+// 等级口径 = levelOf（由 FSRS 稳定性 S 派生），统计范围是全部题目（含从未学过的 Lv0）
 function computeLvCounts(){
   if(_lvCountsCache) return _lvCountsCache;
   const lvCounts = {0:0,1:0,2:0,3:0,4:0,5:0,'M':0};
   DOCS.forEach(d2=>d2.questions.forEach(dq=>{
-    const pp = PROGRESS[dq.id]||{};
-    const lv = pp.mastered ? 'M' : pp.srLevel || 0;
+    const lv = levelOf(PROGRESS[dq.id]);   // 派生等级（见 levelOf）：与进度页、战报同一把尺子
     lvCounts[lv] = (lvCounts[lv]||0)+1;
   }));
   _lvCountsCache = lvCounts;
@@ -2864,7 +2947,7 @@ function buildMemoryQueue(useCache){
       queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,isNew:false,docOrder:i});
       return;
     }
-    const level=p.srLevel||0;
+    const level=levelOf(p);   // 队列排序用的等级与进度条同口径（原先读 srLevel 计数器）
     const next=p.srNext||0;
     const isNew = !next;  // srNext为0才是真新题
     // 逾期天数走自然日序号相减（与进度页同一口径，见 dayIndexOf）
@@ -2877,22 +2960,70 @@ function buildMemoryQueue(useCache){
   _memQueueBuiltAt = Date.now();
   return queue;
 }
-// 等级分布 → 进度条段 + 图例 HTML（记忆模式与进度页共用，纯展示）
+// 等级分布 → 进度条段 + 图例 + 读屏描述（记忆模式与进度页共用，纯展示）
+const LV_ORDER = ['M',5,4,3,2,1,0];   // 展示顺序：掌握在最左，Lv0（没学过）在最右
+const LV_NAME = {M:'掌握',5:'Lv5',4:'Lv4',3:'Lv3',2:'Lv2',1:'Lv1',0:'Lv0'};
 function buildLvBarHtml(lvCounts){
-  const LV_ORDER = ['M',5,4,3,2,1,0];
-  const stacked = LV_ORDER.filter(lv=>lvCounts[lv]>0).map(lv=>
-    `<i class="lv${lv}" style="flex:${lvCounts[lv]} 1 0" title="Lv${lv}: ${lvCounts[lv]}题"></i>`
-  ).join('');
+  const total = LV_ORDER.reduce((n,lv)=>n+(lvCounts[lv]||0), 0);
+  const pct = n => total ? (n/total*100).toFixed(1) : '0.0';
+  const stacked = LV_ORDER.filter(lv=>lvCounts[lv]>0).map(lv=>{
+    const n = lvCounts[lv];
+    // data-lv / data-n 供 animateLvBar 补段宽过渡；title 走 LV_NAME（原先用 'Lv'+lv 会拼出莫名其妙的"LvM"）
+    return `<i class="lv${lv}" data-lv="${lv}" data-n="${n}" style="flex:${n} 1 0" title="${LV_NAME[lv]} · ${n} 题（${pct(n)}%）"></i>`;
+  }).join('');
   const legend = LV_ORDER.map(lv=>
-    `<span style="display:inline-flex;align-items:center;font-size:12px;color:var(--muted)"><i class="an-dot lv${lv}"></i>${lv==='M'?'掌握':'Lv'+lv} ${lvCounts[lv]||0}</span>`
+    `<span style="display:inline-flex;align-items:center;font-size:12px;color:var(--muted)"><i class="an-dot lv${lv}"></i>${LV_NAME[lv]} ${lvCounts[lv]||0}</span>`
   ).join('');
-  return { stacked, legend };
+  // 读屏描述：条本身是一组纯色块，没有这段文字读屏软件等于读不到任何信息
+  const label = '全库 '+total+' 题等级分布：'+LV_ORDER.slice().reverse().map(lv=>`${LV_NAME[lv]} ${lvCounts[lv]||0} 题`).join('，');
+  return { stacked, legend, label };
+}
+// 等级条段宽过渡：renderAll 每次评分都重建 innerHTML，节点是全新的，CSS 过渡不可能触发（原先那条
+// transition:width 从来没生效过，而且段宽由 flex-grow 决定、根本不是 width），所以这里用 WAAPI 从
+// 「上一次的题数」补一段插值。一次评分只挪动一两段，开销可忽略。
+let _lvBarPrev = null;   // 上一次渲染的各等级题数；null = 首次渲染，不动画
+function animateLvBar(scope){
+  const bar = scope && scope.querySelector('.pbar.lvbar');
+  if(!bar) return;
+  const segs = Array.from(bar.children);
+  const cur = {};
+  segs.forEach(el=>{ if(el.dataset.lv!=null) cur[el.dataset.lv] = +el.dataset.n; });
+  const prev = _lvBarPrev;
+  _lvBarPrev = cur;
+  // 首次渲染不做动画（直接就是最终比例）；reduced-motion 与不支持 WAAPI 的环境同样跳过
+  if(!prev || !segs.length || typeof segs[0].animate !== 'function') return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  segs.forEach(el=>{
+    const lv = el.dataset.lv;
+    if(lv == null) return;
+    const to = +el.dataset.n;
+    const from = (lv in prev) ? prev[lv] : 0;   // 上次没有这一段（刚有题升上来）→ 从 0 长出来
+    if(from === to) return;
+    el.animate([{flexGrow:String(from)},{flexGrow:String(to)}], {duration:420, easing:'cubic-bezier(.22,.61,.36,1)'});
+  });
+}
+// 单段进度条的宽度补间（浏览页的文档进度条 / 总览页的预计月薪条）：同一个道理 —— DOM 每次重建，
+// CSS 过渡永远不触发，只能从上次的宽度手动补一段。key 标识"同一根条"：换文档/换页面时 key 不同，
+// 直接落到新值，不会出现"从上一篇的宽度滑过来"这种莫名其妙的效果
+const _segBarPrev = new Map();   // key -> 上一次的宽度（CSS 长度字符串）
+function animateSegBar(scope, sel, key){
+  const fill = scope && scope.querySelector(sel);
+  if(!fill || !key) return;
+  const cur = fill.style.width;
+  const prev = _segBarPrev.get(key);
+  _segBarPrev.set(key, cur);
+  if(prev === undefined || prev === cur) return;
+  if(typeof fill.animate !== 'function') return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  fill.animate([{width:prev},{width:cur}], {duration:520, easing:'cubic-bezier(.22,.61,.36,1)'});
 }
 // 数据被整体替换（导入 / 云拉取 / 清除进度 / 清空全部）后，记忆模式的队列快照与撤销栈同时失效：整块重置。
 // 只清缓存标志是不够的 —— 记忆页里旧快照的 item.q 指向的已是丢弃对象，卡面会显示旧题面，
 // 评分还会给一个已不存在的 qid 写进度（孤儿数据）。四个数据替换入口统一走这里。
 function resetMemoryState(){
   memory = { queue: [], index: 0, flipped: false, _history: [] };
+  _lvBarPrev = null;      // 等级条的比例基线一并作废：数据整体换过之后不该"从旧比例滑过来"
+  _segBarPrev.clear();    // 各单段条（浏览页文档进度 / 总览月薪条）的基线同理
 }
 // 撤销记忆模式上一步评分：恢复旧进度、回滚这次评分带出的副作用（趁热榜 / 战报），并定位回被撤销的题目
 function undoMemoryGrade(){
@@ -3065,7 +3196,7 @@ function renderMemory(c){
   }).join('');
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pbar">${lvBar.stacked}</div>
+      <div class="pbar lvbar" role="img" aria-label="${esc(lvBar.label)}">${lvBar.stacked}</div>
       <div class="pmeta">
         <span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
         <span>
@@ -3104,6 +3235,7 @@ function renderMemory(c){
       <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-4 评分（忘了 → 简单）</div>
     </div>
   `;
+  animateLvBar(c);   // 段宽从"上一次的比例"滑到新比例（innerHTML 重建后 CSS 过渡无法触发，见 animateLvBar）
   // 翻转卡片：点击卡片翻转，答案区域选中文字时不触发
   const card = c.querySelector('.memory-card');
   card.onclick = (e) => {
@@ -3164,12 +3296,12 @@ function buildAnalyticsData(){
   const docStats = [];
   DOCS.forEach(d=>{
     const qs = d.questions||[];
-    const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, overdueMax:0, levels:{0:0,1:0,2:0,3:0,4:0,5:0,'M':0} };
+    const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, overdueMax:0 };
     qs.forEach(q=>{
       const p = PROGRESS[q.id]||{};
       if(!(p.seen||p.mastered||p.practiced||p.srLevel||p.srNext)) return;
       const mastered = !!p.mastered;
-      const lv = mastered ? 'M' : (p.srLevel||0);
+      const lv = levelOf(p);   // 与记忆页进度条同口径（M 由 mastered 派生），CSV / 复制报告也跟着走
       const next = p.srNext||0;
       const minNext = (p.lastPracticed||0) + MASTERED_MIN_DAYS*86400000;
       const effectiveNext = mastered ? Math.max(next, minNext) : next;
@@ -3184,7 +3316,7 @@ function buildAnalyticsData(){
       // 老记录没有 fsrs 字段时由 fsrsStateOf 一次性换算（interval≈S、EF→D），所以历史数据同样有值
       const state = fsrsStateOf(p, now);
       rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, s:state?state.s:0, d:state?state.d:0, lastPracticed:p.lastPracticed||0, due, overdue });
-      st.levels[lv]++; if(mastered) st.mastered++; if(due) st.due++;
+      if(mastered) st.mastered++; if(due) st.due++;
       st.cnt++;
       st.overdueMax = Math.max(st.overdueMax, overdue);
     });
@@ -3194,7 +3326,8 @@ function buildAnalyticsData(){
 }
 
 function buildAnalyticsReport(o){
-  const lvLine = ['M','5','4','3','2','1','0'].map(lv=>`Lv${lv}: ${o.lvCounts[lv]}`).join('  ');
+  // 等级名走 LV_NAME：原先用 'Lv'+lv 会把掌握档拼成 "LvM"（与进度条 tooltip 是同一个毛病，那条修了这条漏了）
+  const lvLine = LV_ORDER.map(lv=>`${LV_NAME[lv]}: ${o.lvCounts[lv]||0}`).join('  ');
   const docLines = o.docStats.slice().sort((a,b)=>b.due-a.due).map(d=>`  - ${d.title}: 记忆题 ${d.cnt} / 掌握 ${d.mastered} / 待复习 ${d.due}${d.overdueMax>0?` / 最久逾期 ${d.overdueMax}天`:''}`).join('\n');
   const top = (o.maxOverdue>0 && o.topOverdue) ? `  - 最久逾期：${o.maxOverdue} 天（${o.topOverdue.doc} · ${o.topOverdue.title}）` : '  - 无逾期，复习节奏良好';
   return `【进度分析报告】生成于 ${new Date().toLocaleString('zh-CN')}
@@ -3391,6 +3524,8 @@ function renderAnalytics(c){
     <td style="text-align:right">${d.cnt?Math.round(d.mastered/d.cnt*100):0}%</td>
     <td style="text-align:right;color:${d.overdueMax>0?'var(--bad)':'var(--good)'}">${d.overdueMax>0?d.overdueMax+'天':'—'}</td>
   </tr>`).join('');
+  // 等级图例对读屏隐藏（模板里的 aria-hidden）：上面那根条的 aria-label 已经用一句话念完了同样的信息
+  // （"全库 N 题等级分布：Lv0 … 掌握 …"），不隐藏的话读屏会先念整句、再逐条念一遍图例，同一份数据听两遍
   c.innerHTML = `
   <div class="an-wrap">
     <div class="an-h">📈 进度分析</div>
@@ -3410,8 +3545,8 @@ function renderAnalytics(c){
     <div class="an-sec">🔮 未来 ${FSRS_MAX_INTERVAL} 天到期预测<span style="font-weight:500;font-size:12px;color:var(--muted)">（排期上限 ${FSRS_MAX_INTERVAL} 天，提前看到哪天会积压）</span></div>
     <div class="an-chart-card">${buildForecastHtml(rows, FSRS_MAX_INTERVAL)}</div>
     <div class="an-sec">🎚️ 等级分布（Lv0 新 → Lv5 熟 → M 掌握）</div>
-    <div class="pbar">${lvBar.stacked}</div>
-    <div class="an-legend">${lvBar.legend}</div>
+    <div class="pbar lvbar" role="img" aria-label="${esc(lvBar.label)}">${lvBar.stacked}</div>
+    <div class="an-legend" aria-hidden="true">${lvBar.legend}</div>
     <div class="an-sec">📁 文档进度（按待复习降序，前 12）</div>
     <div class="an-tbl-wrap"><table class="an-table">
       <thead><tr><th>文档</th><th style="text-align:right">记忆题</th><th style="text-align:right">掌握</th><th style="text-align:right">待复习</th><th style="text-align:right">掌握率</th><th style="text-align:right">最久逾期</th></tr></thead>
@@ -3424,6 +3559,7 @@ function renderAnalytics(c){
       <span id="anCopyStatus" style="font-size:12px;color:var(--good)"></span>
     </div>`}
   `;
+  animateLvBar(c);   // 与记忆页同一套段宽过渡（本页 total===0 时没有等级条，animateLvBar 自己会跳过）
   // 主题粒子避让：热力图/预测图上不飘星点（与格子混在一起会被误读成数据）
   setParticleMask([c.querySelector('.hm-wrap'), c.querySelector('.fc-strip')]);
   if(total===0) return;
