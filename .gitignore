@@ -7,5 +7,10 @@ ocr-review-result.json
 # www/ 是 sync-www.js 从根目录生成的产物（Capacitor 的 webDir），逐字节副本不入库：
 # npm run cap:sync / build:android 都会先重新生成它，根目录才是唯一源
 www/
-# 图标流水线（scripts/icon-build.py）替换下来的旧图标备份：只在换图标时当临时回滚用，不入库
-generated-images/selected/_backup-icons/
+# 图标流水线（scripts/icon-build.py）的源图 / 母版 / 旧图标备份：只在本机换图标时用，不入库。
+# 需要把设计资产也入库时，用 git add -f generated-images/selected/ 显式添加
+generated-images/
+# Python 工具脚本的运行产物
+__pycache__/
+# 主题渲染探测的临时产物（各主题截图 / 探测页 / 无头 Chromium 的 profile 目录）：只在本机核对效果用，不入库
+_probe*

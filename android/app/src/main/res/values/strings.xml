@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <!-- app_name：桌面图标名与任务栈名；title_activity_main：Activity 标题（BridgeActivity 会读） -->
     <string name="app_name">万法归元</string>
     <string name="title_activity_main">万法归元</string>
-    <string name="package_name">com.learnapp.interview</string>
-    <string name="custom_url_scheme">com.learnapp.interview</string>
 </resources>

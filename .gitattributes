@@ -4,3 +4,8 @@
 *.md text working-tree-encoding=UTF-8
 *.css text working-tree-encoding=UTF-8
 *.txt text working-tree-encoding=UTF-8
+# Android 工程用手写文件：Windows 编辑器默认 GBK 会让 Gradle 解析 XML/Java 时出错，编码也钉成 UTF-8
+*.xml text working-tree-encoding=UTF-8
+*.java text working-tree-encoding=UTF-8
+*.gradle text working-tree-encoding=UTF-8
+*.properties text working-tree-encoding=UTF-8

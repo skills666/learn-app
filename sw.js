@@ -1,7 +1,7 @@
 // ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION 同步递增（两处数字必须完全一致，sync-www.js 会在打包前校验）
 // 图标等预缓存资源变更时同样要递增，否则老用户会一直用缓存里的旧图标。
 // 注意：这里不要写死"当前是几" —— 曾经写过"当前 '62'"，而实际早已是 64，注释本身就是错的。
-const CACHE = 'learn-v64';
+const CACHE = 'learn-v75';
 
 // 预缓存静态资源，确保离线可用。
 // 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
@@ -19,7 +19,11 @@ self.addEventListener('install', e => {
       }).catch(err => console.warn('[SW] 预缓存资源失败:', u, err)))
     ))
   );
-  self.skipWaiting();
+  // 只有"首次安装"（还没有 active 的 SW）才直接接管：此时不存在旧版本竞争，新用户也能立刻离线可用。
+  // 更新场景（已有 active）保持 waiting：由页面弹「有新版本可用，是否立即刷新」决定何时切换；
+  // 否则新 SW 会绕过后台提示悄悄接管，页面里那套更新提示就成了永远看不到的死代码。
+  // 注：index.html 的 SW_VERSION 机制在"版本递增"时会主动注销并重装 SW，那条路径不受影响。
+  if(!self.registration.active) self.skipWaiting();
 });
 
 // 策略：
