@@ -352,7 +352,7 @@
   .set-section.open{border-color:var(--line2)}
   .set-head{cursor:pointer;padding:14px 16px;font-size:14px;font-weight:700;color:var(--text);background:var(--panel);display:flex;justify-content:space-between;align-items:center;transition:.15s;user-select:none}
   /* 原来写的是 border-color —— .set-head 自身没有 border，改了也看不见，等于没有悬停反馈 */
-  .set-head:hover{background:var(--panel2)}
+  @media (hover:hover){ .set-head:hover{background:var(--panel2)} }   /* 触屏上颜色类 hover 会粘住：点开过的分区头一直挂着高亮底色 */
   .set-section.open .set-head{color:var(--accent)}
   .set-arrow{font-size:11px;transition:transform .25s;color:var(--muted)}
   .set-section.open .set-arrow{transform:rotate(180deg);color:var(--accent)}
@@ -562,8 +562,6 @@
   .grill-dur-btn{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:.15s}
   .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
   .grill-dur-btn.sel{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.3)}
-  .fc-switch{display:inline-flex;gap:3px;margin-left:2px}
-  .fc-switch .grill-dur-btn{margin-right:0}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:12px;padding:14px;font-size:14px;line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
   .grill-resume:focus{border-color:var(--accent2)}
@@ -704,11 +702,13 @@
 
   /* 未来到期预测：柱高按当日题量归一化；空日留 3px 基线，避免"没排期"和"柱太矮看不见"混淆 */
   .fc-strip{display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:4px}
-  /* 柱高也要过渡：切换/刷新时原来只有透明度在动，高度是硬跳 */
+  /* 只保留 hover 那点透明度过渡：height 过渡在这里是死代码 —— 预测柱每次渲染都整段重建
+     （innerHTML 拼串，新节点一出生就是最终高度），过渡永远不会触发，与 .pbar 的 transition:width 同一个坑。
+     要让柱高有动画得走 animateSegBar 那种"改现有节点"的路径，这里不需要 */
   .fc-strip>i{flex:1 1 0;min-width:2px;border-radius:2px 2px 0 0;opacity:.78;
     background:linear-gradient(180deg,var(--accent2),var(--accent));
-    transition:opacity .15s,height .35s cubic-bezier(.22,.61,.36,1)}
-  .fc-strip>i:hover{opacity:1}
+    transition:opacity .15s}
+  @media (hover:hover){ .fc-strip>i:hover{opacity:1} }   /* 同上：手指点过的柱子会一直高亮 */
   .fc-strip>i.today{background:linear-gradient(180deg,var(--accent3),#e07a4a);opacity:1}
   .fc-strip>i.fc-empty{background:rgba(var(--text-rgb,255,255,255),.09);opacity:1}   /* 类名不能叫 empty：会撞上上面空状态样式的 padding:60px 20px；底色须用 --text-rgb，否则浅色主题下白 x% 隐形 */
   /* 真实保留率：按间隔分桶的柱状 + 百分比 */
@@ -717,7 +717,8 @@
   .rt-pct{font-size:11px;font-weight:700;color:var(--text);height:14px;line-height:14px}
   .rt-pct b{color:var(--accent)}
   .rt-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
-  .rt-bar{width:64%;max-width:42px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 0 0;min-height:3px;transition:height .35s cubic-bezier(.22,.61,.36,1)}
+  /* 高度过渡同样去掉：与预测柱同理（整段重建，过渡不触发）。写过 transition:height 反而让人以为这里有动画 */
+  .rt-bar{width:64%;max-width:42px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 0 0;min-height:3px}
   .rt-label{font-size:10.5px;color:var(--muted);white-space:nowrap}
   .rt-n{font-size:9.5px;color:var(--faint)}
   /* 每日复习构成：堆叠柱 */
@@ -732,7 +733,7 @@
   /* 标签掌握度：donut 环形网格 */
   .tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:6px}
   .tag-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;transition:border-color .15s}
-  .tag-item:hover{border-color:var(--accent2)}
+  @media (hover:hover){ .tag-item:hover{border-color:var(--accent2)} }   /* 同上：触屏点过的标签行会一直像"被选中" */
   .tag-donut{width:38px;height:38px;flex:none}
   .td-bg{stroke:rgba(var(--text-rgb,255,255,255),.08)}
   .td-fg{transition:stroke-dasharray .4s ease}
@@ -764,6 +765,17 @@
   .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
+
+  /* ---------- 触屏手感（App / 手机浏览器）----------
+     1) touch-action:manipulation = 只关掉"双击缩放"，双指缩放照常可用。记忆模式的评分键位置固定，
+        快速连点两颗星（1→2）会被浏览器当成双击手势 → 整页突然放大；鼠标操作永远遇不到这个问题。
+     2) 控件（按钮/标签/表头/图标键）长按不选中：手机没有 hover，长按会弹文字选择与复制菜单，
+        点按就变成"选字"。正文与答案（.q / .memory-card / .answer）保持可选，方便复制。
+     只列交互元素、不写 * —— 全站禁选会让答案复制不了。 */
+  .btn,.iconbtn,.tab,.theme-tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x,.tag-item,
+  .q,.ov-card,.memory-card,.theme-card,.grill-mode-card,.pbar,.bigbar,.hm-cell,.dt-count{touch-action:manipulation}
+  .btn,.iconbtn,.tab,.theme-tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x{
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
   /* 进度条/热力图/等级条/预测柱等数据块：全主题统一用圆角（不再为某个主题特殊收成方角）。 */
 
@@ -817,6 +829,35 @@
   .theme-vt::view-transition-new(root){animation:none;mix-blend-mode:normal}
   .theme-vt::view-transition-old(root){z-index:0}
   .theme-vt::view-transition-new(root){z-index:1}
+  /* 圆形扩散这 520ms 里，页面被旧/新两张快照盖着 —— 背景渐变的过渡此刻完全看不见，
+     而它每帧都要重画两道光晕（整屏），等于在最重的一段时间里白烧光栅，这里直接停掉。
+     渐变本身保留：不支持 VT / 开了减动效时走"直接应用"分支，那时它才是可见的过渡效果。 */
+  .theme-vt,.theme-vt body{transition:none}
+  /* 背景动效（极光的 background-position 漂移、星雾的 opacity 呼吸）同理：快照盖着时看不见，
+     却仍在每帧重绘整屏，扩散期间一并暂停；canvas 那层由 JS 暂停（见 holdThemeCanvas） */
+  .theme-vt body::before,.theme-vt body::after{animation-play-state:paused}
+
+  /* 手机浏览器上地址栏展开时 100dvh < 100vh：弹窗/气泡按 vh 居中会被上下裁掉，而且外层不滚动、滚不到底部按钮。
+     统一在这里用 dvh 覆盖（旧内核不认 dvh 时保留上一行的 vh）。App 内 dvh == vh，无影响。
+     注意 .grill-chat 在窄屏本来就该更矮（40vh），这里一并按 40dvh 覆盖，别把 55 带过来 */
+  @media(max-width:768px){
+    .modal{max-height:90vh;max-height:90dvh}
+    .modal.settings-modal{max-height:88vh;max-height:88dvh}
+    .theme-popup{max-height:min(72vh,560px);max-height:min(72dvh,560px)}
+    .grill-chat{max-height:40vh;max-height:40dvh}
+  }
+
+  /* 触控目标：手机上这些控件原本只有 19~32px 高，远低于 40px 的可点下限，且常相邻（★掌握 与 🗑删除 只差 6px）。
+     统一在窄屏把它们抬到 38~44px；只改这些"手指要点"的控件，不动排版骨架 */
+  @media(max-width:768px){
+    .iconbtn{width:38px;height:38px}
+    .btn.sm{padding:6px 9px}
+    .theme-tab{padding:7px 12px}
+    .grill-dur-btn{padding:7px 10px}
+    .tag-item{padding:5px 8px}
+    .backtop{width:44px;height:44px}
+    .qacts{gap:10px}
+  }
 
   /* ---------- 顶栏 SVG 图标：跟随文字颜色(currentColor)，尺寸与旧 emoji 对齐 ---------- */
   .ic svg,.btn-ic,.search-ic{width:15px;height:15px;display:inline-block;vertical-align:-3px;
@@ -898,8 +939,8 @@
       <div class="set-section">
         <div class="set-head">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-hint">导出 Markdown 完整题库，便于备份或交给 AI 阅读。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
-          <div class="set-btns"><button class="btn primary" id="exportMDBtn">📄 导出全部题库（Markdown）</button> <button class="btn" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
+          <div class="set-hint">备份 / 换机请用 <b>JSON</b>（含题库、进度、掌握、通关数，可原样回导）；Markdown 只导出题目正文，适合交给 AI 阅读，回导会丢结构。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
+          <div class="set-btns"><button class="btn" id="exportJsonBtn">🗄️ 导出备份（JSON · 可回导）</button> <button class="btn" id="exportMDBtn">📄 导出题库（Markdown · 给 AI 看）</button> <button class="btn primary" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
         </div></div></div>
       </div>
       <!-- 2. AI 设置 -->
@@ -1086,6 +1127,15 @@ const Store = (() => {
     catch(e){ warnSilent('本地存储数据损坏，已改用内存数据', e); mem = {}; }
     return mem;
   }
+  let _degradedStamped = false;   // 降级标记每次会话最多写一次
+  /* 降级期间只要发生过写入，就落一个时间戳，供下次以**正常路径**启动时 checkDegradedResidue 提示合并。
+     这个标记此前只有"读"和"清"、没有任何写入点：于是那句"下次启动会提示合并"永远不成立，
+     降级期间改的题库/进度等于搁浅在临时区（DB 恢复后再没有任何路径把它捞回来）。 */
+  function markDegradedWrite(){
+    if(_degradedStamped || !useLS) return;
+    _degradedStamped = true;
+    safeLocalSet(DEGRADED_KEY, String(Date.now()));
+  }
   function saveLS(o){
     try{
       const str = JSON.stringify(o);
@@ -1093,6 +1143,7 @@ const Store = (() => {
       if(str.length > 4500000 && !_capWarned){ _capWarned = true; toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
       localStorage.setItem(LS_KEY, str);
       mem = o; _memPrimed = true;
+      markDegradedWrite();
     }
     catch(e){
       // localStorage 满或不可用时的兜底保护
@@ -1208,10 +1259,53 @@ let _memGradeBusy = false;
 // selMode / selDur / selSrc 是配置页的"上次选择"，与 mode（本场面试的模式）分开存：
 // 切走标签再回来、或退出面试回到配置页时，选择不该被重置
 let grill = { resume:'', messages:[], started:false, loading:false, mode:'', ended:false, feedback:'', forceEnd:false, selMode:'', selDur:'standard', selSrc:'ai' };
+/* 面试会话落盘：一场面试动辄 15~45 分钟（含已解析的简历与整条追问链），而它此前只活在内存里 ——
+   App 切后台被系统回收就全没了（进度有防抖落盘 + 后台 flush，面试一点都没有）。
+   做法：把会话序列化进 localStorage 草稿（_abort 是 AbortController，不能序列化，跳过），
+   切后台/离开页面时立刻写一次；恢复时不自动重发任何消息，只把对话原样摆回来接着聊。 */
+const GRILL_DRAFT_KEY = 'learnAppGrillDraft';
+let _grillDraftTimer = null;
+function saveGrillDraft(now){
+  const doSave = () => {
+    try{
+      if(!grill || !grill.started){
+        // 没在面试：清掉草稿，别留一份"看起来还没结束"的旧会话
+        try{ localStorage.removeItem(GRILL_DRAFT_KEY); }catch(_){}
+        return;
+      }
+      const dump = { v:1, at:Date.now(), resume:grill.resume||'', messages:grill.messages||[], mode:grill.mode||'',
+                     ended:!!grill.ended, feedback:grill.feedback||'', forceEnd:!!grill.forceEnd,
+                     selMode:grill.selMode, selDur:grill.selDur, selSrc:grill.selSrc };
+      const str = JSON.stringify(dump);
+      // 超长会话不落盘：localStorage 配额有限，写坏了会连累题库与进度
+      if(str.length > 1500000) return;
+      safeLocalSet(GRILL_DRAFT_KEY, str);
+    }catch(e){ warnSilent('面试草稿落盘失败', e); }
+  };
+  if(now) return doSave();
+  clearTimeout(_grillDraftTimer);
+  _grillDraftTimer = setTimeout(doSave, 800);   // 防抖：连续消息不必每条都整份序列化
+}
+function restoreGrillDraft(){
+  try{
+    const raw = safeLocalGet(GRILL_DRAFT_KEY, '');
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.messages) || !d.messages.length) return false;
+    Object.assign(grill, {
+      resume: d.resume||'', messages: d.messages, started: true, loading: false, mode: d.mode||'',
+      ended: !!d.ended, feedback: d.feedback||'', forceEnd: !!d.forceEnd,
+      selMode: d.selMode||grill.selMode, selDur: d.selDur||grill.selDur, selSrc: d.selSrc||grill.selSrc
+    });
+    return true;
+  }catch(e){ warnSilent('面试草稿恢复失败（已忽略这份草稿）', e); return false; }
+}
 // 趁热打铁：HOT = 持久化热榜 [{qid, addedAt}]（localStorage + 独立 gist 文件）；hot = 趁热页本轮游标
 let HOT = [];
-// 昨日战报：WARLOG = 按本地自然日归档的答题日志 { 'yyyy-mm-dd': {c:[四档次数], q:[当天题id], …} }，
-// 与热榜同款"独立 localStorage"，由 init 里的 loadWarLog() 恢复
+// 昨日战报：WARLOG = 按本地自然日 + 设备归档的答题日志
+//   { 'yyyy-mm-dd': { 设备号: {c:[四档次数], q:[当天题id], nw/mUp/mDown/up/down, at} } }
+// 与热榜同款"独立 localStorage"（由 init 里的 loadWarLog() 恢复），但另存为 gist 里的
+// warlog-data.json —— 战报要回答"昨天一共复盘了多少"，跨设备必须能看到合起来的量
 let WARLOG = {};
 // 保留率日志：每次「复习」记录一条 {d: 上次间隔天数, r: 是否记得}，用于进度页的真实保留率曲线。
 // 只记"有间隔"的复习（首刷没有"上次间隔"，谈不上保持）；独立 localStorage，不吃导入/云端的覆盖
@@ -1599,8 +1693,17 @@ function hotLiveQueue(){
 // 从哪条路径进来会得到不同的热榜（本地旧榜残留 / 被旧数据覆盖），行为不可预期。
 function applyHotFromGist(gist){
   const f = gist && gist.files && gist.files['hot-data.json'];
-  HOT = [];   // 先清空，避免把本地旧热榜混进云端数据
-  if(f && f.content){ try{ const hd = JSON.parse(f.content); if(hd && Array.isArray(hd.hot)) HOT = hd.hot.filter(x=>x&&x.qid); }catch(_){ HOT = []; } }
+  /* 合并而不是整份覆盖：热榜是本机攒出来的学习队列，云端那份可能更短（另一端清过、或本机有还没推上去的条目），
+     覆盖会把本机条目直接抹掉 —— 与战报同一条教训。
+     规则：本机顺序原样保留，云端多出来的按加入时间追加在后面（同 qid 不重复），谁也不丢。
+     取舍：在另一端清空热榜不会传播过来（并集会把旧条目带回来）。个人使用、单端在线的场景下，
+     "少丢一条"比"清空严格同步"更重要 —— 清空想跨设备生效时，在本机也清一次即可。 */
+  let remote = [];
+  if(f && f.content){ try{ const hd = JSON.parse(f.content); if(hd && Array.isArray(hd.hot)) remote = hd.hot.filter(x=>x&&x.qid); }catch(_){ remote = []; } }
+  const seen = new Set(HOT.map(x => x && x.qid).filter(Boolean));
+  const added = remote.filter(x => x && x.qid && !seen.has(x.qid))
+                      .sort((a,b) => (+a.addedAt||0) - (+b.addedAt||0));
+  HOT = HOT.concat(added.map(x => ({ qid: x.qid, addedAt: +x.addedAt || Date.now() })));
   saveHot();
   hot.inPass = false; hot.index = 0; hot.cleared = 0;
 }
@@ -1609,11 +1712,17 @@ function applyHotFromGist(gist){
    为什么不复用现成数据：PROGRESS 每题只留"最后一次练习时间"，同一天对同一道题的多次评分会被后一次覆盖，
    推不出"昨天四档各评了多少"（热力图里写过同样的口径说明）；而把日志并进 PROGRESS 又会被导入、
    云端拉取、「仅清除进度」整份抹掉 —— 一个统计功能反过来污染学习数据，代价太大。
-   所以走趁热打铁的同款先例：独立 localStorage 键、不进 gist 主载荷。
+   所以走趁热打铁的同款先例：独立 localStorage 键 + gist 里单独一个 warlog-data.json。
    口径：键 = 本地自然日 yyyy-mm-dd，不是滚动 24 小时窗口 —— 23:50 与次日 00:10 评的题算两天，
-   与"昨天"这个词在用户心里的含义一致，也和 streak / 热力图的归日方式一致。 */
+   与"昨天"这个词在用户心里的含义一致，也和 streak / 热力图的归日方式一致。
+   跨设备：热力图/趋势图读的是会同步的 PROGRESS，看到的量天然是"多台设备合起来"的；
+   战报若只记本机，手机与电脑就会各报一半（用户实测：手机 10 多题、电脑 30 多题、趋势 40 多题）。
+   所以每天的记录再按「设备」分一层：本机只写自己那一层，拉取时逐设备取较新的那一份合并
+   —— 同一台设备的同一份数据反复合并不会重复计数，两台设备看到的是同一个合计量。 */
 const WARLOG_KEY = 'learnAppWarLog';
 const WARLOG_KEEP = 45;   // 只留最近 45 天：战报只读「昨天」和「前天」（做对比），多留就是无效存储
+const WARLOG_DEV_KEY = 'learnAppWarDevId';   // 本机设备号（战报合并的最小单位：一台设备一个名字）
+const WARLOG_LEGACY_DEV = '_legacy';         // 云端若出现没有设备分层的旧桶，统一挂到这个名下（多端一致，不重复计数）
 const REVLOG_KEY = 'learnAppRevLog';
 const REVLOG_MAX = 2000;  // 保留最近 2000 次复习，足够保留率分桶，又不会无限膨胀
 // 本地自然日键：由年月日拼出，不经 UTC，跨时区/夏令时都不会错位
@@ -1632,8 +1741,101 @@ function dayIndexOf(ts){
 function loadWarLog(){
   try{
     const o = JSON.parse(safeLocalGet(WARLOG_KEY,'') || '{}');
-    return (o && typeof o === 'object') ? o : {};
+    return (o && typeof o === 'object') ? warLogMigrate(o) : {};
   }catch(_){ return {}; }
+}
+// 旧版本把每天记成一个扁平桶（{c,q,…}，没有设备分层）。那正是本机自己答的题 ——
+// 必须在开机加载时就归到本机设备名下：否则推送会把"没有归属的历史"发上云，
+// 另一端收到后再按自己的设备名记一份，同一天的次数就会翻倍。
+function warLogMigrate(o){
+  let moved = false;
+  Object.keys(o).forEach(day=>{
+    const e = o[day];
+    if(e && typeof e === 'object' && e.c){ o[day] = { [warDevId()]: e }; moved = true; }
+  });
+  if(moved) safeLocalSet(WARLOG_KEY, JSON.stringify(o));
+  return o;
+}
+// 本机设备号：第一次用到时生成并落盘。换设备 / 清过站点数据后会拿到新号 ——
+// 旧号那一层仍留在云端与其它设备上，统计照旧算进来（不需要"接管"，也不会重复计数）
+function warDevId(){
+  const id = safeLocalGet(WARLOG_DEV_KEY,'');
+  if(typeof id === 'string' && /^[a-z0-9]{8,}$/.test(id)) return id;
+  const nid = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  safeLocalSet(WARLOG_DEV_KEY, nid);
+  return nid;
+}
+// 一天的记录按设备分层：{ 设备号: {c,q,…,at} }。
+// mk=false 时只读：没有这一天就返回 null，绝不建桶（统计路径不许改数据）
+function warDayMap(day, mk){
+  let e = WARLOG[day];
+  if(!e){ if(!mk) return null; e = WARLOG[day] = {}; }
+  if(e.c) e = WARLOG[day] = { [warDevId()]: e };   // 漏迁的旧扁平桶兜底（正常在 loadWarLog 就搬完了）
+  return e;
+}
+// 本机在某天的桶（mk=true 时没有就建）
+function warLocalBucket(day, mk){
+  const m = warDayMap(day, mk);
+  if(!m) return null;
+  const id = warDevId();
+  return m[id] || (mk ? (m[id] = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0, at:0 }) : null);
+}
+// 汇总某一天：跨设备相加（四档次数 / 首刷 / 升降 / 掌握各自相加），覆盖题号取并集。
+// 纯只读 —— 昨日战报、热力图明细、进度页堆叠柱三处共用这一个口径，不许各算各的
+function warDayAgg(day){
+  const e = WARLOG[day];
+  if(!e) return null;
+  // 两种形状都要能读：旧版扁平桶（当天就是 {c,q,…}）与按设备分层（{设备号:{c,q,…}}）；
+  // 迁移途中混在同一层时的兜底也顺带覆盖（下面按每个值是否带 c 过滤）
+  const buckets = [e].concat(Object.keys(e).map(k => e[k]));
+  const out = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0, total:0, uniq:0 };
+  buckets.forEach(b=>{
+    if(!b || !b.c) return;
+    for(let i=0;i<4;i++) out.c[i] += (+b.c[i] || 0);
+    const qs = Array.isArray(b.q) ? b.q : [];
+    for(let i=0;i<qs.length;i++) if(out.q.indexOf(qs[i]) === -1) out.q.push(qs[i]);
+    out.nw += b.nw||0; out.mUp += b.mUp||0; out.mDown += b.mDown||0; out.up += b.up||0; out.down += b.down||0;
+  });
+  out.total = out.c.reduce((a,b)=>a+b, 0);
+  out.uniq = out.q.length;   // 覆盖题数 = 跨设备去重后的题号数
+  return out;
+}
+// 只留最近 WARLOG_KEEP 天：日期键定长零填充 → 字典序即时间序
+function warLogTrim(){
+  const keys = Object.keys(WARLOG).sort();
+  const drop = keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP));
+  drop.forEach(x => delete WARLOG[x]);
+}
+// 把云端的战报并进本地（两条拉取路径共用）。为什么是"合并"而不是像热榜那样整份覆盖：
+// 云端那份可能来自另一台设备、也可能是本机更早推送的旧快照；覆盖会把本机这几天自己答的记录抹掉。
+// 同一台设备对同一天只有一份记录，所以逐设备比 at 取较新的那一份即可 —— 重复合并同一份数据是幂等的。
+// 返回真正收下的份数（调用方据此决定要不要把并集推回云端）
+function warLogMerge(remote){
+  if(!remote || typeof remote !== 'object') return 0;
+  let changed = 0;
+  Object.keys(remote).forEach(day=>{
+    const rv = remote[day];
+    if(!rv || typeof rv !== 'object') return;
+    // 云端留着没有设备分层的旧桶时统一挂到固定名下：两端都这么办，合并结果一致且不会重复计数
+    const rmap = rv.c ? { [WARLOG_LEGACY_DEV]: rv } : rv;
+    const devs = Object.keys(rmap).filter(dev => rmap[dev] && rmap[dev].c);
+    if(!devs.length) return;
+    const lmap = warDayMap(day, true);
+    devs.forEach(dev=>{
+      const rb = rmap[dev], lb = lmap[dev];
+      if(!lb || (rb.at||0) > (lb.at||0)){ lmap[dev] = rb; changed++; }
+    });
+  });
+  if(changed){ warLogTrim(); safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG)); }
+  return changed;
+}
+// 云端战报落库：与 applyHotFromGist 对称的入口。云端还没有这个文件（旧数据 / 首次推送前）时保持本地不动
+function applyWarFromGist(gist){
+  const f = gist && gist.files && gist.files['warlog-data.json'];
+  if(!f || !f.content) return 0;
+  let wd = null;
+  try{ wd = JSON.parse(f.content); }catch(_){ return 0; }
+  return warLogMerge(wd && wd.war);
 }
 function loadRevLog(){
   try{
@@ -1645,7 +1847,9 @@ function loadRevLog(){
 // newLvl 是派生展示等级（levelOf），旧等级由 pr 现算 —— 不用 pr.srLevel，那个计数器与展示等级已不是一个口径
 function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   const k = dayKeyOf(now);
-  const d = WARLOG[k] || (WARLOG[k] = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0 });
+  const d = warLocalBucket(k, true);
+  // at = 这一层的"新旧标记"（合并时逐设备比对）。取单调值：撤销后计数变少，也得盖得过云端那份
+  d.at = Math.max(now, (d.at || 0) + 1);
   d.c[g-1]++;
   if(d.q.indexOf(qid) === -1) d.q.push(qid);   // 同一题当天反复刷：次数照加，但"覆盖题数"只算一道
   if(!(pr && pr.fsrs)) d.nw++;                 // 首次作答：此前从未评分过。不能用 lastPracticed 判定 ——
@@ -1655,10 +1859,9 @@ function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   // 用排序权重比较：等级可能是 'M'，与数字直接比大小恒为 false，掌握被打回（M → Lv0）会漏计
   const oldRank = lvRank(levelOf(pr)), newRank = lvRank(newLvl);
   if(newRank > oldRank) d.up++; else if(newRank < oldRank) d.down++;
-  // 日期键定长零填充 → 字典序即时间序，降序保留最近 WARLOG_KEEP 天
-  const keys = Object.keys(WARLOG).sort();
-  keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP)).forEach(x => delete WARLOG[x]);
+  warLogTrim();   // 日期键定长零填充 → 字典序即时间序，只留最近 WARLOG_KEEP 天
   safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+  markDirty();    // 战报也上云（warlog-data.json）：不标脏，定时自动推送就不会带它
   // 保留率日志：只记"有间隔的复习"（上次间隔 > 0），首刷没有"上次间隔"谈不上保持
   const days = pr && pr.interval;
   if(days && days > 0){
@@ -1669,11 +1872,13 @@ function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   }
 }
 // 撤销一次评分 → 回填战报：按归档时的同一套条件反向计数（用当时的时间戳定位自然日，跨天撤销也不会记错桶）。
+// 只动本机那一层 —— 别的设备这几天答的题不归这次撤销管。
 // 「覆盖题数」d.q 不回收：同一题当天可能评过多次，日志里没有逐题次数可依据，宁可多算一道覆盖也不漏。
 function warLogUndo(at, qid, g, pr, newLvl, newMastered){
-  const d = WARLOG[dayKeyOf(at)];
-  if(!d || !d.c || !(g >= 1 && g <= 4)) return false;   // 那天没有日志（或档位异常）→ 什么都不做
+  const d = warLocalBucket(dayKeyOf(at), false);
+  if(!d || !d.c || !(g >= 1 && g <= 4)) return false;   // 那天没有本机的日志（或档位异常）→ 什么都不做
   const dec = v => Math.max(0, (v || 0) - 1);           // 钳到 0：宁可少减也不要出现负数
+  d.at = Math.max(Date.now(), (d.at || 0) + 1);         // 撤销后的读数也要能盖过云端那份（否则另一端永远停在撤销前）
   d.c[g-1] = dec(d.c[g-1]);
   if(!(pr && pr.fsrs)) d.nw = dec(d.nw);   // 与 warLogAdd 的判定保持一致
   if(newMastered && !pr.mastered) d.mUp = dec(d.mUp);
@@ -1682,6 +1887,7 @@ function warLogUndo(at, qid, g, pr, newLvl, newMastered){
   if(newRank > oldRank) d.up = dec(d.up);
   else if(newRank < oldRank) d.down = dec(d.down);
   safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+  markDirty();   // 同上：撤销后的读数也要推上去，否则云端留着撤销前的那份
   return true;
 }
 // 撤销一次评分 → 回滚保留率日志：按「评分时刻 + 题目」精确删除那一条。
@@ -1709,19 +1915,18 @@ function warDayKeys(now){
     before: dayKeyOf(new Date(t.getFullYear(), t.getMonth(), t.getDate()-2))
   };
 }
-// 汇总「昨天」这一个自然日；昨天没学过（或日志缺失）返回 null —— 不弹空战报
+// 汇总「昨天」这一个自然日；昨天没学过（或日志缺失）返回 null —— 不弹空战报。
+// 走 warDayAgg 的跨设备汇总：手机上答的与电脑上答的算同一天的战报（与趋势图/热力图同一份合计量）
 function buildWarReport(now){
   const k = warDayKeys(now);
-  const d = WARLOG[k.yest];
-  if(!d || !d.c) return null;
-  const total = d.c.reduce((a,b)=>a+b, 0);
-  if(!total) return null;
-  const prev = WARLOG[k.before];
+  const d = warDayAgg(k.yest);
+  if(!d || !d.total) return null;
+  const prev = warDayAgg(k.before);
   return {
-    dateKey: k.yest, total, uniq: (d.q||[]).length, c: d.c,
-    newQ: d.nw||0, mUp: d.mUp||0, mDown: d.mDown||0, up: d.up||0, down: d.down||0,
-    recall: Math.round((d.c[Rate.GOOD-1] + d.c[Rate.EASY-1]) / total * 100),   // 记得率 =（记得+简单）/ 总次数
-    prevTotal: (prev && prev.c) ? prev.c.reduce((a,b)=>a+b, 0) : null
+    dateKey: k.yest, total: d.total, uniq: d.uniq, c: d.c,
+    newQ: d.nw, mUp: d.mUp, mDown: d.mDown, up: d.up, down: d.down,
+    recall: Math.round((d.c[Rate.GOOD-1] + d.c[Rate.EASY-1]) / d.total * 100),   // 记得率 =（记得+简单）/ 总次数
+    prevTotal: prev ? prev.total : null
   };
 }
 // 一句话点评：按「记得率 × 题量」给实话。不灌鸡汤 —— 值得夸的事得真的发生过
@@ -2011,8 +2216,13 @@ function hideModal(el){
   if(!el) return;
   const was = el.classList.contains('show');
   el.classList.remove('show');
-  // 关闭时把焦点还给当初打开它的元素（无障碍：不让 Tab 从 document 顶部重新找）
-  if(was && el.__returnTo && document.contains(el.__returnTo)){ try{ el.__returnTo.focus(); }catch(_){}} el.__returnTo = null;
+  /* 关闭时把焦点还给当初打开它的元素（无障碍：不让 Tab 从 document 顶部重新找）。
+     但只在这个弹窗仍"握着焦点"时才归还：点遮罩关闭时用户往往已经点到（或正要输入）别处，
+     这时把焦点抢回顶栏按钮，表现为"第一下点击被吃掉、得再点一次"（主题气泡 + 搜索框最常踩） */
+  const cur = document.activeElement;
+  const holding = !cur || cur === document.body || cur === el || el.contains(cur);
+  if(was && holding && el.__returnTo && document.contains(el.__returnTo)){ try{ el.__returnTo.focus(); }catch(_){}}
+  el.__returnTo = null;
 }
 let _confirmOpen = false;
 let _confirmQueue = [];   // 待弹出的确认框：{msg, resolve}
@@ -2079,8 +2289,46 @@ function _showConfirm(msg, resolve){
 }
 function dateStr(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
-// 统一文件下载：挂载到 DOM 后点击，兼容 Safari/Firefox 的下载行为
+// ===== 原生壳（Capacitor）能力：网页端下面每个原生分支都不会进入 =====
+// 判定顺序：Capacitor 官方 API 优先；它还没就绪时用"https + localhost"兜底 ——
+// 那正是 capacitor.config.json（androidScheme:https + 默认 hostname）下 App 内 WebView 的源。
+// 要求 https 是为了不误伤本地 http://localhost:端口 的调试预览。
+function isNativeApp(){
+  try{
+    if(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') return !!window.Capacitor.isNativePlatform();
+  }catch(_){ }
+  try{ return location.protocol === 'https:' && location.hostname === 'localhost'; }catch(_){ return false; }
+}
+// 取原生插件对象（网页环境返回 null：调用点一律判空）
+function nativePlugin(name){
+  try{ return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null; }catch(_){ return null; }
+}
+// 统一文件下载：
+//   网页端 → blob + a[download]（挂到 DOM 再点，兼容 Safari/Firefox）
+//   原生壳 → Android WebView 不支持 a[download]，Capacitor 核心也没有 DownloadListener，
+//            点下去什么都不会发生（旧版还照样 toast"已导出"，用户以为存下来了）——
+//            改走 Filesystem 写进应用缓存目录 + 系统分享面板，可直接"保存到文件"或发给 AI。
 function downloadBlob(blob, filename){
+  const FS = isNativeApp() ? nativePlugin('Filesystem') : null;
+  const SH = isNativeApp() ? nativePlugin('Share') : null;
+  // 原生 writeFile 不收 Blob（Blob 只在 Web 端支持），所以转成 utf8 字符串直写，
+  // 既避免 base64 转换与体积膨胀，也保住 CSV 开头的 BOM
+  if(FS && SH && blob && typeof blob.text === 'function'){
+    return (async () => {
+      try{
+        const saved = await FS.writeFile({ path: filename, data: await blob.text(), directory: 'CACHE', encoding: 'utf8' });
+        // files[] 由 Share 插件经 FileProvider 转成 content:// 再分享，
+        // authority 与 AndroidManifest 里那个 ${applicationId}.fileprovider 一致，
+        // file_paths.xml 已含 cache-path，缓存目录里的文件可直接被分享
+        await SH.share({ title: filename, files: [saved.uri], dialogTitle: '导出「' + filename + '」' });
+        return true;
+      }catch(e){ warnSilent('原生导出失败，回退浏览器下载', e); }
+      return saveViaBrowser(blob, filename);   // 兜底：至少让网页那套逻辑再试一次，不静默
+    })();
+  }
+  return saveViaBrowser(blob, filename);
+}
+function saveViaBrowser(blob, filename){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -2089,7 +2337,51 @@ function downloadBlob(blob, filename){
   a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  return true;
 }
+/* ---------- 安卓返回键：分层回退 ----------
+   此前完全没有接管返回键（也没装 @capacitor/app），系统默认行为就是 finish()：
+   在设置弹窗里、复习到一半、AI 对话中按返回都是"秒退应用"。
+   这里按"最上面那层先关"的顺序消费；消费不掉（已经在一级页）才交给调用方做双击退出。 */
+const BACK_BTN_BY_VIEW = {
+  [Views.BROWSE]: '#browseBack',
+  [Views.PRACTICE]: '#practiceBack',
+  [Views.HOT]: '#hotBack',
+};
+function consumeBackPress(){
+  // 1) 确认框在最上层（z-index 9999）：返回 = 取消。复用 Esc 那条分支，避免按钮与返回键两套结论
+  if(typeof _confirmCancel === 'function' && _confirmCancel){ try{ _confirmCancel(); return true; }catch(_){} }
+  // 2) 普通弹窗 / 主题气泡：关最上面那个（名单与 Esc 分支一致，含每天首次自动弹出的战报）
+  const modals = [$('#addModal'), $('#editModal'), $('#dataModal'), $('#warReportModal')].filter(el => el && el.classList.contains('show'));
+  if(modals.length){ hideModal(modals[modals.length-1]); return true; }
+  const tp = $('#themePopup');
+  if(tp && tp.classList.contains('show')){ hideModal(tp); return true; }
+  // 3) 带返回按钮的子页面：直接点它自己那个按钮 —— 目标页与副作用（practice.done / browseLimit …）
+  //    与用户手点完全一致，不另立一套"返回键规则"
+  const backSel = BACK_BTN_BY_VIEW[view];
+  if(backSel){ const b = $(backSel); if(b){ b.click(); return true; } }
+  // 4) 搜索结果页没有返回按钮（入口是顶部搜索框）→ 回总览
+  if(view === Views.SEARCH){ view = Views.OVERVIEW; renderAll(); return true; }
+  // 5) 八股练习（MOCK）照 renderAll 里 navKey 的口径回入口页（从面试进入的回面试，否则回文档）
+  if(view === Views.MOCK){ view = (practiceFrom || Views.DOCS); renderAll(); return true; }
+  // 6) 一级页（总览/文档/进度/面试/记忆/趁热）不消费，交给下面"再按一次退出"。
+  //    面试进行中、记忆复习中都不在这里替他退出：各有显式退出按钮，返回键顺手带走会静默丢掉一场对话/一轮复习
+  return false;
+}
+(function initNativeBack(){
+  const app = isNativeApp() ? nativePlugin('App') : null;
+  if(!app || typeof app.addListener !== 'function') return;
+  let lastAt = 0;
+  try{
+    app.addListener('backButton', () => {
+      if(consumeBackPress()) return;
+      const now = Date.now();
+      if(now - lastAt < 2000){ try{ app.exitApp(); }catch(_){} return; }   // 退出应用本身走插件，不自己 finish Activity
+      lastAt = now;
+      toast('再按一次返回键退出');
+    });
+  }catch(e){ warnSilent('注册返回键监听失败', e); }
+})();
 // 降级路径上"预期会失败"的异常统一走这里：既不打扰用户，也不把问题彻底吞掉
 function warnSilent(tag, e){
   try{ console.warn('[learn-app] ' + tag + ':', (e && (e.message || e.name)) || e); }catch(_){}
@@ -2431,7 +2723,9 @@ function drawChart(days, mode){
   for(let i=0;i<days;i++){
     if(days<=7||i%5===0||i===days-1){
       ctx.fillStyle=faintColor; ctx.font='10px sans-serif'; ctx.textAlign='center';
-      const date = new Date(today0-(days-1-i)*dayMs);
+      // 用日历减法取标签日期（不能用毫秒直减：有夏令时的时区会差一天，且与同函数内的 dayIndexOf 口径不一致）
+      const _ld = new Date(today0); _ld.setDate(_ld.getDate() - (days-1-i));
+      const date = _ld;
       const label = days<=7 ? date.toLocaleDateString('zh-CN',{weekday:'short'}) : (date.getMonth()+1+'/'+date.getDate());
       ctx.fillText(label, padL+i*barW+barW/2, H-padB+16);
     }
@@ -2668,8 +2962,8 @@ function saveProgress(keepLv){   // keepLv 透传给 invalidateMemQueue：只有
   _progWriteTimer = setTimeout(flushProgressWrite, 600);
 }
 // 页面隐藏/卸载时把所有带防抖的落盘项立即 flush（各 600ms 防抖，不 flush 会丢掉最后一次评分/最后一次输入）
-window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); });
-document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); } });
+window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); });
+document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); } });
 // 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
 // 同时失效记忆队列缓存：否则新增/删除题目后，记忆模式最长 30 分钟看不到变化
 async function saveDocs(){ buildIndex(); markDirty(); invalidateMemQueue(); await Store.saveDocs(DOCS); }
@@ -3530,7 +3824,9 @@ function buildAnalyticsData(){
     const st = { id:d.id, title:d.title, total:qs.length, mastered:0, due:0, cnt:0, overdueMax:0 };
     qs.forEach(q=>{
       const p = PROGRESS[q.id]||{};
-      if(!(p.seen||p.mastered||p.practiced||p.srLevel||p.srNext)) return;
+      // lastPracticed 必须算进来：八股自评（mockGrade）只在第一次评分时写这两个字段中的一个，
+      // 漏掉它会让"热力图里算过的题，在进度页和导出 CSV 里整条不见"
+      if(!(p.seen||p.mastered||p.practiced||p.srLevel||p.srNext||p.lastPracticed)) return;
       const mastered = !!p.mastered;
       const lv = levelOf(p);   // 与记忆页进度条同口径（M 由 mastered 派生），CSV / 复制报告也跟着走
       const next = p.srNext||0;
@@ -3636,7 +3932,7 @@ function hmDayDetail(dayNo, counts, plain){
   const p = n => String(n).padStart(2,'0');
   const key = d.getUTCFullYear() + '-' + p(d.getUTCMonth()+1) + '-' + p(d.getUTCDate());
   const count = (counts || hmDayCounts()).get(dayNo) || 0;
-  const wl = WARLOG[key];
+  const wl = warDayAgg(key);   // 跨设备汇总：与上面"复习 N 题"（PROGRESS 口径，本身就会同步）说的是同一天的事
   // plain=true 返回纯文本：title 属性与 aria-label 里写 <b> 会原样显示成字面量标签（明细气泡仍走 HTML 加粗）
   const b = s => plain ? String(s) : '<b>' + s + '</b>';
   const parts = [`${d.getUTCMonth()+1}月${d.getUTCDate()}日`];
@@ -3661,10 +3957,32 @@ function showHmDetail(dayNo, el){
   left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
   let top = r.top - ph - 8;
   if(top < 8) top = r.bottom + 8;
+  // 底部兜底：靠近屏幕底部的格子翻到下方也会被顶出可视区
+  const maxTop = window.innerHeight - ph - 8;
+  if(top > maxTop) top = Math.max(8, maxTop);
   _hmPop.style.left = left + 'px'; _hmPop.style.top = top + 'px';
   requestAnimationFrame(()=> _hmPop.classList.add('show'));
 }
 function hideHmDetail(){ if(_hmPop){ _hmPop.remove(); _hmPop = null; } }
+/* 浮层是 fixed 定位、坐标在打开时算好：页面纵向滚动或热力图横向滚动之后，
+   它会停在旧坐标、指向错误的格子（底部还可能被顶出屏幕）。滚动/缩放时直接关掉，
+   比"跟着重定位"更可预期。capture 才能收到内部滚动容器（.hm-wrap）的 scroll */
+window.addEventListener('scroll', () => { if(_hmPop) hideHmDetail(); }, {passive:true, capture:true});
+window.addEventListener('resize', () => { if(_hmPop) hideHmDetail(); }, {passive:true});
+/* 热力图键盘导航：方向键在格子间移动（左右 ±1 天、上下 ±7 天），Enter/空格看明细。
+   role=button 只是语义，浏览器不会替你把 Enter 变成 click，必须自己转 */
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if(!t || !t.classList || !t.classList.contains('hm-cell') || !t.dataset || !t.dataset.no) return;
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); t.click(); return; }
+  const step = e.key==='ArrowLeft' ? -1 : e.key==='ArrowRight' ? 1 : e.key==='ArrowUp' ? -7 : e.key==='ArrowDown' ? 7 : 0;
+  if(!step) return;
+  e.preventDefault();
+  const next = document.querySelector('.hm-grid .hm-cell[data-no="' + (parseInt(t.dataset.no,10) + step) + '"]');
+  if(!next) return;
+  document.querySelectorAll('.hm-grid .hm-cell[data-no]').forEach(c => { c.tabIndex = -1; });
+  next.tabIndex = 0; next.focus();
+});
 
 function buildHeatmapHtml(){
   const todayNo = hmDayNo(new Date());
@@ -3689,7 +4007,9 @@ function buildHeatmapHtml(){
     if(no < startNo || no > endNo){ cells.push('<i class="hm-cell hm-out"></i>'); continue; }
     const n = counts.get(no)||0;
     const cellLabel = hmDayDetail(no, counts, true);
-    cells.push(`<i class="hm-cell l${lvOf(n)}${i===todayIdx?' hm-today':''}" data-no="${no}" role="button" tabindex="0" aria-label="${esc(cellLabel)}" title="${esc(cellLabel)}"></i>`);
+    // 只有"今天"可 Tab 到（roving tabindex）：365 个格子全是 tabindex=0 时，
+    // 键盘用户要按 365 次 Tab 才能从热力图走到下面那块；进去后用方向键在格子间移动（见下面的键盘处理）
+    cells.push(`<i class="hm-cell l${lvOf(n)}${i===todayIdx?' hm-today':''}" data-no="${no}" role="button" tabindex="${i===todayIdx?'0':'-1'}" aria-label="${esc(cellLabel)}" title="${esc(cellLabel)}"></i>`);
   }
   const months = [];
   for(let c=0;c<WEEKS;c++){
@@ -3800,10 +4120,10 @@ function buildStackedActivityHtml(days){
     keys.push(dayKeyOf(d));
   }
   const data = keys.map(k=>{
-    const wl = WARLOG[k];
-    const total = wl && wl.c ? wl.c.reduce((a,b)=>a+b, 0) : 0;
-    const nw = wl ? (wl.nw||0) : 0;
-    const mUp = wl ? (wl.mUp||0) : 0;
+    const wl = warDayAgg(k);   // 跨设备汇总（见 warDayAgg）：柱子的量不再只是"本机答的"
+    const total = wl ? wl.total : 0;
+    const nw = wl ? wl.nw : 0;
+    const mUp = wl ? wl.mUp : 0;
     return { total, nw, mUp, rev: Math.max(0, total - nw - mUp) };
   });
   const max = Math.max(1, ...data.map(d=>d.total));
@@ -3892,7 +4212,7 @@ function renderAnalytics(c){
       <div class="an-card"><div class="n" id="anOverdue" style="color:${maxOverdue>0?'var(--bad)':'var(--good)'}">${maxOverdue}</div><div class="t">最久逾期(天)</div></div>
     </div>
     <div class="an-sec">🗓️ 今年打卡热力图<span style="font-weight:500;font-size:12px;color:var(--muted)">（点击格子看当天明细）</span></div>
-    <div class="an-chart-card" id="hmChart">${buildHeatmapHtml()}</div>
+    <div class="an-chart-card">${buildHeatmapHtml()}</div>
     <div class="an-sec">🔮 未来 ${FSRS_MAX_INTERVAL} 天到期预测<span style="font-weight:500;font-size:12px;color:var(--muted)">（排期上限 ${FSRS_MAX_INTERVAL} 天，提前看到哪天会积压）</span></div>
     <div class="an-chart-card">${buildForecastHtml(rows, FSRS_MAX_INTERVAL)}</div>
     <div class="an-sec">🧠 真实保留率<span style="font-weight:500;font-size:12px;color:var(--muted)">（按上次间隔分桶的记得率）</span></div>
@@ -3958,7 +4278,7 @@ function renderGrill(c){
         <button class="btn primary" id="grillClose" style="flex:1">关闭</button>
       </div>`:`
       <div class="grill-input-row">
-        <textarea id="grillInput" rows="1" placeholder="输入你的回答…（Enter 发送，Shift+Enter 换行）" autocomplete="off" aria-label="输入你的回答" ${grill.loading?'disabled':''}></textarea>
+        <textarea id="grillInput" rows="1" placeholder="输入你的回答…（Enter 发送，Shift+Enter 换行）" autocomplete="off" enterkeyhint="send" aria-label="输入你的回答" ${grill.loading?'disabled':''}></textarea>
         <button class="btn primary" id="grillSend" ${grill.loading?'disabled':''}>发送</button>
         <button class="btn ghost" id="grillQuit" style="color:var(--bad)" title="直接退出，不生成总结">退出</button>
         <button class="btn ghost" id="grillQuitSum" style="color:var(--bad)" title="退出并让 AI 生成一份总结反馈">退出并总结</button>
@@ -3984,7 +4304,7 @@ function renderGrill(c){
       if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){ e.preventDefault(); send(); }
     };
     input.focus();
-    const resetGrill = () => { if(grill._abort){ try{grill._abort.abort();}catch(_){} } const _r=grill.resume; grill={resume:_r,messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; renderAll(); };   // 中止在途流；保留简历避免重新粘贴
+    const resetGrill = () => { if(grill._abort){ try{grill._abort.abort();}catch(_){} } const _r=grill.resume; grill={resume:_r,messages:[],started:false,loading:false,mode:'',ended:false,feedback:'',forceEnd:false}; saveGrillDraft(true); renderAll(); };   // 中止在途流；保留简历避免重新粘贴（started=false 后落盘会自动清掉草稿）
     // 直接退出：不生成总结
     $('#grillQuit').onclick = async () => {
       if(!await confirmDialog('退出本场拷打？对话记录将清空，不生成总结。')) return;
@@ -4959,6 +5279,9 @@ searchInput.oninput = () => {
 /* =========================================================
   主题切换 — 配置驱动引擎
    ========================================================= */
+/* 注：浅底主题的 muted / faint 已按 WCAG AA（对 --bg 与 --panel 都 ≥4.5:1）校过 ——
+   这两个色用在 9~10px 的小字（热力图坐标、图表轴标签、搜索占位符）与记忆卡答案正文上，
+   是最不该低对比度的地方。改这两个值时请重新核对，别再压回"看着柔和"的浅灰。 */
 const THEMES = {
   // 动态组配色来源（均为 GitHub 高星开源配色体系，再按本项目变量语义适配）：
   //   aurora 星云 ← Tokyo Night  │ midnight 子夜 ← Catppuccin Mocha │ sunset 斜光 ← Kanagawa
@@ -4971,9 +5294,9 @@ const THEMES = {
   sunset:{bg:'#15120f',bg2:'#1d1917',panel:'#232019',panel2:'#2b2721',card:'#232019',line:'#3b332a',line2:'#524636',text:'#f0e6d2',muted:'#c0ab8e',faint:'#847460',accent:'#ffa066',accent2:'#ff5d62',accent3:'#e6c384',good:'#98bb6c',warn:'#e6c384',bad:'#e46876'},
   // 素笺 ← Flexoki（github.com/kepano/flexoki，MIT）：纸底 paper / 墨字 black / 青墨 cyan-600 ↔ 钢笔蓝 blue-600
   // id 取 paper；旧存档里保存的 'void'（上一版"点阵"）由 THEME_ALIAS 自动映射到本主题，用户偏好不丢
-  paper: {bg:'#F7F5EA',bg2:'#EFEDE2',panel:'#FFFCF0',panel2:'#FFFEF9',card:'#FFFCF0',line:'#E6E4D9',line2:'#CECDC3',text:'#1C1B1A',muted:'#575653',faint:'#878580',accent:'#24837B',accent2:'#205EA6',accent3:'#BC5215',good:'#66800B',warn:'#AD8301',bad:'#AF3029'},
+  paper: {bg:'#F7F5EA',bg2:'#EFEDE2',panel:'#FFFCF0',panel2:'#FFFEF9',card:'#FFFCF0',line:'#E6E4D9',line2:'#CECDC3',text:'#1C1B1A',muted:'#575653',faint:'#72706c',accent:'#24837B',accent2:'#205EA6',accent3:'#BC5215',good:'#66800B',warn:'#AD8301',bad:'#AF3029'},
   // 粼光 ← Catppuccin Latte（github.com/catppuccin/catppuccin，MIT）：teal 主色 / blue 深水 / lavender 浪影
-  ripple:{bg:'#EFF1F5',bg2:'#E6E9EF',panel:'#F7F9FC',panel2:'#FFFFFF',card:'#F7F9FC',line:'#DCE0E8',line2:'#BCC0CC',text:'#4C4F69',muted:'#6C6F85',faint:'#9CA0B0',accent:'#179299',accent2:'#1E66F5',accent3:'#7287FD',good:'#40A02B',warn:'#DF8E1D',bad:'#D20F39'},
+  ripple:{bg:'#EFF1F5',bg2:'#E6E9EF',panel:'#F7F9FC',panel2:'#FFFFFF',card:'#F7F9FC',line:'#DCE0E8',line2:'#BCC0CC',text:'#4C4F69',muted:'#6a6d83',faint:'#6b6e79',accent:'#179299',accent2:'#1E66F5',accent3:'#7287FD',good:'#40A02B',warn:'#DF8E1D',bad:'#D20F39'},
   particle:{bg:'#08090d',bg2:'#0d0f16',panel:'#111420',panel2:'#171b2a',card:'#12151f',line:'#1f2433',line2:'#2d3549',text:'#e8ebf5',muted:'#98a2bd',faint:'#5c6684',accent:'#5eead4',accent2:'#a78bfa',accent3:'#38bdf8',good:'#4ade80',warn:'#fbbf24',bad:'#f87171'},
   songxing:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',panel2:'#121026',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
   shuangren:{bg:'#0a0d15',bg2:'#111624',panel:'#151b2b',panel2:'#1b2335',card:'#141a29',line:'#232d44',line2:'#32405c',text:'#d5deee',muted:'#98a9c7',faint:'#5f708d',accent:'#89b8c2',accent2:'#8fb0e0',accent3:'#c3e8f0',good:'#8fd6c0',warn:'#e2c08d',bad:'#e27878'},
@@ -4982,8 +5305,8 @@ const THEMES = {
   'img-bg':{bg:'#0a0a12',bg2:'rgba(0,0,0,0.35)',panel:'rgba(0,0,0,0.5)',panel2:'rgba(0,0,0,0.6)',card:'rgba(0,0,0,0.6)',line:'rgba(255,255,255,0.1)',line2:'rgba(255,255,255,0.15)',text:'#eaecf5',muted:'#a3a9c2',faint:'#6a7086',accent:'#a78bfa',accent2:'#38bdf8',accent3:'#fbbf24',good:'#4ade80',warn:'#fbbf24',bad:'#f87171'},
   // 定制组（松星保留原样，子良/子荣用中国画色彩体系）：
   //   子良 晨雾青黛 ← 雾白底 + 青黛主色（配层叠远山）│ 子荣 丹青墨韵 ← 宣纸底 + 朱砂/靛青
-  ziliang: {bg:'#eaeff0',bg2:'#e0e7e8',panel:'#f2f6f7',panel2:'#fafcfc',card:'#f6f9f9',line:'#d3dcdd',line2:'#bfcbcd',text:'#22333a',muted:'#4d6470',faint:'#7f949d',accent:'#2f6f78',accent2:'#4a8a94',accent3:'#b8763f',good:'#4f8a5f',warn:'#b8763f',bad:'#b04a44'},
-  zirong: {bg:'#f4efe6',bg2:'#ece5da',panel:'#faf6ee',panel2:'#fffdf8',card:'#fcf8f1',line:'#e2d7c6',line2:'#d0c0a8',text:'#26201a',muted:'#5a4c40',faint:'#8d7c6b',accent:'#b4322e',accent2:'#2c5f7a',accent3:'#c8912f',good:'#4a7a4c',warn:'#c8912f',bad:'#b4322e'},
+  ziliang: {bg:'#eaeff0',bg2:'#e0e7e8',panel:'#f2f6f7',panel2:'#fafcfc',card:'#f6f9f9',line:'#d3dcdd',line2:'#bfcbcd',text:'#22333a',muted:'#4d6470',faint:'#5f6f76',accent:'#2f6f78',accent2:'#4a8a94',accent3:'#b8763f',good:'#4f8a5f',warn:'#b8763f',bad:'#b04a44'},
+  zirong: {bg:'#f4efe6',bg2:'#ece5da',panel:'#faf6ee',panel2:'#fffdf8',card:'#fcf8f1',line:'#e2d7c6',line2:'#d0c0a8',text:'#26201a',muted:'#5a4c40',faint:'#7a6b5c',accent:'#b4322e',accent2:'#2c5f7a',accent3:'#c8912f',good:'#4a7a4c',warn:'#c8912f',bad:'#b4322e'},
   // ── 经典编辑器配色组（配色取自对应开源主题，再按本项目变量语义适配）──
   // Catppuccin Frappé（github.com/catppuccin，MIT）：奶咖暖深色，介于 Mocha 与 Latte 之间
   frappe: {bg:'#232634',bg2:'#292c3c',panel:'#303446',panel2:'#383d52',card:'#303446',line:'#414559',line2:'#51576d',text:'#c6d0f5',muted:'#a5adce',faint:'#737994',accent:'#ca9ee6',accent2:'#8caaee',accent3:'#81c8be',good:'#a6d189',warn:'#ef9f76',bad:'#e78284'},
@@ -4992,7 +5315,7 @@ const THEMES = {
   // Rosé Pine（github.com/rose-pine/rose-pine-theme，MIT）：玫瑰三变体
   rosepine: {bg:'#191724',bg2:'#1f1d2e',panel:'#26233a',panel2:'#2e2a42',card:'#26233a',line:'#403d52',line2:'#524f67',text:'#e0def4',muted:'#908caa',faint:'#6e6a86',accent:'#ebbcba',accent2:'#c4a7e7',accent3:'#f6c177',good:'#9ccfd8',warn:'#f6c177',bad:'#eb6f92'},
   rosepineMoon: {bg:'#232136',bg2:'#2a273f',panel:'#393552',panel2:'#413d5e',card:'#393552',line:'#46436b',line2:'#56527e',text:'#e0def4',muted:'#908caa',faint:'#6e6a86',accent:'#ea9a97',accent2:'#c4a7e7',accent3:'#f6c177',good:'#9ccfd8',warn:'#f6c177',bad:'#eb6f92'},
-  rosepineDawn: {bg:'#faf4ed',bg2:'#f2e9e1',panel:'#fffaf3',panel2:'#ffffff',card:'#fffaf3',line:'#e8dfd6',line2:'#d6c9ba',text:'#575279',muted:'#797593',faint:'#9893a5',accent:'#d7827e',accent2:'#907aa9',accent3:'#ea9d34',good:'#56949f',warn:'#ea9d34',bad:'#b4637a'},
+  rosepineDawn: {bg:'#faf4ed',bg2:'#f2e9e1',panel:'#fffaf3',panel2:'#ffffff',card:'#fffaf3',line:'#e8dfd6',line2:'#d6c9ba',text:'#575279',muted:'#716d89',faint:'#726f7c',accent:'#d7827e',accent2:'#907aa9',accent3:'#ea9d34',good:'#56949f',warn:'#ea9d34',bad:'#b4637a'},
   // Dracula（github.com/dracula/dracula-theme，MIT）
   dracula: {bg:'#1d1e27',bg2:'#23242f',panel:'#282a36',panel2:'#343646',card:'#282a36',line:'#44475a',line2:'#565970',text:'#f8f8f2',muted:'#b6bccf',faint:'#6272a4',accent:'#bd93f9',accent2:'#8be9fd',accent3:'#ff79c6',good:'#50fa7b',warn:'#ffb86c',bad:'#ff5555'},
   // Nord（github.com/nordtheme/nord，MIT）
@@ -5071,8 +5394,15 @@ const CSS_FX = {
   // 星云 ← Aceternity UI「Aurora Background」按原参数的 CSS 复刻（原作本就是纯 CSS 效果）：
   // ① 两层 repeating-linear-gradient：底色条纹压在上层负责"切"出光带，下层是蓝紫青极光（100deg 斜向）
   // ② background-size 300%/200% + 60s 匀速横移（50%→350%）得到 seamless 的极慢流动
-  // ③ blur(10px) 柔化 + opacity .5 + 右上角径向 mask（原作 mask-image: radial-gradient(ellipse at 100% 0%)）
-  aurora:`@keyframes acAurora{0%{background-position:50% 50%,50% 50%}100%{background-position:350% 50%,350% 50%}}body::before{content:'';position:fixed;inset:-10px;pointer-events:none;z-index:0;background-image:repeating-linear-gradient(100deg,#0d0e17 0%,#0d0e17 7%,transparent 10%,transparent 12%,#0d0e17 16%),repeating-linear-gradient(100deg,#7aa2f7 10%,#a5b4fc 15%,#7dcfff 20%,#c4b5fd 25%,#60a5fa 30%);background-size:300%,200%;background-position:50% 50%,50% 50%;filter:blur(10px);opacity:.5;animation:acAurora 60s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%)}@media (prefers-reduced-motion:reduce){body::before{animation:none}}`,
+  // ③ opacity .5 + 右上角径向 mask（原作 mask-image: radial-gradient(ellipse at 100% 0%)）
+  // ④ 原作还有 blur(10px)，这里刻意去掉 —— 它是全应用最贵的一笔每帧开销：
+  //    动效动的是 background-position，这个属性浏览器没法交给合成器，只能每帧在工作线程上重绘整屏；
+  //    再压一层 10px 全屏高斯模糊，等于每帧重做一次整屏模糊，长期占满光栅线程 ——
+  //    表现出来就是"所有动画都不丝滑"（换肤的圆形扩散、展开卡片、切页全都排在它后面）。
+  //    条纹边缘本来就有 3%~4% 的色标过渡（≈40~60px），10px 模糊只多补了一点柔度，
+  //    观感差异极小；若哪天觉得质感不够，正确方向是把动效改成 transform 位移（可合成，每帧成本≈0），
+  //    而不是把 blur 加回来。
+  aurora:`@keyframes acAurora{0%{background-position:50% 50%,50% 50%}100%{background-position:350% 50%,350% 50%}}body::before{content:'';position:fixed;inset:-10px;pointer-events:none;z-index:0;background-image:repeating-linear-gradient(100deg,#0d0e17 0%,#0d0e17 7%,transparent 10%,transparent 12%,#0d0e17 16%),repeating-linear-gradient(100deg,#7aa2f7 10%,#a5b4fc 15%,#7dcfff 20%,#c4b5fd 25%,#60a5fa 30%);background-size:300%,200%;background-position:50% 50%,50% 50%;opacity:.5;animation:acAurora 60s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%)}@media (prefers-reduced-motion:reduce){body::before{animation:none}}`,
   songxing:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
 };
 
@@ -5287,19 +5617,24 @@ function applyTheme(name, opts){
     cl.toggle('light', isLight);
   }catch(e){ warnSilent('同步主题 class 失败', e); }
 
-  // 5. Canvas 粒子引擎（配置驱动）
-  startUnifiedCanvas(name);
+  // 5. Canvas 粒子引擎（配置驱动）：同步切换 + 同步画首帧。
+  //    必须同步：换肤扩散取"新快照"的时机在下一帧绘制之后，晚一帧（或让淡入从 0 起步）
+  //    就会把旧主题的粒子拍进快照 —— 表现就是"扩散铺开的是新配色 + 旧特效，扩散完主题才动起来"。
+  try{ startUnifiedCanvas(name); }catch(e){ warnSilent('启动主题画布失败', e); }
 
-  // 6. 重绘趋势图
-  setTimeout(() => {
+  // 6. 重绘趋势图。图也是 canvas，颜色在绘制时从 CSS 变量读（见 drawChart 里的 getComputedStyle），
+  //    所以扩散期间必须同步重画：延时 50ms 会把旧配色的图拍进快照，与最终画面不一致。
+  //    非扩散路径保持原来的 50ms 延后（等样式落定再画，更稳）
+  const drawOvChart = () => {
     if(view === Views.OVERVIEW && typeof drawChart === 'function'){
       drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
     }
-  }, 50);
+  };
+  if(_vtHold) drawOvChart(); else setTimeout(drawOvChart, 50);
 }
 
 // 主题选择：用 View Transitions API 做「从点击点向全屏」的圆形扩散，修掉"背景 .5s 渐变、卡片瞬间硬切"的错位。
-// 不支持 VT（旧内核）或用户开了减动效时，回退为直接应用。
+// 全平台一套，不做按机型的降级；只有两种真实的能力/偏好回退：内核不支持 VT、用户开了减动效。
 function pickTheme(id, evt){
   const root = document.documentElement;
   const commit = () => { applyTheme(id); hideModal($('#themePopup')); };
@@ -5307,8 +5642,18 @@ function pickTheme(id, evt){
   if(typeof document.startViewTransition === 'function' && !reduce){
     const x = (evt && evt.clientX) || (innerWidth - 30), y = (evt && evt.clientY) || 30;
     const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    // 扩散期间页面被两张快照盖住：画布与背景动效这时做的功一律看不见，先挂起（见 holdThemeCanvas），
+    // 把主线程与光栅全让给扩散本身；结束时统一恢复，并把这次要切的画布补启动
+    holdThemeCanvas(true);
     root.classList.add('theme-vt');
-    const vt = document.startViewTransition(commit);
+    const release = () => { root.classList.remove('theme-vt'); holdThemeCanvas(false); };
+    let vt = null;
+    try{ vt = document.startViewTransition(commit); }
+    catch(e){
+      // 启动失败（内核异常/被策略拦下）时不能把画布永久挂在 hold 上：解除挂起并直接把主题应用掉
+      warnSilent('换肤扩散启动失败，改为直接应用', e);
+      release(); commit(); return;
+    }
     if(vt && vt.ready && vt.ready.then){
       vt.ready.then(() => {
         try{
@@ -5318,10 +5663,10 @@ function pickTheme(id, evt){
           );
         }catch(_){}
       }).catch(()=>{});
-      if(vt.finished && vt.finished.finally) vt.finished.finally(()=>root.classList.remove('theme-vt'));
-      else root.classList.remove('theme-vt');
+      if(vt.finished && vt.finished.finally) vt.finished.finally(release);
+      else release();
     } else {
-      root.classList.remove('theme-vt');
+      release();
     }
   } else {
     commit();
@@ -5374,8 +5719,10 @@ function buildThemeGrid(filterGroup){
       bgRow.appendChild(card);
       return;
     }
-    // 其他组按 filterGroup 过滤
-    if(filterGroup && cfg.group !== filterGroup) return;
+    /* 其他组按 filterGroup 过滤。老存档里的自建配色主题 group 是 'custom2'（自建编辑器已下线，只剩读取路径）：
+       归到「定制」标签下，否则这些主题在选择器里永远不显示 —— 一旦切走就再也选不回来 */
+    const grp = cfg.group === 'custom2' ? 'custom' : cfg.group;
+    if(filterGroup && grp !== filterGroup) return;
     const card = document.createElement('div');
     card.className = 'theme-card';
     card.tabIndex = 0; card.setAttribute('role','button');
@@ -5585,26 +5932,37 @@ if(uploadBgBtn){
           if(currentTheme === 'img-bg') applyTheme('img-bg');
         });
       };
-      if(window.createImageBitmap){
-        // 先降采样再解码：超大图（如 12000×9000）全分辨率解码会直接 OOM 崩掉低端 WebView
-        createImageBitmap(file).then(function(full){
-          const scale = Math.min(1, 2048 / Math.max(full.width, full.height));
-          detectImageColors(full, function(colors){
-            // 小图快路径直接复用原文件，但位图已解码完必须显式释放，否则要一直挂到 GC
-            if(scale >= 1 && file.size <= 4 * 1024 * 1024){ try{ full.close(); }catch(_){} afterSaved(file, colors); return; }
-            const tw = Math.max(1, Math.round(full.width * scale)), th = Math.max(1, Math.round(full.height * scale));
-            full.close();
-            createImageBitmap(file, {resizeWidth: tw, resizeHeight: th}).then(function(bmp){
+      if(window.createImageBitmap && window.URL && URL.createObjectURL){
+        /* 先量尺寸、再**按上限解码一次**。
+           直接 createImageBitmap(file) 是"全分辨率解码"：12000×9000 会先吃掉几百 MB 才轮到 resize，
+           低端 WebView 直接 OOM（注释原先写的正是"先降采样再解码"，实现却是反的）。
+           <img> 只读 naturalWidth/Height 不需要像素解码；拿到尺寸后再带 resizeWidth/Height 去解，峰值内存由上限决定。
+           另外设像素闸门：超大图即便降采样解码也可能吃满内存，这里明确拒绝并给出人话提示，而不是崩页面 */
+        const probeUrl = URL.createObjectURL(file);
+        const probe = new Image();
+        probe.onerror = function(){ try{ URL.revokeObjectURL(probeUrl); }catch(_){} toast('图片无法读取'); };
+        probe.onload = function(){
+          try{ URL.revokeObjectURL(probeUrl); }catch(_){}
+          const MAX = 2048;
+          const ow = probe.naturalWidth || 1, oh = probe.naturalHeight || 1;
+          if(ow * oh > 30e6){ toast('图片太大（' + ow + '×' + oh + '），请先压缩到 3000 万像素以内再上传'); return; }
+          const scale = Math.min(1, MAX / Math.max(ow, oh));
+          const tw = Math.max(1, Math.round(ow * scale)), th = Math.max(1, Math.round(oh * scale));
+          createImageBitmap(file, {resizeWidth: tw, resizeHeight: th}).then(function(bmp){
+            detectImageColors(bmp, function(colors){
+              // 原图本来就够小：直接复用原文件存起来，省一次重编码（位图用完显式释放，别等 GC）
+              if(scale >= 1 && file.size <= 4 * 1024 * 1024){ try{ bmp.close(); }catch(_){} afterSaved(file, colors); return; }
               const c = document.createElement('canvas');
               c.width = tw; c.height = th;
               const g = c.getContext('2d');
               g.fillStyle = '#000'; g.fillRect(0, 0, tw, th);
               g.drawImage(bmp, 0, 0, tw, th);
-              bmp.close();
+              try{ bmp.close(); }catch(_){}
               c.toBlob(function(b){ afterSaved(b || file, colors); }, 'image/jpeg', 0.85);
-            }).catch(function(){ toast('图片无法读取'); });
-          });
-        }).catch(function(){ toast('图片无法读取'); });
+            });
+          }).catch(function(){ toast('图片无法读取'); });
+        };
+        probe.src = probeUrl;
       } else {
         // 老环境兜底：原 Image 路径
         const objUrl = URL.createObjectURL(file);
@@ -5738,7 +6096,16 @@ $('#exportMDBtn').onclick = () => {
   const blob = new Blob([L.join('\n')], {type:'text/markdown;charset=utf-8'});
   downloadBlob(blob, `题库导出-${dateStr()}.md`);
   hideModal($('#dataModal'));
-  toast('已导出 Markdown 题库');
+  toast('已导出 Markdown 题库（可粘贴给 AI）');
+};
+// 完整备份（可回导）：上面那份 Markdown 是"给人/AI 读"的，回导时会退化成一篇《题库导出》
+// （结构、进度、掌握、通关数全丢）—— 真正用于备份/换机的是这份 JSON，导入走同一条 importJsonDocs 路径
+$('#exportJsonBtn').onclick = () => {
+  const payload = { documents: DOCS, progress: PROGRESS, order: ORDER, clears: CLEARS, exportedAt: new Date().toISOString(), app: 'learn-app' };
+  const blob = new Blob([JSON.stringify(payload)], {type:'application/json;charset=utf-8'});
+  downloadBlob(blob, `万法归元-备份-${dateStr()}.json`);
+  hideModal($('#dataModal'));
+  toast('已导出 JSON 备份（用「导入题目」即可原样回导）');
 };
 
 // 统一导入入口：设置面板的按钮与各视图空态里的引导按钮共用
@@ -5988,15 +6355,18 @@ async function doPushToGist(token, gistId, onSuccess, onError){
   const data={documents:DOCS,progress:PROGRESS,order:ORDER,clears:CLEARS,updatedAt:new Date().toISOString()};
   const contentStr = JSON.stringify(data);
   // 趁热打铁：热榜单独一个文件（hot-data.json），与 learn-data.json 分开不混淆；
-  // 每次推送都整包带上两个文件（Gitee/GitHub 更新 gist 时，本次未提及的文件会被删除）
+  // 每次推送都整包带上全部文件（Gitee/GitHub 更新 gist 时，本次未提及的文件会被删除）
   const hotStr = JSON.stringify({ hot: HOT, updatedAt: data.updatedAt });
+  // 昨日战报同理单独一个文件（warlog-data.json）：按「天 → 设备」分层，拉取时逐设备取较新的那份合并，
+  // 于是手机与电脑看到的是合起来的当日战报（只记本机的话，两台设备会各报一半）
+  const warlogStr = JSON.stringify({ war: WARLOG, updatedAt: data.updatedAt });
   const dirtyStamp = _dirtyStamp;   // 推送开始时的脏标记快照
   const ctrl = new AbortController();
   const timeout = setTimeout(()=>ctrl.abort(), 30000);   // 30s 超时：弱网不再无限挂起
   try{
     const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{
       method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'token '+token},
-      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr},'hot-data.json':{content:hotStr}}}),
+      body:JSON.stringify({description:'学习数据',files:{'learn-data.json':{content:contentStr},'hot-data.json':{content:hotStr},'warlog-data.json':{content:warlogStr}}}),
       signal:ctrl.signal
     });
     if(resp.ok){
@@ -6057,12 +6427,20 @@ async function cloudPush(){
   );
 }
 async function cloudPull(){
+  // 与推送互斥：拉取会把本地整份状态换成云端那份，若此刻还有推送在途，那个推送结束时
+  // 会用**拉取前的旧快照**把云端写回去（拉取已把 dirty 清成 false，之后也不会自动补推）
+  if(_pushing){ toast('正在推送中，稍等几秒再拉取（否则可能把旧快照写回云端）'); return; }
   if(_giteeUILoaded) saveGiteeCfg();   // 同 cloudPush：统一以 localStorage 为唯一数据源
   const token=_safe.decode(safeLocalGet('giteeToken',''))||'',gistId=(safeLocalGet('giteeGistId','')||'').trim();
   if(!token||!gistId){toast('请填写 Token 和 Gist ID');return;}
   $('#cloudStatus').textContent='拉取中…';
   try{
-    const resp=await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
+    // 30s 超时：与推送对齐（推送早就有 abort，拉取一直没有 —— 弱网下会永远停在"拉取中…"）
+    const ctrl = new AbortController();
+    const to = setTimeout(()=>ctrl.abort(), 30000);
+    let resp;
+    try{ resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token},signal:ctrl.signal}); }
+    finally{ clearTimeout(to); }
     if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
     const gist=await resp.json();
     if(gist.public && !cloudPull._pubWarned){ cloudPull._pubWarned=true; toast('⚠️ 该 Gist 是公开的，任何知道地址的人都能看到你的数据，建议改为私有'); }
@@ -6115,6 +6493,8 @@ async function cloudPull(){
     DOCS=newDocs;PROGRESS=newProgress;ORDER=newOrder;CLEARS=newClears;
     // 趁热打铁：热榜在独立文件，缺失按空处理（兼容旧 gist）；拉取后重置本轮游标
     applyHotFromGist(gist);
+    // 昨日战报：独立文件 + 按设备合并（缺文件就当没有；不能像热榜那样整份覆盖，否则抹掉本机的记录）
+    const warMerged = applyWarFromGist(gist);
     // 清理孤立进度
     {const allQids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>allQids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!allQids.has(qid)){delete PROGRESS[qid];}});}
     buildIndex();
@@ -6125,6 +6505,7 @@ async function cloudPull(){
     safeLocalSet('lastRemoteTime', String(t));
     safeLocalSet('lastPushTime', data.updatedAt || '');   // 同步 lastPushTime：再次拉取同一版本会命中"已是最新"，不反复弹确认
     _autoSyncDirty = false;
+    if(warMerged) markDirty();   // 并进了别的设备的战报：把并集推回去，否则云端会一直停在"两台设备各推一半"
     $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
     toast('已从云端同步');renderAll();hideModal($('#dataModal'));
   }catch(e){
@@ -6179,13 +6560,18 @@ async function askPullOnStart(){
   const token = _safe.decode(safeLocalGet('giteeToken',''))||'';
   const gistId = safeLocalGet('giteeGistId','')||'';
   if(!token || !gistId) return;
+  if(_pushing) return;   // 有推送在途：本次检查跳过（lastCheckTime 只在成功后才写，下一次还会再来）
   // 距上次检查不到 30 分钟，跳过
   const lastCheck = parseInt(safeLocalGet('lastCheckTime','0')||'0');
   if(Date.now() - lastCheck < 30 * 60 * 1000) return;
   // 读取本地记录的上次云端时间
   _lastKnownRemoteTime = parseInt(safeLocalGet('lastRemoteTime','0')||'0');
   try{
-    const resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token}});
+    const ctrl = new AbortController();
+    const to = setTimeout(()=>ctrl.abort(), 30000);   // 与推送/手动拉取同一套超时
+    let resp;
+    try{ resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token},signal:ctrl.signal}); }
+    finally{ clearTimeout(to); }
     if(!resp.ok) return;
     // 请求成功后才记录检查时间，避免失败时误拦后续检查
     safeLocalSet('lastCheckTime', String(Date.now()));
@@ -6247,11 +6633,14 @@ async function askPullOnStart(){
     CLEARS = newClears;
     // 热榜与手动拉取走同一段逻辑：否则同一份云端数据，从这里（启动自动拉取）进来会忽略云端热榜
     applyHotFromGist(gist);
+    // 战报同理：两条路径共用同一段按设备合并的逻辑
+    const warMerged = applyWarFromGist(gist);
     // 清理孤立进度
     {const qids=new Set();DOCS.forEach(d=>(d.questions||[]).forEach(q=>qids.add(q.id)));Object.keys(PROGRESS).forEach(qid=>{if(!qids.has(qid))delete PROGRESS[qid];});}
     buildIndex();
     invalidateMemQueue(); resetMemoryState();   // 数据已被云端覆盖：队列缓存与记忆快照一并重置
     _autoSyncDirty = false;
+    if(warMerged) markDirty();   // 同手动拉取：合并出并集后回推一次
     safeLocalSet('lastRemoteTime', String(remoteTime));
     safeLocalSet('lastPushTime', remote.updatedAt || '');
     _lastKnownRemoteTime = remoteTime;
@@ -6421,8 +6810,11 @@ const INTRO = {
   speedK: 1                                            // 整体速度系数：浅色主题（纸/雾）放慢些，别像在飞
 };
 try{
-  if(sessionStorage.getItem('learnAppIntroSeen')) INTRO.minShow = 840;   // 本会话已看过：半程带过，调试刷新不烦
-  sessionStorage.setItem('learnAppIntroSeen', '1');
+  // "看过"的标记走 localStorage：App 里 WebView 进程被回收会清掉 sessionStorage，
+  // 于是每次冷启动都重播满 1800ms 入场（网页端同一标签刷新只要 840ms）。改存 localStorage 后，
+  // 只有"装完第一次"看完整版，之后一律半程带过
+  if(safeLocalGet('learnAppIntroSeen', '')) INTRO.minShow = 840;
+  safeLocalSet('learnAppIntroSeen', '1');
 }catch(_){}
 
 // 星野模型：归一化坐标 x/y（-1~1）+ 深度 z（越小越近）；绘制时除以 z 投影，得到"从中心向外飞出"的透视
@@ -6718,6 +7110,8 @@ document.addEventListener('click', (e)=>{
   applyOrder();   // 顺序数据真正应用到渲染顺序上
   CLEARS = await Store.getClears() || {};
   await loadApiConfig();   // 等 AI 配置就绪：否则刚进页面就点 AI 按钮会误报"请先配置 AI API"
+  // 上次没结束时留下的面试草稿：摆回来接着聊（只恢复对话，不重发任何消息）
+  if(restoreGrillDraft()) toast('已恢复上次未结束的 AI 面试，可切到「面试」页继续');
   renderAll();
   hideAppLoader();
   // 降级残留数据恢复：上次降级期间写进临时存储的数据，这次以正常路径启动时提示合并
@@ -6781,7 +7175,9 @@ function startUnifiedCanvas(theme){
   _uTheme = theme;
   _uParticles = [];
   _uTime = 0; _uLastTs = 0;
-  _uFadeIn = 0; // 切换主题时淡入：0→1
+  // 切换主题时淡入：0→1。但换肤扩散期间不淡入 —— 快照要拍"最终长相"，
+  // 从 0 起步会让铺开的那一片明显偏暗、和最终画面不一致（非扩散路径仍保留淡入）
+  _uFadeIn = _vtHold ? 1 : 0;
   initThemeParticles(theme);
   // 静态画面型主题：画一帧就够，不进逐帧循环——省电，也避免"静物在流动"的假动效
   if(STATIC_CANVAS_THEMES.includes(theme)){
@@ -6791,7 +7187,11 @@ function startUnifiedCanvas(theme){
     return;
   }
   _uStaticTheme = '';
-  if(!_uRaf) _uRaf = requestAnimationFrame(tickUnified);
+  // 先同步画一帧再排队（原因见 paintUnifiedFrame）：换肤扩散的新快照依赖这一帧已经是新主题。
+  // 同时撤掉在途的那一帧，避免旧主题的帧插进来、也避免重复调度
+  if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+  paintUnifiedFrame(0.016);
+  _uRaf = requestAnimationFrame(tickUnified);
 }
 // 静态主题只画这一帧；resize 时会再调一次
 function drawStaticCanvasFrame(){
@@ -6803,6 +7203,10 @@ function drawStaticCanvasFrame(){
 }
 function resizeUnified(){
   if(!_uCanvas) return;
+  // dpr 上限 2 + 逐帧绘制，与桌面完全一致。
+  // 曾按窄屏做过"降到 1.5 倍 + 30fps 限帧"的省电降级，但限帧会让背景与前景的动画节奏不一致、
+  // 容易被看成"掉帧"，而省电收益没有实测数据支撑 —— 先回到原参数；
+  // 真要省电应当做成用户可选的设置项（明示代价），而不是默认降级
   const dpr = Math.min(window.devicePixelRatio||1, 2);
   _uCanvas.width = window.innerWidth * dpr;
   _uCanvas.height = window.innerHeight * dpr;
@@ -6989,6 +7393,16 @@ function initThemeParticles(theme){
   // 注：canvasThemes 白名单里 sunset/ziliang（纯几何）、ripple/paper/zirong（纯几何）不走粒子，其余主题均在上方有显式分支
 }
 let _uHidden = false;
+/* 换肤扩散期间挂起画布的帧循环：这 520ms 里页面被旧/新两张快照盖着，逐帧动画在快照后面看不见，
+   却仍在抢光栅 —— 而圆形扩散恰恰最吃这个。注意只是"停帧循环"，不是"不切主题"：
+   主题本身在 applyTheme 里已经同步切好并画好首帧（否则快照里就是旧特效）。
+   挂起期间 on 为真，供 applyTheme 判断"这次要不要淡入"。 */
+let _vtHold = false;
+function holdThemeCanvas(on){
+  _vtHold = !!on;
+  if(_vtHold){ if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; } return; }
+  restartCanvasLoop();
+}
 function restartCanvasLoop(){
   if(_uStaticTheme) return;   // 静态主题没有循环需要恢复
   if(_uCanvas && _uCtx && !_uRaf){
@@ -7009,10 +7423,17 @@ document.addEventListener('visibilitychange', () => {
 function tickUnified(ts){
   if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
   if(_uStaticTheme){ _uRaf = null; return; }   // 静态主题：画面已经画好，不需要逐帧重绘
-  if(_uHidden){ _uRaf = null; return; } // 后台时停止调度，由 visibilitychange 重新拉起
+  // 后台 / 换肤扩散期间停止调度，分别由 visibilitychange、holdThemeCanvas 重新拉起
+  if(_uHidden || _vtHold){ _uRaf = null; return; }
   _uRaf = requestAnimationFrame(tickUnified);
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
   _uLastTs = ts;
+  paintUnifiedFrame(dt);
+}
+/* 画一帧（不含调度）。独立出来是为了切主题时能**同步**画一帧：
+   换肤扩散取"新快照"的时机在下一帧绘制之后，这一帧若晚到、或让 _uFadeIn 从 0 起步，
+   快照里拍到的就是旧主题的粒子 —— 用户看到的正是"铺开的是新配色 + 旧特效，扩散完主题才真正动起来" */
+function paintUnifiedFrame(dt){
   _uTime += dt;
   // 主题切换淡入（按真实时间推进，避免高刷屏淡入过快）
   if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + dt * 1.8); }
@@ -8054,8 +8475,26 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '75';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-v74）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+const SW_VERSION = '83';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+/* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
+   而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
+   老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
+   函数 isNativeApp() 来自上一个 <script>（顶层函数声明挂在全局），网页端 IN_NATIVE_SHELL 为 false，整段跳过 */
+const IN_NATIVE_SHELL = isNativeApp();
+if(IN_NATIVE_SHELL){
+  try{
+    if('serviceWorker' in navigator && navigator.serviceWorker && typeof navigator.serviceWorker.getRegistrations === 'function'){
+      const here = location.href.split('#')[0].split('?')[0];
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => {
+        try{ if(r.scope && here.indexOf(r.scope) === 0) r.unregister(); }catch(_){}
+      })).catch(()=>{});
+    }
+    if(window.caches && typeof caches.keys === 'function'){
+      caches.keys().then(ks => Promise.all(ks.filter(k => k.indexOf('learn-') === 0).map(k => caches.delete(k)))).catch(()=>{});
+    }
+  }catch(e){ warnSilent('原生壳内卸载 Service Worker 失败', e); }
+}
+if(!IN_NATIVE_SHELL && 'serviceWorker' in navigator && navigator.serviceWorker && typeof navigator.serviceWorker.register === 'function' && location.protocol.startsWith('http')){
   (async () => {
     const savedVer = safeLocalGet('learnAppSWVer', '');
     if(savedVer !== SW_VERSION){

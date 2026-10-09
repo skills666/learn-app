@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -129,7 +129,7 @@ if (!rateConst) throw new Error('提取常量失败：Rate');
 // 评分档位表（四档）：与 Rate 同一套刻度，必须在 Rate 之后求值
 const rateMetaConst = extractConst('RATE_META');
 if (!rateMetaConst) throw new Error('提取常量失败：RATE_META');
-const warlogConsts = ['WARLOG_KEY', 'WARLOG_KEEP', 'REVLOG_KEY', 'REVLOG_MAX'].map(n => {
+const warlogConsts = ['WARLOG_KEY', 'WARLOG_KEEP', 'WARLOG_DEV_KEY', 'WARLOG_LEGACY_DEV', 'REVLOG_KEY', 'REVLOG_MAX'].map(n => {
   const c = extractConst(n);
   if (!c) throw new Error('提取常量失败：' + n);
   return c;
@@ -180,7 +180,7 @@ ${rateMetaConst}
 ${schedConsts}
 ${lvConsts}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache });
+({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -301,12 +301,13 @@ console.log('\n[撤销评分 · 副作用一并回滚]');
   H().length = 0;
   M()._history = [];
   const today = api.dayKeyOf(Date.now());
+  const warC = () => (api.warDayAgg(today) || { c: [] }).c;   // 战报按设备分层存，读要过跨设备汇总
   api.applySm2Grade('u1', 1, M()._history);            // 忘了：进趁热榜 + 战报记一笔
   ok(H().some(x => x.qid === 'u1'), '评分「忘了」→ 题进趁热榜', JSON.stringify(H().map(x => x.qid)));
-  ok(W()[today] && W()[today].c[0] === 1, '评分「忘了」→ 战报记一次', JSON.stringify(W()[today] && W()[today].c));
+  ok(warC()[0] === 1, '评分「忘了」→ 战报记一次', JSON.stringify(warC()));
   api.undoMemoryGrade();
   ok(!H().some(x => x.qid === 'u1'), '撤销 → 趁热榜里的这次入榜被撤回', JSON.stringify(H().map(x => x.qid)));
-  ok(W()[today] && W()[today].c[0] === 0, '撤销 → 战报计数回退', JSON.stringify(W()[today] && W()[today].c));
+  ok(warC()[0] === 0, '撤销 → 战报计数回退', JSON.stringify(warC()));
   ok(!P().u1, '撤销 → 该题恢复为"无记录"', JSON.stringify(P().u1));
   // 已在榜上的题不能被误删：hotAdded=false 时撤销不动榜
   H().push({ qid: 'u2' });
@@ -493,12 +494,47 @@ console.log('\n[昨日战报 · 按自然日归档]');
   api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 简单 → 新增掌握
   api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 同一题再评
   api.warLogAdd(tLate, 'w3', 3, { mastered:true, srLevel:3 }, 2, false);    // 已掌握被打回 + 掉级
-  const d = W()['2026-01-05'];
+  const d = api.warDayAgg('2026-01-05');
   ok(d && d.c[0] === 1 && d.c[2] === 1 && d.c[3] === 2, '四档次数分别归档', JSON.stringify(d && d.c));
   ok(d && d.q.length === 3, '覆盖题数去重（同题重复评分只算一道）', d && d.q.length);
   ok(d && d.mUp === 2 && d.mDown === 1, '掌握「新增 / 打回」分别计数', JSON.stringify(d && { mUp: d.mUp, mDown: d.mDown }));
   ok(d && d.up === 2 && d.down === 1, '等级「升 / 降」分别计数', JSON.stringify(d && { up: d.up, down: d.down }));
+  ok(d && d.total === 4, '总次数 = 四档之和', d && String(d.total));
+  const day = W()['2026-01-05'];
+  ok(day && !day.c && Object.keys(day).length === 1, '当天按「设备」分层存放（合并的最小单位就是这一层）', JSON.stringify(day && Object.keys(day)));
   ok(!W()['2026-01-06'], '别的一天不被串味');
+}
+
+console.log('\n[昨日战报 · 跨设备合并（同日相加 · 同设备取新 · 幂等）]');
+{
+  const W = api.getWarLog, A = api.warDayAgg;
+  const dev = api.warDevId();
+  ok(typeof dev === 'string' && dev.length >= 8, '本机设备号在第一次用到时生成', String(dev));
+  ok(api.warDevId() === dev, '同一台设备反复取号是同一个（否则每次合并都会多出一层）', api.warDevId());
+  const t = new Date(2026, 1, 1, 10, 0, 0).getTime();
+  api.warLogAdd(t, 'm1', 3, {}, 1, false);                       // 本机：记得 1 次
+  const remote = { '2026-02-01': { devB: { c:[0,0,1,0], q:['r1'], nw:1, mUp:0, mDown:0, up:0, down:0, at: t + 1000 } } };
+  const n1 = api.warLogMerge(remote);
+  let agg = A('2026-02-01');
+  ok(n1 === 1, '云端另一台设备的记录被并进来', String(n1));
+  ok(agg.total === 2 && agg.uniq === 2, '跨设备：次数相加、覆盖题号取并集', JSON.stringify({ t: agg.total, u: agg.uniq }));
+  ok(api.warLogMerge(remote) === 0, '重复合并同一份云端数据是幂等的（次数不会越并越多）', String(api.warLogMerge(remote)));
+  ok(A('2026-02-01').total === 2, '幂等合并后总数保持不变', String(A('2026-02-01').total));
+  // 同一台设备对同一天只有一份记录：较新的那份覆盖旧的（撤销后计数变少也要能传过去）
+  api.warLogMerge({ '2026-02-01': { devB: { c:[0,0,0,0], q:['r1'], nw:1, mUp:0, mDown:0, up:0, down:0, at: t + 2000 } } });
+  agg = A('2026-02-01');
+  ok(agg.total === 1 && agg.uniq === 2, '同一设备取较新的那份，设备之间仍是相加', JSON.stringify({ t: agg.total, u: agg.uniq }));
+  ok(W()['2026-02-01'].devB && W()['2026-02-01'].devB.at === t + 2000, '同设备取较新：旧的那份是被替换，不是叠加',
+     String(W()['2026-02-01'].devB && W()['2026-02-01'].devB.at));
+  // 没有设备分层的旧桶（旧版本推送过的样子）：挂到固定名下，聚合口径不变
+  api.warLogMerge({ '2026-02-01': { c:[1,0,0,0], q:['leg'], nw:1, mUp:0, mDown:0, up:0, down:0 } });
+  ok(A('2026-02-01').total === 2, '云端遗留的旧扁平桶也能被算进来', String(A('2026-02-01').total));
+  ok(api.warLogMerge({ '2026-02-01': { c:[1,0,0,0], q:['leg'], nw:1, mUp:0, mDown:0, up:0, down:0 } }) === 0,
+     '旧扁平桶同样幂等（再并一次不会翻倍）', String(A('2026-02-01').total));
+  // 本机自己那层不能被云端更旧的数据盖掉（否则本机刚答的题会被一份旧快照抹掉）
+  api.warLogMerge({ '2026-02-01': { [dev]: { c:[9,9,9,9], q:[], nw:0, mUp:0, mDown:0, up:0, down:0, at: 1 } } });
+  ok(A('2026-02-01').total === 2, '云端更旧的"本机那份"不会覆盖本机的读数', String(A('2026-02-01').total));
+  ok(W()['2026-02-01'][dev].at === t, '本机那层的时间戳没被旧数据改掉', String(W()['2026-02-01'][dev].at));
 }
 
 console.log('\n[normalizeDocs · 题目 id 兜底与去重]');
@@ -609,10 +645,10 @@ console.log('\n[战报 · "首刷"只认从未评分过的题]');
   api.warLogAdd(t, 'nw1', 3, browsed, 1, false);
   // 之前评过分的题 → 不算首刷
   api.warLogAdd(t, 'nw2', 3, { fsrs:{ d:5, s:1, last:0, reps:1, lapses:0 }, lastPracticed:t-1000, srNext:t }, 1, false);
-  const d = W()['2026-03-03'];
-  ok(d && d.nw === 1, '首刷只算"从未评过分"的题（翻看不打折）', d && String(d.nw));
+  const nw = () => (api.warDayAgg('2026-03-03') || { nw: -1 }).nw;
+  ok(nw() === 1, '首刷只算"从未评过分"的题（翻看不打折）', String(nw()));
   api.warLogUndo(t, 'nw1', 3, browsed, 1, false);
-  ok(d && d.nw === 0, '撤销首刷题 → nw 对称回退', d && String(d.nw));
+  ok(nw() === 0, '撤销首刷题 → nw 对称回退', String(nw()));
 }
 
 console.log('\n[撤销评分 · 保留率日志同步回滚]');
@@ -661,8 +697,11 @@ console.log('\n[关键实现点静态断言]');
      '热力图明细支持纯文本输出（title / aria-label 不再显示 <b> 字面量）');
   ok(/at: now, qid: qid \}/.test(html) && /function revLogUndo\(at, qid\)/.test(html),
      '保留率日志带 qid，且撤销评分时同步回滚（统计不再包含已撤销的复习）');
-  ok(/role="button" tabindex="0" aria-label="\$\{esc\(cellLabel\)\}"/.test(html),
-     '热力图格子对键盘 / 读屏可达（role + tabindex + aria-label）');
+  // roving tabindex：365 个格子不能全是 tabindex=0（键盘要按 365 次 Tab 才能走过这块），
+  // 只有"今天"可 Tab 到，其余为 -1，进入后用方向键在格子间移动（见 index.html 的键盘处理）
+  ok(/role="button" tabindex="\$\{i===todayIdx\?'0':'-1'\}" aria-label="\$\{esc\(cellLabel\)\}"/.test(html)
+     && /hm-cell\[data-no\]/.test(html) && /ArrowLeft/.test(html),
+     '热力图格子对键盘 / 读屏可达（role + roving tabindex + aria-label + 方向键导航）');
   ok(!/if\(!hadQueue\) memory\._history = \[\]/.test(html), '队列重建不再顺手清掉撤销栈（切走再回来仍能撤销）');
   ok(/^let _memGradeBusy = false;/m.test(html) && !/let _memBusy/.test(html),
      '评分锁是模块级（渲染闭包里的锁会被"动画期切走再切回"绕过，导致同题双评分）');
@@ -710,7 +749,17 @@ console.log('\n[关键实现点静态断言]');
   ok(/fresh\+\+; return; \}/.test(html), '统计里单列"未学"题数（与记忆队列口径一致）');
   // —— 昨日战报：独立存储 + 按自然日归日，绝不碰记忆进度 ——
   ok(/function warLogAdd\(now, qid, g, pr, newLvl, newMastered\)/.test(html), '战报归档函数签名稳定（applySm2Grade 的埋点依赖它）');
-  ok(/safeLocalSet\(WARLOG_KEY, JSON\.stringify\(WARLOG\)\)/.test(html), '战报日志落独立 localStorage 键（不进 gist 主载荷）');
+  ok(/safeLocalSet\(WARLOG_KEY, JSON\.stringify\(WARLOG\)\)/.test(html), '战报日志落独立 localStorage 键（不混进 learn-data.json 主载荷）');
+  ok(/'warlog-data\.json':\{content:warlogStr\}/.test(html), '战报在 gist 里有独立文件（否则手机与电脑各报一半）');
+  ok(/function warLogMerge\(remote\)/.test(html) && /function warDayAgg\(day\)/.test(html),
+     '战报按「天 → 设备」分层：跨设备相加、同设备取较新（合并天然幂等）');
+  ok(/function warLogMigrate\(o\)/.test(html) && /warLogMigrate\(o\)/.test(html),
+     '开机加载时把旧版扁平桶归到本机设备名下（无归属的桶上云会在另一端被再记一份 → 次数翻倍）');
+  ok((html.match(/applyWarFromGist\(gist\);/g) || []).length === 2,
+     '两条云拉取路径共用战报合并逻辑（手动拉取 / 启动自动拉取）',
+     String((html.match(/applyWarFromGist\(gist\);/g) || []).length));
+  ok(!/const d = WARLOG\[k\.yest\]/.test(html) && !/const wl = WARLOG\[/.test(html),
+     '战报 / 热力图明细 / 堆叠柱都走 warDayAgg 汇总，不再直接读单设备的那一层');
   ok(/new Date\(t\.getFullYear\(\), t\.getMonth\(\), t\.getDate\(\)-1\)/.test(html), '「昨天」用日历减法算（夏令时下减 86400000 会错一天）');
   ok(/safeLocalGet\(WARREPORT_SEEN,''\) === todayKey/.test(html), '战报每天只弹一次：标记值 = 当天日期键，跨天自然失效');
   // —— 界面文案双皮：整体下线，界面固定一套用词（不留 T() 死抽象、不留切换入口）——

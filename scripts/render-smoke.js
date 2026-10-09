@@ -184,6 +184,7 @@ globalThis.__T = {
   startMock: () => startMock(),
   setMockCfg: c => { Object.assign(mock.cfg, c); },
   renderWar: () => { const r = buildWarReport(Date.now()); if (r) renderWarReport(r); return !!r; },
+  warTotal: () => document.querySelector('#warTotal').textContent,   // 战报大数字（次），用来核对跨设备合并的口径
   finishMock: () => { mock.done = true; },
   renderAll: () => renderAll(),
   html: () => document.querySelector('#content').innerHTML,
@@ -259,7 +260,12 @@ console.log('\n[有数据 · 各页面渲染]');
     q3: { practiced: true, lastPracticed: now - 3 * DAY },
   });
   const yk = (() => { const t = new Date(now); const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); })();
-  T.setWarLog({ [yk]: { c: [1, 2, 8, 3], q: ['q1', 'q2', 'q3'], nw: 2, mUp: 2, mDown: 0, up: 3, down: 1 } });
+  // 昨天的战报：本机 14 次 + 另一台设备 3 次（按「设备」分层）——
+  // 页面上的大数字必须是两台设备相加的 17，否则手机/电脑又会各报一半（用户实测过的那个问题）
+  T.setWarLog({ [yk]: {
+    devB: { c: [0, 0, 2, 1], q: ['q3'], nw: 0, mUp: 1, mDown: 0, up: 1, down: 0, at: now },
+    devA: { c: [1, 2, 8, 3], q: ['q1', 'q2', 'q3'], nw: 2, mUp: 2, mDown: 0, up: 3, down: 1, at: now + 1 },
+  } });
   T.setRevLog([{ d: 3, r: 1, at: now - 5 * DAY, qid: 'q1' }, { d: 12, r: 0, at: now - 2 * DAY, qid: 'q2' }]);
   T.setHot([{ qid: 'q2', addedAt: now }]);
 
@@ -313,6 +319,13 @@ console.log('\n[有数据 · 各页面渲染]');
 
   const war = call('renderWarReport', () => T.renderWar()).v;
   ok(!!war, '战报（昨日有数据）能构建并渲染');
+  const warN = call('warTotal', () => T.warTotal()).v;
+  ok(warN === '17', '战报大数字 = 昨天的跨设备合计量（本机 14 + 另一台 3）', String(warN));
+  // 旧版扁平桶（升级前写下的当天记录）仍按原口径可读；本机那份在写入/加载时会被迁到设备名下
+  T.setWarLog({ [yk]: { c: [1, 2, 8, 3], q: ['q1', 'q2', 'q3'], nw: 2, mUp: 2, mDown: 0, up: 3, down: 1 } });
+  const legacyWar = call('renderWarReport', () => T.renderWar()).v;
+  ok(!!legacyWar && call('warTotal', () => T.warTotal()).v === '14', '旧格式（无设备分层）的当天记录照旧统计',
+     String(call('warTotal', () => T.warTotal()).v));
 }
 
 console.log('\n[运行时错误日志]');
