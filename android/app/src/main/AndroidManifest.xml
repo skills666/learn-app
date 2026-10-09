@@ -17,8 +17,16 @@
              Web 层的移动端规则全在 max-width:768px 里，横屏手机宽度会超过 768 直接落到桌面断点
              （顶栏、统计条、卡片密度都会变成宽屏样式）。要放开横屏时，先补一套按高度/短边判断的
              移动端规则，再删掉这一行。 -->
+        <!-- windowSoftInputMode=adjustResize：键盘弹起时让窗口（进而 WebView）变矮。
+             Capacitor 的模板里默认就有这一行，本项目在最初的工程生成中漏掉了 —— 后果是在
+             Android 15 以下（尚未强制 edge-to-edge 的机型）键盘会直接盖住页面底部的输入框。
+             Android 15+ 强制 edge-to-edge 后系统不再响应 adjustResize（decorFitsSystemWindows=false），
+             那条路走的是 Web 层按 visualViewport 算出的 kb 变量（见 index.html 的 bindKeyboardInset），
+             两者互补：能缩窗的机型走系统缩窗，不能缩的走那个变量，都不会重复让位。
+             （注意：XML 注释里不能出现连续两个减号，上面的变量名因此不写全称） -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
+            android:windowSoftInputMode="adjustResize"
             android:screenOrientation="portrait"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"

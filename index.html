@@ -28,6 +28,52 @@
     --shadow:0 8px 30px rgba(0,0,0,.45);
     --card-hover-shadow:0 8px 26px rgba(0,0,0,.35),0 0 0 1px rgba(var(--accent2-rgb),.12),0 0 22px rgba(var(--accent2-rgb),.16);
     --scroll-thumb:var(--line2); --scroll-thumb-hover:var(--accent2);
+
+    /* ===== 设计令牌（颜色之外的那一半）=====
+       颜色已经变量化，但"节奏"没有：字体栈抄了 5 遍、缓动曲线 6 条、圆角 11 种、
+       版心 1200/1040/880/820 四套，改一处要全文件搜字面量。这里把这一层抽出来，
+       下文凡是有名字的地方一律引用令牌 —— 调一处、全站跟着变。 */
+
+    /* 字体栈：唯一两套（正文 / 等宽），等宽此前被复制在 5 个 <pre> 规则里 */
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+    /* 圆角梯度：按"组件体量"命名，不按像素 —— 取值与既有实现逐一对齐，换上令牌不改变观感 */
+    --r-card:14px;          /* 列表卡 / 统计卡 */
+    --r-panel:16px;         /* 弹窗 / 浮层 */
+    --r-hero:18px;          /* 大卡：薪资、刷题、结果页 */
+    --r-xs:6px; --r-sm:8px; --r-md:10px; --r-lg:12px; --r-pill:999px;
+    --radius:var(--r-card); /* 兼容既有 var(--radius) 引用 */
+
+    /* 版心与沟槽：内容栏宽度 + 页面左右留白（窄屏由媒体查询覆写，见 --gutter） */
+    --rail:1200px; --gutter:28px;
+
+    /* 间距刻度：只给"块与块之间"用，组件内部仍按各自需要取值 */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+
+    /* 缓动与时长：全站收敛成两条曲线 ——
+       ease-out 管出场（起步快、收尾稳），ease-spring 管强调（收尾极慢，有"到位"的定格感）。
+       此前 6 条曲线各写各的，同一屏里两种节奏并存，动效是散的。 */
+    --ease-out:cubic-bezier(.22,.61,.36,1);
+    --ease-spring:cubic-bezier(.32,.72,0,1);
+    --dur-fast:.15s; --dur:.22s; --dur-slow:.42s;
+
+    /* 阴影三档：轻抬升（小卡悬停）→ --shadow（卡片/浮层，由 applyTheme 按深浅写）→ 浮层最高级。
+       浅底主题由 applyTheme 换成轻投影（重投影在纸白上发飘），这里只是脚本未跑时的兜底 */
+    --e-lift:0 4px 16px rgba(0,0,0,.28);
+    --e3:0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05);
+    /* 语义色 RGB 分量：供"同色系浅底"使用（评分选中态/到期提醒），applyTheme 会按主题覆写 */
+    --good-rgb:79,208,138; --warn-rgb:246,168,91; --bad-rgb:240,106,106;
+
+    /* 焦点环：描边 + 一圈 accent 光晕。光晕用 accent 分量，深浅主题下都够醒目 */
+    --focus-ring:0 0 0 3px rgba(var(--accent-rgb),.32);
+
+    /* 软键盘让出的高度（px）：由 JS 按 visualViewport 实时写回，默认 0。
+       只对"锚在视口底部"的东西有意义 —— App 内 WebView 在 edge-to-edge 下不随键盘缩放，
+       布局视口仍是整屏，于是 ::bottom 的浮层与 .content 的底边会被键盘盖住；
+       输入框要浮到键盘之上，就得在底部预留这一截。网页端浏览器自己会缩放布局视口，
+       这个值恒为 0，下面几处 calc 等于没写。 */
+    --kb:0px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   /* 全局滚动条：跟随主题变量，暗色系不冲突（Firefox + WebKit） */
@@ -39,10 +85,32 @@
   /* .tabs 等需要隐藏滚动条的区域已在各自规则中以 display:none / scrollbar-width:none 处理 */
   html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg);transition:background .5s ease}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    font-family:var(--font-sans);
     background:var(--bg);
     color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px;transition:background .5s ease;
+    /* 基线行高：此前未声明，正文块各写各的（1.5~1.8）。
+       紧接着一条把单行控件锁回 1.2 —— 1.6 是给段落定的，落在按钮/标签上只会把它们整体撑高 */
+    line-height:1.6;
+    -webkit-text-size-adjust:100%;   /* iOS 横屏不再被自动放大字号 */
+    caret-color:var(--accent);       /* 输入光标跟随主题主色 */
+    accent-color:var(--accent);      /* 原生勾选框/进度条着色 */
   }
+  /* 单行控件与紧凑标签：行高锁 1.2（≈系统字体的 normal，与令牌化之前逐像素一致）。
+     这些件全是"一行文字 + 固定内边距"，跟着 1.6 走会让顶栏、按钮、行表一起长高 5px */
+  .btn,.tab,.iconbtn,.theme-tab,.grill-dur-btn,.grade-btn,.modal-x,.qnum,.tag-item,
+  .set-arrow,.stats-bar,.season-rows div,.season-legend div,.sr-item .src,
+  .rt-label,.st-label,.hm-months>i>b{line-height:1.2}
+  /* 文本选中：跟随主题主色（默认的蓝色高亮在暖色/纸白主题上非常出戏） */
+  ::selection{background:rgba(var(--accent-rgb),.3);color:var(--text)}
+  ::-moz-selection{background:rgba(var(--accent-rgb),.3);color:var(--text)}
+
+  /* ---------- 排版基线：标题行高显式化 ----------
+     此前这些标题全部走 UA 默认行高，而默认值随字体度量浮动（命中系统字体 vs 回落到苹方/雅黑/微软雅黑，
+     同一个 20px 标题的行盒可以差 3~4px）。显式钉住之后，标题的紧凑度在任何平台都一致。
+     卡片标题（.pcard / .memory-card / .mock-card .ptitle）各自已有 1.42~1.55 的行高声明，不在此列。
+     层级感一半靠字号差、一半靠"标题紧、正文松"的行高差，这一条负责后者。 */
+  .cfg-card h2,.modal h3,.done-card h3,.mock-result h2,.season-badge,
+  .q-summary .qt,.grill-fb-title,.set-head{line-height:1.3}
   /* 注意：.app 特意不加 z-index —— 主题粒子画布(fixed;z-index:0)需要盖在内容之上才有"氛围感"，
      实测加了 z-index:1 后，10 个动态主题的特效会被不透明卡片挡住、主题几乎失效。
      因此"不压住文字"改为在特效本身解决：所有主题都按"低对比、大面积、无高频小块"来做，峰值透明度逐个压过。
@@ -55,11 +123,14 @@
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:5px 13px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background .15s,color .15s}
   .tab:hover{background:var(--panel);color:var(--text)}
-  .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2)}
+  .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
   .tab .ic{margin-right:3px}
   /* min-height：评分后统计项（待复习/今日已刷/连续）会增减，固定最小高度避免未换行时高度跳动；
      tabular-nums：数字等宽，评分后数字变化（23→22）不再让居中的整组统计项左右微移 */
-  .stats-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:5px 18px;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;font-size:11.5px;color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
+  /* 底色不用 --bg2 + 分割线：那样与顶栏合成两条相距 28px 的平行硬线，整页被切成三段。
+     改成从顶栏底色渐隐到画布，统计条成为"顶栏 → 内容"之间的过渡带；
+     且对 img-bg 那种半透明的 --bg2 同样成立（实色渐变会盖掉背景图） */
+  .stats-bar{display:flex;align-items:center;justify-content:center;gap:var(--sp-4);padding:6px 18px 9px;background:linear-gradient(180deg,var(--bg2),transparent);flex:none;font-size:11.5px;color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
   /* min-width 是必需的，不是保险：flex:1 展开等于 flex-basis:0%，换行计算时这根条被当成 0 宽的项，
      于是它只能吃所在行的残余空间 —— 手机上统计项一多，残余就剩几像素，条"缩成一条线"看不见了。
      给了 min-width，flex 才会按固定宽度给它排版，当前行放不下就整根换到下一行，窄屏上始终可见 */
@@ -70,7 +141,12 @@
   .stats-bar .bar>i:last-child{border-radius:0 3px 3px 0}
   .stats-bar b{color:var(--text);font-weight:700}
   .stats-bar .urg{color:var(--warn);font-weight:700}
-  .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:5px 10px;color:var(--muted);flex:none}
+  /* 搜索框此前是"输入框 outline 被清掉、外层也没有任何焦点反馈"—— 键盘 Tab 进来时看不出光标在哪。
+     补 :focus-within：描边点亮 + 一圈 accent 光晕，与设置面板里的输入框同一套语言 */
+  .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:5px 10px;color:var(--muted);flex:none;
+                  transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+  .topbar .search:focus-within{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.16)}
+  .topbar .search:focus-within .search-ic{color:var(--accent2)}
   .topbar .search input{background:none;border:none;outline:none;color:var(--text);font-size:13px;width:180px}
   .topbar .search input::placeholder{color:var(--faint)}
   .btn{border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
@@ -86,19 +162,21 @@
   /* 滚动条常驻：overflow-y:scroll 让槽位恒定（轨道是透明的，没滚动时完全看不见）。
      若用 auto，评分换题/展开答案导致内容高度跨越视口时，滚动条会出现或消失 → 内容宽度增减 10px，
      整页横向"抖"一下；scrollbar-gutter:stable 是同一目的的标准属性，双写兼容不同内核对自定义滚动条的处理 */
-  .content{flex:1;overflow-y:scroll;overflow-x:hidden;scrollbar-gutter:stable;padding:24px 28px calc(40px + env(safe-area-inset-bottom, 0px));max-width:1200px;margin:0 auto;width:100%}
+  /* 底部多留 --kb：键盘弹起时内容区要能再往上滚一截，最后一行输入框才不会压在键盘底下
+     （滚动由 revealFocusedField 按需触发，这里只负责"滚得动"） */
+  .content{flex:1;overflow-y:scroll;overflow-x:hidden;scrollbar-gutter:stable;padding:var(--sp-5) var(--gutter) calc(var(--sp-6) + env(safe-area-inset-bottom, 0px) + var(--kb));max-width:var(--rail);margin:0 auto;width:100%}
   /* 首屏骨架屏：占位块 + 斜向流光，数据就绪前替代空白 */
   .skeleton{width:100%}
   .sk-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  .sk-card{height:88px;border-radius:14px;background:var(--panel)}
-  .sk-block{height:140px;border-radius:14px;background:var(--panel);margin-bottom:16px}
+  .sk-card{height:88px;border-radius:var(--r-card);background:var(--panel)}
+  .sk-block{height:140px;border-radius:var(--r-card);background:var(--panel);margin-bottom:16px}
   .sk-block.sk-short{height:96px}
   .sk-card,.sk-block{position:relative;overflow:hidden}
   .sk-card::after,.sk-block::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(var(--text-rgb,255,255,255),.06),transparent);animation:skShimmer 1.4s ease-in-out infinite}
   @keyframes skShimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
   @media (max-width:640px){.sk-row{grid-template-columns:repeat(2,1fr)}}   /* 窄屏两列，贴合真实统计卡布局 */
   /* 视图切换：内容块逐个「上浮 + 去模糊」交错入场（致敬 DeepSeek Harness 的 hero-enter） */
-  .content.in > *{animation:riseIn .55s cubic-bezier(.22,.61,.36,1) backwards}
+  .content.in > *{animation:riseIn .55s var(--ease-out) backwards}
   .content.in > *:nth-child(1){animation-delay:.02s}
   .content.in > *:nth-child(2){animation-delay:.06s}
   .content.in > *:nth-child(3){animation-delay:.10s}
@@ -119,7 +197,14 @@
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;animation-delay:0s !important}
   }
   .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
-  .doc-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:.5px}
+  /* 页面标题：流体字号 + 平衡断行 + 签名式 accent 短竖条。
+     字号用 clamp 在 768~1200px 之间从 18 线升到 24 —— 端点与旧的窄屏覆写值完全一致，
+     所以只是把断点处的"跳变"换成连续过渡，不是改设计。text-wrap:balance 让两行标题
+     断得更匀（不再出现"第一行一个字 + 第二行一长串"） */
+  .doc-head h2{margin:0;font-size:clamp(18px,1.39vw + 7.3px,24px);font-weight:800;letter-spacing:.3px;line-height:1.25;text-wrap:balance}
+  /* 一级页面的视觉锚点：顶栏之下、每页左上角同一处短竖条（渐变取主题双主色） */
+  .doc-head h2::before{content:'';display:inline-block;width:3px;height:.76em;border-radius:2px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2));margin-right:10px;vertical-align:-.04em}
   .doc-head .meta{color:var(--muted);font-size:13px;margin-top:4px}
   /* 槽底用主题文字色分量：写死深色在素笺/粼光/子良/子荣这类浅底主题下会变成白卡片上的一条黑槽 */
   .bigbar{height:10px;border-radius:8px;background:rgba(var(--text-rgb),.14);overflow:hidden;margin-top:12px;max-width:420px}
@@ -140,14 +225,17 @@
   .q .qhead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
   .q .qnum{flex:none;width:26px;height:26px;border-radius:8px;background:var(--panel2);
           display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--accent);margin-top:1px}
-  .q .qtitle{font-size:15.5px;font-weight:650;line-height:1.5;flex:1}
-  .q .qacts{display:flex;gap:8px;flex:none}
+  /* 650 是"半粗"的写法，但系统字体栈没有这个字重，各平台会就近取整（Mac 取 600 / 部分安卓取 700），
+     同一份代码在两端厚薄不一 —— 统一落 600，跨平台一致。text-wrap:pretty 让长标题的末行不留孤字 */
+  .q .qtitle{font-size:15.5px;font-weight:600;line-height:1.5;flex:1;text-wrap:pretty}
+  .q .qacts{display:flex;gap:var(--sp-2);flex:none}
   .iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);
            color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:15px;transition:.15s}
   .iconbtn:hover{color:var(--text)}
   .iconbtn.on{color:var(--good);border-color:var(--good)}
   .iconbtn.del:hover{color:var(--bad);border-color:var(--bad)}
-  .answer{overflow:hidden;transition:grid-template-rows .35s ease,opacity .25s ease,margin-top .35s ease;display:grid;grid-template-rows:0fr;opacity:0;margin-top:0}
+  /* 展开节奏与通用折叠容器 .rv 完全对齐（此前 .35s ease / .38s ease-out 两套，同一种交互两种手感） */
+  .answer{overflow:hidden;transition:grid-template-rows .38s var(--ease-out),opacity .3s ease,margin-top .38s ease;display:grid;grid-template-rows:0fr;opacity:0;margin-top:0}
   .answer.show{grid-template-rows:1fr;opacity:1;margin-top:14px}
   .answer .inner{overflow:hidden;border-top:1px dashed var(--line2);padding-top:13px;color:var(--text);line-height:1.75;font-size:14.5px}
   .answer .inner p{margin:0 0 10px}
@@ -156,13 +244,13 @@
   /* 代码块样式：原先只有 .ai-answer 有 pre 规则，题目答案里的代码块是"裸 pre"——
      无背景、无圆角、长行还会撑出横向溢出。这里与 .ai-answer pre 保持同一套观感 */
   .answer .inner pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
-  .answer .inner pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .answer .inner pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:var(--font-mono);white-space:pre}
   .answer .inner strong{color:var(--text)}
   .answer .label{font-size:11px;color:var(--accent);letter-spacing:1px;font-weight:700;margin-bottom:6px}
   /* 通用「展开/收起」容器：grid-rows 0fr→1fr 让高度平滑增长，替代 display:none 的硬切换。
      用法：外层加 .rv（展开时再加 .show），内容包一层 .rv-in（负责裁剪与内边距/边框）。 */
   .rv{display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;
-      transition:grid-template-rows .38s cubic-bezier(.22,.61,.36,1),opacity .3s ease,margin-top .38s ease}
+      transition:grid-template-rows .38s var(--ease-out),opacity .3s ease,margin-top .38s ease}
   .rv.show{grid-template-rows:1fr;opacity:1}
   .rv > .rv-in{overflow:hidden;min-height:0;min-width:0}
   /* 长串断行：英文术语 / URL / 长标识符（如 AbstractApplicationContext）默认没有断行点，
@@ -171,14 +259,29 @@
      这里统一放开任意位置断行。代码块是 white-space:pre，不受影响，仍走自身横向滚动。 */
   .rv > .rv-in,.answer .inner{min-width:0;overflow-wrap:anywhere;word-break:break-word}
   .pcard .ptitle,.memory-card .ptitle,.mock-card .ptitle,.q .qtitle{overflow-wrap:anywhere;word-break:break-word}
+  /* 排版：正文块统一 text-wrap:pretty（避免末行只剩一两个字的"孤字"）。
+     text-wrap 是可继承属性，写在容器上一次即覆盖内部所有段落，不必逐 <p> 重复。
+     标题走 balance（见各标题规则）：两者目标相反 —— balance 求"两行长度接近"，
+     pretty 求"末行别掉单"；同一条规则里不要混用。 */
+  .answer .inner,.pcard .panswer,.memory-answer,.ai-answer,.ai-review,.grill-msg,.grill-fb-content,
+  .season-sub,.modal .desc,.cfg-card .desc,.q-summary .qa,.sr-item .snip{text-wrap:pretty}
   @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .anim-in{animation:fadeSlideUp .34s cubic-bezier(.22,.61,.36,1) both}
-  .empty{text-align:center;color:var(--text);opacity:.62;padding:60px 20px;font-size:14px}
-  .empty .big{font-size:40px;margin-bottom:10px}
+  .anim-in{animation:fadeSlideUp .34s var(--ease-out) both}
+  /* 空状态（与 .flash-empty 同一套，共享声明见下）：
+     图标落在一个随主题着色的圆形柔光底座上，文案限宽 52ch 居中 —— 宽屏上一行说明文字拉满 1200px 会散。
+     原来靠 opacity:.62 压暗整块（连图标一起灰掉），改用 --muted 前景色，底座能保持清晰 */
+  .empty,.flash-empty{text-align:center;padding:64px 20px;font-size:14px;line-height:1.7;max-width:52ch;margin:0 auto}
+  .empty{color:var(--muted)}
+  .flash-empty{color:var(--muted)}
+  .empty .big,.flash-empty .big{position:relative;width:92px;height:92px;margin:0 auto 18px;
+    display:grid;place-items:center;font-size:40px;line-height:1}
+  .empty .big::before,.flash-empty .big::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle at 50% 42%,rgba(var(--accent-rgb),.18),rgba(var(--accent2-rgb),.08) 58%,transparent 74%);
+    border:1px solid rgba(var(--accent-rgb),.14)}
 
   /* ---------- 文档视图：块形（网格）展示 ---------- */
   .docs-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-  .docs-toolbar .dt-count{color:var(--muted);font-size:13px;font-weight:600}
+  .docs-toolbar .dt-count{color:var(--muted);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
   .docs-toolbar .dt-count b{color:var(--accent)}
   /* 每张卡片等高等宽，标题撑开、进度与按钮贴底 */
   .docs-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;align-items:stretch}
@@ -232,22 +335,27 @@
   @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
   @keyframes lvM-arc{0%,100%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 5px rgba(255,224,102,.4),0 0 6px rgba(255,224,102,.55)}50%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 10px rgba(255,224,102,.75),0 0 15px rgba(255,224,102,1)}}
   .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:22px}
-  .an-wrap{max-width:1040px;margin:0 auto;padding:18px 16px}
-  .an-h{font-size:19px;font-weight:800;margin:2px 0}
-  .an-sub{color:var(--muted);font-size:13px;margin-bottom:14px}
-  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:14px 0}
-  .an-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-  .an-card .n{font-size:23px;font-weight:800;line-height:1.1}
+  /* 进度页此前在 .content 的 28px 之外又自带 16px 横向内边距 → 左右留白实际 44px，
+     与其它页面（28px）不同轴，翻页时整块内容会左右"漂"。横向留白统一交给 .content 的 --gutter，这里只管纵向节奏 */
+  .an-wrap{max-width:1040px;margin:0 auto;padding:18px 0}
+  .an-h{font-size:clamp(17px,.8vw + 12.8px,19px);font-weight:800;line-height:1.3;margin:2px 0;text-wrap:balance}
+  .an-sub{color:var(--muted);font-size:13px;margin-bottom:14px;text-wrap:pretty}
+  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin:14px 0}
+  .an-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:14px 16px}
+  /* 数字等宽：进度页的值随复习实时变化，等宽后 9→10 不会把整块卡片顶得左右抖 */
+  .an-card .n{font-size:23px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
   .an-card .t{font-size:12px;color:var(--muted);margin-top:3px}
   /* 图表卡片：热力图/预测图此前是裸块（无背景无边框、宽度也与卡片不一致），包一层与其他卡片同风格同宽 */
   .an-chart-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:6px}
   .an-sec{font-weight:700;font-size:15px;margin:22px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .an-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
   .an-dot{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
-  .pcard{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:30px 32px;min-height:260px;
+  .pcard{background:var(--card);border:1px solid var(--line2);border-radius:var(--r-hero);padding:30px 32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
   .pcard .ptag{font-size:11px;letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
-  .pcard .ptitle{font-size:22px;font-weight:800;line-height:1.5;margin:10px 0 18px;flex:1}
+  /* 题目主标题：流体字号 —— 此前桌面 22px 一路带到 360px 手机屏上（该视图是全应用唯一没做窄屏缩放的标题），
+     手机上换行三次、把答案区推到屏外。clamp 让它在 750px 以下收到 18px，桌面端仍是 22px */
+  .pcard .ptitle{font-size:clamp(18px,1.2vw + 13px,22px);font-weight:800;line-height:1.42;margin:10px 0 18px;flex:1;text-wrap:pretty}
   .pcard .panswer{color:var(--muted);line-height:1.8;font-size:15px}
   /* 边框与内边距放进 .rv-in：放外层时即使内容折叠也仍会占位，会留下一道虚线 */
   .pcard .panswer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
@@ -255,23 +363,30 @@
   .pcard .panswer p{margin:0 0 10px}
   .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .pcard .panswer pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
-  .pcard .panswer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .pcard .panswer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:var(--font-mono);white-space:pre}
   .pcard .panswer strong{color:var(--text)}
   .pcontrols{display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap}
   .pcontrols .spacer{flex:1}
   .reveal-hint{color:var(--text);opacity:.6;font-size:13px;text-align:center;margin-top:14px}
 
-  /* overview */
-  .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;transition:border-color .18s,box-shadow .22s,transform .22s}
-  .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);
-                 box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(var(--accent2-rgb),.2)}
-  .ov-card .n{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  /* overview
+     5 张统计卡：≥901px 一排五张；中间区间（769~900）此前被压到每张约 140px，
+     数字和标签同时挤在一起 —— 补一条中间断点，落到 3 列（768 及以下的窄屏规则更靠后，不受影响） */
+  .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-3);margin-bottom:20px}
+  @media (max-width:900px){.ov-grid{grid-template-columns:repeat(3,1fr);gap:10px}}
+  .ov-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:16px;text-align:center;
+           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur)}
+  /* 悬停阴影改走 --card-hover-shadow（由 applyTheme 按深浅各给一套）：
+     原先这里是写死的黑投影 + 彩色外发光，浅底主题（素笺/粼光/子良/子荣/玫瑰黎明）上会糊成一团脏影 */
+  .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);box-shadow:var(--card-hover-shadow)}
+  .ov-card .n{font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
+             background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .ov-card .t{color:var(--muted);font-size:13px;margin-top:4px}
   /* 总览：待复习行动卡 —— 纯色数字要覆盖 .n 的渐变文字填充；有到期题时轻微脉冲提示 */
   .ov-card .n.plain{background:none;-webkit-text-fill-color:currentColor}
-  .ov-card.ov-act{border-color:rgba(246,168,91,.5)}
+  /* 提醒色走语义令牌：写死的橙在暖色主题（流光/斜光）上与主色同调，等于没提醒 */
+  .ov-card.ov-act{border-color:rgba(var(--warn-rgb),.55)}
   .ov-card.ov-act .n{animation:duePulse 2.2s ease-in-out infinite}
   @keyframes duePulse{0%,100%{opacity:1}50%{opacity:.68}}
   /* 薪资卡片 — 跟随主题色 */
@@ -282,38 +397,56 @@
     width:300px;height:80px;background:radial-gradient(ellipse,var(--accent3),transparent 70%);pointer-events:none;opacity:.15}
   .salary-card .salary-inner{position:relative;padding:24px 28px;text-align:center;z-index:1}
   .salary-card .salary-label{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px}
-  .salary-card .salary-num{font-size:52px;font-weight:900;letter-spacing:2px;
+  /* 大数字：字号流体化 —— 768~1200px 之间从 32 连续升到 52，768 以下自然收敛在 32，
+     两端取值与原来的"桌面 52 / 窄屏 32"完全一致，只是把断点处的跳变换成过渡
+     （≤400px 的 24px 覆写仍在，那条是另一档，见后面的媒体查询）。
+     等宽数字让"从旧值滚到新值"的画面不左右抖；字距从写死的 2px 收到 .01em ——
+     2px 是两位数时代的固定值，数值到五六位时会散开 */
+  .salary-card .salary-num{font-size:clamp(32px,4.63vw - 3.6px,52px);font-weight:900;letter-spacing:.01em;line-height:1.12;
+    font-variant-numeric:tabular-nums;
     background:linear-gradient(180deg,var(--accent),var(--accent2));
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .salary-card .salary-sub{font-size:12px;color:var(--muted);margin-top:4px}
   .salary-card .salary-sub b{color:var(--accent3)}
-  .salary-card .salary-bar{height:8px;border-radius:6px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
+  .salary-card .salary-bar{height:8px;border-radius:var(--r-xs);background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
   /* 圆角两端都是 4px（= 8px 高度下容器 6px 圆角的实际半径），与容器吻合，故保留自带写法；
      宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点） */
-  .salary-card .salary-bar>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent3),var(--accent))}
+  .salary-card .salary-bar>i{display:block;height:100%;border-radius:var(--r-xs);background:linear-gradient(90deg,var(--accent3),var(--accent))}
   .mini i{display:block}
 
   /* search results */
-  .sr-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px}
+  .sr-item{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;
+           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur)}
+  /* 搜索结果条目此前是"整行能点、但没有任何悬停反馈"。补的这套与卡片类刻意不同：
+     卡片是"浮起 + 发光"，结果条目在列表流里、动太多会晃眼 —— 只做描边点亮 + 2px 横向位移 */
+  @media (hover:hover){
+    .sr-item:hover{border-color:rgba(var(--accent2-rgb),.5);transform:translateX(2px);box-shadow:var(--e-lift)}
+  }
   .sr-item .src{font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:3px}
-  .sr-item .qt{font-weight:650;cursor:pointer}
-  .sr-item .snip{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.6}
+  .sr-item .qt{font-weight:600;cursor:pointer}
+  .sr-item .snip{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.6;text-wrap:pretty}
 
   /* 刷题完成卡片 */
   .done-card{text-align:center;padding:40px 20px}
-  .done-card .big{font-size:54px;margin-bottom:10px}
+  .done-card .big{font-size:54px;line-height:1.1;margin-bottom:10px}
   .done-card h3{font-size:22px;margin:0 0 8px}
   .done-card .sub{color:var(--muted);margin-bottom:20px}
 
   /* modal */
   /* z-index 必须高于 .backtop(70)：50 时"回到顶部"会浮在遮罩之上、还能点，弹窗里会看到一颗多余的悬浮按钮。
      仍低于 .toast(80)：弹窗打开期间的提示要能盖在最上面 */
-  .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.85);
+  /* padding-bottom 收 --kb：键盘弹起时栅格的内容盒变矮，居中的弹窗自然抬到键盘之上
+     （弹窗里就有输入框：新增/编辑题目、导入导出），不被键盘压住才谈得上"填得完" */
+  .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.85);padding-bottom:var(--kb);
            display:grid;place-items:center;z-index:75;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
   .modal-bg.show{visibility:visible;opacity:1}
   .modal-bg.show .modal{animation:scaleIn .2s ease}
-  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:24px;width:min(520px,92vw);
-         box-shadow:var(--shadow);max-height:90vh;overflow-y:auto;scrollbar-gutter:stable}
+  /* 弹窗用最高一级阴影 --e3：与卡片共用 --shadow 时，遮罩之上的一层浮窗和页面里的卡片是同一个深度，
+     层级靠"半透明黑遮罩"一个人扛。--e3 更重 + 带 1px 内描边高光，深浅主题各有一套（见 applyTheme） */
+  /* max-height 同样收 --kb：它算的是"键盘之上还剩多少高度"，不然弹窗仍按全屏高居中、
+     底部按钮会落到键盘后面（弹窗内部是滚动的，够不到就等于没有） */
+  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-panel);padding:24px;width:min(520px,92vw);
+         box-shadow:var(--e3);max-height:calc(90vh - var(--kb));overflow-y:auto;scrollbar-gutter:stable}
   .modal h3{margin:0 0 14px;font-size:18px}
   .modal label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px;font-weight:600}
   .modal input[type=text],.modal textarea{
@@ -384,7 +517,7 @@
     background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .season-hero span{font-size:13px;color:var(--muted);font-weight:600}
   .season-sub{text-align:center;font-size:13px;color:var(--muted);margin-top:9px;line-height:1.6}
-  .season-bar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);margin:18px 0 12px}
+  .season-bar{display:flex;height:12px;border-radius:var(--r-pill);overflow:hidden;background:var(--bg2);border:1px solid var(--line);margin:18px 0 12px}
   .season-bar i{display:block;height:100%}
   .season-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
   .season-legend div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
@@ -400,15 +533,26 @@
   .season-foot .btn{min-width:132px;justify-content:center}
 
   .hidden{display:none!important}
-  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(20px);
+  /* 提示条与回到顶部都锚在视口底部：键盘弹起时同样收 --kb —— 复习/对话里弹出的提示
+     （"已导出""已评分"）多数出现在键盘正上方，被盖住等于没提示 */
+  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px) + var(--kb));left:50%;transform:translateX(-50%) translateY(20px);
          max-width:calc(100vw - 32px);background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:12px;
-         font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:80}
+         font-size:14px;box-shadow:var(--e3);opacity:0;pointer-events:none;
+         transition:opacity var(--dur-slow),transform var(--dur-slow);z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* 回到顶部：右下悬浮，向下滚动一屏后淡入 */
-  .backtop{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom, 0px));width:42px;height:42px;border-radius:12px;border:1px solid var(--line2);
+  .backtop{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom, 0px) + var(--kb));width:42px;height:42px;border-radius:var(--r-lg);border:1px solid var(--line2);
            background:var(--panel2);color:var(--muted);cursor:pointer;display:grid;place-items:center;z-index:70;opacity:0;pointer-events:none;transform:translateY(8px);
-           transition:opacity .22s,transform .22s,color .15s;box-shadow:var(--shadow)}
+           transition:opacity var(--dur),transform var(--dur),color var(--dur-fast);box-shadow:var(--shadow)}
   .backtop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  /* 滚动进度环：按钮外圈一圈 conic 渐变，随 --sp（0~100，JS 写入）填满 ——
+     这颗按钮只在"已经滚过一屏"时出现，那正是最该知道"还剩多少"的时刻。
+     mask 挖空中心成环，不遮住箭头；不支持 mask 的内核只是看不到环，按钮本身照常 */
+  .backtop::before{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+    background:conic-gradient(var(--accent) calc(var(--sp,0) * 1%),transparent 0);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));
+            mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));
+    opacity:.9}
   .backtop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
   .backtop:hover{color:var(--accent);border-color:var(--accent)}
   /* ---------- 入场动画：全屏星空（warp 星野） ----------
@@ -420,14 +564,14 @@
               background:radial-gradient(120% 85% at 50% 46%,
                 var(--intro-bg1, #13141f) 0%, var(--intro-bg2, #0d0e17) 52%, var(--intro-bg3, #07080f) 100%);
               will-change:opacity,transform;
-              transition:opacity .78s cubic-bezier(.32,.72,0,1),transform .78s cubic-bezier(.32,.72,0,1)}
+              transition:opacity .78s var(--ease-spring),transform .78s var(--ease-spring)}
   /* 收尾：星空一边放大一边淡出（镜头穿过星野），与下面 .app 的浮起交叉 = "解锁进桌面"的推进感 */
   .app-loader.out{opacity:0;transform:scale(1.14);pointer-events:none}
   /* 主界面入场：有遮罩时才先藏住（脚本没跑/报错时不会有 intro-on，界面照常可见，不会白屏），
      交接时从略小浮到原位。两条规则都只动 transform/opacity —— 走合成器，手机上才不糊不卡 */
   body.intro-on .app{opacity:0;transform:scale(.965)}
   body.intro-on.intro-reveal .app{opacity:1;transform:scale(1);
-                 transition:opacity .78s cubic-bezier(.32,.72,0,1),transform .92s cubic-bezier(.22,.61,.36,1);
+                 transition:opacity .78s var(--ease-spring),transform .92s var(--ease-out);
                  will-change:opacity,transform}
   .app-loader canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
   /* 中心柔光：给星野一个"看得进去"的纵深。色相取主题的主/辅强调色
@@ -451,8 +595,7 @@
   .mock-card .ptag{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .mock-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
   .memory-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;cursor:pointer;transition:border-color .2s,box-shadow .25s,transform .25s}
-  .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
-                     box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 24px rgba(var(--accent2-rgb),.2)}
+  .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);box-shadow:var(--card-hover-shadow)}
   .memory-card .ptag{font-size:12px;color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:19px;font-weight:700;line-height:1.55;margin:10px 0 16px}
   /* 记忆卡牌堆视觉：卡片下方露出两层「余牌」，暗示还有一摞题待复习 */
@@ -460,7 +603,7 @@
   .mem-stack::before,.mem-stack::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-7px;width:calc(100% - 22px);height:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);z-index:-1;opacity:.58}
   .mem-stack::after{bottom:-13px;width:calc(100% - 44px);opacity:.3}
   @keyframes memCardIn{from{opacity:0;transform:translateY(26px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
-  .mem-stack.card-enter{animation:memCardIn .42s cubic-bezier(.22,.61,.36,1)}
+  .mem-stack.card-enter{animation:memCardIn .42s var(--ease-out)}
   .memory-answer{color:var(--muted);line-height:1.8;font-size:15px}
   .memory-answer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
   .memory-answer .label{font-size:11px;color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
@@ -468,7 +611,7 @@
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--accent)}
   .memory-answer pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
-  .memory-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .memory-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:var(--font-mono);white-space:pre}
   .memory-answer strong{color:var(--text)}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
   .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
@@ -499,10 +642,17 @@
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
   .grade-btn.mem-grade:hover{background:var(--panel2)}
   .grade-btn.mem-grade:active{transform:scale(.97)}
+  /* 悬停预览"这一档会是什么颜色"：四档评分按钮此前悬停一律点亮成 --accent2（紫），
+     与点下去之后才出现的绿/黄/红不是一套色 —— 悬停时先给出该档的语义色，点选是"确认"而不是"意外" */
   .grade-btn:hover{border-color:var(--accent2)}
-  .grade-btn.g-good.sel{border-color:var(--good);background:rgba(74,222,128,.18)}
-  .grade-btn.g-mid.sel{border-color:var(--warn);background:rgba(251,191,36,.18)}
-  .grade-btn.g-bad.sel{border-color:var(--bad);background:rgba(248,113,113,.18)}
+  .grade-btn.g-good:hover{border-color:var(--good)}
+  .grade-btn.g-mid:hover{border-color:var(--warn)}
+  .grade-btn.g-bad:hover{border-color:var(--bad)}
+  /* 选中态底色取语义色的 RGB 分量：此前写死红绿黄三组字面量（Tailwind 的 green/yellow/red-400），
+     与主题自己的 --good/--warn/--bad 不是一套色 —— 换了主题就是"描边跟主题、底色不跟"的错位 */
+  .grade-btn.g-good.sel{border-color:var(--good);background:rgba(var(--good-rgb),.18)}
+  .grade-btn.g-mid.sel{border-color:var(--warn);background:rgba(var(--warn-rgb),.18)}
+  .grade-btn.g-bad.sel{border-color:var(--bad);background:rgba(var(--bad-rgb),.18)}
   .grade-btn:disabled{opacity:.45;cursor:default}
   .pstatus{font-size:12.5px;color:var(--text);opacity:.85;margin-top:12px;padding:10px 14px;background:var(--card);border-radius:8px;line-height:1.5}
   .mock-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
@@ -511,7 +661,7 @@
   .mock-result .sub{text-align:center}
   .score-summary{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
   .mock-result .si{flex:1;min-width:120px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px;text-align:center}
-  .mock-result .si .n{font-size:26px;font-weight:800}
+  .mock-result .si .n{font-size:26px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
   .mock-result .si .t{font-size:12px;color:var(--muted);margin-top:4px}
   .q-summary{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
   .q-summary .qt{font-weight:700;margin-bottom:8px}
@@ -525,17 +675,17 @@
   .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
   .ai-answer .ai-head{font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px}
   .ai-answer pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
-  .ai-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .ai-answer pre code{background:none;padding:0;color:var(--text);font-size:12.5px;font-family:var(--font-mono);white-space:pre}
   .ai-answer h3,.ai-answer h4{margin:14px 0 6px;color:var(--text);font-size:14.5px;font-weight:700}
   .ai-answer ul,.ai-answer ol{margin:8px 0;padding-left:22px}
   .ai-answer li{margin:4px 0}
-  .ai-stream{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+  .ai-stream{font-family:var(--font-mono);font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
   .ai-grading{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px;max-height:600px;overflow-y:auto;scrollbar-gutter:stable}
-  /* 闪卡 */
-  .flash-empty{text-align:center;padding:60px 20px;color:var(--muted)}
-  .flash-empty .big{font-size:60px;margin-bottom:16px}
+  /* 闪卡空状态：与 .empty 合并为一套声明（图标 60px 降到与 .empty 一致的 40px ——
+     同一个"空态图标"角色不该有两种体量），样式见文件上方 .empty 分组 */
+
   /* 主题选择器 */
-  .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
+  .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:12px;z-index:100;box-shadow:var(--e3);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s;gap:8px}
   .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn .15s ease}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{padding:4px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:.15s;white-space:nowrap}
@@ -543,7 +693,7 @@
   .theme-tab.active{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.25)}
   .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:11px;cursor:pointer;border:2px solid transparent;transition:.18s;position:relative;background:var(--bg2)}
-  .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+  .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)}
   .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
   .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
   .theme-card .tc-swatch{width:42px;height:30px;border-radius:7px;position:relative;overflow:hidden;flex:none;border:1px solid var(--line2);box-sizing:border-box}
@@ -554,7 +704,7 @@
   /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
   .grill-mode-card{flex:1;min-width:140px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 12px;cursor:pointer;transition:.18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-  .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--e-lift)}
   .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.08),rgba(var(--accent2-rgb),.08));box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
   .gm-icon{font-size:28px}
   .gm-title{font-size:14px;font-weight:700;color:var(--text)}
@@ -589,18 +739,21 @@
     .btn{font-size:11px;padding:5px 8px}
     .btn.sm{padding:3px 6px;font-size:11px}
     .stats-bar{font-size:11px;gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
-    .content{padding:14px 12px calc(30px + env(safe-area-inset-bottom, 0px));max-width:100%}
+    /* 窄屏左右留白：原先 12px 只剩一条缝，卡片整体"贴边"，与卡内 10px 的内边距几乎分不开；
+       16px 才让"页面留白 > 卡片内边距"的层级成立 */
+    :root{--gutter:16px}
+    .content{padding:14px var(--gutter) calc(30px + env(safe-area-inset-bottom, 0px) + var(--kb));max-width:100%}
     .ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}
     .ov-card{padding:12px 8px}
     .ov-card .n{font-size:22px}
     .ov-card .t{font-size:11px}
-    .salary-card .salary-num{font-size:32px}
+    /* 薪资大数字同样交给 clamp（≤768 落 32px；≤400 的 24px 覆写在后面） */
     .salary-card .salary-inner{padding:16px}
     .salary-card .salary-sub{font-size:10px}
     .memory-card{padding:20px 16px}
     .memory-card .ptitle{font-size:16px}
     .memory-answer{font-size:13px}
-    .q{padding:10px 12px}
+    .q{padding:12px 14px}
     .docs-toolbar{margin-bottom:10px;gap:8px}
     .docs-toolbar .dt-count{font-size:11.5px}
     .docs-wrap{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -623,7 +776,7 @@
     .grill-msg{font-size:13px;max-width:90%}
     .qacts{gap:6px}
     .iconbtn{width:32px;height:32px;font-size:13px}
-    .doc-head h2{font-size:18px}
+    /* .doc-head h2 的字号已交给 clamp（≤768 时正好收敛到 18px），不在断点处硬切 */
     .doc-head .meta{font-size:11px}
     .theme-popup{max-width:300px;padding:8px;gap:4px}
     #themePopup{right:6px!important}
@@ -676,7 +829,9 @@
   .hm-inner{width:max-content;min-width:100%}
   .hm-months{display:grid;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));gap:3px;height:14px;margin-bottom:5px}
   .hm-months>i{position:relative}
-  .hm-months>i>b{position:absolute;left:0;top:1px;font-size:10px;font-weight:400;color:var(--faint);white-space:nowrap}
+  /* 月份刻度用 --muted 而不是 --faint：--faint 是"最淡的一档"，作 10px 文字时在深底主题上
+     对比度只有 3.3:1（WCAG 小字要求 4.5:1）。刻度是数据，不是装饰 */
+  .hm-months>i>b{position:absolute;left:0;top:1px;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap}
   /* 1 号落在最右两列时标签改右对齐：否则「12月」这类两字标签会越出 hm-inner 右缘，被 overflow 裁掉 */
   .hm-months>i>b.rt{left:auto;right:0}
   .hm-grid{display:grid;grid-auto-flow:column;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));grid-template-rows:repeat(7,auto);gap:3px}
@@ -688,16 +843,21 @@
   .hm-cell.l3{background:rgba(var(--accent-rgb),.72)}
   .hm-cell.l4{background:var(--accent);box-shadow:0 0 7px rgba(var(--accent-rgb),.5)}
   .hm-cell.hm-out{background:transparent;visibility:hidden}   /* 域外占位格：透明不可见，仅补满矩形 */
-  .hm-pop{position:fixed;z-index:95;background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:8px 12px;border-radius:10px;font-size:12px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .15s;max-width:270px;line-height:1.6}
+  /* 格子可点（弹当天明细），但此前没有任何"可点"提示。用 outline 而非 border：
+     不参与布局，悬停时格子不会位移；不会误命中域外占位格（它们 visibility:hidden） */
+  @media (hover:hover){
+    .hm-cell:not(.hm-out):hover{outline:1.5px solid var(--accent2);outline-offset:1px}
+  }
+  .hm-pop{position:fixed;z-index:95;background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:8px 12px;border-radius:var(--r-md);font-size:12px;box-shadow:var(--e-lift);opacity:0;pointer-events:none;transition:opacity var(--dur-fast);max-width:270px;line-height:1.6}
   .hm-pop.show{opacity:1}
   .hm-pop b{color:var(--accent)}
   /* 未刷题 / 今年还没到的日期 / 1/1 前与 12/31 后的域外余格：统一走 .hm-cell 的同一个灰底，
      年度图是一整块完整的矩形、不留空洞；三者的区别只在悬停提示（未刷题 / 未开始 / 无提示） */
 
   .stat-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-    margin-top:10px;font-size:11.5px;color:var(--muted)}
+    margin-top:10px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .stat-foot b{color:var(--text)}
-  .hm-scale{display:inline-flex;align-items:center;gap:4px;color:var(--faint)}
+  .hm-scale{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
   .hm-peak{color:var(--accent3);font-weight:700}
 
   /* 未来到期预测：柱高按当日题量归一化；空日留 3px 基线，避免"没排期"和"柱太矮看不见"混淆 */
@@ -714,25 +874,25 @@
   /* 真实保留率：按间隔分桶的柱状 + 百分比 */
   .rt-grid{display:flex;gap:10px;align-items:flex-end;height:118px;margin-top:6px}
   .rt-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;min-width:0}
-  .rt-pct{font-size:11px;font-weight:700;color:var(--text);height:14px;line-height:14px}
+  .rt-pct{font-size:11px;font-weight:700;color:var(--text);height:14px;line-height:14px;font-variant-numeric:tabular-nums}
   .rt-pct b{color:var(--accent)}
   .rt-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
   /* 高度过渡同样去掉：与预测柱同理（整段重建，过渡不触发）。写过 transition:height 反而让人以为这里有动画 */
   .rt-bar{width:64%;max-width:42px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 0 0;min-height:3px}
   .rt-label{font-size:10.5px;color:var(--muted);white-space:nowrap}
-  .rt-n{font-size:9.5px;color:var(--faint)}
+  .rt-n{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
   /* 每日复习构成：堆叠柱 */
-  .st-grid{display:flex;gap:4px;align-items:flex-end;height:110px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
+  .st-grid{display:flex;gap:var(--sp-1);align-items:flex-end;height:110px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
   .st-grid::-webkit-scrollbar{display:none}
   .st-col{flex:1 1 0;min-width:8px;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
   .st-bar{width:72%;max-width:26px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden;background:rgba(var(--text-rgb,255,255,255),.05)}
   .st-bar>i{display:block;width:100%;flex:none}
-  .st-label{font-size:9px;color:var(--faint);white-space:nowrap}
+  .st-label{font-size:9.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
   .st-legend{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);flex-wrap:wrap}
   .st-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
   /* 标签掌握度：donut 环形网格 */
   .tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:6px}
-  .tag-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;transition:border-color .15s}
+  .tag-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 12px;transition:border-color var(--dur-fast)}
   @media (hover:hover){ .tag-item:hover{border-color:var(--accent2)} }   /* 同上：触屏点过的标签行会一直像"被选中" */
   .tag-donut{width:38px;height:38px;flex:none}
   .td-bg{stroke:rgba(var(--text-rgb,255,255,255),.08)}
@@ -763,6 +923,10 @@
   .theme-card:active,.grill-mode-card:active,.grill-dur-btn:active,
   .modal-x:active,.grade-btn:active{transform:scale(.97);transition-duration:.08s}
   .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
+  /* 可点卡片（题目卡 / 记忆卡）在触屏上被 hover:none 复位了位移与发光，按下时只剩"内容突然变化"。
+     补一层按下反馈：底色提到 --panel2 + 极轻的缩放，手指按下与卡片响应之间不再有空白。
+     桌面端 hover 抬起 -2px、按下落到 scale(.996)，那 2px 的下沉本身就是"按下去"的手感 */
+  .q:active,.memory-card:active{transform:scale(.996);background:var(--panel2);transition-duration:.08s}
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
 
@@ -789,8 +953,11 @@
      顶栏标签/主题卡等用了 tabindex，但此前没有 :focus-visible 样式，暗色下浏览器默认焦点环几乎看不见。
      用 --accent 画环、:where() 保持零特异度（不抢既有样式的优先级），只在键盘导航时出现。 */
   :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.theme-tab,.q,.memory-card,.iconbtn,
-         .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt):focus-visible{
-    outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+         .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt,.sr-item,.backtop,.ov-card,.an-card):focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+  /* 焦点光晕单独一条、不套 :where()：:where 特异度为 0，光晕会被元素自身的 box-shadow 盖掉
+     （例如 .backtop 的 --shadow），焦点态就只剩一圈描边。单靠描边在低饱和主色的浅底主题上偏淡 */
+  :focus-visible{box-shadow:var(--focus-ring)}
   /* 屏幕阅读器专用（视觉隐藏，供 aria-live 播报切页） */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
@@ -808,16 +975,16 @@
      memCardIn 复用记忆卡牌堆入场的关键帧（全局定义）。均不加 fill，动画结束后自然交还 hover 位移。 */
   @keyframes cardInFwd{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
   @keyframes cardInBack{from{opacity:0;transform:translateX(-48px)}to{opacity:1;transform:none}}
-  .pcard.flip-in-fwd{animation:cardInFwd .3s cubic-bezier(.22,.61,.36,1)}
-  .pcard.flip-in-back{animation:cardInBack .3s cubic-bezier(.22,.61,.36,1)}
-  .memory-card.card-enter{animation:memCardIn .42s cubic-bezier(.22,.61,.36,1)}
+  .pcard.flip-in-fwd{animation:cardInFwd .3s var(--ease-out)}
+  .pcard.flip-in-back{animation:cardInBack .3s var(--ease-out)}
+  .memory-card.card-enter{animation:memCardIn .42s var(--ease-out)}
 
   /* ---------- 确认框进出场（原生 confirmDialog）：补齐与 .modal 一致的对称动效 ----------
      此前 confirmDialog 用内联样式 append/remove，啪一下出现啪一下消失，是全站唯一裸奔的浮层。 */
   @keyframes ovIn{from{opacity:0}to{opacity:1}}
   @keyframes ovOut{from{opacity:1}to{opacity:0}}
   .confirm-ov{animation:ovIn .18s ease both}
-  .confirm-dlg{animation:scaleIn .22s cubic-bezier(.22,.61,.36,1) both}
+  .confirm-dlg{animation:scaleIn .22s var(--ease-out) both}
   .confirm-ov.closing{animation:ovOut .16s ease both}
   .confirm-ov.closing .confirm-dlg{animation:scaleOut .16s ease both}
 
@@ -837,19 +1004,19 @@
      却仍在每帧重绘整屏，扩散期间一并暂停；canvas 那层由 JS 暂停（见 holdThemeCanvas） */
   .theme-vt body::before,.theme-vt body::after{animation-play-state:paused}
 
-  /* 手机浏览器上地址栏展开时 100dvh < 100vh：弹窗/气泡按 vh 居中会被上下裁掉，而且外层不滚动、滚不到底部按钮。
-     统一在这里用 dvh 覆盖（旧内核不认 dvh 时保留上一行的 vh）。App 内 dvh == vh，无影响。
-     注意 .grill-chat 在窄屏本来就该更矮（40vh），这里一并按 40dvh 覆盖，别把 55 带过来 */
+  /* 窄屏（≤768px）的两组微调合并成一块：同一个断点此前被拆在文件两处、中间还隔着别的规则，
+     改窄屏行为要找两个地方，也容易漏改一处 */
   @media(max-width:768px){
-    .modal{max-height:90vh;max-height:90dvh}
+    /* 1) 用 dvh 覆盖 vh：手机浏览器地址栏展开时 100dvh < 100vh，弹窗按 vh 居中会被上下裁掉，
+       而外层不滚动、滚不到底部按钮。旧内核不认 dvh 时保留上一行的 vh；App 内 dvh == vh，无影响。
+       注意 .grill-chat 在窄屏本来就该更矮（40vh），一并按 40dvh 覆盖，别把 55 带过来 */
+    /* 双写保留 vh 兜底：不认 dvh 的旧内核（WebView < 108）会丢掉第二行，用第一行 */
+    .modal{max-height:calc(90vh - var(--kb));max-height:calc(90dvh - var(--kb))}
     .modal.settings-modal{max-height:88vh;max-height:88dvh}
     .theme-popup{max-height:min(72vh,560px);max-height:min(72dvh,560px)}
     .grill-chat{max-height:40vh;max-height:40dvh}
-  }
-
-  /* 触控目标：手机上这些控件原本只有 19~32px 高，远低于 40px 的可点下限，且常相邻（★掌握 与 🗑删除 只差 6px）。
-     统一在窄屏把它们抬到 38~44px；只改这些"手指要点"的控件，不动排版骨架 */
-  @media(max-width:768px){
+    /* 2) 触控目标：这些控件原本只有 19~32px 高，远低于 40px 的可点下限，且常相邻
+       （★掌握 与 🗑删除 只差 6px）。统一抬到 38~44px；只改"手指要点"的控件，不动排版骨架 */
     .iconbtn{width:38px;height:38px}
     .btn.sm{padding:6px 9px}
     .theme-tab{padding:7px 12px}
@@ -859,14 +1026,54 @@
     .qacts{gap:10px}
   }
 
+  /* ---------- 跳转到主内容（键盘/读屏用户）----------
+     顶栏有 6 个标签 + 搜索 + 两个按钮，键盘用户每次进页面都要先穿过去才能碰到正文。
+     平时视觉隐藏、获得焦点时浮到左上角 —— 这是获奖级站点都会有的那一条，成本极低 */
+  .skip-link{position:fixed;left:12px;top:12px;z-index:9998;transform:translateY(-200%);
+    background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:var(--r-md);
+    padding:10px 16px;font-size:13px;font-weight:600;text-decoration:none;box-shadow:var(--e3);
+    transition:transform var(--dur) var(--ease-out)}
+  .skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--accent);outline-offset:2px}
+
   /* ---------- 顶栏 SVG 图标：跟随文字颜色(currentColor)，尺寸与旧 emoji 对齐 ---------- */
   .ic svg,.btn-ic,.search-ic{width:15px;height:15px;display:inline-block;vertical-align:-3px;
     fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .topbar .search .search-ic{width:14px;height:14px;color:var(--muted);flex:none}
 
+  /* ---------- 浅底主题（素笺 / 粼光 / 子良 / 子荣 / 玫瑰黎明）的收尾微调 ----------
+     body.light 由 applyTheme 一直挂着，但此前 CSS 里没有一条 .light 规则 —— 钩子在、没人接。
+     这里只做一类调整：**收敛发光**。几何与排版一律不动，5 个浅底主题之外零影响。
+     理由：彩色外发光在深空底上是氛围，在纸面上是脏斑（色块旁边糊一团颜色）。 */
+  body.light .hm-cell.l4{box-shadow:none}
+  body.light .pbar>i.lv5{box-shadow:0 0 0 1px rgba(139,92,246,.45)}
+  body.light .salary-card .salary-glow{opacity:.05}
+  /* 薪资卡：写死的 25% 黑投影在纸白底上是一团发飘的灰云，浅底换成轻投影
+     （内层那点 3% 白色高光在浅底上本来就等于不存在，一并去掉） */
+  body.light .salary-card{box-shadow:0 6px 20px rgba(0,0,0,.10)}
+  /* 弹窗遮罩：85% 的近黑是"深色主题下关灯聚焦"的浓度，纸白主题上同一浓度会把整屏压成黑板，
+     与页面自身的明亮基调反差过大。浅底降到 50%，并与确认框（rgba(0,0,0,.5)）取同一浓度，全站一致 */
+  body.light .modal-bg{background:rgba(18,16,12,.5)}
+  body.light .tab.active{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}   /* 纸面上的"高光"要亮一些才看得见 */
+  body.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+  /* 满级流光：保留色带流动（那是"满级"的语义本身），去掉向外扩散的呼吸光晕（纸面上会糊成一片） */
+  @media (prefers-reduced-motion: no-preference){
+    body.light .pbar>i.lvM{animation:lvM-flow 12s linear infinite}
+  }
+
+  /* ---------- 高对比度偏好（prefers-contrast）----------
+     把 1px 描边从 --line 提到 --line2：边界更清楚，颜色本身一个都不动。
+     深色与浅色主题都受益，且不改任何主题的观感基调。 */
+  @media (prefers-contrast:more){
+    .q,.ov-card,.an-card,.an-chart-card,.sr-item,.q-summary,.memory-card,.mock-card,.cfg-card,
+    .modal,.tag-item,.set-section,.theme-popup,.grill-msg{border-color:var(--line2)}
+    .tab{color:var(--text)}
+  }
+
 </style>
 </head>
 <body>
+<!-- 跳转链接：键盘用户的第一个 Tab 停靠点，Enter 直达主内容（平时视觉隐藏，聚焦才浮出） -->
+<a class="skip-link" href="#content">跳到主要内容</a>
 <!-- 入场动画：全屏星空（纯画面，不叠文字）。canvas 星野由 introStart() 驱动；init 完成并展示满最短时长后淡出移除 -->
 <div class="app-loader" id="appLoader">
   <canvas id="introCanvas"></canvas>
@@ -874,13 +1081,15 @@
 <div class="app">
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="tabs">
-      <div class="tab active" data-view="overview" role="button" tabindex="0" aria-current="page"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/></svg></span> <span>总览</span></div>
-      <div class="tab" data-view="docs" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> <span>文档</span></div>
-      <div class="tab" data-view="analytics" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/></svg></span> <span>进度</span></div>
-      <div class="tab" data-view="grill" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> <span>拷打</span></div>
-      <div class="tab" data-view="memory" role="button" tabindex="0"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> <span>记忆</span></div>
-      <div class="tab" data-view="hot" role="button" tabindex="0" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span>趁热</span></div>
+    <!-- 语义按 tablist 规范标注：role=tab + aria-selected + roving tabindex（由 renderStatsBar 维护），
+         组内左右方向键切换。整块顶栏因此只占一个 Tab 停靠点，而不是六个 -->
+    <div class="tabs" role="tablist" aria-label="主导航">
+      <div class="tab active" data-view="overview" role="tab" tabindex="0" aria-selected="true"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/></svg></span> <span>总览</span></div>
+      <div class="tab" data-view="docs" role="tab" tabindex="-1" aria-selected="false"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> <span>文档</span></div>
+      <div class="tab" data-view="analytics" role="tab" tabindex="-1" aria-selected="false"><span class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/></svg></span> <span>进度</span></div>
+      <div class="tab" data-view="grill" role="tab" tabindex="-1" aria-selected="false"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> <span>拷打</span></div>
+      <div class="tab" data-view="memory" role="tab" tabindex="-1" aria-selected="false"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> <span>记忆</span></div>
+      <div class="tab" data-view="hot" role="tab" tabindex="-1" aria-selected="false" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span>趁热</span></div>
     </div>
     <div class="search">
       <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
@@ -889,7 +1098,8 @@
     <button class="btn ghost" id="themeBtn" title="切换主题" aria-label="切换主题"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 10.6C21.4 5.8 17.1 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7" r="1.2"/></svg></button>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
-  <div class="content" id="content">
+  <!-- tabindex="-1"：让上面那条跳转链接的落点可以接收焦点（否则浏览器只滚动、后续 Tab 仍从顶栏开始） -->
+  <div class="content" id="content" tabindex="-1">
     <!-- 首屏骨架屏：数据未就绪时（如无入场动画 / 数据库打开慢）占位，renderAll 首次渲染后自然覆盖 -->
     <div class="skeleton" aria-hidden="true">
       <div class="sk-row"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></div>
@@ -2251,7 +2461,9 @@ function _showConfirm(msg, resolve){
     // 无障碍：确认框也是对话框，补上语义（Tab 焦点循环见 keydown 里的 .confirm-ov 分支）
     ov.setAttribute('role','dialog');
     ov.setAttribute('aria-modal','true');
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    // 底部同样收 --kb：确认框常在键盘弹起时出现（"退出本场拷打？"就在输入框旁边点出来的），
+    // 收进来居中才会落在键盘之上，按钮不会被挡住
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding-bottom:var(--kb)';
     const dlg=document.createElement('div');
     dlg.className='confirm-dlg';
     dlg.style.cssText='background:var(--card);color:var(--text);padding:24px 28px;border-radius:14px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid var(--line2);text-align:center';
@@ -2356,6 +2568,9 @@ function consumeBackPress(){
   if(modals.length){ hideModal(modals[modals.length-1]); return true; }
   const tp = $('#themePopup');
   if(tp && tp.classList.contains('show')){ hideModal(tp); return true; }
+  // 2b) 热力图日详情气泡：动态 append 的临时浮层（点空白处即关）。返回键只关它，
+  //     否则会在"正弹着某天明细"的状态下直接离开进度页 —— 看起来像返回键失灵跳了一级
+  if(_hmPop){ hideHmDetail(); return true; }
   // 3) 带返回按钮的子页面：直接点它自己那个按钮 —— 目标页与副作用（practice.done / browseLimit …）
   //    与用户手点完全一致，不另立一套"返回键规则"
   const backSel = BACK_BTN_BY_VIEW[view];
@@ -2506,8 +2721,12 @@ function renderStatsBar(){
       (v===Views.HOT&&owner===Views.HOT) ||
       (v===Views.ANALYTICS&&owner===Views.ANALYTICS);
     t.classList.toggle('active', on);
-    // aria-current：给屏幕阅读器/辅助技术标记当前所在标签（视觉高亮之外再补语义）
-    if(on) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
+    // 无障碍语义按 tablist 规范补齐：aria-selected 标当前页 + roving tabindex
+    // （整组只留一个 Tab 停靠点，组内左右方向键切换，见文件末尾的 keydown 分支）。
+    // 此前是 aria-current + 六个 tabindex="0"：读屏读不出"第几个/共几个"，键盘还要按 6 次 Tab 才能跳过顶栏。
+    // 这套"roving tabindex + 方向键"与热力图格子的键盘方案是同一种，全站保持一致
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+    t.tabIndex = on ? 0 : -1;
   });
 }
 
@@ -5204,6 +5423,41 @@ function renderSearch(c){
    ========================================================= */
 let _persistedView = null;
 let _inAnimTimer = null;   // 入场动画收尾定时器：连续切视图时先清旧的，否则上一轮的定时器会把新一轮动画从中间掐断
+/* ---------- 屏幕常亮（复习 / 答题 / 对话进行中） ----------
+   这几个页面是"盯着一道题想"或"敲一段回答"，手里有纸笔时不会去点屏幕，
+   系统 30 秒熄屏正好卡在思考中间 —— 解锁、找回页面、重新聚焦，一次打断丢掉一整段思路。
+   用 W3C 的 Screen Wake Lock 在"进行中"的页面上按住屏幕，切走或结束立刻交还。
+   不装插件：App 内 WebView 的源是 https://localhost，属于安全上下文，浏览器原生 API 直接可用；
+   旧内核不支持时整段静默跳过（网页端 Chrome/Safari 支持的话同样受益）。 */
+let _wakeSentinel = null;
+function needWakeLock(){
+  if(document.hidden) return false;                       // 切后台由浏览器自行释放，别再申请
+  if(view === Views.MEMORY) return memory.queue.length > memory.index;   // 还有待复习的卡
+  if(view === Views.HOT) return hot.inPass && hot.queue.length > 0;      // 趁热这一轮进行中
+  if(view === Views.MOCK) return mock.queue.length > 0 && !mock.done;    // 模考答题中（结果页不按住）
+  if(view === Views.GRILL) return grill.started && !grill.ended;         // 拷打进行中
+  return false;
+}
+function syncWakeLock(){
+  const want = needWakeLock();
+  const wl = navigator.wakeLock;
+  if(!wl || typeof wl.request !== 'function') return;
+  if(want && !_wakeSentinel){
+    try{
+      wl.request('screen').then(s => {
+        // 申请是异步的：拿到之前用户可能已经退出复习/切走，那就立刻还回去
+        if(!needWakeLock()){ try{ s.release(); }catch(_){} return; }
+        _wakeSentinel = s;
+        // 页面切后台时浏览器会自行释放，这里同步状态 —— 回前台才会重新申请（见 visibilitychange）
+        s.addEventListener('release', () => { if(_wakeSentinel === s) _wakeSentinel = null; });
+      }).catch(e => warnSilent('屏幕常亮申请失败', e));
+    }catch(e){ warnSilent('屏幕常亮申请失败', e); }
+  } else if(!want && _wakeSentinel){
+    const s = _wakeSentinel;
+    _wakeSentinel = null;
+    try{ s.release(); }catch(_){}
+  }
+}
 function renderAll(){
   const _prevView = _persistedView;   // 记旧视图，用于判断导航方向
   // 先渲染、再落状态：renderContent 在数据缺失时会把 view 改写（题目/文档被删后回退到总览），
@@ -5242,6 +5496,9 @@ function renderAll(){
       _inAnimTimer = setTimeout(()=>{ _inAnimTimer = null; c.classList.remove('in'); }, 1000);
     }
   }
+  // 屏幕常亮的开关只取决于"当前在哪个页面、进行到哪一步"：在唯一的重渲染出口收口，
+  // 切页/评分/开局/结束时都自然同步，不必在每个入口各写一次
+  syncWakeLock();
 }
 
 /* =========================================================
@@ -5482,6 +5739,11 @@ let _uParticles = [];
 let _uFadeIn = 1;
 let _uAlphaBase = 1;
 let _uStaticTheme = '';   // 静态主题标记：只画一帧、不进逐帧循环（子良山水这类"画面"型主题，不需要也不该有流动动画）
+// 页面是否在后台 / 换肤扩散期间是否挂起帧循环。放在本区的原因：这两个量会被 startUnifiedCanvas
+// 读到，而它会经由 initTheme → applyTheme 在**脚本解析期**执行 —— 声明晚于调用点就会命中 TDZ，
+// 抛出的 ReferenceError 又会被 applyTheme 的 try/catch 吞掉（见 startUnifiedCanvas 里的解析期判断）
+let _uHidden = false;
+let _vtHold = false;
 // 静态主题名单（只画一帧、不进逐帧循环）。子良已改为「网格 + 高亮格子明灭」的动态画面，故此处为空
 const STATIC_CANVAS_THEMES = [];
 // 经典配色组（编辑器生态）：共享同一套「星尘」粒子 —— 颜色按主题 accent/accent2/accent3 实时取，
@@ -5551,6 +5813,12 @@ function applyTheme(name, opts){
   const ar = hexToRgbStr(t.accent), a2 = hexToRgbStr(t.accent2), tr = hexToRgbStr(t.text);
   if(ar) cssVars += ';--accent-rgb:'+ar;
   if(a2) cssVars += ';--accent2-rgb:'+a2;
+  // 语义色（good/warn/bad）同样补 RGB 分量：评分选中态、到期提醒要的是"同色系的浅底 + 实色描边"，
+  // 此前写死 rgba(74,222,128,.18) 这类字面量，换主题不跟手（浅底主题上尤其明显）
+  const gr = hexToRgbStr(t.good), wr = hexToRgbStr(t.warn), br = hexToRgbStr(t.bad);
+  if(gr) cssVars += ';--good-rgb:'+gr;
+  if(wr) cssVars += ';--warn-rgb:'+wr;
+  if(br) cssVars += ';--bad-rgb:'+br;
   // 中性底色（未刷题格子/空柱/进度槽）用文字色分量：写死白色在浅色主题（素笺/粼光/子良/子荣）下会隐形
   if(tr) cssVars += ';--text-rgb:'+tr;
   // 等级色板（lv0~lv4）：深底沿用原配色；浅底换一版明度适配的（原 lv0 深灰蓝在纸白底上就是一块脏斑）
@@ -5562,6 +5830,10 @@ function applyTheme(name, opts){
   // 明暗分量的投影：浅底用轻投影（重投影在纸白上像浮尘、发飘），深底用重投影增强层次
   cssVars += ';--shadow:' + (isLight ? '0 6px 20px rgba(0,0,0,.10)' : '0 8px 30px rgba(0,0,0,.45)');
   cssVars += ';--card-hover-shadow:' + (isLight ? '0 12px 30px rgba(0,0,0,.14),0 0 0 1px rgba(var(--accent2-rgb),.10)' : '0 8px 26px rgba(0,0,0,.35),0 0 0 1px rgba(var(--accent2-rgb),.12),0 0 22px rgba(var(--accent2-rgb),.16)');
+  // 浮层阴影（弹窗/气泡，最高一级）：浅底换成轻投影 + 一道极淡描边，深底用重投影 + 顶部高光
+  cssVars += ';--e3:' + (isLight ? '0 16px 40px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05)' : '0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)');
+  // 轻抬升（小卡/模式卡/主题卡悬停）：写死的黑投影在浅底主题上发脏，按深浅各给一套
+  cssVars += ';--e-lift:' + (isLight ? '0 4px 14px rgba(0,0,0,.10)' : '0 4px 16px rgba(0,0,0,.34)');
   cssVars += ';}';
 
   // 2. 图片背景主题
@@ -6689,6 +6961,25 @@ document.addEventListener('keydown', e => {
     }
     return;
   }
+  // tablist 的方向键导航：左右在标签间移动并跟随激活（跟手切换，不需要再按 Enter），Home/End 跳首尾。
+  // 与上面的 roving tabindex 配套 —— 顶栏只占一个 Tab 停靠点，组内用方向键逛。
+  // 注意顺序：先触发 onclick（renderAll → 重新计算 roving tabindex，把停靠点挪到新标签）再 focus
+  const tabNavEl = (e.target && e.target.closest) ? e.target.closest('.tabs .tab') : null;
+  if(tabNavEl && (e.key==='ArrowRight' || e.key==='ArrowLeft' || e.key==='Home' || e.key==='End')){
+    const list = Array.from(document.querySelectorAll('.tabs .tab'));
+    const i = list.indexOf(tabNavEl);
+    if(i >= 0 && list.length){
+      const next = e.key==='Home' ? 0
+                 : e.key==='End' ? list.length - 1
+                 : e.key==='ArrowRight' ? (i + 1) % list.length
+                 : (i - 1 + list.length) % list.length;
+      e.preventDefault();
+      const t = list[next];
+      if(typeof t.onclick === 'function') t.onclick();
+      t.focus();
+    }
+    return;
+  }
   // 顶部标签已加 tabindex="0"，支持键盘 Enter / 空格激活。
   // 注意：鼠标点击会让标签获得焦点，若空格一律触发标签，会吃掉记忆/八股/刷题里"空格"的原有快捷键，故此处让位
   const tabEl = e.target.closest && e.target.closest('.tab');
@@ -6988,11 +7279,18 @@ function hideAppLoader(){
 introStart();
 
 // 回到顶部：内容区向下滚动超过一屏后浮现，点击平滑滚回顶（renderAll 的切页回顶用 auto，避免误触发平滑）
+// 外圈的滚动进度环（--sp）也在这里写：只在"已滚过一屏"时才看得见，那正是需要知道还剩多少的时刻
 (function bindBackTop(){
   const btn = document.getElementById('backTop');
   const c = document.getElementById('content');
   if(!btn || !c) return;
-  const onScroll = () => { btn.classList.toggle('show', c.scrollTop > window.innerHeight * 0.8); };
+  let sp = -1;   // 缓存上一帧的值：绝大多数滚动帧的百分比没变，省掉一次 style 写入
+  const onScroll = () => {
+    const h = c.scrollHeight - c.clientHeight;
+    const pct = h > 0 ? Math.round(Math.max(0, Math.min(1, c.scrollTop / h)) * 100) : 0;
+    if(pct !== sp){ sp = pct; btn.style.setProperty('--sp', String(pct)); }
+    btn.classList.toggle('show', c.scrollTop > window.innerHeight * 0.8);
+  };
   c.addEventListener('scroll', onScroll, { passive:true });
   window.addEventListener('resize', onScroll, { passive:true });
   btn.addEventListener('click', () => { c.scrollTo({ top:0, behavior:'smooth' }); });
@@ -7002,6 +7300,71 @@ introStart();
 document.addEventListener('click', (e)=>{
   if(_hmPop && !e.target.closest('.hm-cell, .hm-pop')) hideHmDetail();
 });
+
+/* ---------- 软键盘避让（App 内 WebView 不随键盘缩放） ----------
+   网页端键盘弹出时浏览器自己会把布局视口压矮，输入框自动可见，这段完全用不上；
+   App 内 WebView 在 edge-to-edge（Android 15 起强制）下拿到的是"整屏 + 系统栏外边距"，
+   键盘只是盖在最上面，布局视口一动不动 —— 于是：
+     · 锚在 ::bottom 的浮层（提示条 / 回到顶部 / 弹窗遮罩）被键盘压住；
+     · 页面底部的输入框（拷打输入框、设置项、新增题目）滚不到键盘之上，
+       因为内容区没有多余的可滚高度，浏览器也无处可滚（实测 Android WebView 的
+       默认行为就是不 resize，这也是全应用最"不像原生 App"的一处）。
+   这里按 visualViewport 算出"被键盘吃掉的高度"写进 :root 的 --kb（CSS 各处按需收），
+   再把当前聚焦的输入框滚到键盘之上（只滚最近的滚动容器，不动整页）。 */
+const KB_MIN = 80;     // 小于这个高度差视为浏览器 UI 抖动（地址栏收展），不计入键盘
+const KB_MARGIN = 16;  // 输入框与键盘之间留的余量：贴着键盘看不清光标
+let _kbLast = -1;      // 上一帧写入的 --kb：键盘动画期间事件会连发，值没变就不碰 DOM
+function kbInset(){
+  const vv = window.visualViewport;
+  if(!vv) return 0;
+  // 布局视口高 - 可见高度 - 可见区顶部偏移 = 被键盘遮住的高度
+  const gap = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+  return gap > KB_MIN ? gap : 0;
+}
+function kbVisibleBottom(){
+  const vv = window.visualViewport;
+  // 浏览器把可视区上移（offsetTop）时也算进去，否则会低估可用的可视范围、把输入框多滚一截
+  return vv ? vv.height + vv.offsetTop : window.innerHeight;
+}
+function revealFocusedField(){
+  const el = document.activeElement;
+  if(!el || !el.tagName || typeof el.getBoundingClientRect !== 'function') return;
+  const tag = el.tagName.toUpperCase();
+  if(tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') return;
+  const over = el.getBoundingClientRect().bottom + KB_MARGIN - kbVisibleBottom();
+  if(over <= 0) return;   // 已经露在键盘之上，不打扰用户
+  // 找到最近的可滚动祖先（.content / .modal / …）：只让它滚，
+  // 不用 scrollIntoView —— 那个会连外层一起滚，把顶栏也带走
+  let p = el.parentElement;
+  while(p && p !== document.body){
+    const oy = getComputedStyle(p).overflowY;
+    if((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight + 1) break;
+    p = p.parentElement;
+  }
+  if(p && p !== document.body && p !== document.documentElement) p.scrollTop += over;
+  else window.scrollBy(0, over);
+}
+function syncKeyboardInset(){
+  const kb = kbInset();
+  if(kb !== _kbLast){
+    _kbLast = kb;
+    document.documentElement.style.setProperty('--kb', kb + 'px');
+  }
+  revealFocusedField();
+}
+(function bindKeyboardInset(){
+  const vv = window.visualViewport;
+  if(!vv || typeof vv.addEventListener !== 'function') return;
+  // resize 是键盘收展的唯一可靠信号；scroll 兼顾浏览器把可视区整体上移的情况
+  vv.addEventListener('resize', syncKeyboardInset, { passive:true });
+  vv.addEventListener('scroll', syncKeyboardInset, { passive:true });
+  document.addEventListener('focusin', () => {
+    // 键盘是渐进弹出的（约 250ms）：聚焦那一刻量到的还是旧值，等它落定再各量一次
+    setTimeout(syncKeyboardInset, 60);
+    setTimeout(syncKeyboardInset, 320);
+  });
+  syncKeyboardInset();
+})();
 
 (async function init(){
   setupErrorHandler();
@@ -7139,6 +7502,12 @@ document.addEventListener('click', (e)=>{
 // 引擎状态（_uCanvas/_uCtx/_uRaf/_uTheme/_uParticles/_uFadeIn/_uAlphaBase/_spriteCache 等）
 // 已在 applyTheme 之前声明，这里只保留绘制逻辑
 function startUnifiedCanvas(theme){
+  // 解析期不启动引擎：initTheme() → applyTheme() 会在脚本还没解析完时就走到这里，而各主题绘制函数用到的
+  // 常量都"就近声明"在引擎区（7600 行往后），此刻仍在 TDZ —— 真去画那一帧就会抛 ReferenceError，
+  // 被 applyTheme 的 try/catch 吞掉，画布静默不启动（主题在、画布在，但粒子与帧循环都没有），
+  // 表现就是"首次进入完全没有动效，手动切一次主题才活"：因为切换发生在解析之后。
+  // 解析期只登记不启动，交给 init 末尾那次 startUnifiedCanvas 真正拉起。
+  if(document.readyState === 'loading') return;
   // 系统开启「减少动态效果」时，不启动粒子引擎（无障碍降级）
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
@@ -7392,12 +7761,11 @@ function initThemeParticles(theme){
   }
   // 注：canvasThemes 白名单里 sunset/ziliang（纯几何）、ripple/paper/zirong（纯几何）不走粒子，其余主题均在上方有显式分支
 }
-let _uHidden = false;
 /* 换肤扩散期间挂起画布的帧循环：这 520ms 里页面被旧/新两张快照盖着，逐帧动画在快照后面看不见，
    却仍在抢光栅 —— 而圆形扩散恰恰最吃这个。注意只是"停帧循环"，不是"不切主题"：
    主题本身在 applyTheme 里已经同步切好并画好首帧（否则快照里就是旧特效）。
-   挂起期间 on 为真，供 applyTheme 判断"这次要不要淡入"。 */
-let _vtHold = false;
+   挂起期间 on 为真，供 applyTheme 判断"这次要不要淡入"。
+   _uHidden / _vtHold 的声明已挪到 applyTheme 之前的状态区（解析期就会被读到，见那里的注释） */
 function holdThemeCanvas(on){
   _vtHold = !!on;
   if(_vtHold){ if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; } return; }
@@ -7419,6 +7787,8 @@ document.addEventListener('visibilitychange', () => {
     // 切回前台：主动重启动画循环（修复部分手机切后台后动态主题卡死的问题）
     restartCanvasLoop();
   }
+  // 屏幕常亮同理：切后台交还（浏览器也会自动释放），回前台若仍在复习中就重新按住
+  syncWakeLock();
 });
 function tickUnified(ts){
   if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
@@ -8475,7 +8845,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '83';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '85';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
@@ -8542,4 +8912,5 @@ if(!IN_NATIVE_SHELL && 'serviceWorker' in navigator && navigator.serviceWorker &
   })();
 }
 </script>
-</bo
+</body>
+</html>

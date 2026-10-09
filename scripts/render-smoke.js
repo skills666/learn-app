@@ -178,6 +178,13 @@ globalThis.__T = {
   setDocs: d => { DOCS = d; buildIndex(); globalThis.__T._bump(); },
   setProgress: p => { PROGRESS = p; globalThis.__T._bump(); },
   setHot: a => { HOT = a; },
+  setGrill: o => { Object.assign(grill, o); },
+  // 屏幕常亮的"什么时候按住"由 needWakeLock 决定，是纯状态判断，交给用例直接问；
+  // syncWake 暴露出来是为了让用例能驱动一次"申请/释放"（真机上由浏览器执行）
+  wakeWant: () => needWakeLock(),
+  syncWake: () => syncWakeLock(),
+  // 软键盘避让的高度算法（--kb）：纯算术，直接问；DOM/CSS 侧已在真实浏览器里实测过
+  kbInset: () => kbInset(),
   setWarLog: o => { WARLOG = o; },
   setRevLog: a => { REVLOG = a; },
   startPractice: scope => startPractice(scope),
@@ -326,6 +333,72 @@ console.log('\n[有数据 · 各页面渲染]');
   const legacyWar = call('renderWarReport', () => T.renderWar()).v;
   ok(!!legacyWar && call('warTotal', () => T.warTotal()).v === '14', '旧格式（无设备分层）的当天记录照旧统计',
      String(call('warTotal', () => T.warTotal()).v));
+}
+
+console.log('\n[屏幕常亮：只在"进行中"的页面按住 Screen Wake Lock]');
+{
+  // 假 wakeLock：request 返回"then 同步执行"的 thenable —— 让"申请"与"释放"两个分支
+  // 都能落在同一段同步断言里（真异步的话，微任务跑完前断言就已经执行了）
+  const calls = { req: 0, rel: 0 };
+  ctx.navigator.wakeLock = {
+    request: () => {
+      calls.req++;
+      return { then(fn) { fn({ addEventListener() {}, release() { calls.rel++; } }); return { catch() {} }; } };
+    },
+  };
+  const want = () => call('needWakeLock', () => T.wakeWant()).v;
+
+  T.setView(T.views.OVERVIEW); T.renderAll();
+  ok(want() === false, '总览页不按住屏幕（不进复习就不申请，省电）');
+  T.setView(T.views.MEMORY); T.renderAll();
+  ok(want() === true, '记忆模式还有待复习的卡 → 按住');
+  T.syncWake();
+  ok(calls.req === 1, '进入复习后申请了屏幕常亮', 'req=' + calls.req);
+  T.setView(T.views.OVERVIEW); T.renderAll();
+  T.syncWake();
+  ok(calls.rel === 1, '离开复习页立即释放', 'rel=' + calls.rel);
+
+  T.setGrill({ started: false, ended: false });
+  T.setView(T.views.GRILL); T.renderAll();
+  ok(want() === false, '拷打配置页（未开始）不按住');
+  T.setGrill({ started: true, ended: false });
+  T.renderAll();
+  ok(want() === true, '拷打进行中按住（一段回答要写几分钟）');
+  T.setGrill({ ended: true });
+  T.renderAll();
+  ok(want() === false, '拷打结束后放掉');
+
+  call('startMock', () => T.startMock());
+  T.setView(T.views.MOCK); T.renderAll();
+  ok(want() === true, '模考答题中按住');
+  T.finishMock(); T.renderAll();
+  ok(want() === false, '模考结果页放掉');
+
+  T.setView(T.views.MEMORY); T.renderAll();
+  ctx.document.hidden = true;
+  ok(want() === false, '切后台时不申请（浏览器也只在页面可见时才给）');
+  ctx.document.hidden = false;
+  delete ctx.navigator.wakeLock;   // 收尾：别把假插件留给后面的用例
+}
+
+console.log('\n[软键盘避让：--kb 的算法]');
+{
+  const kb = () => call('kbInset', () => T.kbInset()).v;
+  const vv = (h, top) => { ctx.visualViewport = { height: h, offsetTop: top || 0 }; };
+  const oldH = ctx.innerHeight;
+  ctx.innerHeight = 800;
+  delete ctx.visualViewport;
+  ok(kb() === 0, '没有 visualViewport 的旧内核 → 0（CSS 里 var(--kb) 退回 0，等于没写）');
+  vv(800);
+  ok(kb() === 0, '键盘没弹起（可见高度 = 布局高度）→ 0');
+  vv(400);
+  ok(kb() === 400, '键盘吃掉 400px → --kb = 400px', 'kb=' + kb());
+  vv(760);
+  ok(kb() === 0, '高度差 40px 视为地址栏收展，不当键盘（阈值 80px）');
+  vv(400, 40);
+  ok(kb() === 360, '浏览器把可视区上移 40px 时按"实际被遮住的高度"算', 'kb=' + kb());
+  ctx.innerHeight = oldH;
+  delete ctx.visualViewport;   // 收尾
 }
 
 console.log('\n[运行时错误日志]');

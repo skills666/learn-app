@@ -54,7 +54,9 @@ App 端只装了三个官方插件（`@capacitor/app`、`@capacitor/filesystem`�
 | 能力 | 网页端 | App 端 |
 | --- | --- | --- |
 | 导出（CSV / Markdown） | Blob + `a[download]` | 写进应用缓存目录 + 系统分享面板（Android WebView 不支持 `a[download]`，直接点会毫无反应） |
-| 返回键 | —（Esc 关弹窗） | 分层回退：确认框 → 弹窗/主题气泡 → 子页面自己的返回按钮 → 一级页「再按一次退出」 |
+| 返回键 | —（Esc 关弹窗） | 分层回退：确认框 → 弹窗/主题气泡/热力图日详情 → 子页面自己的返回按钮 → 一级页「再按一次退出」 |
+| 软键盘 | 浏览器自己把布局视口压矮，输入框自动可见 | `adjustResize`（Android 14 及以下缩窗）+ Web 层按 `visualViewport` 写 `--kb`（Android 15 起强制 edge-to-edge，系统不再缩窗，底部浮层与输入框只能自己让位） |
+| 屏幕常亮 | 同左（浏览器支持 Screen Wake Lock 时生效） | 记忆 / 趁热 / 模考 / 拷打**进行中**按住屏幕，切页或结束即释放（浏览器原生 API，不装插件） |
 | Service Worker | 注册（离线可用 + 有更新时提示刷新） | 不注册，并注销老版本残留的注册（资源随 APK 打包，SW 只会多一层缓存旧资源的风险） |
 
 Android 侧还有两条与 Web 无关、但桌面端很容易忽略的设置，都在 `capacitor.config.json`：
