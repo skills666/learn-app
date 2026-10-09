@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -154,6 +154,9 @@ let PROGRESS = {};
 // 透传 keepLv：验证"评分路径不清等级分布缓存"这条链路（见 applySm2Grade / invalidateMemQueue）
 function saveProgress(keepLv){ invalidateMemQueue(keepLv); }
 function markDirty(){}
+// 副作用留痕封装：被测函数（applySm2Grade / undoMemoryGrade）的 catch 分支会调它，
+// 沙箱里必须存在 —— 否则一旦某条副作用真的抛错，测试会因为"warnSilent 未定义"而误报成产品缺陷
+function warnSilent(){}
 function fsrsStep(){ return { interval: 1, next: Date.now() + 86400000, card: { d: 5, s: 1, last: Date.now(), reps: 1, lapses: 0 } }; }
 let HOT = [];
 const localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
@@ -682,7 +685,7 @@ console.log('\n[关键实现点静态断言]');
      '趁热进料：倒背如流不动、其余三档去重入队（并回报"这次是否真入榜"，供撤销回滚）');
   // —— 评分档位：UI 四档与 FSRS 四档一一对应。曾经存在过"UI 五档 + 换算表"两层刻度，
   //    那层换算正是"点简单却不涨掌握"事故的温床；现在两者是同一套刻度，这类错位不可能再发生 ——
-  ok(/const gradeBtns = \[Rate\.AGAIN, Rate\.HARD, Rate\.GOOD, Rate\.EASY\]\.map\(/.test(html), '评分按钮由四档枚举生成（档位数不许再手写死）');
+  ok(/\[Rate\.AGAIN, Rate\.HARD, Rate\.GOOD, Rate\.EASY\]\.map\(/.test(html), '评分按钮由四档枚举生成（档位数不许再手写死）');
   ok(!/MEM_RATES|MEM_EASY_RATE/.test(html), '旧的五档表 / 换算常量已删除（档位只剩一套刻度）');
   ok(!/4:-55/.test(html), '飞出动画的位移表也退回四档');
   // —— 掌握语义：新题第一次评分即使点最高档也不算掌握（防"看一眼就自认会了"）——
@@ -788,7 +791,7 @@ console.log('\n[关键实现点静态断言]');
      '回忆训练遗留状态对象 / 未使用的 _uRipples / 死 id 已清除');
   ok(/\$\('#themePopup'\)\]\.filter\(el=>el&&el\.classList\.contains\('show'\)\)\.pop\(\)/.test(html),
      '主题弹窗已纳入 Tab 焦点陷阱');
-  ok(/role="button" tabindex="0" aria-expanded="\$\{memory\.flipped\?'true':'false'\}"/.test(html),
+  ok(/role="button" tabindex="0" aria-expanded="/.test(html) && /card\.setAttribute\('aria-expanded', memory\.flipped\?'true':'false'\)/.test(html),
      '记忆卡对读屏/键盘暴露"可展开"语义');
   ok(/function saveCloudPayload\(/.test(html) && !/\(await Store\.saveDocs\(newDocs\)\) && \(await Store\.saveProgress/.test(html),
      '云端数据落库不再用 && 短路（避免"文档已覆盖、进度没写"还提示本地数据未变）');
@@ -814,7 +817,7 @@ console.log('\n[关键实现点静态断言]');
   ok(/\.pbar\.lvbar:hover > i\{opacity:\.32\}/.test(html), '等级条支持悬停高亮单段、其余变淡');
   ok(/@media \(hover:hover\)\{\s*\.pbar\.lvbar:hover > i\{opacity:\.32\}/.test(html),
      '悬停高亮包在 hover:hover 里（触屏点过的那段不会一直粘在高亮态）');
-  ok(/\.pbar > i\{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0\}/.test(html)
+  ok(/\.pbar > i\{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0/.test(html)
      && /\.bigbar > i\{[^}]*border-radius:0 5px 5px 0/.test(html),
      '单段条（刷题 / 文档页）填充统一为"左端交给容器裁 + 右端 5px 前沿圆角"（原先只有 .pbar 自带 3px，左右不对称）');
   ok(!/\.pbar > i\{[^}]*border-radius:3px/.test(html), '不再有"填充自带 3px 圆角"的孤例');
@@ -840,15 +843,59 @@ console.log('\n[关键实现点静态断言]');
      'docStats 的 levels 死字段已删除（只写不读，没有任何消费方）');
   ok(/const lvLine = LV_ORDER\.map\(lv=>`\$\{LV_NAME\[lv\]\}: \$\{o\.lvCounts\[lv\]\|\|0\}`\)/.test(html),
      '复制给 AI 的报告里掌握档写作「掌握」，不再拼出 "LvM"');
-  ok(!/transition:width \.3s/.test(html), '清掉从未生效的 transition:width（段宽由 flex 分配，且每次渲染都重建节点）');
-  ok(/function animateLvBar\(scope\)/.test(html) && /data-n="\$\{n\}"/.test(html),
-     '等级条段宽变化走 WAAPI 补帧（innerHTML 重建后 CSS 过渡无法触发）');
+  ok(!/transition:width \.3s/.test(html), '清掉从未生效的 transition:width（段宽由 flex 分配）');
+  ok(!/function animateLvBar/.test(html) && /data-n="\$\{sp\.n\}"/.test(html) && /flex-grow var\(--dur-slow\) var\(--ease-out\)/.test(html),
+     '等级条段宽走 CSS 过渡（记忆页改局部更新后段节点得以复用，过渡才真正生效；WAAPI 补帧已删）');
   ok(/@media \(prefers-reduced-motion: no-preference\)\{\s*\.pbar > i\.lvM\{animation:/.test(html),
      'lvM 流光包进 no-preference（reduced-motion 下不再"闪一下再停"）');
-  ok(/role="img" aria-label="\$\{esc\(lvBar\.label\)\}"/.test(html),
+  ok(/role="img"/.test(html) && /setAttribute\('aria-label', lvBar\.label\)/.test(html),
      '等级条对读屏暴露一句话描述（纯色块否则等于没有信息）');
-  ok(/title="\$\{LV_NAME\[lv\]\} · \$\{n\} 题（\$\{pct\(n\)\}%）"/.test(html),
+  ok(/title="\$\{LV_NAME\[sp\.lv\]\} · \$\{sp\.n\} 题（\$\{sp\.p\}%）"/.test(html),
      '悬停提示用等级名 + 题数 + 占比（原先 M 档会被拼成莫名其妙的"LvM"）');
+  /* ── 持久化注册表 ───────────────────────────────────────────────
+     这四条守的是「新增持久化项不会再漏」这个机制本身：此前导出与导入各手写一份字段清单，
+     REVLOG 就是因为要改两处而被漏掉的（长期只在本地，换机后「真实保留率」永久为空）。
+     谁绕过注册表手写清单，这里立刻变红。 */
+  ok(/const PERSIST_REGISTRY = \{/.test(html),
+     '持久化项收在 PERSIST_REGISTRY 一张表里');
+  ok((html.match(/Object\.keys\(PERSIST_REGISTRY\)\.forEach/g) || []).length === 2,
+     '导出与导入都遍历注册表（恰好两处）');
+  ok(/if\(!spec\.backup \|\| typeof spec\.get !== 'function'\) return;/.test(html),
+     '导出只写 backup:true 的项（设备身份 / 密钥 / 时间戳不带出去）');
+  ok(/if\(!spec\.backup \|\| typeof spec\.merge !== 'function'\) return;/.test(html),
+     '导入只读 backup:true 的项，且逐项独立（单项失败不影响其余）');
+  // 写入失败通道：Store 自持状态并通知，不依赖 30+ 个调用点去检查返回值
+  ok(/function raiseFault\(kind, msg\)/.test(html) && /onWriteFault: fn =>/.test(html),
+     'Store 主动报出写入受阻（不再只靠返回值，调用方无需检查）');
+  ok(/id="saveFault"/.test(html) && /role="alert"/.test(html) && /\.save-fault\[hidden\]\{display:none\}/.test(html),
+     '写入受阻时显示一条不会自动消失的横幅（toast 3 秒就没了，等于没提示）');
+  ok(/const ok = saveLS\(Object\.assign\(loadLS\(\), \{\[k\]:v\}\)\);/.test(html)
+      && /if\(!ok\) raiseFault\('local',/.test(html),
+     '降级到 localStorage 时也上报真实写入结果（此前恒报成功）');
+
+  /* ── 数据安全与来源唯一性 ─────────────────────────────────────── */
+  // 冻结时阻断评分：那时产生的新进度只存在内存，刷新即丢
+  ok(/function applySm2Grade\(qid, rate, historyArr\)\{\s*\n\s*\/\* 写入受阻时拒绝评分/.test(html)
+      && /Store\.writeFault\(\)/.test(html),
+     '写入受阻时拒绝评分（查看/翻页不受影响，横幅给出导出与刷新两条出路）');
+  // 保留率日志必须同时进本地备份与云端：它是只增日志，丢了无法重建
+  ok(/revlog:REVLOG,updatedAt/.test(html) && /function applyRevFromGist\(gist\)/.test(html)
+      && (html.match(/applyRevFromGist\(gist\);/g) || []).length === 2,
+     '保留率日志随 learn-data.json 上云（两条拉取路径都应用，与导入备份共用同一 merge）');
+  // 主题 id 清单必须从 THEME_SPEC 派生，不能再手写第二份
+  ok(/const STARDUST_THEMES = \[\], ALL_CANVAS_THEMES = \[\];/.test(html)
+      && !/const STARDUST_THEMES = \['frappe'/.test(html)
+      && !/const canvasThemes = \['aurora'/.test(html),
+     '主题特效的 id 清单由 THEME_SPEC 的 canvas 声明派生（此前手写两份，与声明是三份信息）');
+  ok(!/gradient: t\.gradient/.test(html) && !/canvas: t\.canvas/.test(html)
+      && !/getThemeConfig\(name\)\|\|\{\};/.test(html),
+     'THEME_CONFIG 只留被读取的字段（canvas / gradient 与 cfg 死变量已清）');
+  // 二进制文档不再当纯文本读（乱码会原样进 AI 提示词）
+  ok(/请直接粘贴文本，或先另存为 PDF \/ TXT/.test(html) && /const PDF_MAX_PAGES = 80;/.test(html),
+     '简历上传只接受能可靠转文本的格式，PDF 提取有页数上限');
+  // 统计数字原地滚动
+  ok(/window\._sbLastNums/.test(html) && /data-num="seenPct"/.test(html),
+     '顶栏统计数字原地滚动（与总览页共用 countUpNum，含 reduced-motion 降级）');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');

@@ -1,7 +1,8 @@
 .backup/
 node_modules/
 .idea/
-.syntax-tmp/
+# 说明：原 `.syntax-tmp/` 规则已删 —— check-syntax.js 改用 os.tmpdir() 写临时文件，仓库里不再产生该目录，
+# 留着它只会让人以为"还有个临时目录要清"
 # AI 代码审查的中间产物（含 token 统计等本地信息，不入库）
 ocr-review-result.json
 # www/ 是 sync-www.js 从根目录生成的产物（Capacitor 的 webDir），逐字节副本不入库：
@@ -14,3 +15,9 @@ generated-images/
 __pycache__/
 # 主题渲染探测的临时产物（各主题截图 / 探测页 / 无头 Chromium 的 profile 目录）：只在本机核对效果用，不入库
 _probe*
+# 系统 / 编辑器 / 构建产物的常见噪音
+Thumbs.db
+.DS_Store
+*.log
+*.apk
+.vscode/

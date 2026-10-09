@@ -21,8 +21,9 @@
              Capacitor 的模板里默认就有这一行，本项目在最初的工程生成中漏掉了 —— 后果是在
              Android 15 以下（尚未强制 edge-to-edge 的机型）键盘会直接盖住页面底部的输入框。
              Android 15+ 强制 edge-to-edge 后系统不再响应 adjustResize（decorFitsSystemWindows=false），
-             那条路走的是 Web 层按 visualViewport 算出的 kb 变量（见 index.html 的 bindKeyboardInset），
-             两者互补：能缩窗的机型走系统缩窗，不能缩的走那个变量，都不会重复让位。
+             键盘高度改由 @capacitor-community/safe-area 在 decorView 上补 padding 让出（效果等同缩窗），
+             Web 层按 visualViewport 算出的 kb 变量（见 index.html 的 bindKeyboardInset）继续兜底：
+             三者在各自机型上互补，都不会重复让位。
              （注意：XML 注释里不能出现连续两个减号，上面的变量名因此不写全称） -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"

@@ -9,10 +9,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 最后一步要拿 diff 基线（PR base sha / push 的 before）比对，浅克隆里这些对象不存在
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20      # package.json 的 engines 是 >=18，CI 取 20（满足范围），两处不冲突
           cache: npm
       - run: npm ci
       - run: npm run check
+      # 资源清单交叉校验 + SW 版本号一致性（sw.js 的 PRE_CACHE / manifest.json 的 icons /
+      # sync-www.js 的 FILES_* 三处必须对齐；index.html 的 SW_VERSION 必须等于 sw.js 的 CACHE）。
+      # 这一步以前只在本机 cap:sync 时才跑，PR 里改了 index.html 忘了递增版本号，CI 是绿的
+      - run: node sync-www.js
+      # sync-www.js 只能证明"当前文件自洽"，看不出"内容改了版本没改"：这里用本次 diff 补这一刀
+      - name: 改了 index.html 必须同步递增 sw.js 的 CACHE
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          node -e '
+          const { execFileSync } = require("child_process");
+          const git = (...a) => execFileSync("git", a, { encoding: "utf8" });
+          const base = (process.env.BASE_SHA || "").trim();
+          if (!base || /^0+$/.test(base)) { console.log("没有可用的 diff 基线（新分支/首次推送），跳过"); process.exit(0); }
+          const changed = git("diff", "--name-only", base, "HEAD").trim().split("\n");
+          if (!changed.includes("index.html")) { console.log("本次未改 index.html，跳过"); process.exit(0); }
+          const bumped = changed.includes("sw.js") && /^\+\s*const CACHE = /m.test(git("diff", "-U0", base, "HEAD", "--", "sw.js"));
+          if (!bumped) {
+            console.error("::error::改了 index.html 但 sw.js 的 CACHE 没递增 —— 老用户会一直用缓存里的旧版（离线首开不刷新）");
+            process.exit(1);
+          }
+          console.log("SW 版本联动 OK");
+          '
       - run: npm test

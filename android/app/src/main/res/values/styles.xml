@@ -13,13 +13,15 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <!-- 这里是"应用运行期"的窗口背景（原先写 @null）：
-             1) Android 15+ 强制 edge-to-edge 后，Capacitor 按 android.adjustMarginsForEdgeToEdge=auto
-                给 WebView 让出状态栏/导航栏区域，让出来的那两条露出的就是这块窗口背景 —— 填品牌底色才不突兀；
-             2) @null 时首帧之前窗口不定色，容易闪一下（深色应用上尤其明显）。填成与启动图/WebView 同色，
-                启动图 → 空窗 → 页面首帧三段连起来是同一个底色，看不出接缝。 -->
+             1) 首帧之前窗口不定色会闪一下（深色应用上尤其明显）。填成与启动图/WebView 同色，
+                启动图 → 空窗 → 页面首帧三段连起来是同一个底色，看不出接缝；
+             2) edge-to-edge 后 WebView 铺满整屏（见 MainActivity 的 EdgeToEdge.enable），这块底色
+                理论上露不出来，只在首帧前可见 —— 所以"跟页面主题的实时同步"由 Web 侧负责，
+                这里保持启动期的深色即可。 -->
         <item name="android:background">@color/colorPrimaryDark</item>
-        <!-- 状态栏图标恒用浅色：窗口与状态栏底色恒为深色 #0D0E17（不随应用内主题变化），
-             深色图标会看不见。DayNight 只跟系统深浅走，跟应用自己的主题无关，所以只能"定死浅色" -->
+        <!-- 状态栏/导航栏图标只用浅色是"启动期默认"：启动图与首帧前的底色恒为深色 #0D0E17，
+             此时深色图标会看不见。运行期由 Web 侧 SafeArea.setSystemBarsStyle 按"应用主题"
+             （而非系统深浅）动态接管，见 index.html 的 applyTheme。 -->
         <item name="android:windowLightStatusBar">false</item>
         <!-- 三键导航栏同理（API 27+ 才认这个属性，低版本自动忽略该条） -->
         <item name="android:windowLightNavigationBar">false</item>

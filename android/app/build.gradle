@@ -1,31 +1,82 @@
 apply plugin: 'com.android.application'
 
+/* 版本号来源：android/version.properties（入库的手写常量，见该文件里的注释）。
+   不再由本地时钟派生：同小时同号、时钟回拨会变小、每次构建 versionName 都不同（破坏缓存与可复现性）。 */
+def versionPropsFile = rootProject.file('version.properties')
+if (!versionPropsFile.exists()) {
+    throw new GradleException("缺少 android/version.properties。请在 android/ 下新建该文件，内容至少包含：\nVERSION_CODE=1\nVERSION_NAME=1.0.0\n（发版时手动递增这两个值）")
+}
+def versionProps = new Properties()
+versionPropsFile.withInputStream { versionProps.load(it) }
+def appVersionCodeRaw = versionProps.getProperty('VERSION_CODE')
+if (appVersionCodeRaw == null || !appVersionCodeRaw.trim().isInteger()) {
+    throw new GradleException('android/version.properties 的 VERSION_CODE 必须是整数，当前：' + appVersionCodeRaw)
+}
+if (!versionProps.getProperty('VERSION_NAME') || !versionProps.getProperty('VERSION_NAME').trim()) {
+    throw new GradleException('android/version.properties 的 VERSION_NAME 不能为空')
+}
+def appVersionCode = appVersionCodeRaw.trim().toInteger()
+def appVersionName = versionProps.getProperty('VERSION_NAME').trim()
+
+/* 可选发布签名：存在 android/keystore.properties 就用它签 release，否则回退 debug 签名。
+   为什么回退而不是不管：未签名的 release APK 其实是个废包（装不上，INSTALL_PARSE_FAILED_NO_CERTIFICATES），
+   与其给一个装不上的产物，不如用 debug key 签一份"能装上自测"的包，并在日志里明确警告。
+   keystore.properties 模板（放在 android/ 下，已在 android/.gitignore 里忽略）：
+     storeFile=release.jks        # 相对 android/ 的路径，或绝对路径
+     storePassword=…
+     keyAlias=…
+     keyPassword=… */
+def keystorePropsFile = rootProject.file('keystore.properties')
+def hasReleaseKeystore = keystorePropsFile.exists()
+def keystoreProps = new Properties()
+if (hasReleaseKeystore) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+    ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].each { k ->
+        if (!keystoreProps.getProperty(k)) throw new GradleException("android/keystore.properties 缺少 ${k}（模板见本文件顶部注释）")
+    }
+}
+
 android {
     namespace "com.learnapp.interview"
     compileSdk rootProject.ext.compileSdkVersion
 
-    def buildTime = new Date().format("yyyyMMddHHmm")
-    // versionCode 必须单调递增（Play 上架要求，也是"新包覆盖旧包"的前提）。
-    // 由构建时间派生（yyMMddHH，每小时 +1），避免所有构建都停在 1 而无法升级
-    def buildCode = new Date().format("yyMMddHH").toInteger()
+    // AGP 8 的写法（aaptOptions 已改名 androidResources，行为不变）。
+    // 原来写在 defaultConfig{} 里是靠 Groovy 的 owner 链落到扩展级配置上的，这里显式放回扩展级
+    androidResources {
+        // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+        // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
 
     defaultConfig {
         applicationId "com.learnapp.interview"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode buildCode
-        versionName "1.0." + buildTime
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
-            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            release {
+                storeFile rootProject.file(keystoreProps.getProperty('storeFile'))
+                storePassword keystoreProps.getProperty('storePassword')
+                keyAlias keystoreProps.getProperty('keyAlias')
+                keyPassword keystoreProps.getProperty('keyPassword')
+            }
         }
     }
     buildTypes {
         release {
+            // 不开 R8：WebView 的 @JavascriptInterface 方法是被反射调用的，混淆/剥离只有运行期才炸
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                rootProject.logger.warn('[build.gradle] 未找到 android/keystore.properties：release 使用 debug 签名，产出仅供自测，不可用于正式分发')
+                signingConfig signingConfigs.debug
+            }
         }
     }
 
@@ -45,6 +96,9 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    // EdgeToEdge / SystemBarStyle（MainActivity 的沉浸式入口）：:capacitor-android 以 implementation
+    // 依赖它、不向 app 模块暴露，直接使用必须在此显式声明（版本沿用 variables.gradle 的 androidxActivityVersion）
+    implementation "androidx.activity:activity:$androidxActivityVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')

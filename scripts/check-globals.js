@@ -9,7 +9,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { findMainScript, lineOfIndex, maskCode, trySpans, isIndexInSpans } = require('./lib/html-scripts');
+const { findMainScript, extractInlineScripts, lineOfIndex, maskCode, trySpans, isIndexInSpans } = require('./lib/html-scripts');
 
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -32,7 +32,8 @@ const absLine = (idx) => mainStartLine + lineOfIndex(mainScript, idx) - 1;
 
 // 1. 字面量 id 收集与重复检测
 const idMap = new Map();
-const idRe = /\bid="([A-Za-z][\w:-]*)"/g;
+// 单引号写法（id='x'）此前会被整条漏掉：既漏重复检测，也漏"未被引用"统计
+const idRe = /\bid=["']([\w:-]+)["']/g;
 let m;
 while ((m = idRe.exec(all)) !== null) {
   const id = m[1];
@@ -286,13 +287,6 @@ let _undeclaredHits = 0;
     let x;
     while ((x = re.exec(code)) !== null) declared.add(x[2]);
   }
-  {
-    const re = /\b(?:const|let|var)\s*([\[{][^\]}]*[\]}])\s*=/g;
-    let x;
-    while ((x = re.exec(code)) !== null) {
-      x[1].replace(/[\[\]{}]/g, '').split(',').forEach(addName);
-    }
-  }
   // 3) 参数位（只认真正的参数位）：function 参数 / 箭头函数参数 / catch 参数。
   //    绝不能"收集所有括号内的标识符" —— 那样 if(x)、while(x)、f(x) 里的 x 都会被当成"已声明"，
   //    括号内读取的未声明变量将永远漏报（真实事故 _hmCountsCache 恰好是 `if(_hmCountsCache)` 这个形态）
@@ -330,7 +324,7 @@ let _undeclaredHits = 0;
    原先本脚本没有退出码，无论发现什么都是 exit 0 —— npm run check 与 CI 里的这条门禁形同虚设。 */
 const _dupIdHits = (() => {
   const seen = new Set(), dup = new Set();
-  const re = /\bid="([A-Za-z][\w:-]*)"/g;
+  const re = /\bid=["']([\w:-]+)["']/g;
   let x;
   while ((x = re.exec(all)) !== null) { if (seen.has(x[1])) dup.add(x[1]); seen.add(x[1]); }
   return dup.size;
@@ -351,11 +345,16 @@ const _nakedLsHitsFinal = (function () {
   }
   return n;
 })();
+/* 门禁用的文本：所有内联 <script> 各自 maskCode 后拼接（注释 / 字符串 / 正则 / 模板文本段已抹成空白）。
+   为什么不用 mainMasked：index.html 有三个内联块（SEED / 主脚本 / SW+版本），只扫主脚本会让另外两块漏报；
+   为什么不再用原文 all：注释里写一句"不要用 console.log("、或字符串里出现 eval( / document.write(，
+   原先都会把门禁判成回归 —— 假阳性会逼人删掉解释性注释，比漏报更伤。 */
+const codeMaskedAll = extractInlineScripts(html).map(b => maskCode(b.code)).join('\n');
 const _hardFailed = [
   ['重复字面量 id', _dupIdHits],
-  ['console.log 残留', (all.match(/console\.log\(/g) || []).length],
-  ['eval() 调用', (all.match(/\beval\(/g) || []).length],
-  ['document.write 调用', (all.match(/document\.write\(/g) || []).length],
+  ['console.log 残留', (codeMaskedAll.match(/console\.log\(/g) || []).length],
+  ['eval() 调用', (codeMaskedAll.match(/\beval\(/g) || []).length],
+  ['document.write 调用', (codeMaskedAll.match(/document\.write\(/g) || []).length],
   ['裸 localStorage 调用（未走 safeLocal* 且不在 try 块内）', _nakedLsHitsFinal],
   ['调用了但本文件没定义的函数（改名漏改调用点 → 运行时 ReferenceError）', _undefinedCallHits],
   ['引用了但没声明的标识符（读取即 ReferenceError）', _undeclaredHits]

@@ -1,0 +1,6 @@
+# 图标流水线（scripts/icon-build.py）的依赖。
+# 只在本机换图标时才需要；网页 / App 的构建与测试都不依赖 Python 包。
+# 安装：pip install -r scripts/requirements.txt
+pillow>=10.0
+numpy>=1.24
+opencv-python>=4.8

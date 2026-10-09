@@ -294,7 +294,7 @@ console.log('\n[有数据 · 各页面渲染]');
 
   const hMem = render(T.views.MEMORY, '记忆');
   ok(hMem.indexOf('lvbar') !== -1 || hMem.indexOf('全部掌握') !== -1, '记忆页含全库等级条（或如实显示已复习完）');
-  ok(hMem.indexOf('<button type="button" class="grade-btn mem-grade') !== -1, '记忆四档评分是真按钮（键盘/读屏可达）');
+  ok(hMem.indexOf('id="memGradeRow"') !== -1 && /<button type="button" class="grade-btn mem-grade/.test(html), '记忆四档评分是真按钮（骨架建好后由 paintMemoryCard 填入）');
 
   const hHot = render(T.views.HOT, '趁热');
   ok(hHot.indexOf('hotCard') !== -1 || hHot.indexOf('热榜是空的') !== -1, '趁热页渲染正常');
