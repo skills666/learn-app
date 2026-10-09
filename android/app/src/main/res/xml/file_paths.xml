@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
+    <!-- 导出走的是 Filesystem 的 CACHE 目录（见 index.html 的 downloadBlob），Share 插件经
+         FileProvider 把该文件转成 content:// 再分享，所以只需要 cache-path。
+         原先还放行了 external-path path="."（整个外部存储根）：那是模板里带的默认项，
+         本项目没有任何一处用它 —— 平白让 Provider 具备把下载/相机目录等任意文件授出去的能力。
+         需要分享到 Downloads 时再显式加具体子目录，不要放开整根。 -->
     <cache-path name="my_cache_images" path="." />
 </paths>

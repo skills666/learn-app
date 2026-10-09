@@ -11,4 +11,9 @@
     <color name="colorPrimary">#5AD1C9</color>
     <color name="colorPrimaryDark">#0D0E17</color>
     <color name="colorAccent">#8B7CF6</color>
+
+    <!-- 启动图底色：直接从启动图位图四角取色（drawable-port-*/splash.webp 实测 #0F0D19）。
+         drawable/splash_launch.xml 用它做底、位图按原比例居中叠上去，所以看不出拼缝；
+         以后重做启动图（scripts/icon-build.py）时，这里要跟着改成新图的底色。 -->
+    <color name="splashBg">#0F0D19</color>
 </resources>

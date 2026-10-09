@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动背景：纯色底 + 原始比例居中的启动图。
+     为什么不再把位图直接当 windowBackground：窗口背景里的位图默认"拉伸铺满"，
+     而启动图是 960×1600（宽高比 1.667）、真机普遍 2.1~2.22 —— 图中间的图标会被纵向拉长约 30%（圆的变椭圆）。
+     gravity=center 让位图按自身尺寸显示、不缩放；底色取的是位图四角的颜色（@color/splashBg），
+     多出来的上下留白与原图底色同色，所以看不出拼缝。 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splashBg" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash"
+            android:gravity="center" />
+    </item>
+</layer-list>

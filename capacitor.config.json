@@ -2,7 +2,11 @@
   "appId": "com.learnapp.interview",
   "appName": "万法归元",
   "webDir": "www",
+  "backgroundColor": "#0d0e17",
   "server": {
     "androidScheme": "https"
+  },
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
   }
 }
