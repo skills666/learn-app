@@ -2135,17 +2135,17 @@ function pruneHot(){
 // 从哪条路径进来会得到不同的热榜（本地旧榜残留 / 被旧数据覆盖），行为不可预期。
 function applyHotFromGist(gist){
   const f = gist && gist.files && gist.files['hot-data.json'];
-  /* 合并而不是整份覆盖：热榜是本机攒出来的学习队列，云端那份可能更短（另一端清过、或本机有还没推上去的条目），
-     覆盖会把本机条目直接抹掉 —— 与战报同一条教训。
-     规则：本机顺序原样保留，云端多出来的按加入时间追加在后面（同 qid 不重复），谁也不丢。
-     取舍：在另一端清空热榜不会传播过来（并集会把旧条目带回来）。个人使用、单端在线的场景下，
-     "少丢一条"比"清空严格同步"更重要 —— 清空想跨设备生效时，在本机也清一次即可。 */
-  let remote = [];
-  if(f && f.content){ try{ const hd = JSON.parse(f.content); if(hd && Array.isArray(hd.hot)) remote = hd.hot.filter(x=>x&&x.qid); }catch(_){ remote = []; } }
-  const seen = new Set(HOT.map(x => x && x.qid).filter(Boolean));
-  const added = remote.filter(x => x && x.qid && !seen.has(x.qid))
-                      .sort((a,b) => (+a.addedAt||0) - (+b.addedAt||0));
-  HOT = HOT.concat(added.map(x => ({ qid: x.qid, addedAt: +x.addedAt || Date.now() })));
+  /* 覆盖而不是合并：趁热队列是「待复习」列表，两端必须一致才有意义 ——
+     用户实测过「电脑复习掉 20 道、手机还留着这 20 道」的割裂：并集只能加不能删，
+     永远无法把「已复习完」传播过去。
+     改成覆盖后：拉取 = 本机队列直接换成云端那份，电脑复习掉的题手机上同步消失。
+     个人单端使用（一次只在一台设备刷题）下，覆盖不会误删本机未推的条目；
+     真要双端同时刷，那是另一种数据模型（删除墓碑），当前场景用不上。 */
+  if(!f || !f.content) return;   // 云端还没有 hot 文件（旧数据 / 首次推送前）：保持本地不动，不能清空
+  let remote = null;
+  try{ const hd = JSON.parse(f.content); if(hd && Array.isArray(hd.hot)) remote = hd.hot.filter(x=>x&&x.qid); }catch(_){ }
+  if(!remote) return;
+  HOT = remote.map(x => ({ qid: x.qid, addedAt: +x.addedAt || Date.now() }));
   saveHot();
   hot.inPass = false; hot.index = 0; hot.cleared = 0;
 }
@@ -9779,7 +9779,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '102';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '103';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
