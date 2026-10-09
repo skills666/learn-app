@@ -95,9 +95,17 @@
        此前 6 条曲线各写各的，同一屏里两种节奏并存，动效是散的。 */
     --ease-out:cubic-bezier(.22,.61,.36,1);
     --ease-spring:cubic-bezier(.32,.72,0,1);
+    /* 弹簧（有回冲）：--ease-out 是「平滑停下」，这条会在结尾轻微冲过目标再回位 ——
+       这是 Apple 动效最容易被感知的特征。
+       只用于**低频**交互：卡片悬停抬升、弹窗出现、toast 上浮。
+       评分 / 翻页 / 展开答案这类高频操作一律保持 --ease-out ——
+       HIG 的原话是「App 中通常避免给高频 UI 交互加动效」：动效不该让人每次都要等它演完。 */
+    --ease-pop:cubic-bezier(.34,1.56,.64,1);
     /* --dur-quick 是"悬停抬升"档：文档里原本是散落的 .18s 字面量（卡片类 hover），
        与 --dur-fast(.15s) 只差 30ms 却各写各的，索性收成一个有名字的档位 */
     --dur-fast:.15s; --dur-quick:.18s; --dur:.22s; --dur-slow:.42s;
+    /* 弹簧专用时长：过冲需要时间才看得见，.18s 太短会只剩"抖一下" */
+    --dur-pop:.3s;
     /* 主题底色淡入（换肤时 body/html 的背景过渡）：它比任何组件动效都慢得多，是独立的一档 */
     --dur-theme:.5s;
 
@@ -297,7 +305,7 @@
   .q-summary,.set-section,.grill-mode-card,.tag-item{
     background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card);
   }
-  .q{padding:16px 18px;margin-bottom:13px;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur)}
+  .q{padding:16px 18px;margin-bottom:13px;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   .q:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
            box-shadow:var(--card-hover-shadow)}
   .q .qhead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
@@ -459,7 +467,7 @@
   .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-3);margin-bottom:20px}
   @media (max-width:900px){.ov-grid{grid-template-columns:repeat(3,1fr);gap:10px}}
   .ov-card{padding:16px;text-align:center;
-           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur)}
+           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   /* 悬停阴影改走 --card-hover-shadow（由 applyTheme 按深浅各给一套）：
      原先这里是写死的黑投影 + 彩色外发光，浅底主题（素笺/粼光/子良/子荣/玫瑰黎明）上会糊成一团脏影 */
   .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);box-shadow:var(--card-hover-shadow)}
@@ -503,7 +511,7 @@
 
   /* search results */
   .sr-item{border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;
-           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur)}
+           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   /* 搜索结果条目此前是"整行能点、但没有任何悬停反馈"。补的这套与卡片类刻意不同：
      卡片是"浮起 + 发光"，结果条目在列表流里、动太多会晃眼 —— 只做描边点亮 + 2px 横向位移 */
   @media (hover:hover){
@@ -530,7 +538,8 @@
            padding-left:var(--safe-x, 0px);padding-right:var(--safe-x, 0px);
            display:grid;place-items:center;z-index:75;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast)}
   .modal-bg.show{visibility:visible;opacity:1}
-  .modal-bg.show .modal{animation:scaleIn var(--dur-quick) ease}
+  /* 入场用弹簧：弹窗是低频交互，"出现"本身就带"弹"的语义 */
+  .modal-bg.show .modal{animation:scaleIn var(--dur-pop) var(--ease-pop)}
   /* 弹窗用最高一级阴影 --e3：与卡片共用 --shadow 时，遮罩之上的一层浮窗和页面里的卡片是同一个深度，
      层级靠"半透明黑遮罩"一个人扛。--e3 更重 + 带 1px 内描边高光，深浅主题各有一套（见 applyTheme） */
   /* max-height 同样收 --kb：它算的是"键盘之上还剩多少高度"，不然弹窗仍按全屏高居中、
@@ -628,7 +637,9 @@
   .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px) + var(--kb));left:50%;transform:translateX(-50%) translateY(20px);
          max-width:calc(100vw - 32px - 2 * var(--safe-x, 0px));background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:12px 20px;border-radius:var(--r-lg);
          font-size:var(--fs-body);box-shadow:var(--e3);opacity:0;pointer-events:none;
-         transition:opacity var(--dur-slow),transform var(--dur-slow);z-index:80}
+         /* transform 走弹簧做出"弹出来"的手感；opacity 保持平滑 ——
+            二者若共用同一条过冲曲线，透明度会在回冲段出现可见的忽明忽暗 */
+         transition:opacity var(--dur-slow),transform var(--dur-pop) var(--ease-pop);z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* 写入失败横幅：与 toast 的关键区别是「不会自动消失」——保存失败是持续状态，
      toast 3 秒后消失等于没提示（用户不会因此停下手上的复习）。
@@ -699,7 +710,7 @@
   .mock-card{padding:24px;margin-bottom:18px}
   .mock-card .ptag{font-size:var(--fs-sm);color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .mock-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-card{padding:28px 24px;cursor:pointer;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur)}
+  .memory-card{padding:28px 24px;cursor:pointer;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);box-shadow:var(--card-hover-shadow)}
   .memory-card .ptag{font-size:var(--fs-sm);color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
@@ -802,13 +813,13 @@
 
   /* 主题选择器 */
   .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:12px;z-index:100;box-shadow:var(--e3);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast);gap:8px}
-  .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur-fast) ease}
+  .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur-pop) var(--ease-pop)}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:4px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);white-space:nowrap}
   .theme-tab:hover{color:var(--text);background:var(--panel)}
   .theme-tab.active{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.25)}
   .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-quick);position:relative;background:var(--bg2)}
+  .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);position:relative;background:var(--bg2)}
   .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)}
   .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
   .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
@@ -819,7 +830,7 @@
   .theme-card .tc-name{font-size:var(--fs-xs);font-weight:600;color:var(--text);line-height:1}
   /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
-  .grill-mode-card{flex:1;min-width:140px;border-width:2px;padding:14px 12px;cursor:pointer;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-quick);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .grill-mode-card{flex:1;min-width:140px;border-width:2px;padding:14px 12px;cursor:pointer;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
   .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--e-lift)}
   .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.08),rgba(var(--accent2-rgb),.08));box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
   .gm-icon{font-size:var(--fs-num)}
@@ -3070,7 +3081,7 @@ function renderOverview(c){
   const due = _ovStats.due, fresh = _ovStats.fresh;
   const todo = due + fresh;   // 记忆队列实际会排给你的题量（到期 + 从没刷过）
   const salary = tm * 100;
-  const chartDays = (window._ovChartDays||7);
+
   /* 整体保留率（样本不足时为 null）。它是总览里唯一"越练越好看"的数字 ——
      其余几张卡都只是当前存量（有多少题、学了多少），只有它反映学习效果本身。
      颜色与提示文案都在这算好，模板里只做插值：一是避免把判断塞进 HTML 里难读，
@@ -3112,10 +3123,9 @@ function renderOverview(c){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span style="font-weight:700;font-size:var(--fs-base)">📈 刷题趋势</span>
         <div style="display:flex;gap:4px">
-          <button type="button" class="btn sm ${chartDays===7?'primary':''}" id="chartBtn7">7天</button>
-          <button type="button" class="btn sm ${chartDays===30?'primary':''}" id="chartBtn30">30天</button>
-          <button type="button" class="btn sm ${(window._ovChartMode||'bar')==='bar'?'primary':''}" id="chartBtnBar">柱状</button>
-          <button type="button" class="btn sm ${(window._ovChartMode||'bar')==='line'?'primary':''}" id="chartBtnLine">折线</button>
+          <!-- 固定展示近 30 天（不再提供 7/30 切换）；默认折线，可切回柱状 -->
+          <button type="button" class="btn sm ${(window._ovChartMode||'line')==='bar'?'primary':''}" id="chartBtnBar">柱状</button>
+          <button type="button" class="btn sm ${(window._ovChartMode||'line')==='line'?'primary':''}" id="chartBtnLine">折线</button>
         </div>
       </div>
       <canvas id="chartCanvas" style="width:100%;height:auto;border-radius:var(--r-sm);aspect-ratio:1080/260"></canvas>
@@ -3123,7 +3133,7 @@ function renderOverview(c){
     </div>
   `;
   // Draw chart
-  setTimeout(()=>drawChart(chartDays, window._ovChartMode||'bar'), 30);
+  setTimeout(()=>drawChart(30, window._ovChartMode||'line'), 30);
   // 数字滚动：从上次显示值滚到新值（同一会话内切换标签返回、数值未变时不重复播放）
   const lastNums = window._ovLastNums || (window._ovLastNums = {});
   const roll = (id, to, key, fmt) => {
@@ -3147,10 +3157,9 @@ function renderOverview(c){
     memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };
     view = Views.MEMORY; renderAll();
   };
-  $('#chartBtn7').onclick = ()=>{ window._ovChartDays=7; $('#chartBtn7').classList.add('primary');$('#chartBtn30').classList.remove('primary'); drawChart(7, window._ovChartMode||'bar'); };
-  $('#chartBtn30').onclick = ()=>{ window._ovChartDays=30; $('#chartBtn30').classList.add('primary');$('#chartBtn7').classList.remove('primary'); drawChart(30, window._ovChartMode||'bar'); };
-  $('#chartBtnBar').onclick = ()=>{ window._ovChartMode='bar'; $('#chartBtnBar').classList.add('primary');$('#chartBtnLine').classList.remove('primary'); drawChart(window._ovChartDays||7, 'bar'); };
-  $('#chartBtnLine').onclick = ()=>{ window._ovChartMode='line'; $('#chartBtnLine').classList.add('primary');$('#chartBtnBar').classList.remove('primary'); drawChart(window._ovChartDays||7, 'line'); };
+
+  $('#chartBtnBar').onclick = ()=>{ window._ovChartMode='bar'; $('#chartBtnBar').classList.add('primary');$('#chartBtnLine').classList.remove('primary'); drawChart(30, 'bar'); };
+  $('#chartBtnLine').onclick = ()=>{ window._ovChartMode='line'; $('#chartBtnLine').classList.add('primary');$('#chartBtnBar').classList.remove('primary'); drawChart(30, 'line'); };
 }
 
 function drawChart(days, mode){
@@ -3288,7 +3297,7 @@ window.addEventListener('resize', () => {
   if(view !== Views.OVERVIEW) return;
   clearTimeout(_chartResizeTimer);
   _chartResizeTimer = setTimeout(() => {
-    if(view === Views.OVERVIEW) drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
+    if(view === Views.OVERVIEW) drawChart(30, window._ovChartMode||'line');
   }, 200);
 }, {passive:true});
 
@@ -6673,7 +6682,7 @@ function applyTheme(name, opts){
   //    非扩散路径保持原来的 50ms 延后（等样式落定再画，更稳）
   const drawOvChart = () => {
     if(view === Views.OVERVIEW && typeof drawChart === 'function'){
-      drawChart(window._ovChartDays||7, window._ovChartMode||'bar');
+      drawChart(30, window._ovChartMode||'line');
     }
   };
   if(_vtHold) drawOvChart(); else setTimeout(drawOvChart, 50);
@@ -9770,7 +9779,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '101';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '102';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

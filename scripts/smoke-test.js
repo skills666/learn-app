@@ -896,6 +896,9 @@ console.log('\n[关键实现点静态断言]');
   // 统计数字原地滚动
   ok(/window\._sbLastNums/.test(html) && /data-num="seenPct"/.test(html),
      '顶栏统计数字原地滚动（与总览页共用 countUpNum，含 reduced-motion 降级）');
+  // 弹簧缓动：只用于低频交互（弹窗/悬停/toast），高频的评分与翻页保持 ease-out
+  ok(/--ease-pop:cubic-bezier\(\.34,1\.56,\.64,1\)/.test(html) && /--dur-pop:\.3s/.test(html),
+     '弹簧缓动存在，且只作用于低频交互（评分/翻页这类高频操作不弹）');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');
