@@ -1100,10 +1100,14 @@
   .theme-card:active,.grill-mode-card:active,.grill-dur-btn:active,
   .modal-x:active,.grade-btn:active{transform:scale(.97);transition-duration:.08s}
   .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
-  /* 可点卡片（题目卡 / 记忆卡）在触屏上被 hover:none 复位了位移与发光，按下时只剩"内容突然变化"。
-     补一层按下反馈：底色提到 --panel2 + 极轻的缩放，手指按下与卡片响应之间不再有空白。
-     桌面端 hover 抬起 -2px、按下落到 scale(.996)，那 2px 的下沉本身就是"按下去"的手感 */
-  .q:active,.memory-card:active{transform:scale(.996);background:var(--panel2);transition-duration:.08s}
+  /* 可点卡片（题目卡 / 记忆卡）在触屏上被 hover:none 复位了位移与发光，按下时只剩"内容突然变化"，
+     所以要补一层按下反馈。但**底色跃迁只该给触屏**：
+       桌面端 hover 已经给了描边点亮 + 抬起 2px，而 :active 的 scale 会把这 2px 落回去 ——
+       那 2px 的下沉本身就是"按下去"的手感；再叠一层整块底色只是重复同一件事，
+       还把注意力从题目内容上拽走（实测反馈：点击时整张卡片亮起，没有意义）。
+     只把 background 关进 @media(hover:none)，位移保持全局 —— 桌面端的下沉手感不受影响。 */
+  .q:active,.memory-card:active{transform:scale(.996);transition-duration:.08s}
+  @media (hover:none){ .q:active,.memory-card:active{background:var(--panel2)} }
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
 
@@ -10407,7 +10411,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '118';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '119';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

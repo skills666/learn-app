@@ -974,6 +974,10 @@ console.log('\n[关键实现点静态断言]');
       && !/scrollIntoView\(\{behavior:'smooth'/.test(html)
       && (html.match(/if\(reduce \|\| !card/g) || []).length === 2,
       '平滑滚动都过减动效偏好（三处改行为值；刷题/趁热两处在 prefersReduce 时提前 return 不执行）');
+   // 卡片按下时的底色跃迁只给无 hover 的设备：桌面端 hover 已有描边+抬升，再叠整块底色是重复信息
+   ok(/\.q:active,\.memory-card:active\{transform:scale\(\.996\);transition-duration:\.08s\}/.test(html)
+      && /@media \(hover:none\)\{ \.q:active,\.memory-card:active\{background:var\(--panel2\)\} \}/.test(html),
+      '卡片按下底色只在 @media(hover:none) 生效（桌面端保留下沉手感，不再整块亮起）');
    // 主题集：每套内置主题必须有**自己**的绘制分支；且删掉的 id 必须在 THEME_ALIAS 里登记
    // 经典组里任何一套都不许再声明 canvas:'stardust'（注释里提到它不算数，这里只看同一行上同时有 group:'classic' 的声明）
    ok(!/group:'classic'[^\n]*canvas:'stardust'/.test(html)
