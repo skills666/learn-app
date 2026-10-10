@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#0d0e17">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http:; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self';">
 <title>万法归元</title>
 <style>
   :root{
@@ -85,7 +85,14 @@
        留白取"常规值"与安全区的较大值、不相加 —— 常规机型 --safe-x 为 0，结果仍是原值，
        不会凭空多留一截；只有真带侧边安全区的机型才被顶开。
        var() 写第二参数：内核不认识 env() 时 --safe-x 整条无效，此处退回常规值 */
-    --rail:1200px; --gutter:max(28px, var(--safe-x, 0px));
+    /* 版心两档 —— 此前是 1200/1040/880/820 四套散在各处（见文件头第 34 行的自述）。
+       四套的代价不是"不整齐"，而是**切换标签时版心跳变**：总览 1200、进度 1040、
+       面试 880、刷题 820，用户会在同一层导航里感到页面一宽一窄（实测反馈）。
+       · --rail      栅格 / 仪表盘：总览、题库、进度 —— 卡片网格与图表越宽越好用
+       · --rail-read 单列阅读：刷题、题目浏览、搜索结果、面试、记忆、拷打 —— 一列里有成段正文，
+                     中文方块字 14px 下 40~50 字/行最舒服（≈820px），拉满 1200 会到 80+ 字
+       两档之外不要再引第三个数字：新增页面时先判断它属于"栅格"还是"单列阅读"。 */
+    --rail:1200px; --rail-read:820px; --gutter:max(28px, var(--safe-x, 0px));
 
     /* 间距刻度：只给"块与块之间"用，组件内部仍按各自需要取值 */
     --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
@@ -183,7 +190,7 @@
   .tabs{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:5px 13px;border-radius:var(--r-sm);cursor:pointer;color:var(--muted);font-size:var(--fs-ui);font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background var(--dur-fast),color var(--dur-fast)}
-  .tab:hover{background:var(--panel);color:var(--text)}
+  @media (hover:hover){ .tab:hover{background:var(--panel);color:var(--text)} }
   .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
   .tab .ic{margin-right:3px}
   /* min-height：评分后统计项（待复习/今日已刷/连续）会增减，固定最小高度避免未换行时高度跳动；
@@ -204,7 +211,9 @@
   .stats-bar .urg{color:var(--warn);font-weight:700}
   /* 搜索框此前是"输入框 outline 被清掉、外层也没有任何焦点反馈"—— 键盘 Tab 进来时看不出光标在哪。
      补 :focus-within：描边点亮 + 一圈 accent 光晕，与设置面板里的输入框同一套语言 */
-  .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:5px 10px;color:var(--muted);flex:none;
+  /* min-height 走控件高度令牌：此前没有任何高度约束，手机上（padding 3px + 12px 字）只有 ~22px，
+     点不准 —— 它是顶栏最常用的入口之一，却是全站唯一没纳入 --ctl-* 的控件。 */
+  .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:5px 10px;color:var(--muted);flex:none;min-height:var(--ctl-md);
                   transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
   .topbar .search:focus-within{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.16)}
   .topbar .search:focus-within .search-ic{color:var(--accent2)}
@@ -217,13 +226,13 @@
      而且 input 是 background:none;border:none 的 —— 光圈没有边框可依附，直接浮在文字外面，格外突兀 */
   .topbar .search input:focus-visible{box-shadow:none}
   .btn{min-height:var(--ctl-md);border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:var(--r-md);cursor:pointer;font-size:var(--fs-ui);font-weight:600;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-  .btn:hover{border-color:var(--accent2)}
+  @media (hover:hover){ .btn:hover{border-color:var(--accent2)} }
   .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0b0e16;
                box-shadow:0 2px 8px rgba(0,0,0,.25);transition:filter var(--dur-quick),box-shadow var(--dur),transform var(--dur)}
   .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px);
                      box-shadow:0 6px 22px rgba(var(--accent-rgb),.38),0 4px 16px rgba(var(--accent2-rgb),.32)}
   .btn.ghost{background:transparent}
-  .btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+  @media (hover:hover){ .btn.danger:hover{border-color:var(--bad);color:var(--bad)} }
   .btn.sm{min-height:var(--ctl-sm);padding:5px 9px;font-size:var(--fs-sm)}
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
   /* 滚动条常驻：overflow-y:scroll 让槽位恒定（轨道是透明的，没滚动时完全看不见）。
@@ -286,7 +295,7 @@
   .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:0 5px 5px 0}
   /* 二级页返回按钮（题目浏览 / 刷题） */
   .back-btn{color:var(--muted)}
-  .back-btn:hover{color:var(--text)}
+  @media (hover:hover){ .back-btn:hover{color:var(--text)} }
   .doc-head .back-btn{margin-bottom:10px}
   .pmeta-l{display:inline-flex;align-items:center;gap:8px;min-width:0}
   .pmeta-l > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -309,7 +318,10 @@
   .q:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
            box-shadow:var(--card-hover-shadow)}
   .q .qhead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
-  .q .qnum{flex:none;width:26px;height:26px;border-radius:var(--r-sm);background:var(--panel2);
+  /* 宽度用 min-width 而不是固定值：文档页那套（.docs-wrap .q .qnum）早就是 min-width + 内边距，
+   而这里是写死的 26px —— 三位数题号（第 100 题起）加上放大字号会把徽标撑破。基线尺寸不变：
+   一两位数字仍落在 26px 上，只有内容更宽时才长出来 */
+  .q .qnum{flex:none;min-width:26px;height:26px;padding:0 5px;border-radius:var(--r-sm);background:var(--panel2);
           display:grid;place-items:center;font-size:var(--fs-sm);font-weight:700;color:var(--accent);margin-top:1px}
   /* 650 是"半粗"的写法，但系统字体栈没有这个字重，各平台会就近取整（Mac 取 600 / 部分安卓取 700），
      同一份代码在两端厚薄不一 —— 统一落 600，跨平台一致。text-wrap:pretty 让长标题的末行不留孤字 */
@@ -317,9 +329,9 @@
   .q .qacts{display:flex;gap:var(--sp-2);flex:none}
   .iconbtn{width:var(--ctl-md);height:var(--ctl-md);border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--panel);
            color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:var(--fs-base);transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
-  .iconbtn:hover{color:var(--text)}
+  @media (hover:hover){ .iconbtn:hover{color:var(--text)} }
   .iconbtn.on{color:var(--good);border-color:var(--good)}
-  .iconbtn.del:hover{color:var(--bad);border-color:var(--bad)}
+  @media (hover:hover){ .iconbtn.del:hover{color:var(--bad);border-color:var(--bad)} }
   /* 展开节奏与通用折叠容器 .rv 完全对齐（此前 .35s ease / .38s ease-out 两套，同一种交互两种手感） */
   .answer{overflow:hidden;transition:grid-template-rows .38s var(--ease-out),opacity .3s ease,margin-top .38s ease;display:grid;grid-template-rows:0fr;opacity:0;margin-top:0}
   .answer.show{grid-template-rows:1fr;opacity:1;margin-top:14px}
@@ -383,7 +395,7 @@
   .docs-wrap .q .qacts .btn.danger{flex:0 0 auto;padding-left:11px;padding-right:11px}
 
   /* practice mode */
-  .practice-wrap{max-width:820px;margin:0 auto}
+  .practice-wrap{max-width:var(--rail-read);margin:0 auto}
   .pbar{height:10px;border-radius:var(--r-sm);background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin:6px 0 4px;display:flex}
   /* 段宽由 inline 的 flex:N 1 0 分配、不是 width：原先那条 transition:width 从来没生效过。
      记忆页的等级条现在走 CSS 过渡（段节点在局部更新后得以复用，见 .pbar.lvbar > i 的 flex-grow） */
@@ -429,7 +441,7 @@
   .pmeta{display:flex;justify-content:space-between;font-size:var(--fs-sm);color:var(--muted);margin-bottom:22px}
   /* 进度页此前在 .content 的 28px 之外又自带 16px 横向内边距 → 左右留白实际 44px，
      与其它页面（28px）不同轴，翻页时整块内容会左右"漂"。横向留白统一交给 .content 的 --gutter，这里只管纵向节奏 */
-  .an-wrap{max-width:1040px;margin:0 auto;padding:18px 0}
+  .an-wrap{max-width:var(--rail);margin:0 auto;padding:18px 0}   /* 进度页是图表仪表盘，与总览同档（原 1040 是第三个数） */
   .an-h{font-size:clamp(17px,.8vw + 12.8px,19px);font-weight:800;line-height:1.3;margin:2px 0;text-wrap:balance}
   .an-sub{color:var(--muted);font-size:var(--fs-ui);margin-bottom:14px;text-wrap:pretty}
   .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin:14px 0}
@@ -451,7 +463,7 @@
   .pcard .panswer{color:var(--muted);line-height:1.8;font-size:var(--fs-base)}
   /* 边框与内边距放进 .rv-in：放外层时即使内容折叠也仍会占位，会留下一道虚线 */
   .pcard .panswer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
-  .pcard .panswer .label{font-size:var(--fs-xs);color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
+  .pcard .panswer .label{font-size:var(--fs-xs);color:var(--accent3-ink, var(--accent3));letter-spacing:1px;font-weight:700;margin-bottom:8px}
   .pcard .panswer p{margin:0 0 10px}
   .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:var(--fs-ui);color:var(--accent)}
   .pcard .panswer pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
@@ -499,7 +511,7 @@
     background:linear-gradient(180deg,var(--accent),var(--accent2));
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .salary-card .salary-sub{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
-  .salary-card .salary-sub b{color:var(--accent3)}
+  .salary-card .salary-sub b{color:var(--accent3-ink, var(--accent3))}
   .salary-card .salary-bar{height:8px;border-radius:var(--r-xs);background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
   /* 圆角两端都是 4px（= 8px 高度下容器 6px 圆角的实际半径），与容器吻合，故保留自带写法；
      宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点） */
@@ -534,7 +546,9 @@
      （弹窗里就有输入框：新增/编辑题目、导入导出），不被键盘压住才谈得上"填得完" */
   /* 左右同样留出安全区：弹窗宽度是 min(520px,92vw)，4vw 的余量在侧挖孔机型上不够躲，
      而弹窗里全是输入框，被挡住一角就很难填。遮罩背景不受影响（padding 是往内收的） */
-  .modal-bg{position:fixed;inset:0;background:rgba(6,8,14,.85);padding-bottom:var(--kb);
+  /* 遮罩不做 backdrop-blur（见主题特效的性能红线注释）：改用「降透明度 + 上下渐变」让背景若隐若现，
+     顶部更透、底部更沉，比原来 85% 的死黑更有纵深、不那么压抑。 */
+  .modal-bg{position:fixed;inset:0;background:linear-gradient(180deg, rgba(9,11,20,.58), rgba(4,5,10,.78));padding-bottom:var(--kb);
            padding-left:var(--safe-x, 0px);padding-right:var(--safe-x, 0px);
            display:grid;place-items:center;z-index:75;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast)}
   .modal-bg.show{visibility:visible;opacity:1}
@@ -564,6 +578,20 @@
   @media(min-width:769px){
     .modal.qmodal{width:min(760px,92vw);padding:26px 30px}
     .qmodal textarea{min-height:clamp(180px,34vh,340px)}
+    /* 设置弹窗同理：520px 里 .set-row2 的双列字段（标签 + 输入）挤成两条窄缝，Token / Gist 那类
+       长字符串基本看不全。加宽到 760 与 .qmodal 取同一档，让"桌面上的表单类弹窗"只有一个宽度。
+       移动端不受影响：那边 .modal{width:96vw!important} 带 !important，压得过这里的任何 width。 */
+    .modal.settings-modal{width:min(760px,92vw)}
+
+    /* .tabs 本来就是设计成横向滚动的（overflow-x:auto + 隐藏滚动条 + -webkit-overflow-scrolling:touch），
+       但作为 flex 项它的 min-width 默认是 auto —— 内容多宽就再也不肯窄一寸，overflow-x:auto 因此形同虚设：
+       顶栏只能在总宽约 870px 处整体 flex-wrap 折成两行（6 个标签 + 搜索 + 2 个按钮）。
+       放开这个下限，那句滚动才真的生效，769px 以上顶栏恒定单行。只加在桌面断点里 ——
+       移动端的折行是既定行为，#themePopup 的 top 偏移就是按它算的（见那处注释）。 */
+    .topbar .tabs{min-width:0}
+    /* 769~1023 的总宽正好卡在折行临界点：搜索框收到 140px 整行才排得下（≥1024 会放大到 280px）。
+       不做这一步，虽然靠上面的 min-width:0 也不会折行，但标签一上来就需要横向滚动。 */
+    .topbar .search input{width:140px}
   }
 
   /* ===== 设置弹窗（.settings-modal 作用域，不影响其它弹窗） ===== */
@@ -574,7 +602,7 @@
   .settings-modal .modal-head{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
   .settings-modal .modal-title{font-size:var(--fs-lead);font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
   .settings-modal .modal-x{width:var(--ctl-sm);height:var(--ctl-sm);border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--panel);color:var(--muted);cursor:pointer;font-size:var(--fs-ui);line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
-  .settings-modal .modal-x:hover{color:var(--text);border-color:var(--bad)}
+  @media (hover:hover){ .settings-modal .modal-x:hover{color:var(--text);border-color:var(--bad)} }
   /* overflow-x:hidden + scrollbar-gutter:stable —— 展开分区后内容高度跨越弹窗高度时垂直滚动条会出现，
    其占位会挤压内容宽度，一瞬间触发水平滚动条（展开 AI 设置/进阶操作时最明显）。
    gutter 让槽位恒定（宽度不变），overflow-x:hidden 则保证任何瞬时溢出都不会画出水平滚动条 */
@@ -652,7 +680,7 @@
   .save-fault .sf-act{flex:0 0 auto;padding:5px 12px;border:1px solid var(--bad);border-radius:var(--r-sm);
     background:transparent;color:var(--bad);font:inherit;font-size:var(--fs-sm);cursor:pointer;
     transition:background-color var(--dur-fast),color var(--dur-fast)}
-  .save-fault .sf-act:hover{background:var(--bad);color:#fff}
+  @media (hover:hover){ .save-fault .sf-act:hover{background:var(--bad);color:#fff} }
   /* 回到顶部：右下悬浮，向下滚动一屏后淡入 */
   /* 这 18px 是"离屏幕边"的距离，有侧边安全区时要在它之外再退一截，所以用加法而非 max()。
      这里共用 --safe-x 而不单独读 safe-area-inset-right：屏幕要么左右都不让、要么让一侧，
@@ -670,7 +698,7 @@
             mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));
     opacity:.9}
   .backtop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
-  .backtop:hover{color:var(--accent);border-color:var(--accent)}
+  @media (hover:hover){ .backtop:hover{color:var(--accent);border-color:var(--accent)} }
   /* ---------- 入场动画：全屏星空（warp 星野） ----------
      进入 App 立刻全屏播放，与 init 并行：init 就绪且展示满最短时长后淡出，就绪后点一下可跳过。
      画面全部由 JS（introStart/introTick）画在 canvas 上，这里只负责底色、柔光与收尾交接。 */
@@ -698,7 +726,7 @@
                                                 rgba(var(--accent2-rgb,139,124,246),.11) 26%, rgba(0,0,0,0) 62%)}
 
   /* ---------- 八股练习 ---------- */
-  .feature-wrap{max-width:880px;margin:0 auto}
+  .feature-wrap{max-width:var(--rail-read);margin:0 auto}   /* 面试/记忆/拷打与刷题同为单列阅读（原 880 是第二套"窄版心"） */
   .cfg-card{padding:24px;margin-bottom:18px}
   .cfg-card h2{margin:0 0 4px;font-size:var(--fs-h2)}
   .cfg-card .desc{color:var(--text);opacity:.65;font-size:var(--fs-ui);margin-bottom:18px;line-height:1.6}
@@ -712,7 +740,7 @@
   .mock-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
   .memory-card{padding:28px 24px;cursor:pointer;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);box-shadow:var(--card-hover-shadow)}
-  .memory-card .ptag{font-size:var(--fs-sm);color:var(--accent3);font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .memory-card .ptag{font-size:var(--fs-sm);color:var(--accent3-ink, var(--accent3));font-weight:700;letter-spacing:1px;text-transform:uppercase}
   .memory-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
   /* 记忆卡牌堆视觉：卡片下方露出两层「余牌」，暗示还有一摞题待复习 */
   .mem-stack{position:relative;margin-bottom:16px}
@@ -722,7 +750,7 @@
   .mem-stack.card-enter{animation:memCardIn var(--dur-slow) var(--ease-out)}
   .memory-answer{color:var(--muted);line-height:1.8;font-size:var(--fs-base)}
   .memory-answer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
-  .memory-answer .label{font-size:var(--fs-xs);color:var(--accent3);letter-spacing:1px;font-weight:700;margin-bottom:8px}
+  .memory-answer .label{font-size:var(--fs-xs);color:var(--accent3-ink, var(--accent3));letter-spacing:1px;font-weight:700;margin-bottom:8px}
 
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:var(--fs-ui);color:var(--accent)}
@@ -756,14 +784,14 @@
   .grade-btn.mem-grade .gb-main{font-size:var(--fs-body);font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   .grade-btn.mem-grade .gb-int{font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
-  .grade-btn.mem-grade:hover{background:var(--panel2)}
+  @media (hover:hover){ .grade-btn.mem-grade:hover{background:var(--panel2)} }
   .grade-btn.mem-grade:active{transform:scale(.97)}
   /* 悬停预览"这一档会是什么颜色"：四档评分按钮此前悬停一律点亮成 --accent2（紫），
      与点下去之后才出现的绿/黄/红不是一套色 —— 悬停时先给出该档的语义色，点选是"确认"而不是"意外" */
-  .grade-btn:hover{border-color:var(--accent2)}
-  .grade-btn.g-good:hover{border-color:var(--good)}
-  .grade-btn.g-mid:hover{border-color:var(--warn)}
-  .grade-btn.g-bad:hover{border-color:var(--bad)}
+  @media (hover:hover){ .grade-btn:hover{border-color:var(--accent2)} }
+  @media (hover:hover){ .grade-btn.g-good:hover{border-color:var(--good)} }
+  @media (hover:hover){ .grade-btn.g-mid:hover{border-color:var(--warn)} }
+  @media (hover:hover){ .grade-btn.g-bad:hover{border-color:var(--bad)} }
   /* 选中态底色取语义色的 RGB 分量：此前写死红绿黄三组字面量（Tailwind 的 green/yellow/red-400），
      与主题自己的 --good/--warn/--bad 不是一套色 —— 换了主题就是"描边跟主题、底色不跟"的错位 */
   .grade-btn.g-good.sel{border-color:var(--good);background:rgba(var(--good-rgb),.18)}
@@ -774,9 +802,9 @@
      只有 g-good 有样式，g-again/g-hard/g-easy 三个类此前在 CSS 里完全不存在（悬停不变色、
      选中态只能靠元素上的行内 border-color 撑着）。这里把缺的三档补齐，让类名重新有意义。
      注：悬停时的底色变化由上面的 .grade-btn.mem-grade:hover 提供，行内色负责常态描边。 */
-  .grade-btn.g-again:hover{border-color:var(--bad)}
-  .grade-btn.g-hard:hover{border-color:var(--warn)}
-  .grade-btn.g-easy:hover{border-color:var(--good)}
+  @media (hover:hover){ .grade-btn.g-again:hover{border-color:var(--bad)} }
+  @media (hover:hover){ .grade-btn.g-hard:hover{border-color:var(--warn)} }
+  @media (hover:hover){ .grade-btn.g-easy:hover{border-color:var(--good)} }
   .grade-btn.g-again.sel{border-color:var(--bad);background:rgba(var(--bad-rgb),.18)}
   .grade-btn.g-hard.sel{border-color:var(--warn);background:rgba(var(--warn-rgb),.18)}
   .grade-btn.g-easy.sel{border-color:var(--good);background:rgba(var(--good-rgb),.18)}
@@ -816,11 +844,11 @@
   .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur-pop) var(--ease-pop)}
   .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
   .theme-tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:4px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);white-space:nowrap}
-  .theme-tab:hover{color:var(--text);background:var(--panel)}
+  @media (hover:hover){ .theme-tab:hover{color:var(--text);background:var(--panel)} }
   .theme-tab.active{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.25)}
   .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);position:relative;background:var(--bg2)}
-  .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)}
+  @media (hover:hover){ .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)} }
   .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
   .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
   .theme-card .tc-swatch{width:42px;height:30px;border-radius:var(--r-sm);position:relative;overflow:hidden;flex:none;border:1px solid var(--line2);box-sizing:border-box}
@@ -831,13 +859,13 @@
   /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
   .grill-mode-card{flex:1;min-width:140px;border-width:2px;padding:14px 12px;cursor:pointer;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-  .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--e-lift)}
+  @media (hover:hover){ .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--e-lift)} }
   .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.08),rgba(var(--accent2-rgb),.08));box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
   .gm-icon{font-size:var(--fs-num)}
   .gm-title{font-size:var(--fs-body);font-weight:700;color:var(--text)}
   .gm-desc{font-size:var(--fs-xs);color:var(--muted);line-height:1.5}
   .grill-dur-btn{min-height:var(--ctl-sm);display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
-  .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)}
+  @media (hover:hover){ .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)} }
   .grill-dur-btn.sel{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.3)}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:var(--r-lg);padding:14px;font-size:var(--fs-body);line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
@@ -860,7 +888,7 @@
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
       .topbar{padding:calc(6px + env(safe-area-inset-top, 0px)) max(8px, var(--safe-x, 0px)) 6px max(8px, var(--safe-x, 0px));gap:3px;justify-content:flex-start}
-    .tab{padding:4px 8px;font-size:var(--fs-sm);border-radius:6px}
+    .tab{padding:4px 8px;font-size:var(--fs-sm);border-radius:6px;min-height:var(--ctl-md)}   /* 主导航是最高频入口，窄屏也要够 38px */
     .topbar .search{padding:3px 8px}
     .topbar .search input{width:100px;font-size:var(--fs-sm)}
     .btn{font-size:var(--fs-xs);padding:5px 8px}
@@ -878,7 +906,9 @@
     .ov-card .t{font-size:var(--fs-xs)}
     /* 薪资大数字同样交给 clamp（≤768 落 32px；≤400 的 24px 覆写在后面） */
     .salary-card .salary-inner{padding:16px}
-    .salary-card .salary-sub{font-size:10px}
+    /* 10px 比全站最小档 --fs-xs(11px) 还小一档；它承载的是「掌握 N 题 · 目标 ¥N」这类会变的数字，
+       一并补上 tabular-nums，否则上面大数字在滚动时这一行会跟着轻微抽动。 */
+    .salary-card .salary-sub{font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
     .memory-card{padding:20px 16px}
     .memory-card .ptitle{font-size:16px}
     .memory-answer{font-size:var(--fs-ui)}
@@ -938,8 +968,11 @@
     .btn{font-size:var(--fs-xs);padding:4px 6px;gap:3px}
     .salary-card .salary-num{font-size:24px}
     .theme-card .tc-swatch{width:30px;height:22px}
-    .theme-card .tc-name{font-size:8px}
+    .theme-card .tc-name{font-size:10px}
   }
+  /* 颜色类 hover 与几何类一样会在触屏上「粘住」（点过的按钮一直挂着 accent 描边）。
+     统一的处理是把它们关进 @media (hover:hover)，而不是在 hover:none 里逐条写复位值 ——
+     复位值等于把非悬停态的颜色再抄一份，同一件事写两处迟早漂移。 */
   /* 无 hover 能力的设备（触屏）：点击后 :hover 会"粘住"，导致卡片上浮/发光一直不恢复，这里统一复位 */
   @media (hover:none){
     .q:hover,.ov-card:hover,.memory-card:hover,.grill-mode-card:hover,
@@ -957,7 +990,11 @@
      否则「10月」这类两字标签会把那一列撑宽，整行刻度就和格子错位了 */
   .hm-wrap{overflow-x:auto;padding:2px 0;scrollbar-width:thin}
   .hm-inner{width:max-content;min-width:100%}
-  .hm-months{display:grid;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));gap:3px;height:14px;margin-bottom:5px}
+  /* height → min-height：这一行只放绝对定位的刻度文字（不参与布局），所以纵向放开是安全的；
+     写死 14px 时，用户把浏览器/系统最小字号调大就会把刻度裁掉。
+     注：.rt-grid / .st-grid 那两个固定高度**不能**这样改 —— 它们内部的柱子是 flex:1，
+     容器一旦变成内容撑高，柱子会塌成 min-height。那两处的自适应要连柱子布局一起重做。 */
+  .hm-months{display:grid;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));gap:3px;min-height:14px;margin-bottom:5px}
   .hm-months>i{position:relative}
   /* 月份刻度用 --muted 而不是 --faint：--faint 是"最淡的一档"，作 10px 文字时在深底主题上
      对比度只有 3.3:1（WCAG 小字要求 4.5:1）。刻度是数据，不是装饰 */
@@ -965,7 +1002,10 @@
   /* 1 号落在最右两列时标签改右对齐：否则「12月」这类两字标签会越出 hm-inner 右缘，被 overflow 裁掉 */
   .hm-months>i>b.rt{left:auto;right:0}
   .hm-grid{display:grid;grid-auto-flow:column;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));grid-template-rows:repeat(7,auto);gap:3px}
-  .hm-cell{width:11px;height:11px;border-radius:3px;background:rgba(var(--text-rgb,255,255,255),.06)}
+  /* 格子在窄屏仍是 11px（53 列固定，不可能更大），所以原地扩一圈点击热区：
+     inset:-3px 正好吃掉 3px 的 gap，既扩大命中也绝不重叠到相邻格子。 */
+  .hm-cell{position:relative;width:11px;height:11px;border-radius:3px;background:rgba(var(--text-rgb,255,255,255),.06)}
+  .hm-cell::after{content:'';position:absolute;inset:-3px}
   /* 网格内的格子随列宽放大成正方形；min-height 兜底不支持 aspect-ratio 的内核 */
   .hm-grid .hm-cell{width:auto;height:auto;min-height:11px;aspect-ratio:1}
   .hm-cell.l1{background:rgba(var(--accent-rgb),.24)}
@@ -992,7 +1032,7 @@
     margin-top:10px;font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
   .stat-foot b{color:var(--text)}
   .hm-scale{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
-  .hm-peak{color:var(--accent3);font-weight:700}
+  .hm-peak{color:var(--accent3-ink, var(--accent3));font-weight:700}
 
   /* 未来到期预测：柱高按当日题量归一化；空日留 3px 基线，避免"没排期"和"柱太矮看不见"混淆 */
   .fc-strip{display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:4px}
@@ -1018,7 +1058,10 @@
   /* 每日复习构成：堆叠柱 */
   .st-grid{display:flex;gap:var(--sp-1);align-items:flex-end;height:110px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
   .st-grid::-webkit-scrollbar{display:none}
-  .st-col{flex:1 1 0;min-width:8px;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+  /* min-width 取 26px：日期标签（"MM-DD" 9.5px）实宽 19~26px。此前是 8px + flex 平分，
+     375px 下 14 列每列只有 18.5px，相邻标签直接压在一起。给足宽度让容器真的横向滚动。
+     （JS 注入的 --st-cols 从未被 CSS 使用，是死变量；这里不依赖它，按内容定宽更稳。） */
+  .st-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
   .st-bar{width:72%;max-width:26px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden;background:rgba(var(--text-rgb,255,255,255),.05)}
   .st-bar>i{display:block;width:100%;flex:none}
   .st-label{font-size:9.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1140,14 +1183,22 @@
 
   /* 窄屏（≤768px）的两组微调合并成一块：同一个断点此前被拆在文件两处、中间还隔着别的规则，
      改窄屏行为要找两个地方，也容易漏改一处 */
+
+  /* dvh 兜底不该绑在宽度断点上，而该绑在「内核认不认识 dvh」上：
+     它此前写在下方的 ≤768 块里，于是 769~1023px 的**横屏手机**（如 812×375）既躲过窄屏块、
+     又进不去宽屏块，弹窗仍按 100vh 居中 —— 地址栏收展时会多算一截，底部按钮被推出屏幕外。
+     用 @supports 表达真正的前提，全宽度生效；不认识 dvh 的内核整块跳过，自动落回上面的 vh 声明。
+     App 内 dvh == vh，无影响；≤768 块里那两个 40dvh 仍排在后面，窄屏照旧生效。 */
+  @supports (height:100dvh){
+    .modal{max-height:calc(90dvh - var(--kb))}
+    .modal.settings-modal{max-height:88dvh}
+    .theme-popup{max-height:min(72dvh,560px)}
+    .grill-chat{max-height:55dvh}
+  }
   @media(max-width:768px){
-    /* 1) 用 dvh 覆盖 vh：手机浏览器地址栏展开时 100dvh < 100vh，弹窗按 vh 居中会被上下裁掉，
-       而外层不滚动、滚不到底部按钮。旧内核不认 dvh 时保留上一行的 vh；App 内 dvh == vh，无影响。
-       注意 .grill-chat 在窄屏本来就该更矮（40vh），一并按 40dvh 覆盖，别把 55 带过来 */
-    /* 双写保留 vh 兜底：不认 dvh 的旧内核（WebView < 108）会丢掉第二行，用第一行 */
-    .modal{max-height:calc(90vh - var(--kb));max-height:calc(90dvh - var(--kb))}
-    .modal.settings-modal{max-height:88vh;max-height:88dvh}
-    .theme-popup{max-height:min(72vh,560px);max-height:min(72dvh,560px)}
+    /* 1) 高度兜底只剩 .grill-chat：.modal / .settings-modal / .theme-popup 的 dvh 覆盖已上提到
+       上面那个与断点无关的 @supports 块（同一件事写两处，正是"横屏手机拿不到 dvh"那个 bug 的成因）。
+       这里只留窄屏专属值：聊天区在手机上本来就该更矮（40 而不是 55），一样双写 vh 兜底旧内核。 */
     .grill-chat{max-height:40vh;max-height:40dvh}
     /* 2) 触控目标：高度下限已由 :root 的 --ctl-sm/md/lg 三档令牌统一保证，
        这里只保留"窄屏更宽松"的手感调整，以及相邻图标键的间距
@@ -1186,12 +1237,54 @@
   body.light .salary-card{box-shadow:0 6px 20px rgba(0,0,0,.10)}
   /* 弹窗遮罩：85% 的近黑是"深色主题下关灯聚焦"的浓度，纸白主题上同一浓度会把整屏压成黑板，
      与页面自身的明亮基调反差过大。浅底降到 50%，并与确认框（rgba(0,0,0,.5)）取同一浓度，全站一致 */
-  body.light .modal-bg{background:rgba(18,16,12,.5)}
+  body.light .modal-bg{background:linear-gradient(180deg, rgba(18,16,12,.38), rgba(18,16,12,.52))}
   body.light .tab.active{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}   /* 纸面上的"高光"要亮一些才看得见 */
   body.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
   /* 满级流光：保留色带流动（那是"满级"的语义本身），去掉向外扩散的呼吸光晕（纸面上会糊成一片） */
   @media (prefers-reduced-motion: no-preference){
     body.light .pbar>i.lvM{animation:lvM-flow 12s linear infinite}
+  }
+
+  /* ---------- 宽屏桌面端（≥1024px）----------
+     断点体系此前只有"移动端覆写"（≤768）和一条给 .qmodal 加宽的 min-width:769px，
+     宽屏没有任何正向规则 —— 结果是桌面端把移动端布局等比拉宽：内容限到 --rail(1200px)，
+     正文实际可用 ~1140px，14px 中文一行 80+ 字，长答案必须来回扫行才读得完。
+     对照同类作品：Anki 桌面复习屏同样是「空格显示答案 + 数字 1-4 评分」——那套本项目已经一致，
+     它多出来的是全局单键导航与宽屏分栏；Apple HIG 也建议导航随尺寸自适应（窄屏标签栏 → 宽屏侧栏）。
+     本轮只做"读得舒服"这一层，且整块关在 ≥1024px 里：移动端与平板（≤1023）零影响。
+     行宽依据：中文是方块字，同字号比拉丁字母宽，舒适行长约 40~50 字 ≈ 820px(14px)；
+     直接套用拉丁文本的 65~75ch 会偏宽。 */
+  @media(min-width:1024px){
+    /* 单列阅读类页面（题目浏览 / 搜索结果）：正文块收到 --rail-read 并居中。
+       题目浏览页只挑 .doc-head / .q / .empty 三类：底部"显示更多"那行带内联 margin:18px 0，
+       一起收进来会让它相对卡片列左移 (1144-820)/2 = 162px；它本身 text-align:center，
+       留在全宽容器里反而和居中后的卡片列同轴。
+       搜索结果页此前是 display:grid 双列，而 .empty 没被指定跨列 → 它就落在**第一列**，
+       于是"没有匹配 xxx 的题目"显示在左上角（用户实测）。双列对"扫结果"确有价值，
+       但两个同类列表页一个双列一个单列，版心一宽一窄，更像是"页面没对齐" ——
+       改回同一条阅读版心后，空态也自然回到居中的块。 */
+    .content[data-view="browse"]>:is(.doc-head,.q,.empty),
+    .content[data-view="search"]>:is(.doc-head,.sr-item,.empty){max-width:var(--rail-read);margin-left:auto;margin-right:auto}
+    /* 顶栏搜索框 180px 在宽屏上偏小。只在 ≥1024 放大 —— 769~1023 的总宽本身紧张，
+       那段已把它收到 140px（见上面的 min-width:769px 块），这里加宽会把标签推去横向滚动。 */
+    .topbar .search input{width:280px}
+    /* 总览页：薪资卡是"一个大数字 + 一行说明"，铺满 1144px 时横向全是空。宽屏改两列 ——
+       左薪资卡、右统计卡（3 列排 5 张），趋势图横跨两列铺满。
+       用 align-items:start 而不是默认的 stretch：两块高度不同，拉伸会让矮的那张中间空出一大截。
+       趋势图占满整行 → canvas 宽度与原来完全一致，drawChart 的取样尺寸不受影响。 */
+    .content[data-view="overview"]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;align-content:start}
+    /* 只声明列、不声明行：靠自动排布定行。显式写 grid-row 时，多出来的引导块（.empty）
+       会和薪资卡撞在同一格里；自动排布则按 DOM 顺序依次落位。
+       趋势图 grid-column:1/-1 需要整行，于是自然落到下一行。
+       ⚠️ 空题库时 `emptyLead`（renderOverview）会多出**两个**同级块：`.empty` 文案 + 一个内联的
+          「导入题库」按钮 div。此前只给 `.empty` 声明了跨列，按钮块于是独自落进第 1 列
+          （半幅宽、看着偏左），还把薪资卡顶到下一行、右半幅留空 —— 新装用户 100% 命中。
+          这里改用「排除已知块」的写法：将来再加引导块也自动跨满，不必逐个补选择器。 */
+    .content[data-view="overview"]> :not(.salary-card):not(.ov-grid):not(.ov-trend){grid-column:1/-1}
+    .content[data-view="overview"]>.salary-card{grid-column:1;margin-bottom:0}
+    .content[data-view="overview"]>.ov-grid{grid-column:2;margin-bottom:0;grid-template-columns:repeat(3,1fr)}
+    .content[data-view="overview"]>.ov-trend{grid-column:1/-1}
+    /* .empty 已由上面那条 :not() 规则覆盖，不再单独列出 */
   }
 
   /* ---------- 高对比度偏好（prefers-contrast）----------
@@ -1254,7 +1347,12 @@
 </div>
 
 <!-- THEME POPUP -->
-<div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:48px">
+<!-- top 要叠加 safe-area-inset-top：App 是 edge-to-edge，顶栏高度 = 6px + 刘海/状态栏 (24~44px)，
+     手机窄屏下 6 个标签还会换行到 80~90px —— 写死 48px 会让浮层压在标签上、并盖住触发它的按钮。
+     宽屏另有内联样式解决不了的问题：.topbar 是 justify-content:center 的全宽容器，浮层固定 right:12px
+     会贴到视口最右、离主题按钮几百像素（2560px 屏上尤其明显）。那一段由 placeThemePopup() 在打开时
+     按按钮实测位置覆盖 right/top；移动端不介入，保持这里的原样。 -->
+<div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:calc(48px + env(safe-area-inset-top, 0px))">
   <div class="theme-tabs" id="themeTabs">
     <div class="theme-tab active" data-tab="canvas">✨ 动态</div>
     <div class="theme-tab" data-tab="classic">🎨 经典</div>
@@ -1409,6 +1507,10 @@ const EASE = {
   std: 'cubic-bezier(.4,0,.2,1)',       // 中性：删除时列表项塌缩
 };
 
+/* ⚠️ 这是**可逆混淆**，不是加密：XOR 0x5A + base64，密钥就在下一行。它的目的只是防肩窥
+   （别人瞥一眼 localStorage 看不到明文 Key），任何能读到本地存储的程序都能一步还原。
+   设置面板的说明文字已经这么写了（见「Key 只保存在本机浏览器」那段），这里把同一句话放在
+   定义处 —— 免得日后有人看到 _safe 这个名字就以为密钥是受保护的。 */
 const _safe = {
   V: 'v1', // 版本标记，存在即表示已编码
   // UTF-8 字节 ↔ Latin-1 字符串：替代已废弃的 unescape(encodeURIComponent())，产物与旧实现逐字节一致
@@ -1449,8 +1551,9 @@ const Store = (() => {
         if(db || useLS) return;
         useLS = true;
         warnSilent('IndexedDB 打开超时（无任何事件），降级到 localStorage');
-        // 说清风险：降级期间的改动只写进临时存储，刷新后可能读不回来（下次启动会提示合并，见 checkDegradedResidue）
-        toast('本地数据库无响应，已临时降级运行：本次改动保存在临时存储中，刷新后可能不生效，建议先导出备份');
+        // 说清风险：降级期间的改动只写进临时存储，刷新后可能读不回来（下次启动会提示合并，见 checkDegradedResidue）。
+        // 走常驻横幅而不是 toast —— 用户可能在降级状态里待上一整场复习，3 秒的提示等于没说
+        raiseNotice('本地数据库无响应，已临时降级运行：本次改动保存在临时存储中，刷新后可能不生效，建议先导出备份');
         done();
       }, 4000);
       try{
@@ -1475,13 +1578,19 @@ const Store = (() => {
           db = e.target.result;
           done();
         };
-        req.onerror = () => { useLS = true; done(); };
+        req.onerror = () => { useLS = true; raiseNotice('本地数据库打开失败，已临时降级运行：本次改动保存在临时存储中，建议先导出备份'); done(); };
         // 其它标签页持有旧版本连接时升级会被阻塞，默认会永久挂起（加载页一直转圈）：给提示 + 兜底降级
         req.onblocked = () => {
-          toast('检测到其它页面正占用本地数据库，请关闭其它标签页后刷新');
+          // 这条同样是「持续状态」：横幅说明现象 + 出路（关掉其它标签页后刷新即可恢复）
+          raiseNotice('检测到其它页面正占用本地数据库，已临时降级运行。关闭其它标签页后刷新即可恢复。');
           setTimeout(() => { if(!db && !useLS){ useLS = true; done(); } }, 5000);
         };
-      }catch(e){ useLS = true; done(); warnSilent('IndexedDB 打开失败，降级到 localStorage', e); }
+      }catch(e){
+        useLS = true;
+        raiseNotice('本地数据库不可用，已临时降级运行：本次改动保存在临时存储中，建议先导出备份');
+        done();
+        warnSilent('IndexedDB 打开失败，降级到 localStorage', e);
+      }
     });
   }
   let mem = {};   // 存储不可用（如 file:// 受限）时的内存兜底，保证应用不崩溃
@@ -1544,6 +1653,27 @@ const Store = (() => {
     _fault = { kind: kind, msg: msg, at: Date.now() };
     _faultCbs.forEach(fn => { try{ fn(_fault); }catch(e){ warnSilent('写入失败回调抛错', e); } });
   }
+  /* 失败状态必须能恢复：它表达的是「这一刻写不进去」，不是「这台机器从此写不进去」。
+     此前只有 raiseFault、没有清零点 —— 一次瞬时失败（IndexedDB 抖动、配额一时打满）置位后，
+     applySm2Grade 会在本会话剩余时间里永久拒绝评分，用户只能刷新页面才能继续学。
+     现在下一次成功写入就把状态撤掉（并通知 UI 收回横幅）。
+     freeze 是例外：它表示磁盘可能已半更新，属于持久状态，只有刷新才安全 —— 那种情况下
+     set() 永远走不到成功分支，所以这里的清除逻辑碰不到它。 */
+  function clearFault(){
+    if(!_fault || _frozen) return;
+    _fault = null;
+    _faultCbs.forEach(fn => { try{ fn(null); }catch(e){ warnSilent('写入失败回调抛错', e); } });
+  }
+  /* 降级提示是第三条独立通道，刻意不复用 _fault：降级期间 localStorage 仍能正常读写真数据，
+     若并进 _fault，applySm2Grade 会误判成「写入受阻」而拒绝评分 —— 那等于把降级变成了不可用。
+     但两者都是「持续状态」，都该以常驻横幅呈现，而不是 3 秒就消失的 toast。 */
+  let _notice = null;
+  const _noticeCbs = [];
+  function raiseNotice(msg){
+    if(_notice === msg) return;
+    _notice = msg;
+    _noticeCbs.forEach(fn => { try{ fn(_notice); }catch(e){ warnSilent('降级提示回调抛错', e); } });
+  }
   function set(k,v){
     if(_frozen){   // 半更新保护：冻结后所有写入直接失败（见 cloudPull 的失败分支）
       raiseFault('frozen', '数据未保存：检测到磁盘状态可能已半更新，写入已暂停以免覆盖新数据。');
@@ -1552,12 +1682,13 @@ const Store = (() => {
     if(useLS){
       const ok = saveLS(Object.assign(loadLS(), {[k]:v}));
       if(!ok) raiseFault('local', '数据未保存：本地存储写入失败（可能空间不足）。请导出备份后清理浏览器存储。');
+      else clearFault();
       return Promise.resolve(ok);
     }
     return new Promise((res)=>{
       try{
         const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').put({key:k,val:v});
-        tx.oncomplete = () => res(true);
+        tx.oncomplete = () => { clearFault(); res(true); };
         tx.onerror = () => { raiseFault('db', '数据未保存：数据库写入失败，改动只保留在内存中。'); console.error('[Store] IndexedDB 写入失败, key=' + k); res(false); };
         tx.onabort = () => { raiseFault('db', '数据未保存：数据库写入被中止，改动只保留在内存中。'); console.error('[Store] IndexedDB 写入中止, key=' + k); res(false); };
       }catch(e){ raiseFault('db', '数据未保存：数据库写入失败，改动只保留在内存中。'); warnSilent('IndexedDB 写入失败, key=' + k, e); res(false); }
@@ -1571,6 +1702,9 @@ const Store = (() => {
     // 写入失败通道：状态由 Store 持有，UI 订阅即可（调用方无需检查任何返回值）
     writeFault: () => _fault,
     onWriteFault: fn => { _faultCbs.push(fn); if(_fault){ try{ fn(_fault); }catch(_){} } },
+    // 降级提示（常驻）：与写入失败共用同一条横幅，但语义与后果都不同，见 raiseNotice 的说明
+    notice: () => _notice,
+    onNotice: fn => { _noticeCbs.push(fn); if(_notice){ try{ fn(_notice); }catch(_){} } },
     freeze: () => { _frozen = true; raiseFault('frozen', '数据未保存：检测到磁盘状态可能已半更新，写入已暂停以免覆盖新数据。'); },
     getDocs: () => get('docs').then(v => v || null),
     saveDocs: v => set('docs', v),
@@ -1628,7 +1762,7 @@ let CLEARS = {};                  // docId -> 通关次数
 const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'practice', MOCK:'mock', MEMORY:'memory', GRILL:'grill', BROWSE:'browse', ANALYTICS:'analytics', HOT:'hot' };
 // ↑ 原 CLOZE:'cloze'（回忆模式）已下线；故意从 Views 中移除，旧存档 lastView='cloze' 会在下方启动检查里回退到总览，不会残留进入不存在的页
 // 视图中文名：供切页时给屏幕阅读器播报（aria-live）
-const VIEW_NAMES = { overview:'总览', docs:'文档', search:'搜索结果', practice:'刷题', mock:'模拟面试', memory:'记忆复习', grill:'项目拷打', browse:'题目浏览', analytics:'进度', hot:'趁热打铁' };
+const VIEW_NAMES = { overview:'总览', docs:'文档', search:'搜索结果', practice:'刷题', mock:'八股练习', memory:'记忆复习', grill:'面试拷打', browse:'题目浏览', analytics:'进度', hot:'趁热打铁' };
 
 let view; try{ view = sessionStorage.getItem('lastView') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
 if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
@@ -2054,17 +2188,22 @@ function effectiveNextOf(p){
   const base = (p.lastPracticed || p.masteredAt || 0);
   return Math.max(p.srNext || 0, base + MASTERED_MIN_DAYS*86400000);
 }
+/* 写入受阻（Store 被冻结）时拒绝「会产生新进度」的操作，返回 true = 已拦住，调用方直接 return。
+   冻结意味着磁盘状态可能已半更新，此后写进内存的新进度刷新即丢 —— 与其让用户白做一轮，
+   不如当场拦住并指路（横幅上有「导出当前数据」和「刷新页面」）。
+   原先只有记忆模式的评分设了这道防，星级标记与八股自评照旧静默接受：同一件事只在一处设防，
+   等于口径分裂 —— 用户在这些入口不会得到任何提示，白做一轮还以为存下了。统一走这里。
+   只拦「会产生新进度」的动作：翻页、展开答案、看统计都不受影响，用户仍能查看全部内容。
+   typeof 守卫是必需的：冒烟测试会把这些函数抽到沙箱里单跑，那里没有 Store。 */
+function blockedByWriteFault(what){
+  if(typeof Store === 'undefined' || !Store.writeFault || !Store.writeFault()) return false;
+  toast('数据未保存，暂时无法' + (what || '评分') + ' —— 请先点上方横幅的「导出当前数据」或「刷新页面」');
+  return true;
+}
 // 记忆模式评分入口：只写 PROGRESS（含 FSRS 调度状态）。
 // historyArr 非 null 时记录撤销栈（记忆模式传 memory._history）
 function applySm2Grade(qid, rate, historyArr){
-  /* 写入受阻时拒绝评分。冻结意味着「磁盘状态可能已半更新」，此时产生的新进度只存在内存里，
-     刷新即丢 —— 与其让用户白做一整轮，不如当场拦住并指路（横幅上有「导出当前数据」和「刷新页面」）。
-     只拦「会产生新进度」的评分：翻页、展开答案、看统计都不受影响，用户仍能查看全部内容。
-     typeof 守卫是必需的：冒烟测试会把这个函数抽到沙箱里单跑，那里没有 Store。 */
-  if(typeof Store !== 'undefined' && Store.writeFault && Store.writeFault()){
-    toast('数据未保存，暂时无法评分 —— 请先点上方横幅的「导出当前数据」或「刷新页面」');
-    return;
-  }
+  if(blockedByWriteFault('评分')) return;
   const now = Date.now();
   const pr = PROGRESS[qid] || {};
   const g = fsrsFromRate(rate);
@@ -2259,11 +2398,16 @@ function warLogMerge(remote){
   if(!remote || typeof remote !== 'object') return 0;
   let changed = 0;
   Object.keys(remote).forEach(day=>{
+    // 危险键必须显式挡掉：远端 warlog-data.json 的键就是外部数据，而下面 lmap[dev] = rb 是
+    // 「拿远端字符串当属性名写本地对象」。day='__proto__' 时 warDayMap 里的 WARLOG[day] 取到的是
+    // Object.prototype（真值，于是不会新建），lmap 就成了 Object.prototype，lmap[dev]=rb 会写到全局原型上。
+    // 判断内联而不复用 isSafeKey：与 sanitizeProgressMap 同一处理（那个函数要能被冒烟测试单独抽进沙箱跑）。
+    if(day==='__proto__'||day==='constructor'||day==='prototype') return;
     const rv = remote[day];
     if(!rv || typeof rv !== 'object') return;
     // 云端留着没有设备分层的旧桶时统一挂到固定名下：两端都这么办，合并结果一致且不会重复计数
     const rmap = rv.c ? { [WARLOG_LEGACY_DEV]: rv } : rv;
-    const devs = Object.keys(rmap).filter(dev => rmap[dev] && rmap[dev].c);
+    const devs = Object.keys(rmap).filter(dev => rmap[dev] && rmap[dev].c && dev!=='__proto__' && dev!=='constructor' && dev!=='prototype');
     if(!devs.length) return;
     const lmap = warDayMap(day, true);
     devs.forEach(dev=>{
@@ -2406,7 +2550,7 @@ function renderWarReport(r){
   const masteryPct = st.tq ? Math.round(st.tm / st.tq * 100) : 0;
   $('#warSub').innerHTML = '覆盖 <b style="color:var(--text)">' + r.uniq + '</b> 道题'
     + (r.newQ ? ' · 其中首刷 ' + r.newQ + ' 道' : '')
-    + (st.streak > 0 ? '<br>🔥 连续打卡第 <b style="color:var(--accent3)">' + st.streak + '</b> 天' : '');
+    + (st.streak > 0 ? '<br>🔥 连续打卡第 <b style="color:var(--accent3-ink, var(--accent3))">' + st.streak + '</b> 天' : '');
   // 四档占比条：宽度按次数占比，颜色直接取 RATE_META（与评分按钮同源，改一处两处都对）
   $('#warBar').innerHTML = [1,2,3,4].map(g => r.c[g-1]
     ? '<i style="width:' + (r.c[g-1]/r.total*100).toFixed(2) + '%;background:' + RATE_META[g].color + '"></i>' : '').join('');
@@ -2494,11 +2638,14 @@ function normalizeDocs(docs){
           let id = (q.id == null || q.id === '') ? String(d.id || 'doc') + '#' + (qi + 1) : String(q.id);
           if(usedIds.has(id)){ let n = 2; while(usedIds.has(id + '_' + n)) n++; id = id + '_' + n; }
           usedIds.add(id);
-          return Object.assign({}, q, {
+          // 用展开而不是 Object.assign：后者走 [[Set]] 语义，JSON 里带 "__proto__" 的 own property
+          // 会顺带改写这个题目对象的原型（sanitizeKeyedObject 那条防线管的是 map，管不到单个对象）
+          return {
+            ...q,
             id: id,
             title: (q.title == null || q.title === '') ? '（未命名题目）' : String(q.title),
             answer: q.answer == null ? '' : String(q.answer)
-          });
+          };
         });
       return d;
     });
@@ -2733,7 +2880,10 @@ function _showConfirm(msg, resolve){
     btns.style.cssText='display:flex;gap:12px;justify-content:center';
     const yesBtn=document.createElement('button');
 
-    yesBtn.style.cssText='padding:8px 24px;border:none;border-radius:var(--r-sm);background:var(--accent);color:#fff;cursor:pointer;font-size:var(--fs-body)';
+    // 「确定」是实心 accent 按钮，前景写死 #fff 在浅底主题的亮 accent 上只有 2.8~3.7:1。
+    // 按 accent 的实际明度决定前景：亮 accent 用深墨（与 .btn.primary 同一套做法），暗 accent 用白。
+    const _accInk = isLightColor((getComputedStyle(document.documentElement).getPropertyValue('--accent')||'').trim()) ? '#0b0e16' : '#fff';
+    yesBtn.style.cssText='padding:8px 24px;border:none;border-radius:var(--r-sm);background:var(--accent);color:'+_accInk+';cursor:pointer;font-size:var(--fs-body)';
     yesBtn.textContent='确定';
     const noBtn=document.createElement('button');
 
@@ -2839,6 +2989,17 @@ function saveViaBrowser(blob, filename){
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
   return true;
 }
+/* 统一的「导出 + 提示」出口：downloadBlob 在原生壳里是异步的（写缓存目录 → 拉起分享面板），
+   写盘失败或分享被取消时它会返回 false —— 而此前四个导出点都是「不等结果就 toast 已导出」，
+   用户看到成功提示、磁盘上却没有文件。成功才提示；失败明确说没保存，并给一条可走的路。
+   （Web 端 saveViaBrowser 无法探测失败，恒返回 true —— 那条路径本来就是「点了就有下载」。） */
+async function exportWithToast(blob, filename, okMsg){
+  let ok = false;
+  try{ ok = await downloadBlob(blob, filename); }catch(e){ warnSilent('导出失败：' + filename, e); }
+  if(ok) toast(okMsg);
+  else toast('导出失败：' + filename + ' 没有保存成功。可改用浏览器打开后重试。');
+  return ok;
+}
 /* ---------- 安卓返回键：分层回退 ----------
    此前完全没有接管返回键（也没装 @capacitor/app），系统默认行为就是 finish()：
    在设置弹窗里、复习到一半、AI 对话中按返回都是"秒退应用"。
@@ -2853,7 +3014,18 @@ function consumeBackPress(){
   if(typeof _confirmCancel === 'function' && _confirmCancel){ try{ _confirmCancel(); return true; }catch(e){ warnSilent('确认框取消回调失败', e); } }
   // 2) 普通弹窗 / 主题气泡：关最上面那个（名单与 Esc 分支一致，含每天首次自动弹出的战报）
   const modals = [$('#addModal'), $('#editModal'), $('#dataModal'), $('#warReportModal')].filter(el => el && el.classList.contains('show'));
-  if(modals.length){ hideModal(modals[modals.length-1]); return true; }
+  if(modals.length){
+    const top = modals[modals.length-1];
+    // 添加/编辑题目弹窗里有「正在写的内容」，而硬件返回键是反射性动作（手机上还没有 Esc 可替代）：
+    // 直接关掉等于丢草稿 —— 这两个弹窗**刻意不支持点遮罩关闭**正是为了防这个误触，返回键不该把它推翻。
+    // dataModal / warReportModal 没有待保存内容，仍直接关。
+    if(top.id === 'addModal' || top.id === 'editModal'){
+      // 先返回 true 消费掉这次返回（否则会触发「再按一次退出」），再异步问一次
+      confirmDialog('关闭后会丢失正在编辑的内容，确定关闭吗？').then(ok => { if(ok) hideModal(top); });
+      return true;
+    }
+    hideModal(top); return true;
+  }
   const tp = $('#themePopup');
   if(tp && tp.classList.contains('show')){ hideModal(tp); return true; }
   // 2b) 热力图日详情气泡：动态 append 的临时浮层（点空白处即关）。返回键只关它，
@@ -2879,7 +3051,14 @@ function consumeBackPress(){
     app.addListener('backButton', () => {
       if(consumeBackPress()) return;
       const now = Date.now();
-      if(now - lastAt < 2000){ try{ app.exitApp(); }catch(_){} return; }   // 退出应用本身走插件，不自己 finish Activity
+      if(now - lastAt < 2000){
+        // 退出前显式落一次盘：进度有 600ms 防抖，退出时刻正好落在窗口内时，最后一次评分只在内存里。
+        // 不能指望 pagehide / visibilitychange 一定派发 —— Android 强杀不保证。
+        // 退出应用本身走插件，不自己 finish Activity
+        flushProgressWrite(); saveGrillDraft(true);
+        try{ app.exitApp(); }catch(_){}
+        return;
+      }
       lastAt = now;
       toast('再按一次返回键退出');
     });
@@ -2895,20 +3074,46 @@ function toast(msg){
 }
 /* 写入失败横幅的挂载。放在这里而不是 init() 里：它与 toast 同属「全局反馈通道」，
    且 #saveFault 在 HTML 里静态存在，脚本跑到这行就能挂上 —— 越早挂越不会漏掉启动阶段的写入失败。
-   横幅不会自动消失；刷新页面是唯一确定有效的恢复路径（冻结与降级都要重新走一遍 Store.open）。
-   状态源是 Store.onWriteFault：任何写入点失败都会走到这里，不依赖调用方检查返回值。 */
+   状态源是 Store.onWriteFault：任何写入点失败都会走到这里，不依赖调用方检查返回值。
+   横幅在失败期间常驻（不自动消失），但会在 Store 报出恢复时自行撤掉（见 clearFault）——
+     · 瞬时失败（DB 写失败、配额一时打满）：下一次成功写入即恢复，用户不必中断复习
+     · freeze（磁盘可能已半更新）：持久状态，横幅会一直挂着，只有刷新页面能真正解除 */
 (function(){
   const el = $('#saveFault');
   if(!el || !Store || typeof Store.onWriteFault !== 'function') return;
   const msgEl = el.querySelector('.sf-msg');
   const actEl = $('#saveFaultAct');
   const expEl = $('#saveFaultExport');
-  Store.onWriteFault(f => { if(msgEl) msgEl.textContent = f.msg; el.hidden = false; });
+  // 写入失败与降级共用这条横幅，各自都可能为空（已恢复 / 未发生）。
+  // 优先级：写入失败在前 —— 它会让保存静默失败，比降级更紧急。
+  const paintBanner = msg => { if(!msg){ el.hidden = true; return; } if(msgEl) msgEl.textContent = msg; el.hidden = false; };
+  const paintFromState = () => {
+    const f = typeof Store.writeFault === 'function' ? Store.writeFault() : null;
+    if(f) return paintBanner(f.msg);
+    paintBanner(typeof Store.notice === 'function' ? Store.notice() : null);
+  };
+  Store.onWriteFault(() => paintFromState());
+  if(typeof Store.onNotice === 'function') Store.onNotice(() => paintFromState());
   if(actEl) actEl.onclick = () => location.reload();
   // 「先导出、再刷新」是这个场景的标准出路：内存里的进度只在本次会话有效，
   // 而导出的 JSON 用「导入题目」就能原样回导（同一条 importJsonDocs 路径）。
   if(expEl) expEl.onclick = () => exportBackupJson();
 })();
+/* 多标签页合并：localStorage 没有事务，每个标签页各持一份内存副本、写回时整份覆盖 ——「后写的赢」。
+   A 页写了 3 条复习日志、B 页随后写自己那 2 条，A 的第 3 条就永久没了。REVLOG / WARLOG 都是只增日志
+   （保留率曲线与每日战报丢了无法重建），所以监听 storage 事件，把对端写入的条目并回来。
+   两个合并函数本身幂等（revlog 按 at|qid 去重、warlog 逐设备按 at 取新），且「内容没变就不写」，
+   因此不会和对端来回触发（同值 setItem 不会派发 storage 事件）。
+   热榜（learnAppHot）刻意不在这里合并：它是短期队列、丢了重建即可，且云同步走的是覆盖语义
+   （见 applyHotFromGist 的说明），把它拉进来会与那条设计打架。 */
+window.addEventListener('storage', e => {
+  try{
+    // newValue 为 null = 对端调了 clear()：此时保留本地值比照单全收更安全
+    if(!e.key || e.newValue == null) return;
+    if(e.key === REVLOG_KEY) mergeRevLogFromBackup(JSON.parse(e.newValue));
+    else if(e.key === WARLOG_KEY) warLogMerge(JSON.parse(e.newValue));
+  }catch(err){ warnSilent('跨标签页合并失败：' + e.key, err); }
+});
 // 安全的 localStorage 写入：捕获溢出等异常并提示
 function safeLocalSet(key, val){
   try{ localStorage.setItem(key, val); return true; }
@@ -3009,7 +3214,7 @@ function renderStatsBar(){
     <span>总进度 <b data-num="seenPct" data-val="${seenPct}" data-suf="%">${seenPct}%</b></span>
     <div class="bar" style="display:flex">${barSegs}</div>
     <span>题目 <b data-num="tq" data-val="${tq}">${tq}</b></span><span>已看 <b data-num="ts" data-val="${ts}">${ts}</b></span><span>掌握 <b data-num="tm" data-val="${tm}">${tm}</b></span>
-    ${streak>0?`<span style="color:var(--accent3)">🔥 连续 <b data-num="streak" data-val="${streak}">${streak}</b> 天</span>`:''}
+    ${streak>0?`<span style="color:var(--accent3-ink, var(--accent3))">🔥 连续 <b data-num="streak" data-val="${streak}">${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span title="按每题「最后一次练习时间」归日：刷题模式里翻看过的题也算在内，不等于答题次数">今日已刷 <b data-num="todayDone" data-val="${todayDone}">${todayDone}</b> 题</span>`:''}
     ${due>0?`<span class="urg">🧠 记忆 <b data-num="due" data-val="${due}">${due}</b> 题待复习</span>`:''}
     ${fresh>0?`<span>🌱 未学 <b data-num="fresh" data-val="${fresh}">${fresh}</b></span>`:''}
@@ -3059,6 +3264,10 @@ function renderStatsBar(){
    ========================================================= */
 function renderContent(){
   const c = content();
+  // 给内容容器打上当前视图标记：宽屏那几条排版规则要按视图区分（浏览页限宽、搜索结果双列），
+  // 而此前 .content 里没有任何"这是哪一页"的信息，只能靠类名反推（.docs-wrap 之类），
+  // 模板一换就静默失配。标记写在唯一的渲染出口，不存在漏掉某个视图的可能。
+  c.dataset.view = view;
   // 离开进度页后清空粒子避让区：否则 _uMaskEls 一直留着已失效的元素，粒子引擎每帧仍要遍历它们
   if(view !== Views.ANALYTICS && _uMaskEls.length) setParticleMask([]);
   if(view===Views.OVERVIEW) return renderOverview(c);
@@ -3091,10 +3300,16 @@ function renderOverview(c){
   const retCls = ret ? '' : ' plain';
   const retColor = !ret ? '' : (ret.pct >= retTarget ? ' style="color:var(--good)"' : (ret.pct < retTarget - 5 ? ' style="color:var(--warn)"' : ''));
   const retTitle = ret
-    ? ' title="整体记得率：' + ret.n + ' 次复习里评「记得」的比例（目标 ' + retTarget + '%）"'
+    ? ' title="保留率：' + ret.n + ' 次复习里评「记得」的比例（目标 ' + retTarget + '%）"'
     : ' title="复习满 ' + RETENTION_MIN_SAMPLES + ' 次后显示：样本太少时这个百分比没有意义"';
   const retText = ret ? (ret.pct + '%') : '—';
-  c.innerHTML = `
+  // 空题库引导：新装后这一页此前只有一排 0 和 ¥0，没有任何「下一步」的入口 ——
+  // 而文档页早就有同样的引导（见 syncDocs 的 docsEmptySlot），这里复用同一个 openImportPicker。
+  const emptyLead = (tq === 0)
+    ? `<div class="empty"><div class="big">📚</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
+       <div style="text-align:center;margin:0 0 18px"><button type="button" class="btn primary" id="ovImport">⬆️ 导入题库（JSON / Markdown）</button></div>`
+    : '';
+  c.innerHTML = emptyLead + `
     <div class="salary-card">
       <div class="salary-glow"></div>
       <div class="salary-inner">
@@ -3108,7 +3323,7 @@ function renderOverview(c){
       <div class="ov-card"><div class="n" id="ovTotal">${tq}</div><div class="t">总数</div></div>
       <div class="ov-card"><div class="n" id="ovSeen">${ts}</div><div class="t">已学</div></div>
       <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
-      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` style="cursor:pointer" title="点击进入记忆模式，开始复习${fresh?`（另有 ${fresh} 道未学）`:''}"`:''}>
+      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` role="button" tabindex="0" style="cursor:pointer" title="点击进入记忆模式，开始复习${fresh?`（另有 ${fresh} 道未学）`:''}"`:''}>
         <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
         <div class="t">待复习${fresh>0?` · 未学 ${fresh}`:''}</div>
       </div>
@@ -3119,7 +3334,7 @@ function renderOverview(c){
         <div class="t">保留率</div>
       </div>
     </div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:20px;margin-top:0">
+    <div class="ov-trend" style="background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:20px;margin-top:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span style="font-weight:700;font-size:var(--fs-base)">📈 刷题趋势</span>
         <div style="display:flex;gap:4px">
@@ -3150,6 +3365,8 @@ function renderOverview(c){
     animateSegBar(c, '.salary-bar > i', 'salary');   // 月薪条与数字同步滑到新值（同一会话内数值未变则不动）
   }, 30);
   // 待复习卡：点击直接进记忆模式开始复习（无到期题时不可点）
+  const ovImportBtn = c.querySelector('#ovImport');
+  if(ovImportBtn) ovImportBtn.onclick = () => openImportPicker();
   const dueCard = c.querySelector('#ovDueCard');
   if(dueCard && todo>0) dueCard.onclick = () => {
     // 必须整体重建 memory：memory.queue 是上一轮快照（可能含刚评完、已排到明天的题），
@@ -3193,7 +3410,9 @@ function drawChart(days, mode){
   const accent2 = style.getPropertyValue('--accent2').trim() || '#5ad1c9';
   const lineColor = style.getPropertyValue('--line').trim() || '#272d44';
   const mutedColor = style.getPropertyValue('--muted').trim() || '#9aa3c0';
-  const faintColor = style.getPropertyValue('--faint').trim() || '#6b7494';
+  // 日期轴用 --muted 而不是 --faint：--faint 是最淡的一档，作 10px 刻度在深底主题上只有约 3.1:1。
+  // 热力图月份刻度（985）与搜索框占位符（214）早就因同样原因改成 --muted 了，这里是同一政策漏改的第三处。
+  // 那个只从 --faint 取色的局部变量随之删除（全文件只被下面那一行用过）。
   const textColor = style.getPropertyValue('--text').trim() || '#e7eaf3';
 
   const counts = new Array(days).fill(0);
@@ -3281,7 +3500,7 @@ function drawChart(days, mode){
   // Day labels
   for(let i=0;i<days;i++){
     if(days<=7||i%5===0||i===days-1){
-      ctx.fillStyle=faintColor; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillStyle=mutedColor; ctx.font='10px sans-serif'; ctx.textAlign='center';
       // 用日历减法取标签日期（不能用毫秒直减：有夏令时的时区会差一天，且与同函数内的 dayIndexOf 口径不一致）
       const _ld = new Date(today0); _ld.setDate(_ld.getDate() - (days-1-i));
       const date = _ld;
@@ -3503,7 +3722,7 @@ function renderBrowse(c){
     setTimeout(()=>{
       const card = c.querySelector(`[data-qid="${CSS.escape(jumpQid)}"]`);
       if(card){
-        card.scrollIntoView({behavior:'smooth',block:'center'});
+        card.scrollIntoView({behavior: prefersReduce() ? 'auto' : 'smooth', block:'center'});
         card.style.boxShadow = '0 0 0 2px var(--accent)';
         setTimeout(()=>{ card.style.boxShadow = ''; }, 2000);
       }
@@ -3543,6 +3762,7 @@ function toggleAnswer(qid){
   // 浏览模式下展开答案不记进度（可能是在查资料或编辑内容）
 }
 function toggleMaster(qid){
+  if(blockedByWriteFault('标记掌握')) return;   // 与记忆评分同一口径，见 blockedByWriteFault
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.mastered = !p.mastered;
   // 手动标记只是"我会了"的元数据，不能写 lastPracticed —— 它是「今日已刷 / 热力图 / 连续打卡」的统计口径，
@@ -3643,7 +3863,12 @@ function saveProgress(keepLv){   // keepLv 透传给 invalidateMemQueue：只有
 }
 // 页面隐藏/卸载时把所有带防抖的落盘项立即 flush（各 600ms 防抖，不 flush 会丢掉最后一次评分/最后一次输入）
 window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); });
-document.addEventListener('visibilitychange', () => { if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); } });
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); return; }
+  // 回前台补算一次键盘高度：键盘是「在后台被系统收起」的，那种收起不会派发 visualViewport 的 resize，
+  // --kb 会留一个陈旧的非 0 值 —— 表现为弹窗被压矮、聚焦的输入框不回到可见区。
+  try{ syncKeyboardInset(); }catch(_){}
+});
 // 索引先与内存数据同步重建，再异步落盘——避免"落盘完成前"窗口内新题在 QINDEX 中查不到导致刷题崩溃
 // 同时失效记忆队列缓存：否则新增/删除题目后，记忆模式最长 30 分钟看不到变化
 async function saveDocs(){ buildIndex(); markDirty(); invalidateMemQueue(); await Store.saveDocs(DOCS); }
@@ -3945,7 +4170,7 @@ function renderDone(c){
       <div class="done-card">
         <div class="big">🎉</div>
         <h3>刷题完成！</h3>
-        <div class="sub">「${esc(d?d.title:'')}」已完成，累计刷过 <b style="color:var(--accent3)">${docClears(docId)}</b> 次</div>
+        <div class="sub">「${esc(d?d.title:'')}」已完成，累计刷过 <b style="color:var(--accent3-ink, var(--accent3))">${docClears(docId)}</b> 次</div>
         <div class="pcontrols" style="justify-content:center">
           <button type="button" class="btn" id="backDocs">📁 返回文档</button>
           <button type="button" class="btn" id="replayAgain">🔄 再刷一次</button>
@@ -3959,6 +4184,7 @@ function renderDone(c){
   if(!_trophyShown){ _trophyShown = true; celebrateTrophy(); }
 }
 function toggleMasterP(qid){
+  if(blockedByWriteFault('标记掌握')) return;   // 与记忆评分同一口径，见 blockedByWriteFault
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
   p.mastered = !p.mastered;
   // 同 toggleMaster：不写 lastPracticed（打卡统计口径），标记时间存 masteredAt
@@ -4103,6 +4329,7 @@ function startMock(){
   renderAll();
 }
 function mockGrade(qid, rate){
+  if(blockedByWriteFault('记录评分')) return;   // 与记忆评分同一口径，见 blockedByWriteFault
   const a = mock.answers[qid] || (mock.answers[qid]={answer:'',selfRate:null});
   a.selfRate = rate;
   const p = PROGRESS[qid] || (PROGRESS[qid]={seen:false,mastered:false});
@@ -4504,7 +4731,7 @@ function renderMemory(c){
       const todayDone = _ms.todayDone;
       const canUndo = !!(memory._history && memory._history.length);
       const hotLive = hotLiveQueue().length;   // 真实可练题数：会顺带回收被删题遗留的孤儿 qid，不能直接用 HOT.length
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在 FSRS 复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3);font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button type="button" class="btn primary" id="memGoHot">🔥 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button type="button" class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
+      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在 FSRS 复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3-ink, var(--accent3));font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button type="button" class="btn primary" id="memGoHot">🔥 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button type="button" class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
       const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
       const gh = $('#memGoHot'); if(gh) gh.onclick = () => { hot.inPass = false; hot.index = 0; hot.cleared = 0; view = Views.HOT; renderAll(); };
       return;
@@ -4594,7 +4821,9 @@ function bindMemoryCard(c){
     _memGradeBusy = true;
     // 新题从顶部开始：先把滚动位置平滑归位，避免动画结束时内容归位造成位置瞬跳
     if(c.scrollTop > 8){
-      try{ c.scrollTo({ top:0, behavior:'smooth' }); }catch(_){ c.scrollTop = 0; }
+      // 这里的减动效由上面的 early return 保证（prefersReduce 时整段动画都不执行）；
+      // 仍改写成同一套三目，免得以后有人把这段挪出守卫分支、悄悄退化回无条件平滑
+      try{ c.scrollTo({ top:0, behavior: prefersReduce() ? 'auto' : 'smooth' }); }catch(_){ c.scrollTop = 0; }
     }
     // 卡片按评分方向飞出：忘了 → 下坠、倒背如流 → 上浮，四档逐级递进（缺省的兜底取中间档）
     const dy = ({1:70, 2:24, 3:-30, 4:-80})[rate] || -30;
@@ -4771,7 +5000,7 @@ function exportAnalyticsCSV(rows){
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
-  downloadBlob(blob, `记忆进度_${dateStr()}.csv`);   // 本地日期，避免东八区凌晨文件名差一天
+  exportWithToast(blob, `记忆进度_${dateStr()}.csv`, '已导出进度 CSV');   // 本地日期，避免东八区凌晨文件名差一天
 }
 
 function copyText(t){
@@ -5066,7 +5295,7 @@ function buildTagMasteryHtml(){
       </div>
     </div>`;
   }).join('');
-  return `<div class="tag-grid">${items}</div>${list.length > 18 ? `<div class="stat-foot"><span style="color:var(--faint)">仅展示题量前 18 的标签，共 ${list.length} 个</span></div>` : ''}`;
+  return `<div class="tag-grid">${items}</div>${list.length > 18 ? `<div class="stat-foot"><span style="color:var(--muted)">仅展示题量前 18 的标签，共 ${list.length} 个</span></div>` : ''}`;
 }
 
 function renderAnalytics(c){
@@ -5263,7 +5492,13 @@ function renderGrillConfig(c){
   let selectedSrc = grill.selSrc || 'ai'; // 八股扫荡题目来源：ai=AI现场出题，local=本地题库
   // 选择态与各行显隐统一在这里同步：点击后调它一次，避免"点了模式但行没显示 / 简历没隐藏"这类不一致
   const syncGrillUi = () => {
-    document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>c.classList.toggle('sel', c.dataset.mode===selectedMode));
+    // aria-pressed 跟着视觉选中态一起维护 —— 与下面时长 / 来源那两行同一套。
+    // 此前模式卡只有 .sel：读屏读不出「选中了哪个模式」，而同一页的另外两组却读得出。
+    document.querySelectorAll('#grillModeRow .grill-mode-card').forEach(c=>{
+      const on = c.dataset.mode===selectedMode;
+      c.classList.toggle('sel', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     const startBtn = $('#grillStart'); if(startBtn) startBtn.disabled = !selectedMode;
     // 高压实战才显示时长选项
     const durRow = $('#grillDurRow');
@@ -5724,8 +5959,7 @@ function exportMockMD(){
   L.push('### 阅卷要求');
   L.push(GRADE_RUBRIC);   // 与内置「AI 阅卷」共用同一份 rubric，避免两条路径给出不可比的分数
   const blob = new Blob([L.join('\n')], {type:'text/markdown;charset=utf-8'});
-  downloadBlob(blob, `八股练习复盘-${dateStr()}.md`);
-  toast('已导出复盘 MD，交给 AI 阅卷即可');
+  exportWithToast(blob, `八股练习复盘-${dateStr()}.md`, '已导出复盘 MD，交给 AI 阅卷即可');
 }
 
 /* =========================================================
@@ -6182,7 +6416,15 @@ function renderAll(){
     // 列表类视图（文档页/题目浏览页）在原地编辑、删除后要保住滚动位置，
     // 否则题多的文档一删题就被弹回顶部；切视图/翻题/评分仍然回顶部
     const keepScroll = !viewChanged && (view===Views.DOCS || view===Views.BROWSE);
-    if(!keepScroll) c.scrollTop=0;
+    if(!keepScroll){
+      c.scrollTop=0;
+      /* 焦点归位：重渲染用 innerHTML 换掉了内容，被点掉的那个元素连同焦点一起消失，焦点会掉到
+         body —— 键盘/读屏用户此后没有位置，得从头 Tab 一整圈才能回到内容区。
+         .content 是 role=tabpanel + tabindex="-1"，按 ARIA 的 tabpanel 惯例本就该在激活时接管焦点。
+         只在「焦点确实已经丢了」（落在 body）时补一次：不动弹窗里正在输入的光标、也不抢搜索框。
+         preventScroll 避免刚归零的滚动位置又被浏览器改回去。 */
+      if(document.activeElement === document.body) c.focus({preventScroll:true});
+    }
     if(viewChanged){
       // 方向性入场：按标签左右顺序决定新页从哪侧滑入（往右切→右侧滑入，往左切→左侧），建立横向空间连续感
       const NAVORDER = [Views.OVERVIEW,Views.DOCS,Views.ANALYTICS,Views.GRILL,Views.MEMORY,Views.HOT];
@@ -6348,60 +6590,33 @@ const THEME_SPEC = {
     colors:{bg:'#f4efe6',bg2:'#ece5da',panel:'#faf6ee',panel2:'#fffdf8',card:'#fcf8f1',line:'#e2d7c6',line2:'#d0c0a8',text:'#26201a',muted:'#5a4c40',faint:'#7a6b5c',accent:'#b4322e',accent2:'#2c5f7a',accent3:'#c8912f',good:'#4a7a4c',warn:'#c8912f',bad:'#b4322e'},
     bodyBg:`radial-gradient(1100px 600px at 24% 8%, rgba(180,50,46,.07) 0%, transparent 55%), radial-gradient(900px 520px at 82% 6%, rgba(44,95,122,.07) 0%, transparent 55%), radial-gradient(700px 420px at 52% 96%, rgba(200,145,47,.06) 0%, transparent 60%), var(--bg)`,
   },
-  // ── 经典编辑器配色组（配色取自对应开源主题，再按本项目变量语义适配）──
-  // Catppuccin Frappé（github.com/catppuccin，MIT）：奶咖暖深色，介于 Mocha 与 Latte 之间
-  // ── 经典组：编辑器配色生态（均走通用星尘粒子 stardust）──
-  frappe: {
-    group:'classic', name:'奶咖', canvas:'stardust',
-    colors:{bg:'#232634',bg2:'#292c3c',panel:'#303446',panel2:'#383d52',card:'#303446',line:'#414559',line2:'#51576d',text:'#c6d0f5',muted:'#a5adce',faint:'#737994',accent:'#ca9ee6',accent2:'#8caaee',accent3:'#81c8be',good:'#a6d189',warn:'#ef9f76',bad:'#e78284'},
-  },
-  // Catppuccin Macchiato（github.com/catppuccin，MIT）：比 Mocha 浅一档的玛奇朵
-  macchiato: {
-    group:'classic', name:'玛奇朵', canvas:'stardust',
-    colors:{bg:'#181926',bg2:'#1e2030',panel:'#24273a',panel2:'#2c3047',card:'#24273a',line:'#363a4f',line2:'#494d64',text:'#cad3f5',muted:'#a5adcb',faint:'#6e738d',accent:'#c6a0f6',accent2:'#8aadf4',accent3:'#8bd5ca',good:'#a6da95',warn:'#f5a97f',bad:'#ed8796'},
-  },
-  // Rosé Pine（github.com/rose-pine/rose-pine-theme，MIT）：玫瑰三变体
-  rosepine: {
-    group:'classic', name:'玫瑰', canvas:'stardust',
-    colors:{bg:'#191724',bg2:'#1f1d2e',panel:'#26233a',panel2:'#2e2a42',card:'#26233a',line:'#403d52',line2:'#524f67',text:'#e0def4',muted:'#908caa',faint:'#6e6a86',accent:'#ebbcba',accent2:'#c4a7e7',accent3:'#f6c177',good:'#9ccfd8',warn:'#f6c177',bad:'#eb6f92'},
-  },
-  rosepineMoon: {
-    group:'classic', name:'玫瑰月', canvas:'stardust',
-    colors:{bg:'#232136',bg2:'#2a273f',panel:'#393552',panel2:'#413d5e',card:'#393552',line:'#46436b',line2:'#56527e',text:'#e0def4',muted:'#908caa',faint:'#6e6a86',accent:'#ea9a97',accent2:'#c4a7e7',accent3:'#f6c177',good:'#9ccfd8',warn:'#f6c177',bad:'#eb6f92'},
-  },
-  rosepineDawn: {
-    group:'classic', name:'玫瑰晨', canvas:'stardust',
-    colors:{bg:'#faf4ed',bg2:'#f2e9e1',panel:'#fffaf3',panel2:'#ffffff',card:'#fffaf3',line:'#e8dfd6',line2:'#d6c9ba',text:'#575279',muted:'#716d89',faint:'#726f7c',accent:'#d7827e',accent2:'#907aa9',accent3:'#ea9d34',good:'#56949f',warn:'#ea9d34',bad:'#b4637a'},
-  },
   // Dracula（github.com/dracula/dracula-theme，MIT）
+  // ── 经典组：编辑器配色生态 ──
+  //    这里刻意只留 4 套，而且每套配一个**各自独立**的 canvas 特效（不再共用同一个绘制分支）。
+  //    原来这里放着 11 套，全部声明 canvas:'stardust' —— 几何、数量、运动逐像素一致，只有三色跟着
+  //    主题变，等于同一片星尘换 11 次配色；而且其中 Catppuccin 占 2 套（另两套在动态组）、
+  //    Rosé Pine 占 3 套、One Dark 与 Nord 同温度、GitHub 与极光同温度 —— 族内重复也高。
+  //    筛掉同族与同温度的那些，只留色温上真正互补的四套，各自给一个机制不同的特效：
+  //      德古拉 品红/紫 → 上升余烬 │ 北欧 冷蓝 → 寒潮扫描 │ 复古 暖橙 → 胶片颗粒 │ 常青 墨绿 → 林间萤火
+  //    被删掉的 7 个 id 在 THEME_ALIAS 里登记到最近的保留主题，老存档的偏好不会丢（也不会误入跟随系统）。
   dracula: {
-    group:'classic', name:'德古拉', canvas:'stardust',
+    group:'classic', name:'德古拉', canvas:'ember',
     colors:{bg:'#1d1e27',bg2:'#23242f',panel:'#282a36',panel2:'#343646',card:'#282a36',line:'#44475a',line2:'#565970',text:'#f8f8f2',muted:'#b6bccf',faint:'#6272a4',accent:'#bd93f9',accent2:'#8be9fd',accent3:'#ff79c6',good:'#50fa7b',warn:'#ffb86c',bad:'#ff5555'},
   },
   // Nord（github.com/nordtheme/nord，MIT）
   nord: {
-    group:'classic', name:'北欧', canvas:'stardust',
+    group:'classic', name:'北欧', canvas:'scan',
     colors:{bg:'#272c36',bg2:'#2e3440',panel:'#3b4252',panel2:'#434c5e',card:'#3b4252',line:'#4c566a',line2:'#59627a',text:'#d8dee9',muted:'#a3adc0',faint:'#7c869e',accent:'#88c0d0',accent2:'#81a1c1',accent3:'#b48ead',good:'#a3be8c',warn:'#ebcb8b',bad:'#bf616a'},
   },
   // Gruvbox（github.com/morhetz/gruvbox，MIT）Hard Dark
   gruvbox: {
-    group:'classic', name:'复古', canvas:'stardust',
+    group:'classic', name:'复古', canvas:'film',
     colors:{bg:'#1d2021',bg2:'#282828',panel:'#32302f',panel2:'#3c3836',card:'#282828',line:'#504945',line2:'#665c54',text:'#ebdbb2',muted:'#bdae93',faint:'#a89984',accent:'#83a598',accent2:'#d3869b',accent3:'#fe8019',good:'#b8bb26',warn:'#fabd2f',bad:'#fb4934'},
   },
   // Everforest（github.com/sainnhe/everforest，MIT）
   everforest: {
-    group:'classic', name:'常青', canvas:'stardust',
+    group:'classic', name:'常青', canvas:'firefly',
     colors:{bg:'#232a2e',bg2:'#2d353b',panel:'#343f44',panel2:'#3d484d',card:'#343f44',line:'#3d484d',line2:'#4a565c',text:'#d3c6aa',muted:'#9da9a0',faint:'#7a8478',accent:'#7fbbb3',accent2:'#83c092',accent3:'#d699b6',good:'#a7c080',warn:'#dbbc7f',bad:'#e67e80'},
-  },
-  // One Dark（github.com/atom/atom 内置主题，MIT）
-  onedark: {
-    group:'classic', name:'原子暗', canvas:'stardust',
-    colors:{bg:'#21252b',bg2:'#282c34',panel:'#2c313a',panel2:'#353b46',card:'#2c313a',line:'#3b4048',line2:'#4b5263',text:'#abb2bf',muted:'#8b929f',faint:'#5c6370',accent:'#61afef',accent2:'#c678dd',accent3:'#56b6c2',good:'#98c379',warn:'#d19a66',bad:'#e06c75'},
-  },
-  // GitHub Dark（github.com/primer，MIT）
-  github: {
-    group:'classic', name:'极客', canvas:'stardust',
-    colors:{bg:'#0d1117',bg2:'#161b22',panel:'#161b22',panel2:'#1c2129',card:'#161b22',line:'#30363d',line2:'#3d444d',text:'#e6edf3',muted:'#8b949e',faint:'#6e7681',accent:'#58a6ff',accent2:'#bc8cff',accent3:'#39c5cf',good:'#3fb950',warn:'#d29922',bad:'#f85149'},
   },
   // ── 自定义组：上传背景图 ──
   'img-bg': {
@@ -6415,7 +6630,8 @@ const THEMES = {}, THEME_CONFIG = {}, CSS_FX = {}, BODY_BG_MAP = {};
 /* 两份 id 清单也从同一个 canvas 声明派生 —— 它们此前是手写的字面量数组，
    与 THEME_SPEC[*].canvas 是同一信息的两份：改一处忘另一处就是静默失效
    （新主题声明了特效却不在清单里 → 画布永远不启动，且没有任何报错）。
-   STARDUST_THEMES：共用「星尘」粒子的经典配色组；ALL_CANVAS_THEMES：全部需要启动画布引擎的主题。 */
+   STARDUST_THEMES：声明 canvas:'stardust' 的主题（如今只剩旧存档里的自建配色主题靠它兜底）；
+   ALL_CANVAS_THEMES：全部需要启动画布引擎的主题。 */
 const STARDUST_THEMES = [], ALL_CANVAS_THEMES = [];
 for (const id of Object.keys(THEME_SPEC)) {
   const t = THEME_SPEC[id];
@@ -6428,6 +6644,16 @@ for (const id of Object.keys(THEME_SPEC)) {
   if (!t.canvas || t.canvas === 'none') continue;
   ALL_CANVAS_THEMES.push(id);
   if (t.canvas === 'stardust') STARDUST_THEMES.push(id);
+}
+/* 分派键 = THEME_SPEC 声明的 canvas key，**不是主题 id**。
+   早期 12 套的 id 与 key 恰好同名（aurora→aurora、night→night），所以拿 id 去 switch
+   "碰巧"一直是对的；从「经典组」起两者拆开（dracula→ember / nord→scan / gruvbox→film /
+   everforest→firefly），再用 id 分派就会**静默**落进 default 的星尘 —— 不报错、只是没有特效，
+   而且 nord/gruvbox 连粒子都没播种（initThemeParticles 按 id 分支），画面上是一张死图。
+   自建配色主题在 THEME_SPEC 里没有条目，落回自身 id → 无 case → default 星尘（正确）。 */
+function canvasKeyOf(id){
+  const t = THEME_SPEC[id];
+  return (t && t.canvas && t.canvas !== 'none') ? t.canvas : id;
 }
 
 
@@ -6446,7 +6672,18 @@ function getTheme(id){ return CUSTOM_THEMES[id] || THEMES[id]; }
 function getThemeConfig(id){ return CUSTOM_CONFIG[id] || THEME_CONFIG[id]; }
 
 // 主题 id 别名：只用于兼容旧存档。改了 id 的主题在这里登记一次，老用户已保存的偏好不会因改名而丢失
-const THEME_ALIAS = { void:'paper' };
+/* 旧存档里的主题 id → 保留主题的映射（只用于兼容老存档）。
+   登记的原则是「就近」：同族归到同族、同色温归到同色温，用户的偏好意图尽量不丢。
+   ⚠️ 不登记是不行的：savedThemeId() 解析到不存在的 id 会返回空串，于是应用会退回「跟随系统深浅」
+   并且**开始实时跟随系统明暗** —— 用户会觉得「每次打开主题都在变」。这是删主题时最容易漏的一步。 */
+const THEME_ALIAS = {
+  void:'paper',
+  // 下面 7 个是本次主题集收敛时删掉的（同族换色）：Catppuccin 另两个变体 → 子夜，
+  // 玫瑰三变体 → 德古拉（同为冷紫调）与素笺（唯一的浅纸感），One Dark → 北欧，GitHub → 极光
+  frappe:'midnight', macchiato:'midnight',
+  rosepine:'dracula', rosepineMoon:'dracula', rosepineDawn:'paper',
+  onedark:'nord', github:'aurora',
+};
 // "当前该用哪个主题"的唯一读取入口：解析别名 + 兜底非法值，避免各处直接读 localStorage 造成行为不一致
 function savedThemeId(){
   const raw = safeLocalGet('learnAppTheme', '') || '';
@@ -6478,6 +6715,37 @@ function isLightColor(hex){
   if(!m) return false;
   const n = parseInt(m[1],16);
   return (0.2126*((n>>16)&255) + 0.7152*((n>>8)&255) + 0.0722*(n&255)) > 140;
+}
+
+/* WCAG 相对亮度 / 对比度 / 按比例混色：只为派生「可作小字文字色」的那一版强调色。
+   isLightColor 的 140 阈值适合判「底色是不是浅底」，但不能当「文字该压暗还是提亮」的判据
+   （深色主题的卡片底如 #3b4252 加权只有 60 上下，仍该往白提亮），所以这里另用 WCAG 的 0.4 分界。 */
+function _wcagLum(hex){
+  const n = parseInt(String(hex).replace('#',''), 16);
+  const ch = k => { const c = ((n>>k)&255)/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  return 0.2126*ch(16) + 0.7152*ch(8) + 0.0722*ch(0);
+}
+function _contrast(a, b){
+  const l1 = _wcagLum(a), l2 = _wcagLum(b);
+  return (Math.max(l1,l2) + 0.05) / (Math.min(l1,l2) + 0.05);
+}
+function _mixHex(hex, to, t){
+  const n = parseInt(String(hex).replace('#',''),16), m = parseInt(String(to).replace('#',''),16);
+  const ch = k => Math.round((((n>>k)&255)*(1-t)) + (((m>>k)&255)*t)).toString(16).padStart(2,'0');
+  return '#' + ch(16) + ch(8) + ch(0);
+}
+/* 把「装饰用的强调色」派生成一版「能当小字颜色」的：往黑（浅底）或白（深底）压，直到对给定背景
+   达到 AA 的 4.5:1。已经是合格的直接原样返回；不是 6 位 hex（如颜色关键字）时返回空串，调用方跳过。 */
+function inkOn(color, bg){
+  const ok = /^#?[0-9a-f]{6}$/i.test(String(color||'')) && /^#?[0-9a-f]{6}$/i.test(String(bg||''));
+  if(!ok) return '';
+  if(_contrast(color, bg) >= 4.5) return color;
+  const to = _wcagLum(bg) > 0.4 ? '#000000' : '#ffffff';
+  for(let t = 0.02; t <= 1.0001; t += 0.02){
+    const cand = _mixHex(color, to, t);
+    if(_contrast(cand, bg) >= 4.55) return cand;
+  }
+  return to;
 }
 
 // img-bg 专用背景层：fixed div 承载图片，避开 WebView 对 background-attachment:fixed 的糟糕实现
@@ -6518,8 +6786,14 @@ let _vtHold = false;
 // 说明：曾有一条"静态画面型主题"的分支（STATIC_CANVAS_THEMES 名单 + _uStaticTheme + drawStaticCanvasFrame），
 // 名单早已为空数组、四个判断恒假，纯属误导后人的死路径 —— 子良改为动态画面后就整体删掉了。
 // 将来真要做"静物型主题"，应该在 tickUnified 里按主题注册生成器，而不是恢复这条恒假分支。
-// 经典配色组（编辑器生态）：共享同一套「星尘」粒子 —— 颜色按主题 accent/accent2/accent3 实时取，
-// 新增主题只需在 THEME_SPEC 里写一条并声明 canvas，无需再写独立绘制分支。
+// 主题特效的组织方式：**一套主题一个独立特效**（2026-10 起），不再「多套主题共用一条绘制分支」——
+// 共用会让几何、数量、运动完全一致，只有颜色跟着变，用户看到的就是同一片动画换配色。
+// 新增一套主题要动三处：THEME_SPEC 里声明 canvas key、分派表加一个 case、写一个 drawX 函数。
+// ⚠️ 两个静默坑，改完务必跑冒烟测试：
+//   ① 漏掉分派表的 case → 回落到兜底的星尘（不报错）；
+//   ② **分派键必须是 canvas key，不是主题 id** —— 见 canvasKeyOf。id 与 key 同名的主题用 id
+//      分派也碰巧正确，只有像 dracula→ember 这种拆开的才暴露（这条已经真出过一次）。
+// 另外：若主题需要粒子，还要在 initThemeParticles 里加对应分支（漏了就是「不报错但一个粒子都没有」）。
 // 清单本身由上面的派生循环生成（见那里对 STARDUST_THEMES / ALL_CANVAS_THEMES 的说明）。
 // 主题特效的常量一律就近声明在其绘制函数上方（函数体只在帧循环里执行，不存在解析期引用 → 无 TDZ 风险）；
 // 只有 initThemeParticles 也要用的量才提前到本区（它可能在解析期被 initTheme → applyTheme 调用）。
@@ -6595,6 +6869,12 @@ function applyTheme(name, opts){
   if(br) cssVars += ';--bad-rgb:'+br;
   // 中性底色（未刷题格子/空柱/进度槽）用文字色分量：写死白色在浅色主题（素笺/粼光/子良/子荣）下会隐形
   if(tr) cssVars += ';--text-rgb:'+tr;
+  /* accent3 在调色板里是按「装饰 / 渐变」给的（浅底主题上作小字只有 2~3:1），而它同时被当成标签
+     小字色用在好几处（.ptag / .panswer .label / 连续打卡天数…）。这里派生 --accent3-ink：只在「作文字」
+     时用它，按需压到 ≥4.5:1；调色板本身一个值都不动，渐变色带与图例仍用 --accent3（那些只要 3:1）。
+     取不到（非 6 位 hex）时不写这个变量，CSS 侧的 var(--accent3-ink, var(--accent3)) 会落回调色板原值。 */
+  const a3i = inkOn(t.accent3, t.card || t.bg);
+  if(a3i) cssVars += ';--accent3-ink:'+a3i;
   // 等级色板（lv0~lv4）：深底沿用原配色；浅底换一版明度适配的（原 lv0 深灰蓝在纸白底上就是一块脏斑）
   const isLight = isLightColor(t.bg);
   const lvPal = isLight
@@ -6797,19 +7077,38 @@ document.querySelectorAll('#themeTabs .theme-tab').forEach(tab=>{
   // 与 .set-head / 模式卡同款：纯 div 必须补 tabindex + role，否则键盘用户切不了分组
   // （全局 keydown 里已有 [role="button"][tabindex] 的 Enter/Space 激活分支）
   tab.tabIndex = 0; tab.setAttribute('role','button');
-  tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
+  // 用 aria-pressed 而不是 aria-selected：后者只属于 tab / option / row 这些角色，
+  // 挂在 role=button 上读屏不会念出选中状态。与拷打模式卡那组按钮保持同一套表达。
+  tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
   tab.onclick = (e)=>{
     e.stopPropagation();
     document.querySelectorAll('#themeTabs .theme-tab').forEach(t=>{
       t.classList.remove('active');
-      t.setAttribute('aria-selected','false');
+      t.setAttribute('aria-pressed','false');
     });
     tab.classList.add('active');
-    tab.setAttribute('aria-selected','true');
+    tab.setAttribute('aria-pressed','true');
     const group = tab.dataset.tab;
     buildThemeGrid(group==='all'?null:group);
   };
 });
+
+/* 宽屏下顶栏内容是居中的（.topbar{justify-content:center} 且铺满宽度），而浮层的 right 写死 12px，
+   于是它贴在视口最右、离主题按钮几百像素。打开时按按钮的实测位置覆盖 right/top 即可对齐。
+   窄屏（≤768）直接返回：那边按钮本就在右端，且有 @media(max-width:768px){#themePopup{right:6px!important}}，
+   不该由 JS 插手。 */
+function placeThemePopup(){
+  if(window.innerWidth <= 768) return;
+  const btn = $('#themeBtn'), popup = $('#themePopup');
+  if(!btn || !popup) return;
+  const r = btn.getBoundingClientRect();
+  const w = popup.offsetWidth || 340;
+  // 右边缘与按钮对齐；再夹进视口 —— 按钮很靠左时（窄宽屏 + 标签换行）浮层会从左边溢出
+  const right = Math.min(Math.max(Math.round(window.innerWidth - r.right), 6),
+                         Math.max(Math.round(window.innerWidth - w - 6), 6));
+  popup.style.right = right + 'px';
+  popup.style.top = Math.round(r.bottom + 8) + 'px';
+}
 
 $('#themeBtn').onclick = (e)=>{
   e.stopPropagation();
@@ -6820,6 +7119,8 @@ $('#themeBtn').onclick = (e)=>{
     const activeTab = document.querySelector('#themeTabs .theme-tab.active');
     const group = activeTab ? activeTab.dataset.tab : 'canvas';
     buildThemeGrid(group==='all'?null:group);
+    // 必须在 buildThemeGrid 之后：浮层宽度/高度由格子内容撑开，先量会得到上一组的尺寸
+    placeThemePopup();
   }
 };
 
@@ -6937,7 +7238,9 @@ function applyBgTextMode(){
         const ar = hexToRgbStr(c1), a2 = hexToRgbStr(c2), a3 = hexToRgbStr(c3);
         _bgColorStyle.textContent = ':root{'+(c1?`--accent:${c1};`:'')+(c2?`--accent2:${c2};`:'')+
           (ar?`--accent-rgb:${ar};`:'')+(a2?`--accent2-rgb:${a2};`:'')+
-          (c3?`--accent3:${c3};`:'')+(a3?`--accent3-rgb:${a3};`:'')+'}';
+          // 背景图模式下没有调色板可依，按当前实际底色派生根 —— 这条路径只在换配色时走一次
+          +(c3?`--accent3-ink:${inkOn(c3, getComputedStyle(document.documentElement).getPropertyValue('--bg').trim())};`:'')
+          +'}';
         document.head.appendChild(_bgColorStyle);
       }
     }catch(e){ warnSilent('应用自定义背景配色失败', e); }
@@ -7149,9 +7452,8 @@ $('#exportMDBtn').onclick = () => {
     });
   });
   const blob = new Blob([L.join('\n')], {type:'text/markdown;charset=utf-8'});
-  downloadBlob(blob, `题库导出-${dateStr()}.md`);
   hideModal($('#dataModal'));
-  toast('已导出 Markdown 题库（可粘贴给 AI）');
+  exportWithToast(blob, `题库导出-${dateStr()}.md`, '已导出 Markdown 题库（可粘贴给 AI）');
 };
 /* 组装完整备份载荷（可回导）：由 PERSIST_REGISTRY 生成 —— 凡注册为 backup:true 的项都会自动写入，
    所以新增持久化项时不必记得改这里（revlog 当年就是因为要手写清单而被漏掉的）。
@@ -7171,9 +7473,8 @@ function buildBackupPayload(){
    冻结时用户最需要的就是先把内存里的进度落成文件，那条路径绝不能和正常导出有差异。 */
 function exportBackupJson(){
   const blob = new Blob([JSON.stringify(buildBackupPayload())], {type:'application/json;charset=utf-8'});
-  downloadBlob(blob, `万法归元-备份-${dateStr()}.json`);
   hideModal($('#dataModal'));
-  toast('已导出 JSON 备份（用「导入题目」即可原样回导）');
+  exportWithToast(blob, `万法归元-备份-${dateStr()}.json`, '已导出 JSON 备份（用「导入题目」即可原样回导）');
 }
 $('#exportJsonBtn').onclick = exportBackupJson;
 
@@ -7214,7 +7515,7 @@ $('#fileInput').onchange = async e => {
       const looksJson = /^\s*[[{]/.test(text);
       const isMd = /\.(md|markdown|txt)$/i.test(file.name) || (!looksJson && /\n#{1,6}\s+/.test(text));
       if(isMd) importMarkdownDoc(text, file.name);
-      else importJsonDocs(text);
+      else await importJsonDocs(text);   // 它现在是 async：不 await 会把内部异常变成未处理的 rejection
       imported++;
     }catch(err){
       // 原先只 failed++ 就吞掉了：用户看到"0 个成功"却不知道是哪个文件、为什么失败
@@ -7272,6 +7573,25 @@ function sanitizeProgressMap(raw){
              要让新增持久化项自动上云，得再走一次同样的收拢；先把事实标清楚，
              免得有人改了这里的 true/false 却发现云端毫无变化
    键的顺序 = 导出顺序；documents 必须排在 order 之前（后者的合并依赖前者已就位） */
+/* 人类可读名，只用于导入时告诉用户「这份备份里没有哪几项」。
+   注册表加新项时顺手在这里补一行；漏了也不影响导入本身（退回显示键名）。 */
+/* 逐题按「最后一次练习时间」合并两份进度。
+   为什么不能用 Object.assign：那是逐键覆盖 —— 回导一份较旧的备份时，会把本机这段时间新排的
+   FSRS 状态（稳定性 / 难度 / 到期时间）整条抹回旧值，而统计数字照常显示，用户完全看不出发生了什么。
+   规则：本机没有 → 收下；两边都有 → 比 lastPracticed，新的胜；时间相同 → 用备份补齐本机缺的字段。 */
+function mergeProgressByRecency(localMap, incoming){
+  const out = Object.assign({}, localMap);
+  Object.keys(incoming || {}).forEach(qid => {
+    const inc = incoming[qid], cur = out[qid];
+    if(!inc) return;
+    if(!cur){ out[qid] = inc; return; }
+    const a = Number(cur.lastPracticed) || 0, b = Number(inc.lastPracticed) || 0;
+    if(b > a) out[qid] = inc;
+    else if(b === a) out[qid] = Object.assign({}, cur, inc);
+  });
+  return out;
+}
+const PERSIST_LABEL = { documents:'题库', progress:'学习进度', order:'文档顺序', clears:'通关次数', revlog:'保留率日志', warlog:'每日战报' };
 const PERSIST_REGISTRY = {
   documents: {
     backup: true, cloud: true,
@@ -7281,7 +7601,8 @@ const PERSIST_REGISTRY = {
   progress: {
     backup: true, cloud: true,
     get: () => PROGRESS,
-    merge: v => { PROGRESS = Object.assign({}, PROGRESS, sanitizeProgressMap(v)); return {}; },
+    // 不逐键覆盖：见 mergeProgressByRecency 的说明（旧备份不该抹掉本机新排的 FSRS 状态）
+    merge: v => { PROGRESS = mergeProgressByRecency(PROGRESS, sanitizeProgressMap(v)); return {}; },
   },
   order: {
     backup: true, cloud: true,
@@ -7291,7 +7612,18 @@ const PERSIST_REGISTRY = {
   clears: {
     backup: true, cloud: true,
     get: () => CLEARS,
-    merge: v => { if(v && typeof v === 'object') CLEARS = Object.assign({}, CLEARS, sanitizeKeyedObject(v)); return {}; },
+    // 通关次数是只增计数器（同一文档只会越通越多），逐键取较大值：
+    // 既不会把本机新通关的抹掉，也不怕导入一份更旧的备份（Object.assign 会让计数倒退）
+    merge: v => {
+      if(v && typeof v === 'object'){
+        const inc = sanitizeKeyedObject(v);
+        Object.keys(inc).forEach(id => {
+          const cur = Number(CLEARS[id]) || 0, nv = Number(inc[id]) || 0;
+          if(nv > cur) CLEARS[id] = nv;
+        });
+      }
+      return {};
+    },
   },
   revlog: {
     // 与题库、进度同级（都是学习记录本身），跟着 learn-data.json 上云。
@@ -7314,6 +7646,9 @@ const PERSIST_REGISTRY = {
      theme       外观偏好，换机后应跟随新设备
      customBgColors / customBgLabel   背景图取色与标签：图本身（Blob，IndexedDB bg 表）
                                       不进备份，配色单独带过去没有意义
+     grillDraft（learnAppGrillDraft，面试会话草稿）  进行中的一场面试，用来在 App 被系统回收后
+                                      接着聊。它是「本机会话」不是「学习成果」：不可能同时在两台
+                                      设备上半场面试，带过去只会多出一份永远不该恢复的草稿。
    核对口径：Store 的 kv 键共 8 个（docs/progress/order/clears/orderCustom/apiConfig/seedOff/cloze），
    localStorage 的 learnApp* 键若干 —— 凡「用户数据」都已在上表，凡「本机状态」都在本注释里。
    新增持久化项时：用户数据加进上表（backup:true），本机状态加进本注释。 */
@@ -7367,18 +7702,28 @@ function mergeRevLogFromBackup(v){
   return {};
 }
 
-function importJsonDocs(text){
+async function importJsonDocs(text, opts){
+  opts = opts || {};
   const data = JSON.parse(text);
   if(!data.documents || !Array.isArray(data.documents)) throw new Error('JSON 格式不符：缺少 documents 数组');
+  /* 版本兼容：备份载荷自 v5 起带 version（见 buildBackupPayload）。这里刻意【不】按版本号分叉改写合并逻辑 ——
+     每个 merge 都已各自防御缺失/异形字段，再按版本号分叉只会多出一张要跟着维护的映射表。
+     版本号真正要解决的是「这份备份和本机对不对得上」，而这件事以前是完全静默的：
+       · 没有 version  → 早于该字段的旧备份，当年导出根本没带 revlog / warlog
+       · version 更大  → 备份来自更新的 App，本机不认识其中一部分，只能导入认识的那些
+     两种情况下用户都只会看到「导入完成」，然后发现保留率和战报一直是空的，无从自查。 */
+  const srcVer = Number.isInteger(data.version) ? data.version : null;
+  const newer = srcVer !== null && srcVer > DB_VERSION;
   // 遍历注册表：备份里有哪一项就并入哪一项。新增持久化项只要在 PERSIST_REGISTRY 注册过，
   // 导出与导入都会自动带上，不需要再改这个函数（这正是它存在的理由）。
   // 字段缺失（老备份）直接跳过，不影响其余字段 —— 逐项独立，互不拖累。
   let docSummary = {};
+  const missing = [];   // 备份里没有的持久化项：回导后用来解释「为什么保留率/战报是空的」
   Object.keys(PERSIST_REGISTRY).forEach(key => {
     const spec = PERSIST_REGISTRY[key];
     if(!spec.backup || typeof spec.merge !== 'function') return;
     const v = data[key];
-    if(v === undefined || v === null) return;
+    if(v === undefined || v === null){ missing.push(PERSIST_LABEL[key] || key); return; }
     try{
       const r = spec.merge(v) || {};
       if(key === 'documents') docSummary = r;
@@ -7391,12 +7736,25 @@ function importJsonDocs(text){
   applyOrder();   // 顺序要当场生效，不能只存下来等下次启动
   // 清理孤立进度（同 id 文档被替换后，旧题目的进度残留会让统计虚高）
   pruneOrphanProgress();   // 导入替换了题库：清掉已不存在题目的进度（落库由下面那行 Store.saveProgress 负责）
-  saveDocs(); Store.saveProgress(PROGRESS); Store.saveOrder(ORDER); Store.saveClears(CLEARS);
+  /* 四处落盘必须等完：它们各自是独立事务，此前不等就往下走 —— 中途失败会留下
+     「revlog 已落盘、progress 没落盘、DOCS 已换」的静默半更新（revlog 的合并在上面的注册表
+     循环里就已经写盘了，顺序上根本回不了头）。任一写入失败都会置位 Store 的失败通道
+     （横幅已提示导出 / 刷新），此时顺势冻结，避免后续操作继续往一个半更新的状态上叠。 */
+  await Promise.all([saveDocs(), Store.saveProgress(PROGRESS), Store.saveOrder(ORDER), Store.saveClears(CLEARS)]);
+  if(Store.writeFault && Store.writeFault()) Store.freeze();
   // 保留率日志与每日战报已由上面的注册表循环合并并各自落盘（它们走独立 localStorage 键），
   // 这里不再重复处理 —— 同一份逻辑只留一处，避免两边时序/去重口径漂移。
   if(orderFromImport) Store.saveOrderCustom(true);   // 记住"顺序由导入数据决定"，下次启动仍按它排（这个开关原来是只读死值）
   invalidateMemQueue(); resetMemoryState();   // 直接调 Store 保存不会走 saveProgress 包装：缓存与记忆快照都得手动重置
-  toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇${skipped?`、跳过 ${skipped} 篇（缺少 id/title/questions）`:''}，现共 ${totalQuestions()} 题`);
+  // 版本提示只在「真的是一份备份文件」时给：降级残留数据是本机合成的载荷（见下方调用点的 quiet），
+  // 它本就不含日志项，报出来纯是噪音
+  const notes = [];
+  if(!opts.quiet){
+    if(newer) notes.push(`备份来自更新的版本（v${srcVer} > 本机 v${DB_VERSION}），本机不认识的数据已跳过`);
+    else if(srcVer === null) notes.push('旧版格式的备份');
+    if(missing.length) notes.push(`不含 ${missing.join('、')}`);
+  }
+  toast(`导入完成：新增 ${added} 篇、更新 ${replaced} 篇${skipped?`、跳过 ${skipped} 篇（缺少 id/title/questions）`:''}，现共 ${totalQuestions()} 题` + (notes.length ? ` · ${notes.join('；')}` : ''));
 }
 
 // 导入 Markdown：从笔记导出的 .md 直接变成一篇文档
@@ -7838,10 +8196,9 @@ async function askPullOnStart(){
 
 // 添加题目弹窗
 $('#addCancel').onclick = () => hideModal($('#addModal'));
-$('#addModal').onclick = e => { if(e.target.id==='addModal') hideModal($('#addModal')); };
-// 编辑弹窗同样点遮罩关闭：此前 addModal / dataModal / warReportModal 都能关，只有它不能，
-// 表现是"点灰底毫无反应"；键盘用户更会被 Tab 焦点捕获（7003 行那段）锁在框内出不来
-$('#editModal').onclick = e => { if(e.target.id==='editModal') hideModal($('#editModal')); };
+// 添加/编辑题目弹窗**不做**点遮罩关闭：改题时鼠标一滑到灰底就误关、正在写的内容全没了，
+// 误触代价远大于便利。关闭靠明确的取消按钮 / Esc 键（两者都有），键盘用户不受影响。
+// 设置(dataModal)与战报(warReportModal)仍可点遮罩关闭 —— 它们没有"正在编辑的内容"这个误触代价。
 $('#addSubmit').onclick = submitAddQuestion;
 
 // 编辑题目弹窗
@@ -7878,6 +8235,20 @@ document.addEventListener('keydown', e => {
       }
     }
     return;
+  }
+  // 桌面端搜索聚焦：Ctrl/⌘+K 与编辑器/浏览器一致，随处可用（光标已在输入框里时也能用）；
+  // 单独的 / 只在"不在输入态、且没有被浮层挡住"时生效 —— 否则会吃掉正文里正常打斜杠的输入。
+  // 聚焦后全选：直接键入即替换旧词，这是搜索框被快捷键唤起时的默认预期。
+  const searchEl = $('#searchInput');
+  // 有浮层时两条都让位：焦点绝不能落到遮罩背后的搜索框上 —— 弹窗是 aria-modal，
+  // 焦点跑出去就等于「焦点陷阱」被破。此前只给 `/` 写了这道判断，Ctrl/⌘+K 漏了。
+  const overlayOn = !!document.querySelector('.modal-bg.show,.confirm-ov:not(.closing),.theme-popup.show');
+  if(searchEl && !overlayOn && !e.altKey && (e.key==='k'||e.key==='K') && (e.ctrlKey||e.metaKey)){
+    e.preventDefault(); searchEl.focus(); searchEl.select(); return;
+  }
+  if(searchEl && !overlayOn && e.key==='/' && !e.ctrlKey && !e.metaKey && !e.altKey
+     && !(e.target && e.target.closest && e.target.closest('input,textarea,select,[contenteditable]'))){
+    e.preventDefault(); searchEl.focus(); searchEl.select(); return;
   }
   // tablist 的方向键导航：左右在标签间移动并跟随激活（跟手切换，不需要再按 Enter），Home/End 跳首尾。
   // 与上面的 roving tabindex 配套 —— 顶栏只占一个 Tab 停靠点，组内用方向键逛。
@@ -7919,6 +8290,29 @@ document.addEventListener('keydown', e => {
   if(actEl && !actEl.classList.contains('tab') && (e.key===' ' || e.key==='Enter')) return;
   // 忽略输入框和中文输入法组合输入（避免选字时误触）
   if(e.isComposing || (e.target.closest && e.target.closest('input,textarea,select'))) return;
+  // 桌面端翻页键：html/body 是 overflow:hidden（根元素根本不滚动），真正的滚动容器是 .content，
+  // 而它不在 Tab 顺序里 —— 浏览器默认的 PageUp/PageDown/Home/End 落在一个不滚动的根上，等于无效。
+  // 这里显式接管，并保留原生的"翻一屏"手感（约 90% 视口高）；不吃减动效偏好，因为它本就不是动画。
+  if(e.key==='PageDown'||e.key==='PageUp'||e.key==='Home'||e.key==='End'){
+    const sc = $('#content');
+    // 让位规则：焦点落在「自己能滚」的容器里时，翻页键该滚的是眼前那个容器，不是它背后的整页。
+    // 上面 8252 那条让位只放行了 Space/Enter，翻页键会穿透它 —— 于是焦点在 AI 长回答
+    //（.ai-grading）、代码块、设置面板里的长列表或主题浮层上按 PageDown，滚的是整页。
+    // 沿祖先链走到 .content 为止（不含），只认「确实溢出且可滚」的元素。
+    let inner = null;
+    for(let n = e.target; n && n !== sc && n.nodeType === 1; n = n.parentElement){
+      const st = getComputedStyle(n);
+      if(/(auto|scroll)/.test(st.overflowY) && n.scrollHeight > n.clientHeight + 1){ inner = n; break; }
+    }
+    if(sc && !inner){
+      e.preventDefault();
+      const page = Math.max(120, Math.round(sc.clientHeight * .9));
+      if(e.key==='Home') sc.scrollTop = 0;
+      else if(e.key==='End') sc.scrollTop = sc.scrollHeight;
+      else sc.scrollTop += (e.key==='PageDown' ? page : -page);
+    }
+    return;
+  }
   // 记忆模式：数字键 1-4 评分（与按钮 data-rate 同一套编号：1 完全忘了 … 4 倒背如流），Enter/空格 翻转卡片
   if(view===Views.MEMORY){
     const digit = parseInt(e.key);
@@ -8001,7 +8395,12 @@ async function checkDegradedResidue(){
     const when = new Date(+stamp || Date.now()).toLocaleString('zh-CN');
     const go = await confirmDialog(`检测到上次（${when}）因数据库无响应而降级保存的数据：${ls.docs.length} 篇文档。\n\n是否合并到当前数据库？（同 id 文档会以临时数据为准）`);
     if(!go) return;
-    importJsonDocs(JSON.stringify({ documents: ls.docs, progress: ls.progress || {}, clears: ls.clears || {}, order: ls.order || [] }));
+    // quiet：这是本机合成的载荷（本就不含日志项），不该按'旧版备份'给用户报缺项
+    await importJsonDocs(JSON.stringify({ documents: ls.docs, progress: ls.progress || {}, clears: ls.clears || {}, order: ls.order || [] }), { quiet: true });
+    // 合并完就清掉临时区。留着的话，下次再降级时 loadLS() 读回的是这份「今天以前」的快照，
+    // 用户会在旧快照上继续写、恢复时又把陈旧值合并回来 —— 一份几周前的数据被当成「新数据」。
+    // 写成 '{}' 而不是 ''：空对象正是「没有残留」的标准形态（上面的读取路径也用 !raw 判空）。
+    safeLocalSet(Store.lsKey || 'learnAppData_v1', '{}');
     renderAll();
   }catch(e){ warnSilent('降级残留数据恢复失败（临时数据仍留在浏览器存储中）', e); }
 }
@@ -8223,7 +8622,9 @@ introStart();
   };
   c.addEventListener('scroll', onScroll, { passive:true });
   window.addEventListener('resize', onScroll, { passive:true });
-  btn.addEventListener('click', () => { c.scrollTo({ top:0, behavior:'smooth' }); });
+  // 回到顶部也是平滑滚动，同样要过减动效偏好（系统开了「减少动态效果」时直接跳）
+
+  btn.addEventListener('click', () => { c.scrollTo({ top:0, behavior: prefersReduce() ? 'auto' : 'smooth' }); });
 })();
 
 // 热力图明细 popover：点击别处关闭（只在有 popover 时响应，零成本）
@@ -8324,11 +8725,15 @@ function syncKeyboardInset(){
   // 一次性清理：剥离已导入题目中的 Markdown ** 粗体标记
   if(!safeLocalGet('learnAppStripMd_v2', '')){
     let cleaned = 0;
+    // 每个字段只调用一次 stripMarkdown：原来是「先算一遍比较、再算一遍赋值」，等于把最贵的那步做了两遍
+    // （每次调用内含 6 个正则替换）。这是一次性迁移，题目上万时省下的就是「点开先卡一下」的那一瞬。
+    // 语义与原来逐字等价：相同则原样返回且不计数，不同则既赋值又计数（answer 为 undefined 时同样归一成 ''）。
+    const stripTxt = s => { const t = stripMarkdown(s); return t === s ? s : (cleaned++, t); };
     DOCS.forEach(d => {
-      if(stripMarkdown(d.title) !== d.title){ d.title = stripMarkdown(d.title); cleaned++; }
+      d.title = stripTxt(d.title);
       (d.questions || []).forEach(q => {
-        if(stripMarkdown(q.title) !== q.title){ q.title = stripMarkdown(q.title); cleaned++; }
-        if(stripMarkdown(q.answer) !== q.answer){ q.answer = stripMarkdown(q.answer); cleaned++; }
+        q.title = stripTxt(q.title);
+        q.answer = stripTxt(q.answer);
       });
     });
     if(cleaned > 0){ await saveDocs(); }
@@ -8525,7 +8930,7 @@ function initThemeParticles(theme){
   const W = window.innerWidth, H = window.innerHeight;
   const isMobile = W < 768;
 
-  // ── aurora: 星点（极光本体由 CSS 承担，见 CSS_FX.aurora，粒子只负责洒落星点）──
+  // ── aurora: 极光尘（极光本体由 CSS 承担；canvas 层沿光带方向定向流动 + 拉长，见 drawAurora）──
   if(theme==='aurora'){
     const n = isMobile?22:46;
     for(let i=0;i<n;i++){
@@ -8534,6 +8939,7 @@ function initThemeParticles(theme){
         size:0.5+Math.random()*1.6,
         alpha:0.14+Math.random()*0.42,
         phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.4,
+        vx:0.22+Math.random()*0.42,   // 横向漂移 px/帧@60fps ≈ 13~38px/s：与 CSS 光带的横移同向
         tint:Math.random()<0.18?1:0   // 0 冷白 / 1 淡青
       });
     }
@@ -8575,7 +8981,7 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── ripple: 海浪是纯几何（Vanta WAVES 波形线框），不需要粒子 ──
+  // ── ripple: 焦散光斑群由 causticPts 的 12×8 网格 + 位移场驱动（见 drawRipple），不走粒子通道 ──
   else if(theme==='ripple'){ /* no particles */ }
   // ── particle: 星链（粒子间近距连线成网；节点走青/紫/蓝三色）──
   else if(theme==='particle'){
@@ -8590,7 +8996,7 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── gold: 金尘（丝绸光带由 GOLD_SILK 常量驱动）──
+  // ── gold: 金尘（虹彩底纹由 iridSprite 的两张 384² 彩纹交叉淡入驱动，见 drawGold）──
   else if(theme==='gold'){
     const n = isMobile?30:62;
     for(let i=0;i<n;i++){
@@ -8663,7 +9069,39 @@ function initThemeParticles(theme){
   }
   // ── zirong: 彩波是纯几何（Aceternity Wavy Background），不需要粒子 ──
   else if(theme==='zirong'){ /* no particles */ }
-  // ── 经典配色组 / 用户自建主题：通用星尘（三种色相 + 稀疏亮星，颜色在 drawStardust 里按主题实时取）──
+  // ── dracula: 上升余烬（位置在 drawDraculaEmber 里推进，这里只播种）──
+  else if(theme==='dracula'){
+    const n = isMobile?20:40;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vy:0.25+Math.random()*0.75,          // 上浮速度（px/帧@60fps）
+        sway:0.10+Math.random()*0.35,        // 侧向摆动幅度
+        size:0.5+Math.random()*1.5,
+        alpha:0.16+Math.random()*0.40,
+        phase:Math.random()*Math.PI*2, speed:0.35+Math.random()*1.1,
+        tint:Math.random()<0.72?0:1,         // 0 品红 / 1 紫：余烬以品红为主
+        flick:Math.random()<0.22             // 少数会间歇爆亮（像被风一吹）
+      });
+    }
+  }
+  // ── everforest: 林间萤火（游走轨迹在 drawEverforestFirefly 里算，这里只播种）──
+  else if(theme==='everforest'){
+    const n = isMobile?8:14;                 // 刻意稀少：萤火的要点就是「不多」
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        sway:0.55+Math.random()*0.85,        // 游走速度（比余烬快，才像「飞」）
+        size:0.7+Math.random()*1.4,
+        alpha:0.30+Math.random()*0.45,
+        phase:Math.random()*Math.PI*2,
+        tint:Math.random()<0.78?0:1          // 0 暖黄绿 / 1 草绿
+      });
+    }
+  }
+  // ── 用户自建配色主题：通用星尘（三种色相 + 稀疏亮星，颜色在 drawStardust 里按主题实时取）──
+  //    注：内置主题已无一使用 stardust（每套都有自己的特效），这条现在只服务旧存档里的自建主题；
+  //    drawStardust 也仍是分派表的兜底分支，所以两者都不是死代码。
   else if(STARDUST_THEMES.includes(theme) || CUSTOM_THEMES[theme]){
     const n = isMobile?44:92;
     for(let i=0;i<n;i++){
@@ -8731,7 +9169,7 @@ function paintUnifiedFrame(dt){
   if(_uMaskEls.length && _uMaskStale){ _uMaskStale = false; refreshParticleMaskRects(); }   // 仅在滚动/窗口变化后的第一帧重算
   ctx.clearRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = _uFadeIn;
-  switch(_uTheme){
+  switch(canvasKeyOf(_uTheme)){
     case 'aurora': drawAurora(ctx,W,H,dt); break;
     case 'midnight': drawMidnight(ctx,W,H,dt); break;
     case 'sunset': drawSunset(ctx,W,H,dt); break;
@@ -8744,11 +9182,153 @@ function paintUnifiedFrame(dt){
     case 'songxing': drawSongxing(ctx,W,H,dt); break;
     case 'zirong': drawZirong(ctx,W,H,dt); break;
     case 'ziliang': drawZiliang(ctx,W,H,dt); break;
-    default: drawStardust(ctx,W,H,dt); break;   // 经典配色组兜底（星尘）
+    case 'ember': drawDraculaEmber(ctx,W,H,dt); break;
+    case 'scan': drawNordScan(ctx,W,H,dt); break;
+    case 'film': drawGruvboxFilm(ctx,W,H,dt); break;
+    case 'firefly': drawEverforestFirefly(ctx,W,H,dt); break;
+    // 兜底仍是星尘：如今没有内置主题用它了，但**用户自建配色主题**（旧存档里的 custom2 组）
+    // 声明的就是 canvas:'stardust'，所以这条不是死分支；顺带也接住将来任何未登记的特效 key。
+    default: drawStardust(ctx,W,H,dt); break;
   }
   ctx.restore();
 }
-// ── stardust: 通用星尘（经典配色组共享）──
+// ── 主题特效的加分项与红线（新增特效前先读这段）──
+//   走 blit() 的元素自动获得「图表区避让」；直接 arc/fill/stroke 的必须自己乘 maskFactor/maskAlphaAt。
+//   颜色取自 getTheme(_uTheme)，切主题自动跟随；色标数组与模板串要在粒子循环**外**构造（见 drawStardust 的训诫）。
+//   循环里用 sinLut 而不是 Math.sin；不要每帧 new 数组、不要在循环里建渐变。
+//   全屏层（颗粒/扫描线）不做逐段避让 —— 峰值 α 压到 0.10 以内，比热力图底色还低一个量级，
+//   既不会被误读成数据，也做不到「逐 x 变 α」而不把描边拆成几十段。
+
+// ── ember: 上升余烬（德古拉）──
+// 概念：德古拉的底色是夜，但它的两个强调色是品红与紫。比起星尘的「原地闪」，这里做「上升的余烬」——
+// 缓慢上浮 + 横向摆动（被热气流托着）+ 各自的明灭相位，偶尔一颗被风一吹爆亮。
+// 与其余主题的区别：方向向上（星尘静止、松星下落、金尘上浮但无摆动），且带侧向漂移。
+const DR_EMBER = [
+  [0,'rgba(255,121,198,1)',0.45,'rgba(255,121,198,0.22)',1,'rgba(0,0,0,0)'],   // 品红（多数）
+  [0,'rgba(189,147,249,1)',0.45,'rgba(189,147,249,0.20)',1,'rgba(0,0,0,0)'],   // 紫（少数）
+];
+const DR_EMBER_RGB = ['255,121,198','189,147,249'];
+function drawDraculaEmber(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
+  const spr = [glowSprite('drE0',26,DR_EMBER[0]), glowSprite('drE1',26,DR_EMBER[1])];
+  for(const p of _uParticles){
+    // 上升 + 侧向摆动；出了顶部从底部重来（横向也环绕，免得摆动把它们堆到一边）
+    p.y -= p.vy*f;
+    p.x += sinLut(t*0.5 + p.phase)*p.sway*f;
+    if(p.y < -14){ p.y = H+14; p.x = Math.random()*W; }
+    if(p.x < -14) p.x = W+14; else if(p.x > W+14) p.x = -14;
+    const ma = maskFactor(p.x,p.y); if(ma <= 0) continue;
+    const tw = 0.42 + 0.58*sinLut(t*p.speed + p.phase);
+    // 爆亮：只有少数粒子带 flick，且是间歇性的（sinLut(t*9) 的负半周不加成）
+    const fl = p.flick ? 1 + 0.9*Math.max(0, sinLut(t*9 + p.phase)) : 1;
+    const a = p.alpha*tw*fl;
+    const i = p.tint;
+    blit(ctx, spr[i], p.x, p.y, p.size*3.0, a);            // blit 内部已乘遮罩
+    ctx.fillStyle = 'rgba(' + DR_EMBER_RGB[i] + ',' + Math.min(1, a*1.1*ma) + ')';
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.42,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── scan: 寒潮扫描（北欧）──
+// 概念：北欧的底色是冷、静、极简，所以给它一个**结构感**而不是「飘东西」：
+// 等距水平细线恒速向下滚动（示波器/终端），每隔一个周期再有一条更亮的线扫过全屏，
+// 像极夜里风一层层推过雪面。它是主题集里唯一的「线条平移」机制，也完全不用精灵。
+// 避让：见上方红线里的说明（峰值 α 0.10 以内，不做逐段避让）。
+const NORD_SCAN_GAP = 88;      // 线间距（逻辑 px）
+const NORD_SCAN_PERIOD = 11;   // 亮线扫过的周期（秒）
+function drawNordScan(ctx,W,H,dt){
+  const t = _uTime;
+  const th = getTheme(_uTheme) || THEMES.nord;
+  const rgb = hexToRgbStr(th.accent) || '136,192,208';
+  const A = _uAlphaBase;
+  const off = (t*34) % NORD_SCAN_GAP;
+  const y0 = -NORD_SCAN_GAP + off;
+  ctx.lineWidth = 1;
+  for(let y = y0; y < H + NORD_SCAN_GAP; y += NORD_SCAN_GAP){
+    // 首尾各留 18% 屏高做渐隐，免得线在屏幕边缘硬断（读出「贴纸感」）
+    const edge = Math.min(1, Math.min(y, H-y) / (H*0.18));
+    if(edge <= 0) continue;
+    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.035*edge*A) + ')';
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  // 亮线：本体的上下各配一条更淡的伴随线当作柔光（三层描边 ≈ blur，与子荣那条旧做法同一套）
+  const hy = -60 + ((t % NORD_SCAN_PERIOD) / NORD_SCAN_PERIOD) * (H + 120);
+  const he = Math.min(1, Math.min(hy, H-hy) / (H*0.22));
+  if(he > 0){
+    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.055*he*A) + ')';
+    ctx.beginPath(); ctx.moveTo(0,hy-2); ctx.lineTo(W,hy-2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,hy+2); ctx.lineTo(W,hy+2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.10*he*A) + ')';
+    ctx.beginPath(); ctx.moveTo(0,hy); ctx.lineTo(W,hy); ctx.stroke();
+  }
+}
+
+// ── film: 复古胶片（Gruvbox）──
+// 概念：低饱和暖色的 70 年代质感 —— 全屏颗粒在缓慢流动，叠一层极淡的暖色晕影呼吸。
+// 与素笺的区别：素笺是「静态纸纹 + 墨团游动」（有纤维质感、有具体形状），
+// 这里是「噪点自身在流动」（无形状、无墨团），机制上是主题集里唯一的「纹理平移」。
+// 复用现成的 grainSprite（满幅双向噪声）+ texPattern；每帧只有 2 次 fillRect。
+function drawGruvboxFilm(ctx,W,H,dt){
+  const t = _uTime, A = _uAlphaBase;
+  const th = getTheme(_uTheme) || THEMES.gruvbox;
+  const warm = hexToRgbStr(th.accent3) || '254,128,25';
+  // ① 暖色晕影：从四角向内一层很淡的暖橙，约 26s 一次呼吸（复古冲印的偏色感）
+  const breathe = 0.5 + 0.5*sinLut(t*0.24);
+  ctx.save();
+  ctx.globalAlpha = (0.05 + 0.035*breathe)*A;
+  const vg = ctx.createRadialGradient(W*0.5,H*0.46,Math.min(W,H)*0.28, W*0.5,H*0.46,Math.max(W,H)*0.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(' + warm + ',1)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+  // ② 流动颗粒：两张噪声纹理反向平移交错。单张平移会看出「整块在动」，反向交错才像颗粒在原地翻涌
+  ctx.save();
+  const d1x = (t*7)%128, d1y = (t*4.5)%128;
+  ctx.globalAlpha = 0.055*A;
+  ctx.translate(-d1x, -d1y);
+  ctx.fillStyle = texPattern(ctx,'gvFilm0',grainSprite(0));
+  ctx.fillRect(0,0,W+128,H+128);
+  ctx.restore();
+  ctx.save();
+  const d2x = 128 - ((t*11)%128), d2y = 128 - ((t*3)%128);
+  ctx.globalAlpha = 0.045*A;
+  ctx.translate(-d2x, -d2y);
+  ctx.fillStyle = texPattern(ctx,'gvFilm1',grainSprite(1));
+  ctx.fillRect(0,0,W+128,H+128);
+  ctx.restore();
+}
+
+// ── firefly: 林间萤火（常青）──
+// 概念：常青的底色是墨绿，配给的意象是入夜的林子 —— 少量萤火各自游走、明灭，偶尔聚一聚又散开。
+// 与星尘的区别：星尘**坐标静止**只闪；萤火会**游走**（用两条不可通约的 sinLut 慢速摆动当游走，
+// 不用逐帧随机数：既不抖动、又零 RNG 开销）。粒子数刻意很少（14/8）——「稀少」正是萤火的要点。
+const EF_FIRE = [
+  [0,'rgba(215,219,138,1)',0.42,'rgba(215,219,138,0.22)',1,'rgba(0,0,0,0)'],   // 暖黄绿（多数）
+  [0,'rgba(167,192,128,1)',0.40,'rgba(167,192,128,0.20)',1,'rgba(0,0,0,0)'],   // 草绿（少数）
+];
+const EF_FIRE_RGB = ['215,219,138','167,192,128'];
+function drawEverforestFirefly(ctx,W,H,dt){
+  const t = _uTime, f = dt*60;
+  const spr = [glowSprite('efF0',34,EF_FIRE[0]), glowSprite('efF1',34,EF_FIRE[1])];
+  for(const p of _uParticles){
+    // 游走：两条不可通约的频率各自驱动 x/y，得到不重复的漂移轨迹（周期约 20s 与 27s）
+    p.x += sinLut(t*0.31 + p.phase)*p.sway*f;
+    p.y += sinLut(t*0.23 + p.phase*1.7)*p.sway*0.7*f;
+    // 环绕而不是重生：萤火不该「突然出现在别处」
+    if(p.x < -20) p.x = W+20; else if(p.x > W+20) p.x = -20;
+    if(p.y < -20) p.y = H+20; else if(p.y > H+20) p.y = -20;
+    const ma = maskFactor(p.x,p.y); if(ma <= 0) continue;
+    // 明灭：平方让「暗着的时间」明显长于「亮着的时间」，更像真的萤火
+    const tw = 0.5 + 0.5*sinLut(t*0.55 + p.phase);
+    const a = p.alpha*tw*tw;
+    const i = p.tint;
+    blit(ctx, spr[i], p.x, p.y, p.size*3.4, a);
+    ctx.fillStyle = 'rgba(' + EF_FIRE_RGB[i] + ',' + Math.min(1, a*1.4*ma) + ')';
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ── stardust: 通用星尘（现在只服务「用户自建配色主题」）──
 // 三种色相粒子 + 少量亮星呼吸闪烁；颜色从当前主题 accent/accent2/accent3 实时取，切主题自动换色
 function drawStardust(ctx,W,H,dt){
   const t = _uTime;
@@ -8805,23 +9385,36 @@ function blit(ctx, spr, x, y, r, alpha){
 }
 // ======== 新 Canvas 特效 ========
 
-// ── aurora: 星点层（极光本体在 CSS 里，见 CSS_FX.aurora 的 Aceternity Aurora Background 复刻）──
-// canvas 这层只负责洒在极光上的冷白/淡青星点，不重复堆叠光带
+// ── aurora: 极光尘（Aurora Motes）──
+// 极光本体在 CSS 里（CSS_FX.aurora：两层 repeating-linear-gradient(100deg) + 60s 横向 300% 平移）。
+// canvas 这层原来洒的是「静止闪烁的冷白/淡青圆点」—— 那与通用星尘 drawStardust **逐行同源**：
+// 同一个循环、同一个 blit+arc 成对、同一个 0.5+0.5sin 闪烁公式，只换了配色与数量。
+// 等于给极光配了一片星尘 —— 看不出这个主题自己的意思，也正是「好几套主题共用一条绘制分支」的残留。
+// 现在改成「被极光吹出来的光屑」，两个细节都与上层光带对齐：
+//   · 流向 —— 横向漂移，与 background-position 的横移同向，于是整幅画面的动势是一致的；
+//   · 姿态 —— 光屑沿光带长轴躺下（拉长 3.4 倍）。推导：CSS 渐变角 θ（自「上」起顺时针）对应的方向
+//     向量是 (sinθ, −cosθ)，光带长轴即它的正交方向 (cosθ, sinθ)；而 ctx.rotate(φ) 把 x 轴映到
+//     (cosφ, sinφ)。两者相等当且仅当 φ = θ —— 所以画布旋转角直接用 100deg，不必再加直角修正。
+// 与其它粒子主题的运动方式刻意错开：星尘静止闪烁 / 金尘上浮 / 余烬上升并侧摆 / 萤火无向游走 / 雪下落自转。
+const AUR_ROT = 100/180*Math.PI;                  // 光带长轴的画布旋转角（= CSS 的 100deg，推导见上）
+const AUR_RGB = ['192,202,245', '125,207,255'];   // 冷白 / 淡青（Tokyo Night 的 fg 与 cyan）
+const AUR_STOPS = AUR_RGB.map(rgb => [0,`rgba(${rgb},1)`,0.5,`rgba(${rgb},0.22)`,1,'rgba(0,0,0,0)']);
 function drawAurora(ctx,W,H,dt){
-  const t = _uTime;
-  // 冷暖两种星点色各算一次（见 drawStardust 的说明）
-  const AUR_RGB = ['192,202,245', '125,207,255'];
-  const sprites = AUR_RGB.map((rgb, i) => glowSprite('aurS'+i, 32, [0,`rgba(${rgb},1)`,0.5,`rgba(${rgb},0.22)`,1,'rgba(0,0,0,0)']));
+  const t = _uTime, f = dt*60;
+  // 两种色相的精灵在这里算一次；色标数组已提到模块常量，这里只查表（见 drawStardust 的训诫）
+  const sprites = AUR_STOPS.map((s,i)=>glowSprite('aurS'+i, 32, s));
   for(const p of _uParticles){
+    // 横向漂移，穿出画面后从另一侧重入（纵向不做位移，免得它们被吹成一条斜线）
+    p.x += p.vx*f;
+    if(p.x > W+60) p.x -= W+120; else if(p.x < -60) p.x += W+120;
     const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
-    const tw = 0.5+0.5*Math.sin(t*p.speed+p.phase);
+    // 明灭放慢（周期 3~10s）：让「在流动」压过「在闪」，与星尘的原地闪烁区分开
+    const tw = 0.42 + 0.58*Math.sin(t*p.speed*0.6 + p.phase);
     const a = p.alpha*tw*0.9;
     const ti = p.tint ? 1 : 0;
-    const rgb = AUR_RGB[ti];
-    const spr = sprites[ti];
-    blit(ctx, spr, p.x, p.y, p.size*2.6, a);
-    ctx.fillStyle = `rgba(${rgb},${Math.min(1,a*1.25*ma)})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+    blitRot(ctx, sprites[ti], p.x, p.y, p.size*2.6, a, AUR_ROT, 3.4);
+    ctx.fillStyle = `rgba(${AUR_RGB[ti]},${Math.min(1,a*1.25*ma)})`;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size*0.45, 0, Math.PI*2); ctx.fill();
   }
 }
 
@@ -9249,7 +9842,7 @@ function softBandSprite(key, rgb, alpha, h, flat){
   _spriteCache.set(ck, c);
   return c;
 }
-// ── gold: 薄膜虹彩 ──
+// ── gold: 薄膜虹彩 · 绘制入口（常量与 iridSprite 就近声明在上方）──
 // 结构：① 两张彩纹（见 iridSprite）以 ±GOLD_ROT 交叉铺开 + 交叉显隐（周期约 48s）+ 5% 缩放呼吸
 //       → 一层斜向、一层反向，交替显隐时彩膜在"变形"；② 金尘（粒子层，向上飘散）。
 // 刻意不做大面积的柔光与扫光带：它们跨度大、峰值低，8-bit 的色阶会被拉成几十像素宽的条
@@ -9334,20 +9927,15 @@ function paperTexSprite(){
   _spriteCache.set('paperTex', c);
   return c;
 }
-let _paperPat = null, _paperPatTex = null, _paperPatCtx = null;
 function drawPaper(ctx,W,H,dt){
   const t = _uTime, A = _uAlphaBase, L = Math.hypot(W,H);
-  // ① 纸纹（pattern 与纹理、ctx 三者绑定缓存；切主题后 _spriteCache 清空、纹理重建，这里会自动跟着换）
-  const tex = paperTexSprite();
-  if(_paperPatCtx !== ctx || _paperPatTex !== tex){
-    _paperPat = ctx.createPattern(tex, 'repeat');
-    _paperPatCtx = ctx; _paperPatTex = tex;
-  }
-  if(_paperPat){
-    ctx.globalAlpha = 0.055*A;
-    ctx.fillStyle = _paperPat;
-    ctx.fillRect(0,0,W,H);
-  }
+  // ① 纸纹 —— 走统一的 texPattern（星河与子良也用它）：它缓存的是「pattern + 创建它的 ctx + 纹理」三元组，
+  // 切主题后 _spriteCache 清空、纹理重建，下一次调用会自动换新。
+  // 这里原来自己维护一套「pattern + 纹理 + ctx」的三元组变量 —— 与 texPattern 做的是**同一件事**，
+  // 两套实现并存意味着改一处漏一处就是「平铺纹理整块不显示」（texPattern 的注释正是这么写的），收拢到一套。
+  ctx.globalAlpha = 0.055*A;
+  ctx.fillStyle = texPattern(ctx, 'paperTex', paperTexSprite());
+  ctx.fillRect(0,0,W,H);
   // ② 墨韵：三团柔光缓慢洇动（source-over —— 墨是"沉"在纸里的，用 lighter 会变成发光，就假了）
   ctx.globalAlpha = A;
   for(let i=0;i<PAPER_BLOBS.length;i++){
@@ -9476,14 +10064,19 @@ function sparkleSprite(i){
   return c;
 }
 // 带旋转的精灵贴图（blit 不支持旋转，而 sparkle 每个点都要各自转）
-function blitRot(ctx, spr, x, y, size, alpha, rot){
+function blitRot(ctx, spr, x, y, size, alpha, rot, elong){
   const a0 = alpha * maskFactor(x, y);
   if(a0<=0.004 || size<=0.4) return;
+  // elong > 1 时沿旋转轴拉长（宽不变、长 ×elong）。放在这个入口而不是调用方自己 save/rotate/drawImage：
+  // 避让（maskFactor）与 _uAlphaBase 都在这里统一处理，多一条自绘路径就多一处会漏掉避让的地方。
+  // 默认 1 = 原行为，既有的星芒调用完全不受影响。
+  const e = elong > 1 ? elong : 1;
   ctx.save();
   ctx.globalAlpha = Math.min(1, a0*_uAlphaBase);
   ctx.translate(x,y);
   if(rot) ctx.rotate(rot);
-  ctx.drawImage(spr, -size*0.5, -size*0.5, size, size);
+  if(e > 1) ctx.drawImage(spr, -size*0.5*e, -size*0.5, size*e, size);
+  else ctx.drawImage(spr, -size*0.5, -size*0.5, size, size);
   ctx.restore();
 }
 // ── night: 螺旋星流（Galactic Stream）──
@@ -9645,9 +10238,10 @@ function drawNight(ctx,W,H,dt){
   // 说明：这里曾经叠过一层全屏颗粒做"抖动"（给色阶边界做随机化）。实测在深空底上会显成一整片麻点，
   // 观感代价远大于它压掉的那点色阶，已删除。星云若还有残留色阶，只能靠"缩小 + 提亮"继续压。
 }
-// ── zirong: 彩波（Aceternity UI「Wavy Background」的 canvas 版）──
-// 原作是多条彩色波浪路径叠加 + blur(10px) + 横向无限循环位移。
-// canvas 里用「同一条路径描 3 层（线宽递增、透明递减）」等效那道模糊，避开 filter:blur 的高开销；
+// ── zirong: 砚墨晕开（同心墨环）──
+// 这里曾写着「Aceternity「Wavy Background」的 canvas 版／多条彩色波浪路径叠加 + blur(10px)」，
+// 那是改造前的实现；标题与下方机制说明曾长期两套说法并存，已统一。
+// 唯一沿用的手法：同一条路径描 3 层（线宽递增、透明递减）等效那道模糊，避开 filter:blur 的高开销；
 // 配色沿用中国画色系：朱砂 / 靛青 / 赭石 / 墨 / 苍绿
 const ZIRONG_WAVES = [
   {y:0.32, amp:0.045, freq:0.0024, speed: 0.030, rgb:'180,50,46',  a:0.20},
@@ -9656,23 +10250,48 @@ const ZIRONG_WAVES = [
   {y:0.70, amp:0.062, freq:0.0016, speed:-0.018, rgb:'38,32,26',   a:0.13},
   {y:0.82, amp:0.052, freq:0.0021, speed: 0.020, rgb:'96,120,104', a:0.11}
 ];
+/* 子荣（丹青墨韵）：原实现与子良是**同一个模板换参** —— 都是「多条横向正弦曲线按色分层」，
+   只是一个描边一个填充。这条改成「砚墨晕开」：几点朱砂/靛青在宣纸上缓慢晕出的同心细环，
+   扩散到极大半径后淡尽、再从别处另起一枚 —— 中国画里墨滴入水的那种静气。
+   机制上与全站其它主题都不同：粼光（ripple）是**网格光斑的位移场**（无环状结构、无生命周期），
+   这里是**规则同心环 + 扩散淡出的生命周期**；也不同于任何粒子/光束类。
+   复用原有的 ZIRONG_WAVES 常量：每一条的 rgb / a 就是一枚环的颜色与峰值透明度，
+   y 是环心的纵向落点，amp 定最大半径、speed 定扩散速度、freq 用来错开各环的起始相位。
+   避让：环是横跨画面的稀疏细线，峰值透明度压到 0.10 以内（见上方红线），不做逐段避让。 */
+let _zrRings = null;
 function drawZirong(ctx,W,H,dt){
   const t = _uTime;
-  const seg = Math.max(26, Math.round(W/26));
-  for(const w of ZIRONG_WAVES){
-    const baseY = w.y*H, amp = w.amp*H;
-    const drift = t*w.speed*W;                 // 横向循环位移（对应原作的 x 方向无限平移）
-    const k = w.freq*Math.PI*2;
-    ctx.beginPath();
-    for(let i=0;i<=seg;i++){
-      const x = -40 + (i/seg)*(W+80);          // 两端探出屏幕，避免端点被硬切
-      const y = baseY + Math.sin((x+drift)*k)*amp + Math.sin((x+drift)*k*2.3+1.1)*amp*0.42;
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    // 三层描边 ≈ blur(10px)：宽而淡 → 窄而实
-    ctx.strokeStyle = `rgba(${w.rgb},${w.a*0.30*_uAlphaBase})`; ctx.lineWidth = 22; ctx.stroke();
-    ctx.strokeStyle = `rgba(${w.rgb},${w.a*0.55*_uAlphaBase})`; ctx.lineWidth = 8;  ctx.stroke();
-    ctx.strokeStyle = `rgba(${w.rgb},${w.a*_uAlphaBase})`;      ctx.lineWidth = 2;  ctx.stroke();
+  if(!_zrRings){
+    _zrRings = ZIRONG_WAVES.map((w,i)=>({
+      w: w,
+      x: (0.12 + 0.19*i)*W,                  // 开场先均匀铺一次，之后每轮换落点
+      cyc: 0,
+      born: -i*4.2,                          // 出生时刻错开，开场就不会 5 枚环同时炸开
+    }));
+  }
+  for(const r of _zrRings){
+    const w = r.w;
+    const age = t - r.born;
+    if(age < 0) continue;                    // 还没到它的出场时刻
+    // 寿命写成显式周期：常量表里的 amp/speed 是"波浪"时代的参数（amp 是振幅比例、speed 是每秒漂移的屏宽比例），
+    // 直接拿它们反推寿命会差三个数量级（实测第一版算出 9900s，环永远长不出来）。
+    // 这里用 18s 为基准、由 freq 错开成 17~21s，各环不同步；speed 改作环心上下漂移的频率。
+    const span = 18 * (0.70 + w.freq*160);
+    const cyc = Math.floor(age/span);
+    if(cyc !== r.cyc){ r.cyc = cyc; r.x = (0.12 + 0.76*Math.random())*W; }   // 上一轮已淡尽 → 换个落点另起
+    const k = (age/span) - cyc;              // 本轮的生命进度 0→1
+    const rad = k * w.amp*H*2.2;
+    // 透明度：sin 把两头都收干净（刚出生淡入、临近最大半径淡尽）
+    const a = w.a*0.55*Math.sin(Math.PI*k)*_uAlphaBase;
+    if(a <= 0.004 || rad <= 2) continue;
+    const cy = w.y*H + sinLut(t*Math.abs(w.speed)*2.3 + w.freq*600)*H*0.03;   // 环心极缓抬落，画面不死
+    // 三层同心描边 ≈ blur：宽而淡 → 窄而实（与旧实现同一套柔化手法，不用 filter）
+    ctx.strokeStyle = 'rgba(' + w.rgb + ',' + (a*0.28) + ')'; ctx.lineWidth = 14;
+    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(' + w.rgb + ',' + a + ')'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
   }
 }
 // ── ziliang: 远山晨雾（Layered Peaks at Dawn）──
@@ -9779,7 +10398,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '103';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '117';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

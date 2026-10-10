@@ -1,7 +1,7 @@
 // ⚠️ 版本号变更时必须与 index.html 里的 SW_VERSION 同步递增（两处数字必须完全一致，sync-www.js 会在打包前校验）
 // 图标等预缓存资源变更时同样要递增，否则老用户会一直用缓存里的旧图标。
 // 注意：这里不要写死"当前是几" —— 曾经写过"当前 '62'"，而实际早已是 64，注释本身就是错的。
-const CACHE = 'learn-v103';
+const CACHE = 'learn-v117';
 
 // 预缓存静态资源，确保离线可用。
 // 注意：1024 的 icon.png 已删除——它只在 <link rel="icon"> 里被用到，浏览器每次首屏都会下 796KB，
@@ -14,7 +14,8 @@ self.addEventListener('install', e => {
     // 用 {cache:'reload'} 绕开 HTTP 缓存：否则重装 SW 时可能把浏览器缓存里的旧 index.html / 旧图标存进新缓存
     caches.open(CACHE).then(c => Promise.all(
       PRE_CACHE.map(u => fetch(u, { cache: 'reload' }).then(resp => {
-        if (resp.ok) return c.put(u, resp);
+        // 这里不会出现 206（预缓存不带 Range），但判定与上面两条保持一致，免得以后读的人以为漏了
+        if (resp.status === 200) return c.put(u, resp);
         console.warn('[SW] 预缓存响应异常，已跳过:', u, resp.status);
       }).catch(err => console.warn('[SW] 预缓存资源失败:', u, err)))
     ))
@@ -47,8 +48,9 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request, { cache: 'no-cache' }).then(async resp => {
         // 缓存写入放在 respondWith 链内完成：waitUntil 在事件派发结束后再调用会失败，导致离线缓存一直不更新
-        // 只缓存成功响应：404/5xx 错误页不能当作 index.html 存入缓存，否则离线时会一直打开错误页
-        if (resp.ok) {
+        // 只缓存成功响应：404/5xx 错误页不能当作 index.html 存入缓存，否则离线时会一直打开错误页。
+        // 判定收紧到 200：resp.ok 对 206 Partial Content 也是 true，会把半截响应整段存进缓存。
+        if (resp.status === 200) {
           try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put('index.html', copy); } catch(_) {}
         }
         return resp;
@@ -63,10 +65,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 同源 GET 请求：Network First，仅缓存成功的响应
+  // 同源 GET 请求：Network First，仅缓存成功的响应（同样精确到 200，理由见上面导航请求那段）
   e.respondWith(
     fetch(e.request).then(async resp => {
-      if (resp.ok) {
+      if (resp.status === 200) {
         try { const copy = resp.clone(); const c = await caches.open(CACHE); await c.put(e.request, copy); } catch(_) {}
       }
       return resp;

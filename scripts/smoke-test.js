@@ -157,6 +157,9 @@ function markDirty(){}
 // 副作用留痕封装：被测函数（applySm2Grade / undoMemoryGrade）的 catch 分支会调它，
 // 沙箱里必须存在 —— 否则一旦某条副作用真的抛错，测试会因为"warnSilent 未定义"而误报成产品缺陷
 function warnSilent(){}
+// 写入受阻的统一守卫（index.html 的 blockedByWriteFault）：沙箱里没有 Store，固定返回"未受阻"，
+// 让评分相关的单测聚焦在评分逻辑本身；"被拦住"的路径由下方静态断言守着
+function blockedByWriteFault(){ return false; }
 function fsrsStep(){ return { interval: 1, next: Date.now() + 86400000, card: { d: 5, s: 1, last: Date.now(), reps: 1, lapses: 0 } }; }
 let HOT = [];
 const localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
@@ -875,7 +878,8 @@ console.log('\n[关键实现点静态断言]');
 
   /* ── 数据安全与来源唯一性 ─────────────────────────────────────── */
   // 冻结时阻断评分：那时产生的新进度只存在内存，刷新即丢
-  ok(/function applySm2Grade\(qid, rate, historyArr\)\{\s*\n\s*\/\* 写入受阻时拒绝评分/.test(html)
+  ok(/function applySm2Grade\(qid, rate, historyArr\)\{\s*\n\s*if\(blockedByWriteFault\('评分'\)\) return;/.test(html)
+      && /function blockedByWriteFault\(what\)\{/.test(html)
       && /Store\.writeFault\(\)/.test(html),
      '写入受阻时拒绝评分（查看/翻页不受影响，横幅给出导出与刷新两条出路）');
   // 保留率日志必须同时进本地备份与云端：它是只增日志，丢了无法重建
@@ -899,6 +903,205 @@ console.log('\n[关键实现点静态断言]');
   // 弹簧缓动：只用于低频交互（弹窗/悬停/toast），高频的评分与翻页保持 ease-out
   ok(/--ease-pop:cubic-bezier\(\.34,1\.56,\.64,1\)/.test(html) && /--dur-pop:\.3s/.test(html),
      '弹簧缓动存在，且只作用于低频交互（评分/翻页这类高频操作不弹）');
+   // 宽屏桌面端：排版规则必须按视图收口，且全部关在 ≥1024px 断点内（移动端零影响）
+   // 浏览页与搜索结果改走同一条阅读版心（搜索页的双列栅格已撤 —— .empty 会落在第一列、显示在左上角）
+   ok(/c\.dataset\.view = view;/.test(html)
+      && /@media\(min-width:1024px\)\{/.test(html)
+      && /\.content\[data-view="browse"\]>:is\(\.doc-head,\.q,\.empty\)/.test(html)
+      && /\.content\[data-view="search"\]>:is\(\.doc-head,\.sr-item,\.empty\)\{max-width:var\(--rail-read\)/.test(html),
+      '宽屏排版按视图收口（浏览页与搜索结果同走 --rail-read 阅读版心），作用域是 .content 的 data-view 标记');
+   // 桌面弹窗宽度：设置与 qmodal 同档；移动端靠 width:96vw!important 压过，所以只加 min-width 断点
+   ok(/\.modal\.qmodal\{width:min\(760px,92vw\)/.test(html) && /\.modal\.settings-modal\{width:min\(760px,92vw\)\}/.test(html),
+      '设置弹窗与题目表单弹窗在桌面同档加宽到 760px（移动端 width:96vw!important 兜底）');
+   // 主题浮层的宽屏定位：必须有函数、有调用，且函数内部对窄屏直接返回（不碰移动端）
+   ok(/function placeThemePopup\(\)/.test(html) && /placeThemePopup\(\);/.test(html)
+      && /if\(window\.innerWidth <= 768\) return;/.test(html),
+      '主题浮层在宽屏按按钮实测位置对齐（且对 ≤768 直接返回，移动端交给原有 CSS）');
+   // 主题去克隆：极光这层不许再是星尘的翻版（原来只差配色与数量），必须是自己的机制
+   ok(/const AUR_ROT = 100\/180\*Math\.PI;/.test(html)
+      && /blitRot\(ctx, sprites\[ti\], p\.x, p\.y, p\.size\*2\.6, a, AUR_ROT, 3\.4\);/.test(html)
+      && /p\.x \+= p\.vx\*f;/.test(html)
+      && /vx:0\.22\+Math\.random\(\)\*0\.42,/.test(html)
+      && /const AUR_STOPS = AUR_RGB\.map/.test(html)
+      && !/AUR_RGB\.map\(\(rgb, i\) => glowSprite/.test(html),
+      '极光尘：横向定向流动 + 沿光带长轴拉长（不再是静止闪烁圆点），色标数组提到模块常量');
+   // 拉长能力放在 blitRot 入口，避免调用方自绘而漏掉避让
+   ok(/function blitRot\(ctx, spr, x, y, size, alpha, rot, elong\)\{/.test(html)
+      && /if\(e > 1\) ctx\.drawImage\(spr, -size\*0\.5\*e, -size\*0\.5, size\*e, size\);/.test(html),
+      'blitRot 支持沿旋转轴拉长（默认 1 不影响既有星芒调用），避让与 alpha 仍在这一个入口处理');
+   // 平铺纹理只允许一套缓存机制
+   ok(/texPattern\(ctx, 'paperTex', paperTexSprite\(\)\)/.test(html)
+      && !/_paperPat/.test(html),
+      'paper 的纸纹收拢到统一的 texPattern（原先与 _patCache 并存的第二套三元组已删）');
+   // 版心只允许两档：四套版本号（1200/1040/880/820）会让切换标签时版心跳变
+   ok(/--rail:1200px; --rail-read:820px;/.test(html)
+      && /\.practice-wrap\{max-width:var\(--rail-read\)/.test(html)
+      && /\.feature-wrap\{max-width:var\(--rail-read\)/.test(html)
+      && /\.an-wrap\{max-width:var\(--rail\)/.test(html)
+      && !/\.(practice-wrap|feature-wrap|an-wrap)\{max-width:\d/.test(html),
+      '版心收敛为两档令牌（--rail 栅格 / --rail-read 单列阅读），不再有第三个数字');
+   // 空搜索结果必须居中：搜索页曾是双列栅格、.empty 落在第一列 → 提示跑到左上角
+   ok(!/data-view="search"\]\{display:grid/.test(html)
+      && /\.content\[data-view="search"\]>:is\(\.doc-head,\.sr-item,\.empty\)/.test(html),
+      '搜索结果页不再用双列栅格，结果条与空态同走一条阅读版心（空态因此居中）');
+   // 主题分派必须按 canvas key（_uTheme 存的是 id）—— 只数 case 个数是抓不住这个错的：
+   // 早期 12 套 id 与 key 同名，用 id 分派也能全绿，直到经典组 dracula→ember 才静默落兜底星尘。
+   const specKeys = new Set([...html.matchAll(/canvas:\s*'([a-z]+)'/g)].map(m=>m[1]).filter(k=>k!=='stardust'&&k!=='none'));
+   const caseKeys = new Set([...html.matchAll(/case '([a-z]+)': draw/g)].map(m=>m[1]));
+   const missingCase = [...specKeys].filter(k=>!caseKeys.has(k));
+   ok(/function canvasKeyOf\(id\)\{/.test(html)
+      && /switch\(canvasKeyOf\(_uTheme\)\)\{/.test(html)
+      && !/switch\(_uTheme\)\{/.test(html)
+      && specKeys.size === 16 && missingCase.length === 0,
+      '主题分派按 canvas key 分派（canvasKeyOf 桥接 id→key），16 个 canvas 声明与 case 一一对应'
+      + (missingCase.length ? ' —— 缺 case：' + missingCase.join(',') : ''));
+   // 写入受阻的守卫必须统一：原先只有记忆评分设防，星级/八股自评静默接受（进度只在内存里，刷新即丢）
+   ok(/function blockedByWriteFault\(what\)\{/.test(html)
+      && (html.match(/blockedByWriteFault\(/g) || []).length >= 5
+      && !/if\(typeof Store !== 'undefined' && Store\.writeFault && Store\.writeFault\(\)\)\{/.test(html),
+      '写入受阻守卫统一走 blockedByWriteFault（记忆评分 / 星级标记 / 八股自评口径一致），不再各处自己写一份');
+   // 切视图后焦点归位：重渲染会把被点掉的元素连同焦点一起卸载，焦点掉到 body
+   ok(/if\(document\.activeElement === document\.body\) c\.focus\(\{preventScroll:true\}\);/.test(html),
+      '切视图/重渲染后焦点补回 .content（role=tabpanel + tabindex=-1），键盘用户不必从头 Tab');
+   // 平滑滚动都要过减动效偏好（另三处滚动在 prefersReduce 时已提前 return，不属于本断言范围）
+   // 两处"外层已提前 return"的滚动在 prefersReduce 时根本不会执行（见各自的 reduce 判断），
+   // 其余三处必须自己改行为值 —— 断言同时守住这两类写法，避免任何一处退化成无条件平滑
+   ok((html.match(/prefersReduce\(\) \? 'auto' : 'smooth'/g) || []).length === 3
+      && !/scrollIntoView\(\{behavior:'smooth'/.test(html)
+      && (html.match(/if\(reduce \|\| !card/g) || []).length === 2,
+      '平滑滚动都过减动效偏好（三处改行为值；刷题/趁热两处在 prefersReduce 时提前 return 不执行）');
+   // 主题集：每套内置主题必须有**自己**的绘制分支；且删掉的 id 必须在 THEME_ALIAS 里登记
+   // 经典组里任何一套都不许再声明 canvas:'stardust'（注释里提到它不算数，这里只看同一行上同时有 group:'classic' 的声明）
+   ok(!/group:'classic'[^\n]*canvas:'stardust'/.test(html)
+      && (html.match(/case '(ember|scan|film|firefly)': draw/g) || []).length === 4
+      && /function drawDraculaEmber\(/.test(html)
+      && /function drawNordScan\(/.test(html)
+      && /function drawGruvboxFilm\(/.test(html)
+      && /function drawEverforestFirefly\(/.test(html)
+      && /else if\(theme==='dracula'\)\{/.test(html)
+      && /else if\(theme==='everforest'\)\{/.test(html),
+      '每套内置主题各有独立特效（不再多主题共用一条绘制分支），且都有对应粒子播种分支');
+   ok(/frappe:'midnight', macchiato:'midnight',/.test(html)
+      && /rosepine:'dracula', rosepineMoon:'dracula', rosepineDawn:'paper',/.test(html)
+      && /onedark:'nord', github:'aurora',/.test(html)
+      && ["frappe","macchiato","rosepine","rosepineMoon","rosepineDawn","onedark","github"]
+           .every(id => !new RegExp('\\n  ' + id + ': \\{').test(html)),
+      '删掉的 7 个主题已从 THEME_SPEC 移除，且全部登记进 THEME_ALIAS（否则老存档会误入「跟随系统」）');
+   ok(/let _zrRings = null;/.test(html) && /ctx\.arc\(r\.x, cy, rad, 0, Math\.PI\*2\)/.test(html)
+      && !/Math\.sin\(\(x\+drift\)\*k\)/.test(html),
+      '子荣不再是「横向正弦波浪」（与子良同模板），改为砚墨晕开的同心环');
+   // 首启一次性迁移：同一字段不得调用 stripMarkdown 两遍（那是唯一一处同步阻塞的规模性开销）
+   ok(/const stripTxt = s => \{ const t = stripMarkdown\(s\); return t === s \? s : \(cleaned\+\+, t\); \};/.test(html)
+      && !/stripMarkdown\(d\.title\) !== d\.title/.test(html)
+      && !/stripMarkdown\(q\.answer\) !== q\.answer/.test(html),
+      '迁移里每个字段只跑一次 stripMarkdown（原来比较一次、赋值再来一次）');
+   // 降级提示走常驻横幅（且不与「写入失败」混用 —— 混了会让降级期间无法评分）
+   ok(/function raiseNotice\(msg\)\{/.test(html)
+      && /notice: \(\) => _notice,/.test(html)
+      && /raiseNotice\('本地数据库无响应/.test(html)
+      && !/toast\('本地数据库无响应/.test(html)
+      && /if\(typeof Store\.onNotice === 'function'\) Store\.onNotice/.test(html),
+      '数据库降级改为常驻横幅（与写入失败独立成通道），不再是一条 3 秒就消失的 toast');
+   // 总览空题库引导 + 宽屏网格改为自动排布（否则引导块与薪资卡撞格）
+   ok(/const emptyLead = \(tq === 0\)/.test(html)
+      && /id=\"ovImport\"/.test(html)
+      && /ovImportBtn\.onclick = \(\) => openImportPicker\(\)/.test(html)
+      && !/overview\]>\.salary-card\{grid-column:1;grid-row:1/.test(html)
+      && /\.content\[data-view=\"overview\"\]> :not\(\.salary-card\):not\(\.ov-grid\):not\(\.ov-trend\)\{grid-column:1\/-1\}/.test(html),
+      '总览页空题库引导：文案块与导入按钮块都跨满整行（此前只覆盖 .empty，按钮块独自落进第 1 列）');
+   // 收尾批：--faint 不再当正文色、题号徽标可容纳三位数、退出前 flush、回前台补算 --kb
+   ok(!/color:var\(--faint\)/.test(html)
+      && /const mutedColor = style\.getPropertyValue\('--muted'\)/.test(html)
+      && !/faintColor/.test(html)
+      && /\.q \.qnum\{flex:none;min-width:26px;height:26px;padding:0 5px;/.test(html)
+      && /flushProgressWrite\(\); saveGrillDraft\(true\);/.test(html)
+      && /try\{ syncKeyboardInset\(\); \}catch\(_\)\{\}/.test(html),
+      '--faint 不再作正文色（图表日期轴随既定政策改 --muted）；题号徽标 min-width；退出前 flush；回前台补算 --kb');
+   // 战报与 SW：危险键、206 缓存（sw.js 本文件里没读过，就地读一次）
+   const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+   ok(/if\(day==='__proto__'\|\|day==='constructor'\|\|day==='prototype'\) return;/.test(html)
+      && /dev!=='__proto__' && dev!=='constructor' && dev!=='prototype'/.test(html)
+      && !/if \(resp\.ok\)/.test(swSrc)
+      && (swSrc.match(/resp\.status === 200/g) || []).length === 3,
+      'warLogMerge 显式挡危险键（day/dev 都来自远端）；SW 三处缓存判定精确到 200');
+   // 多标签页：localStorage 无事务，两份内存副本整份覆盖 → 必须监听 storage 事件合并只增日志
+   ok(/window\.addEventListener\('storage', e => \{/.test(html)
+      && /if\(e\.key === REVLOG_KEY\) mergeRevLogFromBackup\(JSON\.parse\(e\.newValue\)\);/.test(html)
+      && /else if\(e\.key === WARLOG_KEY\) warLogMerge\(JSON\.parse\(e\.newValue\)\);/.test(html),
+      '跨标签页合并：REVLOG/WARLOG 走 storage 事件并回对端条目（热榜刻意不并，见注释）');
+   // 对比度：装饰色派生出「作文字」的一版，九处文字用它；主题调色板一个值都没动
+   ok(/function inkOn\(color, bg\)\{/.test(html)
+      && /const a3i = inkOn\(t\.accent3, t\.card \|\| t\.bg\);/.test(html)
+      && (html.match(/color:var\(--accent3-ink, var\(--accent3\)\)/g) || []).length === 9
+      && /color:'\+_accInk\+';/.test(html),
+      'accent3 派生 --accent3-ink 供小字使用（九处），确认框确定按钮按 accent 明度取前景');
+   // 触屏：颜色类 hover 关进 @media (hover:hover)，不再靠 hover:none 里逐条抄复位值
+   ok(/@media \(hover:hover\)\{ \.tab:hover\{/.test(html)
+      && /@media \(hover:hover\)\{ \.grade-btn\.g-easy:hover\{/.test(html)
+      && !/\n  \.btn:hover\{border-color:var\(--accent2\)\}/.test(html),
+      '颜色类 hover 统一关进 @media (hover:hover)（触屏上不再粘住高亮）');
+   // 文案 / 语义 / 注入语义三处收尾
+   ok(/mock:'八股练习'/.test(html) && /grill:'面试拷打'/.test(html)
+      && /' title="保留率：'/.test(html)
+      && /\r?\n            \.\.\.q,/.test(html) && !/return Object\.assign\(\{\}, q, \{/.test(html)
+      && /tab\.setAttribute\('aria-pressed', tab\.classList\.contains\('active'\)/.test(html)
+      && !/aria-selected', 'true'/.test(html),
+      '功能名统一（八股练习/面试拷打/保留率）；normalizeDocs 改展开语法；分组 tab 用 aria-pressed');
+   // 导入不得逐键覆盖：进度按时间取较新、通关数取较大（旧备份不该抹掉本机新排的 FSRS 状态）
+   ok(/function mergeProgressByRecency\(localMap, incoming\)\{/.test(html)
+      && /PROGRESS = mergeProgressByRecency\(PROGRESS, sanitizeProgressMap\(v\)\)/.test(html)
+      && /if\(nv > cur\) CLEARS\[id\] = nv;/.test(html)
+      && !/PROGRESS = Object\.assign\(\{\}, PROGRESS, sanitizeProgressMap\(v\)\)/.test(html),
+      '导入按时间/大小合并，不再逐键覆盖（旧备份会静默抹掉本机更新的进度与通关数）');
+   // 导入落盘必须等完并处理失败；importJsonDocs 改了签名，两个调用点都得 await
+   ok(/async function importJsonDocs\(text, opts\)\{/.test(html)
+      && /else await importJsonDocs\(text\);/.test(html)
+      && /await importJsonDocs\(JSON\.stringify\(\{ documents: ls\.docs/.test(html)
+      && /await Promise\.all\(\[saveDocs\(\), Store\.saveProgress\(PROGRESS\), Store\.saveOrder\(ORDER\), Store\.saveClears\(CLEARS\)\]\);/.test(html)
+      && /if\(Store\.writeFault && Store\.writeFault\(\)\) Store\.freeze\(\);/.test(html),
+      '导入落盘等完并检查失败（半更新保护），两个调用点都 await');
+   // 返回键不得直接丢掉正在编辑的内容（这两个弹窗刻意不支持点遮罩关闭）
+   ok(/if\(top\.id === 'addModal' \|\| top\.id === 'editModal'\)\{/.test(html)
+      && /confirmDialog\('关闭后会丢失正在编辑的内容，确定关闭吗？'\)/.test(html),
+      'Android 返回键对「添加/编辑题目」先确认，不再直接关掉丢草稿');
+   // 导出提示必须等真实结果：四个导出点都走 exportWithToast，downloadBlob 不再被直接调用
+   ok(/async function exportWithToast\(blob, filename, okMsg\)\{/.test(html)
+      && (html.match(/downloadBlob\(/g) || []).length === 2
+      && (html.match(/exportWithToast\(blob, `/g) || []).length === 4,   // 只数调用点：定义签名传的是 filename
+      '导出改为「成功才提示」：四个导出点统一走 exportWithToast（此前不等结果就 toast 已导出）');
+   // 无障碍 / CSP / dvh：三条与用户规模无关的廉价修复
+   ok(/id="ovDueCard"\$\{todo>0\?` role="button" tabindex="0"/.test(html)
+      && /connect-src 'self' https: http:\/\/localhost:\* http:\/\/127\.0\.0\.1:\*;/.test(html)
+      && /@supports \(height:100dvh\)\{/.test(html)
+      && !/connect-src 'self' https: http:;/.test(html),
+      '总览待复习卡可键盘激活；CSP 去掉裸 http:（保留 localhost 调试）；dvh 兜底改绑 @supports');
+   // 写入失败状态必须可恢复：只置位不清零会让一次瞬时失败永久锁死评分（见 clearFault）
+   ok(/function clearFault\(\)\{/.test(html)
+      && /if\(!_fault \|\| _frozen\) return;/.test(html)
+      && /tx\.oncomplete = \(\) => \{ clearFault\(\); res\(true\); \};/.test(html)
+      && /else clearFault\(\);/.test(html)
+      && /if\(!msg\)\{ el\.hidden = true; return; \}/.test(html),
+      '写入失败状态可恢复：瞬时失败随下一次成功写入清除，freeze 仍为持久态（横幅随之收起）');
+   // 桌面键盘：两条"根元素不可滚动"的补偿通道
+   ok(/const overlayOn = !!document\.querySelector\(/.test(html)
+      && /\(e\.key==='k'\|\|e\.key==='K'\) && \(e\.ctrlKey\|\|e\.metaKey\)/.test(html)
+      && /searchEl && !overlayOn && e\.key==='\/'/.test(html)
+      && /e\.key==='PageDown'\|\|e\.key==='PageUp'/.test(html)
+      && /if\(sc && !inner\)\{/.test(html),
+      '桌面键盘：Ctrl/⌘+K 与 / 聚焦搜索（两条都先过浮层守卫，焦点不会落到遮罩背后）；PageUp/PageDown/Home/End 显式滚动 .content（焦点在可滚子容器内时让位）');
+   // 顶栏：让 .tabs 真的能横向滚动（min-width:0），折行即消失；总览页宽屏改两列
+   ok(/\.topbar \.tabs\{min-width:0\}/.test(html)
+      && /\.topbar \.search input\{width:140px\}/.test(html)
+      && /\.content\[data-view="overview"\]\{display:grid/.test(html)
+      && /class="ov-trend"/.test(html)
+      && !/\.content\[data-view="overview"\]>div:last-child/.test(html),
+      '顶栏靠 min-width:0 恒定单行（那段 overflow-x:auto 这才真的生效）；总览页宽屏两列且趋势卡有具名类');
+   // 备份导入的版本判断：旧格式 / 更新版本都要给结论，降级残留恢复则走 quiet 不给误导提示
+   ok(/function importJsonDocs\(text, opts\)/.test(html)
+      && /const srcVer = Number\.isInteger\(data\.version\)/.test(html)
+      && /missing\.push\(PERSIST_LABEL\[key\] \|\| key\)/.test(html)
+      && /order: ls\.order \|\| \[\] \}\), \{ quiet: true \}\)/.test(html),
+      '备份导入说明版本差异（旧格式缺项 / 备份比本机新），降级残留恢复不当成备份文件');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');
