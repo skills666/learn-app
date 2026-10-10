@@ -11,7 +11,8 @@
     "cap:add:android": "cap add android",
     "cap:sync": "node sync-www.js && cap sync android",
     "cap:open": "cap open android",
-    "build:android": "node sync-www.js && cap sync android && node scripts/build-android.js assembleDebug"
+    "build:android": "node sync-www.js && cap sync android && node scripts/build-android.js assembleDebug",
+    "build:release": "node sync-www.js && cap sync android && node scripts/build-android.js assembleRelease"
   },
   "engines": {
     "node": ">=18"

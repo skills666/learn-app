@@ -11,6 +11,12 @@ www/
 # 图标流水线（scripts/icon-build.py）的源图 / 母版 / 旧图标备份：只在本机换图标时用，不入库。
 # 需要把设计资产也入库时，用 git add -f generated-images/selected/ 显式添加
 generated-images/
+# 发布签名密钥：绝不入库。
+# 丢了 = 永远无法对已装用户覆盖安装（只能让人卸载重装，而 allowBackup=false，数据会丢）；
+# 泄露 = 任何人都能签出冒充你的升级包。签名文件请单独离线备份。
+android/keystore.properties
+android/*.jks
+android/*.keystore
 # Python 工具脚本的运行产物
 __pycache__/
 # 主题渲染探测的临时产物（各主题截图 / 探测页 / 无头 Chromium 的 profile 目录）：只在本机核对效果用，不入库

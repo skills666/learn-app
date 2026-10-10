@@ -82,7 +82,9 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.all {
-            outputFileName = "learn-app-${variant.versionName}.apk"
+            // 文件名必须带变体：debug 与 release 包体不同、签名不同，同名会在下载目录里互相覆盖，
+            // 也让人分不清手上这只是"自测包"还是"可分发包"（本项目的 debug 包无法覆盖安装正式包）。
+            outputFileName = "learn-app-${variant.name}-${variant.versionName}.apk"
         }
     }
 }

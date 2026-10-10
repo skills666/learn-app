@@ -118,3 +118,11 @@ const sweep = (dir) => {
 };
 if (fs.existsSync(DEST)) sweep(DEST);
 console.log(`www/ 同步完成（${AS_PWA ? 'PWA 模式：含 PWA 专属资源' : 'APK 模式：只同步 FILES_APP'}）：更新 ${copied} 个；跳过 ${skipped} 个（内容一致或缺源文件）` + (cleaned ? `；清理遗留 ${cleaned} 个` : ''));
+/* APK 模式刻意不带 sw.js 与两个 512 图标（WebView 不会取它们，打进包只是白增约 269KB）——
+   代价是这份产物**不是一个完整站点**：manifest 里引用的两个 512 图标会 404，Service Worker 也不存在，
+   部署上去会得到一个「没有离线能力」的站点，而且不会有任何报错提示。这里明确警告一次，
+   并把正确做法写在同一行里，避免有人拿默认产物去部署站点。 */
+if (!AS_PWA) {
+  console.warn('  注意：这是 APK 用途的产物，不要直接当站点部署（缺 sw.js 与 512 图标，manifest 里的图标会 404）。');
+  console.warn('        要部署 PWA 站点请用：node sync-www.js --pwa');
+}

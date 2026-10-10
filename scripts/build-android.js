@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * 跨平台 Android 构建入口：Windows 走 gradlew.bat，类 Unix 走 gradlew。
- * 用法：node scripts/build-android.js [--print-java] [gradle 任务…]（默认 assembleDebug）
+ * 用法：node scripts/build-android.js [--print-java] [--allow-debug-sign] [gradle 任务…]（默认 assembleDebug）
+ *   assembleRelease 会先检查 android/keystore.properties 是否存在，缺了直接报错退出（见下文说明）。
  *
  * 为什么单独一个脚本：package.json 里写死 `cd android && gradlew.bat assembleDebug` 只能在 Windows 跑，
  * 而 `./gradlew` 在 Windows 的 cmd / PowerShell 里又不能直接执行（会被当成文件打开）——
@@ -89,8 +90,33 @@ if (printJava) {
   process.exit(0);
 }
 
-const tasks = argv.filter(a => a !== '--print-java');
+const tasks = argv.filter(a => a !== '--print-java' && a !== '--allow-debug-sign');
 if (!tasks.length) tasks.push('assembleDebug');
+
+/* release 必须真有稳定签名密钥。build.gradle 在没有 keystore.properties 时会**回退 debug 签名**只打一条
+   warning —— 那条后路是留给"临时自测 release 包"的，产物却极易被当成正式包发出去，后果不小：
+   debug key 随机器而变，换机器（或 CI）构建的同名包与已装版本签名冲突 → 系统拒绝覆盖安装，
+   用户只能卸载重装；而本项目 allowBackup=false，卸载即丢全部本地题库与进度。
+   所以把"缺密钥"当错误拦下，而不是打个日志继续。确实只想自测时显式加 --allow-debug-sign。 */
+const wantsRelease = tasks.some(t => /^(assemble|bundle)Release$/i.test(t));
+if (wantsRelease && !argv.includes('--allow-debug-sign')) {
+  const ksFile = path.join(androidDir, 'keystore.properties');
+  if (!fs.existsSync(ksFile)) {
+    console.error('[build:android] 缺少 android/keystore.properties —— release 包必须有稳定签名密钥。');
+    console.error('  没有它时 Gradle 会回退用 debug 签名，而 debug key 随机器而变，换机器构建的包');
+    console.error('  与已装版本签名不同 → 系统拒绝覆盖安装，只能卸载重装；本项目 allowBackup=false，');
+    console.error('  卸载会丢掉全部本地题库与进度。');
+    console.error('  生成密钥（只做一次，之后一直复用同一个文件，务必单独备份 —— 丢了就再也更新不了）：');
+    console.error('    keytool -genkeypair -v -keystore android/release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias learn-app');
+    console.error('  然后在 android/keystore.properties 填入（该文件已被 .gitignore 忽略）：');
+    console.error('    storeFile=release.jks');
+    console.error('    storePassword=…');
+    console.error('    keyAlias=learn-app');
+    console.error('    keyPassword=…');
+    console.error('  只想临时自测 release 包（可接受 debug 签名）：加 --allow-debug-sign');
+    process.exit(1);
+  }
+}
 
 if (!fs.existsSync(launcher)) {
   console.error('[build:android] 找不到 Gradle 启动器：' + launcher);
