@@ -980,6 +980,23 @@ console.log('\n[关键实现点静态断言]');
       && /\.q:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html)
       && /\.memory-card:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html),
       '卡片没有 :active 按下态（点内部按钮时不再整卡跟着响应），悬停反馈保持不变');
+   // 趁热本轮游标不得归零：重进本页要沿用、走完要停在结果页、云端覆盖要按当前题重定位
+   // （inPass=false 曾经同时表示"还没开始"与"已走完"，于是重渲染会把结果页顶掉、从第一题重开）
+   ok(/let hot = \{ queue:\[\], index:0, flipped:false, cleared:0, inPass:false, done:false \};/.test(html)
+      && /else if\(v===Views\.HOT\)\{ hot\.flipped=false; view=Views\.HOT; renderAll\(\); \}/.test(html)
+      && !/v===Views\.HOT\)\{ hot\.inPass=false; hot\.index=0/.test(html)
+      && /if\(hot\.done\) return renderHotDone\(c\)/.test(html)
+      && /hot\.inPass = false; hot\.done = true;/.test(html)
+      && /function saveHotPass\(\)\{/.test(html)
+      && /const at = cur \? hot\.queue\.indexOf\(cur\) : -1;/.test(html),
+      '趁热本轮游标不归零：重进沿用 / 走完停在结果页 / 云端覆盖按当前题重定位，并落会话存档');
+   // 趁热「留在榜上」= 排到队尾（与记忆模式「答错的题由重排落到队尾」同一条规则），不是原地不动；
+   // 走到队尾绕回开头继续，热榜全清完才出结果页（不再有"本轮 / 再来一轮"）
+   ok(/hot\.queue\.splice\(hot\.index, 1\);/.test(html)
+      && /hot\.queue\.push\(curQid\);/.test(html)
+      && /hot\.queue = kept\.concat\(list\.filter/.test(html)
+      && !/id="hotAgain"/.test(html),
+      '趁热为连续队列：留在榜上排到队尾、走到队尾绕回开头，本轮顺序不被热榜原序覆盖');
    // 主题集：每套内置主题必须有**自己**的绘制分支；且删掉的 id 必须在 THEME_ALIAS 里登记
    // 经典组里任何一套都不许再声明 canvas:'stardust'（注释里提到它不算数，这里只看同一行上同时有 group:'classic' 的声明）
    ok(!/group:'classic'[^\n]*canvas:'stardust'/.test(html)

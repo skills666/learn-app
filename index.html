@@ -1864,7 +1864,11 @@ let WARLOG = {};
 // 保留率日志：每次「复习」记录一条 {d: 上次间隔天数, r: 是否记得}，用于进度页的真实保留率曲线。
 // 只记"有间隔"的复习（首刷没有"上次间隔"，谈不上保持）；独立 localStorage，不吃导入/云端的覆盖
 let REVLOG = [];
-let hot = { queue:[], index:0, flipped:false, cleared:0, inPass:false };
+/* 趁热页的"本轮游标"。inPass 与 done 必须分开：
+   inPass=false 曾经同时表示"还没开始"和"本轮已走完"，于是任何一次重渲染都会把结果页顶掉、
+   从第一题悄悄重开一轮（用户实测：刚把某题留在榜上、隔一会又被打回那一题）。
+   done=true 表示本轮已走完（停在结果页，要重来走结果页的「再来一轮」）。 */
+let hot = { queue:[], index:0, flipped:false, cleared:0, inPass:false, done:false };
 /* ===== 撒花庆祝（纯手写 Canvas 粒子，无依赖）=====
    用于「简单」评分、通关完成、手动标记掌握等时刻 */
 let _confettiCanvas = null;
@@ -2254,6 +2258,23 @@ function applySm2Grade(qid, rate, historyArr){
    本队列绝不写 PROGRESS、不改排期/统计/打卡；数据单独存 localStorage + 单独 gist 文件，不与学习数据混。 */
 function saveHot(){ try{ localStorage.setItem('learnAppHot', JSON.stringify(HOT)); }catch(_){ console.warn('[hot] 热榜持久化失败'); } }
 function loadHot(){ try{ const a = JSON.parse(localStorage.getItem('learnAppHot') || '[]'); return Array.isArray(a) ? a.filter(x => x && x.qid) : []; }catch(_){ return []; } }
+/* 本轮游标的会话存档：只存"停在哪道题（qid）+ 移出了几题 + 是否已走完"，不存队列本身
+   （队列由热榜现算，见 hotLiveQueue）。用 sessionStorage，与 view 同一个存档域：
+   页面被重载（刷新、App 被系统回收后恢复）能接着上次那道题刷；关掉标签页即失效 ——
+   它是会话级状态，不该像热榜那样长期留存，更不该进云同步。 */
+const HOT_PASS_KEY = 'learnAppHotPass';
+let _hotPassRestored = false;   // 存档只恢复一次：本会话内用户的实际位置优先
+function saveHotPass(){
+  try{
+    sessionStorage.setItem(HOT_PASS_KEY, JSON.stringify({
+      qid: hot.queue[hot.index] || null, cleared: hot.cleared || 0,
+      inPass: !!hot.inPass, done: !!hot.done
+    }));
+  }catch(_){}   // 隐私模式 / 受限 WebView 下 sessionStorage 会抛异常，存档失败不影响刷题
+}
+function readHotPass(){
+  try{ const o = JSON.parse(sessionStorage.getItem(HOT_PASS_KEY) || 'null'); return (o && typeof o === 'object') ? o : null; }catch(_){ return null; }
+}
 function hotHas(qid){ return HOT.some(h => h.qid === qid); }
 function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid, addedAt: Date.now() }); saveHot(); markDirty(); return true; }
 function hotRemove(qid){ const i = HOT.findIndex(h => h.qid === qid); if(i < 0) return false; HOT.splice(i, 1); saveHot(); markDirty(); return true; }
@@ -2292,7 +2313,8 @@ function applyHotFromGist(gist){
   if(!remote) return;
   HOT = remote.map(x => ({ qid: x.qid, addedAt: +x.addedAt || Date.now() }));
   saveHot();
-  hot.inPass = false; hot.index = 0; hot.cleared = 0;
+  /* 不重置本轮游标：renderHot 会按「当前这道题」在新队列里重新定位（见那里的说明）。
+     这里以前是 inPass=false + index=0，于是云端一覆盖，正在刷的一轮就从第一题重开。 */
 }
 
 /* ===== 昨日战报：按自然日归档的答题日志（零副作用 · 不参与排期/统计/打卡） =====
@@ -4606,10 +4628,36 @@ function renderHot(c){
       };
       return;
     }
-    hot.queue = list; hot.index = 0; hot.flipped = false; hot.cleared = 0; hot.inPass = true;
-  } else if(hot.index >= hot.queue.length){
-    _hotWrap = null;
-    return renderHotDone(c);
+    /* 会话存档优先：页面被重载（刷新、App 被系统回收后恢复）时接着上次那道题，而不是从头来。
+       只认 qid —— 那道题已不在榜上（被别处复习掉）或本轮已走完，就退回"开新一轮"。 */
+    if(!_hotPassRestored){
+      _hotPassRestored = true;
+      const s = readHotPass();
+      const at = (s && !s.done) ? list.indexOf(s.qid) : -1;
+      if(at >= 0){ hot.queue = list; hot.index = at; hot.cleared = s.cleared || 0; hot.flipped = false; hot.inPass = true; }
+    }
+    if(!hot.inPass){
+      /* 热榜已清空、这一遍走完了：停在结果页。缺了这一段时，结果页会被下一次重渲染顶掉。 */
+      if(hot.done) return renderHotDone(c);
+      hot.queue = list.slice(); hot.index = 0; hot.flipped = false; hot.cleared = 0; hot.inPass = true; hot.done = false;
+    }
+  }
+  if(hot.inPass){
+    /* 开刷中：用最新热榜刷新本轮队列，但**保留本轮已有的顺序** —— 「留在榜上」把题排到了队尾，
+       那是本轮的顺序，不能被热榜的原始顺序覆盖回去。规则：
+         · 已在本轮、且仍在热榜 → 保持原位（队尾那批"留下"的题就留在这里）；
+         · 热榜里新出现的 → 追加到队尾（在记忆模式又漏了几道，本轮接着刷）；
+         · 已从热榜消失的（在别处标了「记住了」/ 题被删）→ 从本轮移除。
+       游标按「当前这道题」重定位，绝不回到第一题 —— 重进趁热页也走到这里，就是接着刷。 */
+    const cur = hot.queue[hot.index];
+    const inList = new Set(list);
+    const kept = hot.queue.filter(q => inList.has(q));
+    const known = new Set(kept);
+    hot.queue = kept.concat(list.filter(q => !known.has(q)));
+    if(!hot.queue.length){ _hotWrap = null; return renderHotDone(c); }   // 全清完：收尾
+    const at = cur ? hot.queue.indexOf(cur) : -1;
+    hot.index = at >= 0 ? at : Math.min(hot.index, hot.queue.length - 1);
+    if(hot.index >= hot.queue.length) hot.index = 0;   // 走到队尾 → 绕回开头继续
   }
   const qid = hot.queue[hot.index];
   const q = questionById(qid);
@@ -4634,6 +4682,7 @@ function renderHot(c){
     bindHotCard();
   }
   paintHotCard(doc, q, idx, tot, liveN);
+  saveHotPass();   // 每次换题都记一次，重载后能接着刷（见 saveHotPass 的说明）
 }
 // 只绑一次：换题靠更新字段，所以处理器读"当前题"必须走 hot.queue[hot.index]，不能闭包捕获
 function bindHotCard(){
@@ -4653,8 +4702,23 @@ function bindHotCard(){
     const apply = () => {
       _hBusy = false;
       const curQid = hot.queue[hot.index];
-      if(b.dataset.hot === 'done'){ hotRemove(curQid); hot.cleared = (hot.cleared||0) + 1; }
-      hot.index++; hot.flipped = false; hot._flip = true;
+      if(b.dataset.hot === 'done'){
+        /* 记住了 = 从热榜移出：本轮队列里同时摘掉它，下一题自然滑到这个位置（游标不动）。 */
+        hotRemove(curQid);
+        hot.cleared = (hot.cleared||0) + 1;
+        hot.queue.splice(hot.index, 1);
+      } else {
+        /* 留在榜上 = 排到队尾，稍后还会遇到 —— 与记忆模式同一条规则：
+           记忆模式里答错的题由 FSRS 重排（间隔小的 overdue 最小，自然落到队尾，见 buildMemoryQueue 的排序），
+           趁热没有排期，就在这儿显式把它挪到队尾。
+           原来只做 index++：它留在原位，于是"重开一轮"（重进本页 / 云端覆盖）第一眼又是它。 */
+        hot.queue.splice(hot.index, 1);
+        hot.queue.push(curQid);
+        // 它本来就在队尾：splice + push 等于没动、位置仍是它 → 这一圈到此为止，绕回开头
+        if(hot.queue[hot.index] === curQid) hot.index = 0;
+      }
+      if(hot.index >= hot.queue.length) hot.index = 0;   // 走到队尾 → 绕回开头继续；全清完时由 renderHot 出结果页
+      hot.flipped = false; hot._flip = true;
       renderHot(content());   // 局部更新：卡片原地换题，不再 renderAll() 整页重建
     };
     const reduce = prefersReduce();
@@ -4692,19 +4756,23 @@ function paintHotCard(doc, q, idx, tot, liveN){
 function renderHotDone(c){
   // 真实可练题数：必须走 hotLiveQueue()（会滤掉已删题遗留的孤儿 qid），不能直接用 HOT.length ——
   // 用 HOT.length 时这里会显示"仍需练 1"，点「再来一轮」后页面立刻变成"热榜是空的"（口径自相矛盾）
-  const passed = hot.queue.length, cleared = hot.cleared||0, remain = hotLiveQueue().length;
+  /* 这张页现在只有一个入口：热榜被清空（每道都点过「记住了」）——
+     所以不再有"本轮/再来一轮"，只报一句结果。「留在榜上」的题会一直在队列里绕，
+     想结束就离开本页（或把它们逐个标记）。 */
+  const cleared = hot.cleared||0;
   c.innerHTML = `
     <div class="feature-wrap"><div class="done-card">
-      <div class="big">🔥</div><h3>本轮趁热打铁完成</h3>
-      <div class="sub">过了一遍 ${passed} 题 · 移出热榜 ${cleared} · 仍需练 ${remain}</div>
+      <div class="big">🔥</div><h3>热榜清空了</h3>
+      <div class="sub">共过 ${cleared} 题 · 没有剩下的了</div>
       <div class="pcontrols" style="justify-content:center">
-        ${remain>0?`<button type="button" class="btn primary" id="hotAgain">🔁 再来一轮</button>`:''}
         <button type="button" class="btn" id="hotBack">返回</button>
       </div>
     </div>
-    <div class="pstatus">没移出的题还在热榜，下轮可继续。它们在记忆模式里也会被各自排期正常召回。</div></div>`;
-  hot.inPass = false;
-  const ag = $('#hotAgain'); if(ag) ag.onclick = () => { hot.index = 0; hot.cleared = 0; renderAll(); };
+    <div class="pstatus">没答简单的题会自动回到这里；它们在记忆模式里也会被各自排期正常召回。</div></div>`;
+  /* 走完本轮：标 done 并落存档 —— 之后任何一次重渲染都会稳稳停在这张结果页上，
+     而不是像以前那样从第一题重开一轮（见 renderHot 里对 done 的判断）。 */
+  hot.inPass = false; hot.done = true;
+  saveHotPass();
   const bk = $('#hotBack'); if(bk) bk.onclick = () => { view = Views.OVERVIEW; renderAll(); };
 }
 /* ===== 记忆页：答题卡已改为局部更新 =====
@@ -6475,8 +6543,11 @@ document.querySelectorAll('.tab').forEach(tab => {
     // 保留 _history：只是重进标签页，不该把之前的撤销栈丢掉（否则刚评完分切走再回来就没法撤销了）
     else if(v===Views.MEMORY){ memory={queue:[],index:0,flipped:false,_history:(memory._history||[])}; view=Views.MEMORY; renderAll(); }
     else if(v===Views.GRILL){ view=Views.GRILL; renderAll(); }
-    // 趁热打铁：重开该页 = 用当前热榜重建本轮游标（inPass=false 让 renderHot 重新快照）
-    else if(v===Views.HOT){ hot.inPass=false; hot.index=0; hot.flipped=false; hot.cleared=0; view=Views.HOT; renderAll(); }
+    /* 趁热打铁：重进本页**沿用本轮游标**，不再重建。
+       原先是 inPass=false + index=0（"重开该页 = 用当前热榜重建本轮"），结果很误导：
+       把某题「留在榜上」、去别处刷几道再回来，会被打回第一题 —— 而那正是刚说过"先留着"的那道
+       （用户实测反馈）。本轮走完后要再来一遍，走结果页的「🔁 再来一轮」。 */
+    else if(v===Views.HOT){ hot.flipped=false; view=Views.HOT; renderAll(); }
     else if(v===Views.ANALYTICS){ view=Views.ANALYTICS; renderAll(); }
     else { view=Views.OVERVIEW; renderAll(); }
   };
@@ -10413,7 +10484,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '120';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '121';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
