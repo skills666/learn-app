@@ -1100,14 +1100,16 @@
   .theme-card:active,.grill-mode-card:active,.grill-dur-btn:active,
   .modal-x:active,.grade-btn:active{transform:scale(.97);transition-duration:.08s}
   .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
-  /* 可点卡片（题目卡 / 记忆卡）在触屏上被 hover:none 复位了位移与发光，按下时只剩"内容突然变化"，
-     所以要补一层按下反馈。但**底色跃迁只该给触屏**：
-       桌面端 hover 已经给了描边点亮 + 抬起 2px，而 :active 的 scale 会把这 2px 落回去 ——
-       那 2px 的下沉本身就是"按下去"的手感；再叠一层整块底色只是重复同一件事，
-       还把注意力从题目内容上拽走（实测反馈：点击时整张卡片亮起，没有意义）。
-     只把 background 关进 @media(hover:none)，位移保持全局 —— 桌面端的下沉手感不受影响。 */
-  .q:active,.memory-card:active{transform:scale(.996);transition-duration:.08s}
-  @media (hover:none){ .q:active,.memory-card:active{background:var(--panel2)} }
+  /* 卡片没有自己的按下态（早先有一条把 .q 与 .memory-card 绑在一起写 :active 的规则，已删）。
+     删掉的原因是它**作用错了对象**：:active 按规范会沿祖先链一路生效，于是点卡片里的按钮时
+     ——题卡的「🎯 刷题 / ✏️ 编辑 / 🗑」、记忆卡的评分键、趁热卡的两个键——按钮与整张卡片
+     会同时进入 :active，表现就是"点的是按钮，动的却是整张卡片"。
+     谁被点、谁响应：卡片的状态该由"按在卡片上"触发，按钮的状态由"按在按钮上"触发
+     （按钮各自的 :active 见上面那段，不受影响）。
+     为什么不加一条 :has() 把"按的是内部控件"的情形排除掉：全文件至今没有用过 :has()，
+     它要 Chrome 105+，为一个 0.4% 的缩放进新浏览器基线不划算；而这条规则在底色去掉之后
+     本来就只剩那点缩放，删掉即已满足"谁被点、谁响应"，兼容基线一动不动。
+     桌面端卡片的悬停反馈（描边点亮 + 抬起 2px）与这条无关，见 .q:hover / .memory-card:hover。 */
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
 
@@ -10411,7 +10413,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '119';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '120';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

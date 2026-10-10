@@ -974,10 +974,12 @@ console.log('\n[关键实现点静态断言]');
       && !/scrollIntoView\(\{behavior:'smooth'/.test(html)
       && (html.match(/if\(reduce \|\| !card/g) || []).length === 2,
       '平滑滚动都过减动效偏好（三处改行为值；刷题/趁热两处在 prefersReduce 时提前 return 不执行）');
-   // 卡片按下时的底色跃迁只给无 hover 的设备：桌面端 hover 已有描边+抬升，再叠整块底色是重复信息
-   ok(/\.q:active,\.memory-card:active\{transform:scale\(\.996\);transition-duration:\.08s\}/.test(html)
-      && /@media \(hover:none\)\{ \.q:active,\.memory-card:active\{background:var\(--panel2\)\} \}/.test(html),
-      '卡片按下底色只在 @media(hover:none) 生效（桌面端保留下沉手感，不再整块亮起）');
+   // 卡片不得有自己的 :active：:active 会沿祖先链生效，卡片级的 :active 会让"点卡片里的按钮"也动整张卡片
+   // （题卡的刷题/编辑/删除、记忆卡与趁热卡的评分键都踩过）。谁被点、谁响应 —— 卡片只保留 hover 反馈。
+   ok(!/\.q:active/.test(html) && !/\.memory-card:active/.test(html)
+      && /\.q:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html)
+      && /\.memory-card:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html),
+      '卡片没有 :active 按下态（点内部按钮时不再整卡跟着响应），悬停反馈保持不变');
    // 主题集：每套内置主题必须有**自己**的绘制分支；且删掉的 id 必须在 THEME_ALIAS 里登记
    // 经典组里任何一套都不许再声明 canvas:'stardust'（注释里提到它不算数，这里只看同一行上同时有 group:'classic' 的声明）
    ok(!/group:'classic'[^\n]*canvas:'stardust'/.test(html)
