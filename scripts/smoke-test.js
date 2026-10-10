@@ -960,9 +960,13 @@ console.log('\n[关键实现点静态断言]');
       && (html.match(/blockedByWriteFault\(/g) || []).length >= 5
       && !/if\(typeof Store !== 'undefined' && Store\.writeFault && Store\.writeFault\(\)\)\{/.test(html),
       '写入受阻守卫统一走 blockedByWriteFault（记忆评分 / 星级标记 / 八股自评口径一致），不再各处自己写一份');
-   // 切视图后焦点归位：重渲染会把被点掉的元素连同焦点一起卸载，焦点掉到 body
-   ok(/if\(document\.activeElement === document\.body\) c\.focus\(\{preventScroll:true\}\);/.test(html),
-      '切视图/重渲染后焦点补回 .content（role=tabpanel + tabindex=-1），键盘用户不必从头 Tab');
+   // 焦点归位只在「焦点原本在内容区、且被重渲染卸载」时补：否则每次刷新都会让 .content 拿到焦点，
+   // 被全局含 [tabindex] 的焦点环规则描出整屏发光边框（真实踩过 —— 用户实测反馈）
+   ok(/const _focusEl = document\.activeElement;/.test(html)
+      && /_focusEl\.closest\('#content'\)/.test(html)
+      && /if\(_hadFocusInContent && document\.activeElement === document\.body\) c\.focus\(\{preventScroll:true\}\);/.test(html)
+      && !/if\(document\.activeElement === document\.body\) c\.focus\(\{preventScroll:true\}\);/.test(html),
+      '焦点归位只在「焦点原本在内容区且被卸载」时补；刷新/首次渲染不补（避免 .content 被焦点环描出整屏边框）');
    // 平滑滚动都要过减动效偏好（另三处滚动在 prefersReduce 时已提前 return，不属于本断言范围）
    // 两处"外层已提前 return"的滚动在 prefersReduce 时根本不会执行（见各自的 reduce 判断），
    // 其余三处必须自己改行为值 —— 断言同时守住这两类写法，避免任何一处退化成无条件平滑

@@ -6400,6 +6400,14 @@ function syncWakeLock(){
 }
 function renderAll(){
   const _prevView = _persistedView;   // 记旧视图，用于判断导航方向
+  /* 焦点归位的采集必须在这里 —— renderContent() 之前：那一刻「用户正在操作的元素」还在文档里。
+     只有「焦点原本在内容区、且被这次重渲染卸载了」才值得补回 .content；另两种情形都不能补：
+       · 页面上本来就没有焦点（首次渲染 / 刷新 / 点空白）→ 补了会让 .content 拿到焦点，
+         被全局那条含 [tabindex] 的焦点环规则描出**整屏发光边框**（刷新必现，用户实测反馈）；
+       · 焦点在弹窗里 → 补了会把焦点送到遮罩背后，而 aria-modal 的焦点陷阱正是要防这个。 */
+  const _focusEl = document.activeElement;
+  const _hadFocusInContent = !!(_focusEl && _focusEl !== document.body
+    && _focusEl.closest && _focusEl.closest('#content'));
   // 先渲染、再落状态：renderContent 在数据缺失时会把 view 改写（题目/文档被删后回退到总览），
   // 若先按旧 view 写 sessionStorage 与播报，就会留下"上次视图指向一个不存在的页"的脏值
   renderContent();
@@ -6421,9 +6429,10 @@ function renderAll(){
       /* 焦点归位：重渲染用 innerHTML 换掉了内容，被点掉的那个元素连同焦点一起消失，焦点会掉到
          body —— 键盘/读屏用户此后没有位置，得从头 Tab 一整圈才能回到内容区。
          .content 是 role=tabpanel + tabindex="-1"，按 ARIA 的 tabpanel 惯例本就该在激活时接管焦点。
-         只在「焦点确实已经丢了」（落在 body）时补一次：不动弹窗里正在输入的光标、也不抢搜索框。
+         条件由入口处的 _hadFocusInContent 给（见那里的说明）：只补「确实丢过焦点」的那一次 ——
+         刷新与首次渲染一律不补，否则一刷新就给内容区描上一圈发光边框。
          preventScroll 避免刚归零的滚动位置又被浏览器改回去。 */
-      if(document.activeElement === document.body) c.focus({preventScroll:true});
+      if(_hadFocusInContent && document.activeElement === document.body) c.focus({preventScroll:true});
     }
     if(viewChanged){
       // 方向性入场：按标签左右顺序决定新页从哪侧滑入（往右切→右侧滑入，往左切→左侧），建立横向空间连续感
@@ -10398,7 +10407,7 @@ function drawZiliang(ctx,W,H,dt){
 
 </script>
 <script>
-const SW_VERSION = '117';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '118';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
