@@ -21,6 +21,10 @@ const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 /* ---------- 最小 DOM stub ---------- */
 let elSeq = 0;
+/* 绘制调用计数：断言"某套主题切过去以后确实画了东西"用 —— 只查"不抛异常"是不够的，
+   真实事故里出现过「主题声明了特效、切换也不报错，但一帧下来什么都没画」的静默失败 */
+const drawCalls = { n: 0 };
+const DRAW_METHODS = { drawImage: 1, fillRect: 1, strokeRect: 1, fill: 1, stroke: 1, fillText: 1, putImageData: 1 };
 function stubCtx() {
   const grad = { addColorStop() {} };
   const noop = () => {};
@@ -29,9 +33,16 @@ function stubCtx() {
     textAlign: '', textBaseline: '', globalAlpha: 1, globalCompositeOperation: '',
     createLinearGradient: () => grad, createRadialGradient: () => grad, createPattern: () => ({}),
     measureText: () => ({ width: 0 }), getImageData: () => ({ data: new Uint8ClampedArray(4) }),
+    // createImageData 是逐像素纹理（颗粒/纸纹/星尘）的入口，缺了它那几套主题一画就抛
+    // （只有"真的切到那套主题"才会走到，所以此前一直没暴露）
+    createImageData: (w, h) => ({ data: new Uint8ClampedArray(Math.max(4, (w | 0) * (h | 0) * 4)), width: w, height: h }),
     setTransform: noop, save: noop, restore: noop,
   }, {
-    get(t, k) { return k in t ? t[k] : noop; },
+    get(t, k) {
+      if (k in t) return t[k];
+      if (DRAW_METHODS[k]) return () => { drawCalls.n++; };
+      return noop;
+    },
     set(t, k, v) { t[k] = v; return true; },
   });
 }
@@ -179,6 +190,30 @@ globalThis.__T = {
   setProgress: p => { PROGRESS = p; globalThis.__T._bump(); },
   setHot: a => { HOT = a; },
   setGrill: o => { Object.assign(grill, o); },
+  /* 主题：逐套真切一遍并画一帧。删/改主题最容易留下"引用了已删常量"的绘制函数，
+     而这类错误静态检查看不见，只有真的切过去、真的画一帧才会抛出来。
+     注意 _uFadeIn：切主题时它从 0 起步（淡入），那一帧整幅画几乎全透明 ——
+     有些主题（子荣）在描边前会先判 a <= 0.004 而整帧跳过绘制，直接测首帧会把它们误判成"空图"。
+     推到 1 再画，测的才是"这套主题到底画了什么" */
+  appliesTheme: id => { applyTheme(id, {persist:false}); _uFadeIn = 1; paintUnifiedFrame(0.016); return currentTheme; },
+  /* 评分爆发：形态随主题 —— 每套都真的跑几帧。stub 里 rAF 本来是空操作，这里临时换成"只跑 3 帧"的同步版：
+     否则第二次调用会因为"已有一场在播"直接返回，等于什么都没测到 */
+  burstFor: id => {
+    const oldTheme = currentTheme, oldRaf = window.requestAnimationFrame;
+    let frames = 0;
+    try {
+      window.requestAnimationFrame = fn => { if(frames++ < 3) fn(1000 + frames*16); return frames; };
+      currentTheme = id; _burstCanvas = null;
+      burstParticles(40, 40, { colors: ['#ffffff'] });
+      return frames;
+    } finally {
+      window.requestAnimationFrame = oldRaf;
+      _burstCanvas = null;
+      currentTheme = oldTheme;
+    }
+  },
+  aliasOf: raw => THEME_ALIAS[raw] || '',
+  hasTheme: id => !!getTheme(id),
   // 屏幕常亮的"什么时候按住"由 needWakeLock 决定，是纯状态判断，交给用例直接问；
   // syncWake 暴露出来是为了让用例能驱动一次"申请/释放"（真机上由浏览器执行）
   wakeWant: () => needWakeLock(),
@@ -190,8 +225,13 @@ globalThis.__T = {
   startPractice: scope => startPractice(scope),
   startMock: () => startMock(),
   setMockCfg: c => { Object.assign(mock.cfg, c); },
-  renderWar: () => { const r = buildWarReport(Date.now()); if (r) renderWarReport(r); return !!r; },
+  // 战报按「日期键」构建（入口是热力图上任意一天），所以由用例把当天的键传进来
+  renderWar: dayKey => { const r = buildWarReport(dayKey); if (r) renderWarReport(r); return !!r; },
+  warOfTotal: dayKey => { const r = buildWarReport(dayKey); return r ? r.total : null; },
   warTotal: () => document.querySelector('#warTotal').textContent,   // 战报大数字（次），用来核对跨设备合并的口径
+  // 热力图明细气泡（含藏在它底部的战报入口）真实走一遍
+  showHm: dayNo => showHmDetail(dayNo, document.createElement('i')),
+  hideHm: () => hideHmDetail(),
   finishMock: () => { mock.done = true; },
   renderAll: () => renderAll(),
   html: () => document.querySelector('#content').innerHTML,
@@ -295,6 +335,7 @@ console.log('\n[有数据 · 各页面渲染]');
   const hMem = render(T.views.MEMORY, '记忆');
   ok(hMem.indexOf('lvbar') !== -1 || hMem.indexOf('全部掌握') !== -1, '记忆页含全库等级条（或如实显示已复习完）');
   ok(hMem.indexOf('id="memGradeRow"') !== -1 && /<button type="button" class="grade-btn mem-grade/.test(html), '记忆四档评分是真按钮（骨架建好后由 paintMemoryCard 填入）');
+  ok(hMem.indexOf('id="memSkip"') !== -1 || /id="memSkip"/.test(html), '记忆卡骨架含「跳过」按钮（#memSkip，零副作用游标推进）');
 
   const hHot = render(T.views.HOT, '趁热');
   ok(hHot.indexOf('hotCard') !== -1 || hHot.indexOf('热榜是空的') !== -1, '趁热页渲染正常');
@@ -324,15 +365,62 @@ console.log('\n[有数据 · 各页面渲染]');
   const hMockResult = render(T.views.MOCK, '八股结果页');
   ok(hMockResult.indexOf('score-summary') !== -1, '八股结果页含评分汇总');
 
-  const war = call('renderWarReport', () => T.renderWar()).v;
+  const war = call('renderWarReport', () => T.renderWar(yk)).v;
   ok(!!war, '战报（昨日有数据）能构建并渲染');
   const warN = call('warTotal', () => T.warTotal()).v;
   ok(warN === '17', '战报大数字 = 昨天的跨设备合计量（本机 14 + 另一台 3）', String(warN));
+  // 战报不再只认「昨天」：入口是热力图上的任意一天，所以按日期键构建
+  ok(call('warOfTotal', () => T.warOfTotal(yk)).v === 17, '按日期键取战报（有记录的那天）',
+     String(call('warOfTotal', () => T.warOfTotal(yk)).v));
+  ok(call('warOfTotal', () => T.warOfTotal('2000-01-01')).v === null,
+     '没有记录的日子不产出战报（热力图上的入口据此不出现，不摆空数据）');
   // 旧版扁平桶（升级前写下的当天记录）仍按原口径可读；本机那份在写入/加载时会被迁到设备名下
   T.setWarLog({ [yk]: { c: [1, 2, 8, 3], q: ['q1', 'q2', 'q3'], nw: 2, mUp: 2, mDown: 0, up: 3, down: 1 } });
-  const legacyWar = call('renderWarReport', () => T.renderWar()).v;
+  const legacyWar = call('renderWarReport', () => T.renderWar(yk)).v;
   ok(!!legacyWar && call('warTotal', () => T.warTotal()).v === '14', '旧格式（无设备分层）的当天记录照旧统计',
      String(call('warTotal', () => T.warTotal()).v));
+  // 明细气泡（含底部的战报入口）真的执行一遍：stub 的 DOM 不会真渲染出按钮，但这条路径上的
+  // 未定义引用 / 空指针只有"跑过"才暴露 —— 与文件开头记的那类事故同一个道理
+  const yD = (() => { const t = new Date(now); return new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1); })();
+  const yNo = Math.round(Date.UTC(yD.getFullYear(), yD.getMonth(), yD.getDate()) / 86400000);
+  ok(call('showHmDetail', () => { T.showHm(yNo); return true; }).v === true,
+     '热力图明细气泡（有战报入口的那天）能打开且不抛异常');
+  ok(call('hideHmDetail', () => { T.hideHm(); T.hideHm(); return true; }).v === true,
+     '气泡收起不抛异常，且重复收起安全（气泡自己会因滚动/点别处被关掉）');
+}
+
+console.log('\n[主题集：逐套真切一遍并画出首帧]');
+{
+  const kept = ['sunset', 'particle', 'paper', 'night', 'songxing',
+    'aurora', 'ripple', 'ziliang', 'zirong', 'nord', 'gruvbox'];
+  kept.forEach(id => {
+    const before = drawCalls.n;
+    const r = call('applyTheme(' + id + ')', () => T.appliesTheme(id)).v;
+    const drew = drawCalls.n - before;
+    ok(r === id, '主题 ' + id + ' 能切过去并同步画出首帧（绘制函数不抛异常）', String(r));
+    // 光"不报错"不够：静默不画（曾真实发生过）在这里是 0
+    ok(drew > 0, '主题 ' + id + ' 的首帧确实画了东西（不是一张空图）', 'draw=' + drew);
+  });
+  // 已下线的历史 id：老存档里存的就是它们，别名必须把偏好落到保留的主题上
+  const legacy = ['midnight', 'gold', 'shuangren', 'dracula', 'everforest', 'void', 'frappe',
+    'macchiato', 'rosepine', 'rosepineMoon', 'rosepineDawn', 'onedark', 'github'];
+  const bad = legacy.filter(id => {
+    const t = call('aliasOf(' + id + ')', () => T.aliasOf(id)).v;
+    return !t || kept.includes(t) === false || !call('hasTheme(' + t + ')', () => T.hasTheme(t)).v;
+  });
+  ok(bad.length === 0,
+     legacy.length + ' 个历史 id 全部被别名解析到保留的主题（不登记就会退回「跟随系统深浅」，用户感觉主题每次都在变）',
+     bad.join(','));
+  // 自定义背景图主题仍在（canvas:'none'，不参与画布引擎）
+  ok(call('hasTheme(img-bg)', () => T.hasTheme('img-bg')).v === true, '自定义背景图主题仍在');
+  // 评分爆发：形态随主题 —— 每套真跑 3 帧（只在 kind 分支里打错一个字段就会在这里抛）
+  const burstBad = [];
+  kept.forEach(id => {
+    const f = call('burstFor(' + id + ')', () => T.burstFor(id)).v;
+    if(!f) burstBad.push(id);
+  });
+  ok(burstBad.length === 0,
+     kept.length + ' 套主题的评分爆发都能跑起来并画完几帧（墨点 / 环 / 水花 / 冰晶 / 螺旋…）', burstBad.join(','));
 }
 
 console.log('\n[屏幕常亮：只在"进行中"的页面按住 Screen Wake Lock]');

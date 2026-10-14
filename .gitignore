@@ -21,6 +21,9 @@ android/*.keystore
 __pycache__/
 # 主题渲染探测的临时产物（各主题截图 / 探测页 / 无头 Chromium 的 profile 目录）：只在本机核对效果用，不入库
 _probe*
+# 一次性调试脚本 / 排查截图（`_` 前缀约定为临时文件，如 _dbg.cjs / _del4.cjs / _contact.png）：不入库
+_*.cjs
+_*.png
 # 系统 / 编辑器 / 构建产物的常见噪音
 Thumbs.db
 .DS_Store

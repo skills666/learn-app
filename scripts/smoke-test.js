@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -186,7 +186,7 @@ ${rateMetaConst}
 ${schedConsts}
 ${lvConsts}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS });
+({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -323,6 +323,34 @@ console.log('\n[撤销评分 · 副作用一并回滚]');
   ok(H().some(x => x.qid === 'u2'), '撤销不误删"本来就还在榜上"的题', JSON.stringify(H().map(x => x.qid)));
   M()._history = [];
   ok(api.undoMemoryGrade() === undefined, '撤销栈为空时安全空转（不抛异常）');
+}
+
+console.log('\n[记忆模式跳过 · 零副作用]');
+{
+  const M = api.getMemory, P = api.getProgress, H = api.getHot;
+  Object.keys(P()).forEach(k => delete P()[k]);
+  H().length = 0;
+  // 造一条 2 题队列，游标停在第一题、答案已翻面、撤销栈里留一条历史（跳过都不该碰它们）
+  const queueRef = [{ q: { id: 's1' }, d: { id: 'd1' } }, { q: { id: 's2' }, d: { id: 'd1' } }];
+  M().queue = queueRef; M().index = 0; M().flipped = true; M()._history = [{ qid: 'x', g: 1, at: 1 }];
+  const histLen = M()._history.length, hotLen = H().length;
+  api.skipMemoryQuestion();
+  ok(M().index === 1, '跳过 → 游标前进 1', M().index);
+  ok(M().flipped === false, '跳过 → 翻面态复位', M().flipped);
+  ok(!P()['s1'], '跳过 → 不写 PROGRESS（当前题仍无进度记录）');
+  ok(M()._history.length === histLen, '跳过 → 不进撤销栈（_history 长度不变）', M()._history.length);
+  ok(H().length === hotLen, '跳过 → 不喂趁热榜', H().length);
+  ok(M().queue === queueRef, '跳过 → 不替换队列数组引用（数组本身不动）');
+  ok(M().queue.length === 2 && M().queue[0].q.id === 's1' && M().queue[1].q.id === 's2',
+     '跳过 → 队列内容与顺序不变', JSON.stringify(M().queue.map(it => it.q.id)));
+  // 跳过最后一题：函数只负责 +1，越界由渲染层出空态
+  M().index = 1;
+  api.skipMemoryQuestion();
+  ok(M().index === 2, '跳过最后一题 → index 达到 length（渲染层据此出空态）', M().index);
+  // 空队列安全空转
+  M().queue = []; M().index = 0;
+  api.skipMemoryQuestion();
+  ok(M().index === 0, '空队列跳过 → 不越界（安全空转）', M().index);
 }
 
 console.log('\n[FSRS 调度数学 · 独立沙箱]');
@@ -543,6 +571,30 @@ console.log('\n[昨日战报 · 跨设备合并（同日相加 · 同设备取�
   ok(W()['2026-02-01'][dev].at === t, '本机那层的时间戳没被旧数据改掉', String(W()['2026-02-01'][dev].at));
 }
 
+console.log('\n[战报 · 按日期键构建 + 热力图入口的取舍]');
+{
+  const W = api.getWarLog;
+  Object.keys(W()).forEach(k => delete W()[k]);
+  const now = new Date();
+  // 昨天用日历减法（夏令时那两天减 86400000 会落到前天）
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yk = api.dayKeyOf(y.getTime());
+  const yNo = api.dayIndexOf(y.getTime());
+  api.warLogAdd(y.getTime() + 3600000, 'v1', 3, {}, 1, false);
+  api.warLogAdd(y.getTime() + 7200000, 'v2', 4, {}, 1, true);
+  const r = api.buildWarReport(yk);
+  ok(r && r.total === 2 && r.uniq === 2, '按日期键汇总某一天（不再写死「昨天」）',
+     JSON.stringify(r && { total: r.total, uniq: r.uniq }));
+  ok(api.warPrevKey(yk) === api.dayKeyOf(new Date(y.getFullYear(), y.getMonth(), y.getDate() - 1)),
+     '做对比的「前一天」同样是日历减法（跨月/跨年/夏令时都不掉链子）', api.warPrevKey(yk));
+  ok(api.buildWarReport('2000-01-01') === null, '没有记录的日子不产出战报（入口据此不出现）');
+  ok(api.warEntryKey(yNo) === yk, '热力图上「昨天」那格给战报入口', String(api.warEntryKey(yNo)));
+  ok(api.warEntryKey(yNo - 3) === null, '3 天前没记录 → 不给入口（不摆一个点开是空的日子）');
+  api.warLogAdd(Date.now(), 'v3', 3, {}, 1, false);   // 今天也刷了一题
+  ok(api.buildWarReport(api.dayKeyOf(Date.now())) !== null, '今天其实已经有记录了');
+  ok(api.warEntryKey(api.dayIndexOf(Date.now())) === null, '但今天那格不给入口（"全天"与四档占比都不成立）');
+}
+
 console.log('\n[normalizeDocs · 题目 id 兜底与去重]');
 {
   const nd = api.normalizeDocs;
@@ -711,6 +763,8 @@ console.log('\n[关键实现点静态断言]');
   ok(!/if\(!hadQueue\) memory\._history = \[\]/.test(html), '队列重建不再顺手清掉撤销栈（切走再回来仍能撤销）');
   ok(/^let _memGradeBusy = false;/m.test(html) && !/let _memBusy/.test(html),
      '评分锁是模块级（渲染闭包里的锁会被"动画期切走再切回"绕过，导致同题双评分）');
+  ok(/function skipMemoryQuestion\(\)/.test(html) && /id="memSkip"/.test(html),
+     '记忆模式跳过：独立函数 skipMemoryQuestion + #memSkip 按钮均在位（零副作用，不碰队列/进度）');
   ok(/function warLogUndo\(at, qid, g, pr, newLvl, newMastered\)/.test(html), '战报支持反向回滚（撤销评分时同步回退计数）');
   // —— 复习节奏：档位设置已移除，参数固定（老存档的键由 init 迁移清掉）——
   ok(!/PACES|renderPaceUI|function setPace|paceGrid|paceStatus/.test(html), '「复习节奏」设置卡 / 档位表 / 切换函数均已移除');
@@ -766,8 +820,12 @@ console.log('\n[关键实现点静态断言]');
      String((html.match(/applyWarFromGist\(gist\);/g) || []).length));
   ok(!/const d = WARLOG\[k\.yest\]/.test(html) && !/const wl = WARLOG\[/.test(html),
      '战报 / 热力图明细 / 堆叠柱都走 warDayAgg 汇总，不再直接读单设备的那一层');
-  ok(/new Date\(t\.getFullYear\(\), t\.getMonth\(\), t\.getDate\(\)-1\)/.test(html), '「昨天」用日历减法算（夏令时下减 86400000 会错一天）');
-  ok(/safeLocalGet\(WARREPORT_SEEN,''\) === todayKey/.test(html), '战报每天只弹一次：标记值 = 当天日期键，跨天自然失效');
+  ok(/function warPrevKey\(key, back\)/.test(html) && /new Date\(p\[0\], p\[1\]-1, p\[2\] - \(back \|\| 1\)\)/.test(html),
+     '战报按日期键反推「前一天」做对比（仍是日历减法：夏令时那两天减 86400000 会错一天）');
+  ok(!/maybeShowWarReport|WARREPORT_SEEN/.test(html) && /function openWarReport\(dayKey\)/.test(html),
+     '战报不再每天自动弹（原逻辑会在云端数据拉回来之前就用本机数据弹出来，合并后反而再也看不了）');
+  ok(/dataset\.warDay = ek/.test(html) && /function warEntryKey\(dayNo\)/.test(html),
+     '战报入口藏在热力图「当天明细」气泡里，只给"已过完且有记录"的日子（今天的全天占比不成立）');
   // —— 界面文案双皮：整体下线，界面固定一套用词（不留 T() 死抽象、不留切换入口）——
   ok(!/COPY_THEMES|COPY_BACK|applyCopyStatic|renderCopyUI|applyCopyTheme|setCopyTheme|copyTheme|copyGrid|data-copy/.test(html),
      '文案双皮（词表 / 回译 / 设置卡 / data-copy 标记）已彻底移除');
@@ -888,8 +946,9 @@ console.log('\n[关键实现点静态断言]');
      '保留率日志随 learn-data.json 上云（两条拉取路径都应用，与导入备份共用同一 merge）');
   // 主题 id 清单必须从 THEME_SPEC 派生，不能再手写第二份
   ok(/const STARDUST_THEMES = \[\], ALL_CANVAS_THEMES = \[\];/.test(html)
-      && !/const STARDUST_THEMES = \['frappe'/.test(html)
-      && !/const canvasThemes = \['aurora'/.test(html),
+      && !/const STARDUST_THEMES = \['/.test(html)
+      && /const canvasThemes = ALL_CANVAS_THEMES;/.test(html)
+      && !/const canvasThemes = \['/.test(html),
      '主题特效的 id 清单由 THEME_SPEC 的 canvas 声明派生（此前手写两份，与声明是三份信息）');
   ok(!/gradient: t\.gradient/.test(html) && !/canvas: t\.canvas/.test(html)
       && !/getThemeConfig\(name\)\|\|\{\};/.test(html),
@@ -917,22 +976,26 @@ console.log('\n[关键实现点静态断言]');
    ok(/function placeThemePopup\(\)/.test(html) && /placeThemePopup\(\);/.test(html)
       && /if\(window\.innerWidth <= 768\) return;/.test(html),
       '主题浮层在宽屏按按钮实测位置对齐（且对 ≤768 直接返回，移动端交给原有 CSS）');
-   // 主题去克隆：极光这层不许再是星尘的翻版（原来只差配色与数量），必须是自己的机制
-   ok(/const AUR_ROT = 100\/180\*Math\.PI;/.test(html)
-      && /blitRot\(ctx, sprites\[ti\], p\.x, p\.y, p\.size\*2\.6, a, AUR_ROT, 3\.4\);/.test(html)
-      && /p\.x \+= p\.vx\*f;/.test(html)
-      && /vx:0\.22\+Math\.random\(\)\*0\.42,/.test(html)
-      && /const AUR_STOPS = AUR_RGB\.map/.test(html)
-      && !/AUR_RGB\.map\(\(rgb, i\) => glowSprite/.test(html),
-      '极光尘：横向定向流动 + 沿光带长轴拉长（不再是静止闪烁圆点），色标数组提到模块常量');
+   // 主题集：每套一个独立机制（"同一片星尘换 11 次配色"那类同族换色已清）
+   const canvasIds = [...html.matchAll(/\r?\n  '?([a-zA-Z][\w-]*)'?: \{\r?\n    group:'canvas'/g)].map(m => m[1]);
+   const THEME_ROSTER = ['sunset','particle','paper','night','songxing',
+     'aurora','ripple','ziliang','zirong','nord','gruvbox'];
+   ok(canvasIds.length === THEME_ROSTER.length && THEME_ROSTER.every(id => canvasIds.includes(id)),
+      '内置视觉主题共 ' + THEME_ROSTER.length + ' 套，每套一个独立机制', canvasIds.join(','));
+   // 主题选择器：分组标签随主题集收撤掉（只剩一套分组时是纯负担），一次渲染全部主题
+   ok(/buildThemeGrid\(null\);/.test(html) && !/themeTabs/.test(html) && !/theme-tab/.test(html),
+      '主题选择器不再有分组标签，一次渲染全部主题（旧存档里的自建配色主题也一并显示出来）');
    // 拉长能力放在 blitRot 入口，避免调用方自绘而漏掉避让
    ok(/function blitRot\(ctx, spr, x, y, size, alpha, rot, elong\)\{/.test(html)
       && /if\(e > 1\) ctx\.drawImage\(spr, -size\*0\.5\*e, -size\*0\.5, size\*e, size\);/.test(html),
       'blitRot 支持沿旋转轴拉长（默认 1 不影响既有星芒调用），避让与 alpha 仍在这一个入口处理');
-   // 平铺纹理只允许一套缓存机制
-   ok(/texPattern\(ctx, 'paperTex', paperTexSprite\(\)\)/.test(html)
-      && !/_paperPat/.test(html),
-      'paper 的纸纹收拢到统一的 texPattern（原先与 _patCache 并存的第二套三元组已删）');
+   // 物理型主题的 2D 实现必须删净：留着"GPU 与 2D 两套实现"时，分派路径一改就有一套静默变成死代码，
+   // 而且没人会发现（门禁的死函数检查只抓"同名标识符只出现一次"的形态）
+   const deadDraws = ['drawRain', 'drawPaper', 'drawZiliang', 'drawZirong', 'drawNordScan', 'drawGruvboxFilm', 'drawAurora']
+     .filter(n => new RegExp('function ' + n + '\\(').test(html));
+   ok(deadDraws.length === 0,
+      '物理型主题（雨窗/云海/垂帘/霜原/默片/绢/年轮）的 Canvas 2D 实现已删净，只剩粒子型走 2D 引擎'
+      + (deadDraws.length ? ' —— 残留：' + deadDraws.join(',') : ''));
    // 版心只允许两档：四套版本号（1200/1040/880/820）会让切换标签时版心跳变
    ok(/--rail:1200px; --rail-read:820px;/.test(html)
       && /\.practice-wrap\{max-width:var\(--rail-read\)/.test(html)
@@ -945,16 +1008,123 @@ console.log('\n[关键实现点静态断言]');
       && /\.content\[data-view="search"\]>:is\(\.doc-head,\.sr-item,\.empty\)/.test(html),
       '搜索结果页不再用双列栅格，结果条与空态同走一条阅读版心（空态因此居中）');
    // 主题分派必须按 canvas key（_uTheme 存的是 id）—— 只数 case 个数是抓不住这个错的：
-   // 早期 12 套 id 与 key 同名，用 id 分派也能全绿，直到经典组 dracula→ember 才静默落兜底星尘。
+   // 早期各套 id 与 key 同名，用 id 分派也能全绿，直到有人加了 id 与 key 拆开的主题才静默落兜底星尘。
+   // 现在有两套渲染路径（2D 分派表 / WebGL2 的 GL_SHADER_OF），所以断言改成"两者并集必须恰好覆盖声明的
+   // canvas 集合，且每个 key 只走一条路"—— 两边都登记会让 GPU 主题被 2D 那侧抢先，而且不报错。
    const specKeys = new Set([...html.matchAll(/canvas:\s*'([a-z]+)'/g)].map(m=>m[1]).filter(k=>k!=='stardust'&&k!=='none'));
    const caseKeys = new Set([...html.matchAll(/case '([a-z]+)': draw/g)].map(m=>m[1]));
-   const missingCase = [...specKeys].filter(k=>!caseKeys.has(k));
+   const glMapRaw = (html.match(/const GL_SHADER_OF = \{([^}]*)\};/) || [])[1] || '';
+   // 键可能带引号也可能不带（写成 { ripple:'rain' }），两种都要认
+   const glPairs = [...glMapRaw.matchAll(/(?:'([a-z]+)'|([a-z]+))\s*:\s*'([a-z]+)'/g)]
+     .map(m => ({ key: m[1] || m[2], shader: m[3] }));
+   const glKeys = new Set(glPairs.map(p => p.key));
+   const routedKeys = new Set([...caseKeys, ...glKeys]);
+   const noRoute = [...specKeys].filter(k=>!routedKeys.has(k));
+   const twoRoutes = [...glKeys].filter(k=>caseKeys.has(k));
    ok(/function canvasKeyOf\(id\)\{/.test(html)
       && /switch\(canvasKeyOf\(_uTheme\)\)\{/.test(html)
       && !/switch\(_uTheme\)\{/.test(html)
-      && specKeys.size === 16 && missingCase.length === 0,
-      '主题分派按 canvas key 分派（canvasKeyOf 桥接 id→key），16 个 canvas 声明与 case 一一对应'
-      + (missingCase.length ? ' —— 缺 case：' + missingCase.join(',') : ''));
+      && specKeys.size === THEME_ROSTER.length && noRoute.length === 0 && twoRoutes.length === 0,
+      '主题分派按 canvas key 分派（canvasKeyOf 桥接 id→key），' + THEME_ROSTER.length + ' 个 canvas 声明各有且只有一条渲染路径'
+      + (noRoute.length ? ' —— 缺路径：' + noRoute.join(',') : '')
+      + (twoRoutes.length ? ' —— 两条路径都登记：' + twoRoutes.join(',') : ''));
+   /* WebGL2 图层（物理型主题）：这里只守"静态能查证"的结构 —— 着色器写错在浏览器里的表现是
+      "悄悄退回静态兜底"（页面上只是没动效），没有这些断言就只能靠肉眼发现。 */
+   {
+     const shaderNames = [...glMapRaw.matchAll(/:\s*'([a-z]+)'/g)].map(m=>m[1]);
+     const fsBlock = (html.match(/const GL_FS = \{([^}]*)\};/) || [])[1] || '';
+     const fsKeys = [...fsBlock.matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map(m=>m[1]);
+     const fsVals = [...fsBlock.matchAll(/:\s*([A-Za-z_$][\w$]*)/g)].map(m=>m[1]);
+     ok(shaderNames.length > 0 && shaderNames.length === fsKeys.length && shaderNames.every(n=>fsKeys.includes(n))
+        && fsVals.every(v=>new RegExp('const ' + v + ' = `').test(html)),
+        'GL_SHADER_OF 的每条登记都对应一段实体着色器（key ↔ GL_FS 一一对应，源码常量确实存在）', shaderNames.join(','));
+     // 走 GPU 的主题必须有 scene：缺了它着色器拿到的底色/光晕全是 0（画面漆黑，却不报错）
+     const entryOf = id => { const m = html.match(new RegExp('\\n  ' + id + ': \\{[\\s\\S]*?\\n  \\},')); return m ? m[0] : ''; };
+     const glEntries = THEME_ROSTER.map(id => ({ id, src: entryOf(id) }))
+       .filter(e => glKeys.has((e.src.match(/canvas:'([a-z]+)'/) || [])[1]));
+     const noScene = glEntries.filter(e => !/scene:\{/.test(e.src)).map(e => e.id);
+     ok(glEntries.length === shaderNames.length && noScene.length === 0,
+        '走 GPU 的主题都声明了 scene（CSS 兜底底色 / 2D 静态兜底 / 着色器共用这一份描述）'
+        + (noScene.length ? ' —— 缺 scene：' + noScene.join(',') : ''), glEntries.map(e=>e.id).join(','));
+     ok(/if \(t\.scene\) BODY_BG_MAP\[id\] = sceneToCss\(t\.scene\);/.test(html)
+        && /function sceneToCss\(scene\)\{/.test(html),
+        'bodyBg 由 scene 派生（底色不再与着色器各写一份）');
+     // GLSL 用到的 uniform 必须都已声明、且 JS 侧每个都会上传：名字打错在浏览器里只表现为黑屏
+     const glslRaw = [...html.matchAll(/const \w*_?FS = `[\s\S]*?`;/g)].map(m=>m[0]).join('\n')
+       + ((html.match(/const GL_PRELUDE = `[\s\S]*?`;/) || [''])[0]);
+     const glsl = glslRaw.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+     const declared = new Set([...glsl.matchAll(/uniform\s+\w+\s+(u\w+)/g)].map(m=>m[1]));
+     const jsSide = new Set([...(html.match(/const GL_UNIFORM_NAMES = \[([^\]]*)\]/) || ['',''])[1].matchAll(/'(\w+)'/g)].map(m=>m[1]));
+     const undeclaredU = [...new Set([...glsl.matchAll(/\bu[A-Z]\w*/g)].map(m=>m[0]))].filter(n=>!declared.has(n));
+     const unsetU = [...declared].filter(n=>!jsSide.has(n));
+     ok(!undeclaredU.length && !unsetU.length,
+        'GLSL 的 uniform 名字两侧对得上（用到的都声明了，声明的 JS 都会上传）'
+        + (undeclaredU.length ? ' —— 未声明：' + undeclaredU.join(',') : '')
+        + (unsetU.length ? ' —— JS 未上传：' + unsetU.join(',') : ''));
+     ok(/'#version 300 es\\n' \+ GL_PRELUDE/.test(html)
+        && /'#version 300 es\\n' \+ GL_VS/.test(html)
+        && !/texture2D\(|gl_FragColor|varying\s/.test(glsl)
+        && /out vec4 outColor;/.test(html)
+        && /function paintGLFrame\(key\)\{/.test(html)
+        && (html.match(/paintGLFallback\(\)/g) || []).length >= 3,
+        'GLSL 按 ES 3.00 写（#version 拼在前导之前、无 WebGL1 残留 API），编译失败/无 GL 时落到 2D 静态兜底');
+     ok(/if\(!probe\)\{ _uGLFail = true; return null; \}/.test(html)
+        && /gl\.getShaderParameter\(fs, gl\.COMPILE_STATUS\) !== true/.test(html)
+        && /webglcontextlost/.test(html)
+        && /function canvasLayerActive\(\)\{/.test(html),
+        'GL 可用性以真实返回值判断（测试桩里 getContext 恒返回 truthy 代理），并处理上下文丢失与两层存活判据');
+     // 层叠位置：GPU 图层必须是**背景层**（在内容之下）。
+     // 它是"场景与材质"（雨窗/云海/木头…），本质不透明；压在内容之上就会把整个页面盖住
+     // —— 这轮真出过：切过去要么整屏黑、要么只剩特效、内容全没了。三个标记缺一不可：
+     //   z-index:-1（负层级）、插到 body 最前、以及 html 背景透明（否则 body 的不透明底会盖住它）。
+     ok(/z-index:-1/.test(html)
+        && /function glMount\(\)\{/.test(html)
+        && /document\.body\.insertBefore\(_uGLCanvas, document\.body\.firstChild\)/.test(html)
+        && /document\.documentElement\.style\.background = 'transparent';/.test(html)
+        && !/glMount\(\);\s*\n\s*\}\s*\n\s*_uGLProg/.test(html),
+        'GPU 图层挂在内容之下（背景层）：z-index:-1 + html 背景透明 + 插到 body 最前');
+     ok(/const GL_PIXEL_BUDGET = \d+;/.test(html) && /Math\.sqrt\(GL_PIXEL_BUDGET \/ Math\.max\(1, W \* H\)\)/.test(html)
+        && /function glTrackFrame\(dt\)\{/.test(html) && /glTrackFrame\(dt\); paintGLFrame\(gkey\)/.test(html),
+        'GPU 图层按像素预算封顶并按实际帧间隔自适应降档（片元着色器是填充率敏感）');
+     /* 两条"名字对不上就静默失效"的断言。这类 bug 不会报错、只会让画面变黑或变平，
+        而它们的共同点都是"两张表/两层名字之间少了一层翻译"—— 所以这里逐条守住：
+        ① GL_FS 按**着色器名**索引，而调用方传的是 **canvas key**，中间必须过 GL_SHADER_OF；
+           漏了这层翻译的后果是：凡 key 与着色器名不同的主题全部退到"默认空着色器"= 整屏纯黑（真出过）。
+        ② GLSL 里的数组 uniform（uAcc/uGlowC/uGlowP/uGlowA）在 JS 侧是按**元素**上传的，
+           所以每个元素都要单独取 location；只为基名取 location 会让 gl.uniform*(undefined) 变成
+           **静默 no-op**，整套光晕与强调色从未上传（真出过）。 */
+     ok(/function glShaderNameOf\(key\)\{ return GL_SHADER_OF\[key\] \|\| key; \}/.test(html)
+        && /GL_FS\[glShaderNameOf\(key\)\]/.test(html),
+        '① 查着色器源码前先过 GL_SHADER_OF（canvas key ≠ 着色器名时不至于退到空着色器）');
+     const arrayDecls = [...glsl.matchAll(/uniform\s+\w+\s+(u\w+)\[(\d+)\]/g)].map(m => m[1] + ':' + m[2]);
+     const arrayTableRaw = (html.match(/const GL_ARRAY_UNIFORMS = \{([^}]*)\};/) || [])[1] || '';
+     const arrayTable = [...arrayTableRaw.matchAll(/(u\w+)\s*:\s*(\d+)/g)].map(m => m[1] + ':' + m[2]);
+     const missingArr = arrayDecls.filter(d => !arrayTable.includes(d));
+     ok(!missingArr.length && /o\[n \+ '\[' \+ i \+ '\]'\] = gl\.getUniformLocation\(prog, n \+ '\[' \+ i \+ '\]'\)/.test(html),
+        '② GLSL 里的每个数组 uniform 都在 GL_ARRAY_UNIFORMS 里逐个取元素 location'
+        + (missingArr.length ? ' —— 缺：' + missingArr.join(',') : ''), arrayDecls.join(','));
+     /* GLSL 预检：单文件项目没有着色器编译器，而语法坏掉的着色器在浏览器里只会表现为
+        "这段悄悄失效、退回静态兜底"，肉眼分不清"没写对"和"没生效"。这里查能静态查证的两类：
+        ① 括号配平（少一个 } 是最常见的手误）；② 着色器字符串里混进了 `${` —— 那是 JS 的模板插值，
+        会在拼接前就被求值，着色器里出现一个未定义标识符（而且报错信息指不到这里）。 */
+     const shaderSrcs = [((html.match(/const GL_PRELUDE = `[\s\S]*?`;/) || [''])[0])]
+       .concat([...html.matchAll(/const \w*_?FS = `[\s\S]*?`;/g)].map(m => m[0]));
+     const unbalanced = shaderSrcs.filter(s => {
+       const body = s.slice(s.indexOf('`') + 1, s.lastIndexOf('`'))
+         .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+       let cur = 0, par = 0, brk = 0;
+       for(const ch of body){
+         if(ch === '{') cur++; else if(ch === '}') cur--;
+         else if(ch === '(') par++; else if(ch === ')') par--;
+         else if(ch === '[') brk++; else if(ch === ']') brk--;
+       }
+       return cur !== 0 || par !== 0 || brk !== 0;
+     });
+     ok(shaderSrcs.length >= 2 && !unbalanced.length
+        && shaderSrcs.every(s => s.indexOf('${') < 0),
+        'GLSL 源括号配平、且没有混进 JS 模板插值（${…} 会在拼接前求值，错误指向不到着色器）',
+        shaderSrcs.length + ' 段');
+   }
    // 写入受阻的守卫必须统一：原先只有记忆评分设防，星级/八股自评静默接受（进度只在内存里，刷新即丢）
    ok(/function blockedByWriteFault\(what\)\{/.test(html)
       && (html.match(/blockedByWriteFault\(/g) || []).length >= 5
@@ -997,26 +1167,45 @@ console.log('\n[关键实现点静态断言]');
       && /hot\.queue = kept\.concat\(list\.filter/.test(html)
       && !/id="hotAgain"/.test(html),
       '趁热为连续队列：留在榜上排到队尾、走到队尾绕回开头，本轮顺序不被热榜原序覆盖');
-   // 主题集：每套内置主题必须有**自己**的绘制分支；且删掉的 id 必须在 THEME_ALIAS 里登记
-   // 经典组里任何一套都不许再声明 canvas:'stardust'（注释里提到它不算数，这里只看同一行上同时有 group:'classic' 的声明）
-   ok(!/group:'classic'[^\n]*canvas:'stardust'/.test(html)
-      && (html.match(/case '(ember|scan|film|firefly)': draw/g) || []).length === 4
-      && /function drawDraculaEmber\(/.test(html)
-      && /function drawNordScan\(/.test(html)
-      && /function drawGruvboxFilm\(/.test(html)
-      && /function drawEverforestFirefly\(/.test(html)
-      && /else if\(theme==='dracula'\)\{/.test(html)
-      && /else if\(theme==='everforest'\)\{/.test(html),
-      '每套内置主题各有独立特效（不再多主题共用一条绘制分支），且都有对应粒子播种分支');
-   ok(/frappe:'midnight', macchiato:'midnight',/.test(html)
-      && /rosepine:'dracula', rosepineMoon:'dracula', rosepineDawn:'paper',/.test(html)
-      && /onedark:'nord', github:'aurora',/.test(html)
-      && ["frappe","macchiato","rosepine","rosepineMoon","rosepineDawn","onedark","github"]
-           .every(id => !new RegExp('\\n  ' + id + ': \\{').test(html)),
-      '删掉的 7 个主题已从 THEME_SPEC 移除，且全部登记进 THEME_ALIAS（否则老存档会误入「跟随系统」）');
-   ok(/let _zrRings = null;/.test(html) && /ctx\.arc\(r\.x, cy, rad, 0, Math\.PI\*2\)/.test(html)
-      && !/Math\.sin\(\(x\+drift\)\*k\)/.test(html),
-      '子荣不再是「横向正弦波浪」（与子良同模板），改为砚墨晕开的同心环');
+   // 主题集收敛后：删掉的 id 必须**全部**登记进 THEME_ALIAS —— savedThemeId() 解析不到就返回空串，
+   // 应用会退回「跟随系统深浅」并开始实时跟随，用户会觉得"每次打开主题都在变"（删主题最容易漏的一步）
+   const legacyIds = ['void','rosepineDawn','frappe','macchiato','rosepine','onedark','shuangren',
+     'rosepineMoon','midnight','dracula','github','everforest','gold'];
+   const aliasBlock = (html.match(/const THEME_ALIAS = \{[\s\S]*?\n\};/) || [''])[0];
+   const missingAlias = legacyIds.filter(id => !new RegExp('\\b' + id + ":\\s*'").test(aliasBlock));
+   const badTargets = [...aliasBlock.matchAll(/:\s*'(\w+)'/g)].map(m => m[1]).filter(t => !THEME_ROSTER.includes(t));
+   ok(aliasBlock && missingAlias.length === 0 && badTargets.length === 0,
+      '删掉的 ' + legacyIds.length + ' 个主题 id 全部登记进 THEME_ALIAS，且映射目标都是保留的主题'
+      + (missingAlias.length ? ' —— 缺登记：' + missingAlias.join(',') : '')
+      + (badTargets.length ? ' —— 指向已删除的主题：' + badTargets.join(',') : ''));
+   // 反向：已经保留的主题**不许**出现在别名表里 —— 那样会把用户真实存着的偏好静默改写成"最近的邻居"
+   const wronglyAliased = THEME_ROSTER.filter(id => new RegExp('\\b' + id + ":\\s*'").test(aliasBlock));
+   ok(wronglyAliased.length === 0,
+      '保留中的主题不得出现在别名表里（否则用户的偏好会被静默改写）', wronglyAliased.join(','));
+   // 评分爆发的形态随主题：11 套要全部登记，且不能是"同一个圆点换颜色"（至少 4 种运动学）
+   const burstBlock = (html.match(/const BURST_STYLE = \{[\s\S]*?\n\};/) || [''])[0];
+   const burstKeys = [...burstBlock.matchAll(/\n  '?([\w-]+)'?:/g)].map(m => m[1]);
+   const burstKinds = new Set([...burstBlock.matchAll(/kind:'(\w+)'/g)].map(m => m[1]));
+   const missingBurst = THEME_ROSTER.filter(id => !burstKeys.includes(id));
+   ok(burstBlock && missingBurst.length === 0 && burstKinds.size >= 4 && /BURST_STYLE\[currentTheme\]/.test(html),
+      '评分爆发的形态随主题（' + burstKeys.length + ' 套已登记 / ' + burstKinds.size + ' 种运动学：'
+      + [...burstKinds].join('、') + '）' + (missingBurst.length ? ' —— 缺：' + missingBurst.join(',') : ''));
+   // 缩略图签名：11 套都要有，且 JS 里用到的类必须在 <style> 里真的定义过
+   // （漏定义 = 签名静默不显示，选择器里又退回"11 条颜色带"，属于最容易漏的一步）
+   const sigBlock = (html.match(/const SWATCH_SIG = \{[\s\S]*?\n\};/) || [''])[0];
+   const sigKeys = [...sigBlock.matchAll(/\n  '?([\w-]+)'?:/g)].map(m => m[1]);
+   const sigClasses = [...sigBlock.matchAll(/'(sig-[\w-]+)'/g)].map(m => m[1]);
+   const undefSig = sigClasses.filter(c => !new RegExp('\\.' + c + '\\{').test(html));
+   const missingSig = THEME_ROSTER.filter(id => !sigKeys.includes(id));
+   ok(sigBlock && missingSig.length === 0 && undefSig.length === 0,
+      '缩略图签名：' + sigKeys.length + ' 套主题各有签名元素，且样式都已定义'
+      + (missingSig.length ? ' —— 缺登记：' + missingSig.join(',') : '')
+      + (undefSig.length ? ' —— 未定义样式：' + undefSig.join(',') : ''));
+   // 星尘只剩"兜底"这一个身份：内置主题里不许再有人声明它（旧存档里的自建配色主题仍走 default）
+   const specRegion = (html.match(/const THEME_SPEC = \{[\s\S]*?\n\};/) || [''])[0];
+   ok(specRegion && !/canvas:'stardust'/.test(specRegion)
+      && /default: drawStardust\(ctx,W,H,dt\); break;/.test(html),
+      '内置主题一律不再声明 canvas:\'stardust\'（它现在只服务旧存档里的自建配色主题，由 default 接住）');
    // 首启一次性迁移：同一字段不得调用 stripMarkdown 两遍（那是唯一一处同步阻塞的规模性开销）
    ok(/const stripTxt = s => \{ const t = stripMarkdown\(s\); return t === s \? s : \(cleaned\+\+, t\); \};/.test(html)
       && !/stripMarkdown\(d\.title\) !== d\.title/.test(html)
@@ -1071,9 +1260,9 @@ console.log('\n[关键实现点静态断言]');
    ok(/mock:'八股练习'/.test(html) && /grill:'面试拷打'/.test(html)
       && /' title="保留率：'/.test(html)
       && /\r?\n            \.\.\.q,/.test(html) && !/return Object\.assign\(\{\}, q, \{/.test(html)
-      && /tab\.setAttribute\('aria-pressed', tab\.classList\.contains\('active'\)/.test(html)
+      && /c\.setAttribute\('aria-pressed', on \? 'true' : 'false'\)/.test(html)
       && !/aria-selected', 'true'/.test(html),
-      '功能名统一（八股练习/面试拷打/保留率）；normalizeDocs 改展开语法；分组 tab 用 aria-pressed');
+      '功能名统一（八股练习/面试拷打/保留率）；normalizeDocs 改展开语法；选中态一律 aria-pressed');
    // 导入不得逐键覆盖：进度按时间取较新、通关数取较大（旧备份不该抹掉本机新排的 FSRS 状态）
    ok(/function mergeProgressByRecency\(localMap, incoming\)\{/.test(html)
       && /PROGRESS = mergeProgressByRecency\(PROGRESS, sanitizeProgressMap\(v\)\)/.test(html)

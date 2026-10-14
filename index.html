@@ -163,7 +163,7 @@
   }
   /* 单行控件与紧凑标签：行高锁 1.2（≈系统字体的 normal，与令牌化之前逐像素一致）。
      这些件全是"一行文字 + 固定内边距"，跟着 1.6 走会让顶栏、按钮、行表一起长高 5px */
-  .btn,.tab,.iconbtn,.theme-tab,.grill-dur-btn,.grade-btn,.modal-x,.qnum,.tag-item,
+  .btn,.tab,.iconbtn,.grill-dur-btn,.grade-btn,.modal-x,.qnum,.tag-item,
   .set-arrow,.stats-bar,.season-rows div,.season-legend div,.sr-item .src,
   .rt-label,.st-label,.hm-months>i>b{line-height:var(--lh-ctl)}
   /* 文本选中：跟随主题主色（默认的蓝色高亮在暖色/纸白主题上非常出戏） */
@@ -186,7 +186,15 @@
   /* ---------- Topbar (导航标签) ---------- */
   /* 顶栏背景要铺满（含侧边安全区），但里面的标签不能钻到挖孔底下 ——
      所以左右内边距同样按安全区顶开，背景色不受影响 */
-  .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:calc(8px + env(safe-area-inset-top, 0px)) max(18px, var(--safe-x, 0px)) 8px max(18px, var(--safe-x, 0px));background:var(--bg2);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
+  /* 顶栏对"背景层"透明：所有主题一致。顶栏不再画一条不透明的 --bg2（那会让它在主题背景上
+     割裂成“顶部一条纯色”）；透明后顶栏区域直接露出 body 的主题渐变（每个主题都有）。
+     顶栏在 .app 的 flex 竖列里、flex:none 占位，正文在它下方滚动而非从它底下穿过，
+     所以透明不会让正文内容盖到标签上。
+     ⚠️ 说清楚一个做不到的：2D 粒子那层是压在内容之上的透明 overlay，粒子会额外飘过顶栏；
+     GL 物理层是不透明的全屏背景、只能垫在内容之下，做不到“飘到顶栏之上”（真做上去会把整页盖没）。
+     所以两类无法逐像素一致，这里统一的是“顶栏不额外挡背景”。
+     顺带去掉上一版的 backdrop-filter：常驻顶栏的模糊每个主题都吃一层合成开销，不值当。 */
+  .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:calc(8px + env(safe-area-inset-top, 0px)) max(18px, var(--safe-x, 0px)) 8px max(18px, var(--safe-x, 0px));background:transparent;border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
   .tabs{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:5px 13px;border-radius:var(--r-sm);cursor:pointer;color:var(--muted);font-size:var(--fs-ui);font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background var(--dur-fast),color var(--dur-fast)}
@@ -286,7 +294,7 @@
   .doc-head h2::before{content:'';display:inline-block;width:3px;height:.76em;border-radius:2px;
     background:linear-gradient(180deg,var(--accent),var(--accent2));margin-right:10px;vertical-align:-.04em}
   .doc-head .meta{color:var(--muted);font-size:var(--fs-ui);margin-top:4px}
-  /* 槽底用主题文字色分量：写死深色在素笺/粼光/子良/子荣这类浅底主题下会变成白卡片上的一条黑槽 */
+  /* 槽底用主题文字色分量：写死深色在绢这类浅底主题下会变成白卡片上的一条黑槽 */
   /* --text-rgb 由 applyTheme 条件写入（浅底主题才算得出来），必须带兜底值：
      漏了兜底的话，脚本没跑或主题缺这个键时整条 background 声明失效，进度槽会变成完全透明 */
   .bigbar{height:10px;border-radius:var(--r-sm);background:rgba(var(--text-rgb,255,255,255),.14);overflow:hidden;margin-top:12px;max-width:420px}
@@ -412,7 +420,7 @@
   .pbar.lvbar{gap:2px}
   /* 段宽：记忆页已改为局部更新，段节点不再随每次评分重建，这条 flex-grow 过渡才真正生效 ——
      此前每次评分都是全新节点，CSS 过渡永不触发，只能用 animateLvBar 手动补帧（那套 22 行已删）。
-     新加的段在插入前就把 flex 设成最终值，因此不会“从 0 长出来” */
+     新加的段在插入前就把 flex 设成最终值，因此不会"从 0 长出来" */
   .pbar.lvbar > i{min-width:4px;border-radius:0;transition:opacity var(--dur-quick),flex-grow var(--dur-slow) var(--ease-out)}
   /* 悬停某一段：该段保持原色、其余变淡（GitHub 语言条的可读性做法），从条上就能读出单个等级的占比。
      包在 hover:hover 里：触屏没有真 hover，手指点过的那段会一直粘在高亮态 */
@@ -481,7 +489,7 @@
   .ov-card{padding:16px;text-align:center;
            transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   /* 悬停阴影改走 --card-hover-shadow（由 applyTheme 按深浅各给一套）：
-     原先这里是写死的黑投影 + 彩色外发光，浅底主题（素笺/粼光/子良/子荣/玫瑰黎明）上会糊成一团脏影 */
+     原先这里是写死的黑投影 + 彩色外发光，浅底主题（绢）上会糊成一团脏影 */
   .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);box-shadow:var(--card-hover-shadow)}
   .ov-card .n{font-size:var(--fs-num);font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
              background:linear-gradient(135deg,var(--accent),var(--accent2));
@@ -489,7 +497,7 @@
   .ov-card .t{color:var(--muted);font-size:var(--fs-ui);margin-top:4px}
   /* 总览：待复习行动卡 —— 纯色数字要覆盖 .n 的渐变文字填充；有到期题时轻微脉冲提示 */
   .ov-card .n.plain{background:none;-webkit-text-fill-color:currentColor}
-  /* 提醒色走语义令牌：写死的橙在暖色主题（流光/斜光）上与主色同调，等于没提醒 */
+  /* 提醒色走语义令牌：写死的橙在暖色主题（斜光）上与主色同调，等于没提醒 */
   .ov-card.ov-act{border-color:rgba(var(--warn-rgb),.55)}
   .ov-card.ov-act .n{animation:duePulse 2.2s ease-in-out infinite}
   @keyframes duePulse{0%,100%{opacity:1}50%{opacity:.68}}
@@ -628,8 +636,8 @@
   .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
   .set-status{font-size:var(--fs-sm);color:var(--muted);margin-top:2px;width:100%;text-align:center}
 
-  /* ===== 昨日战报（.season-modal）======
-     每天首次进入只弹一次（见 maybeShowWarReport），所以它必须一眼看完、不出现滚动条：
+  /* ===== 战报（.season-modal）======
+     从热力图「当天明细」气泡里的隐藏入口按需打开（见 openWarReport），所以它必须一眼看完、不出现滚动条：
      大数字 → 四档分布 → 关键变化 → 一句话点评，纵向层级本身就是阅读顺序。
      颜色一律走主题变量（四档色由 JS 从 RATE_META 取，与评分按钮同源），换主题不掉色。 */
   .modal.season-modal{width:min(560px,92vw);padding:0;overflow:hidden;display:flex;flex-direction:column}
@@ -786,6 +794,10 @@
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
   @media (hover:hover){ .grade-btn.mem-grade:hover{background:var(--panel2)} }
   .grade-btn.mem-grade:active{transform:scale(.97)}
+  /* 记忆卡「跳过」行：始终可见（不受翻面态控制），低调靠右，不抢四档评分按钮的视觉焦点 */
+  .mem-skip-row{text-align:right;margin-top:6px}
+  .mem-skip-row .btn{font-size:var(--fs-xs);opacity:.7}
+  .mem-skip-row .btn:active{opacity:1}
   /* 悬停预览"这一档会是什么颜色"：四档评分按钮此前悬停一律点亮成 --accent2（紫），
      与点下去之后才出现的绿/黄/红不是一套色 —— 悬停时先给出该档的语义色，点选是"确认"而不是"意外" */
   @media (hover:hover){ .grade-btn:hover{border-color:var(--accent2)} }
@@ -842,10 +854,7 @@
   /* 主题选择器 */
   .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:12px;z-index:100;box-shadow:var(--e3);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast);gap:8px}
   .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur-pop) var(--ease-pop)}
-  .theme-tabs{display:flex;gap:3px;flex-wrap:wrap}
-  .theme-tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:4px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid transparent;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);white-space:nowrap}
-  @media (hover:hover){ .theme-tab:hover{color:var(--text);background:var(--panel)} }
-  .theme-tab.active{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.25)}
+  /* 分组标签那一行（连同它的样式）已随主题集收敛撤掉：只剩一套分组时，标签行是纯负担 */
   .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);position:relative;background:var(--bg2)}
   @media (hover:hover){ .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)} }
@@ -855,6 +864,22 @@
   .theme-card .tc-swatch::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
   .theme-card .tc-swatch .tc-band{position:absolute;left:0;right:0;top:0;height:9px}
   .theme-card .tc-swatch .tc-dot{position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-radius:50%;border:1px solid rgba(0,0,0,.18)}
+  /* 缩略图的「签名元素」：每套主题在色带之外再画一个小记号，一眼能看出它的机制是什么
+     （否则 11 个缩略图看上去就是 11 条颜色带 —— 选择器里根本分不出谁是谁）。
+     全部用纯 CSS 渐变画出来：不引图片、不加请求、不占额外 DOM 层级。
+     亮度刻意压在 0.3~0.9：够看清是什么，又不至于压住缩略图本身的配色。 */
+  .theme-card .tc-swatch .tc-sig{position:absolute;left:0;right:0;top:9px;bottom:0;pointer-events:none}
+  .sig-rays{background:linear-gradient(68deg,transparent 34%,rgba(255,255,255,.55) 40%,transparent 46%,transparent 58%,rgba(255,255,255,.42) 64%,transparent 70%)}
+  .sig-link{background:radial-gradient(circle at 22% 72%,rgba(255,255,255,.9) 0 1.4px,transparent 2px),radial-gradient(circle at 52% 34%,rgba(255,255,255,.85) 0 1.4px,transparent 2px),radial-gradient(circle at 82% 66%,rgba(255,255,255,.8) 0 1.2px,transparent 1.8px),linear-gradient(20deg,transparent 49.4%,rgba(255,255,255,.45) 49.8% 50.6%,transparent 51%),linear-gradient(-14deg,transparent 49.4%,rgba(255,255,255,.38) 49.8% 50.6%,transparent 51%)}
+  .sig-stars{background:radial-gradient(circle at 24% 40%,rgba(255,255,255,.9) 0 1.2px,transparent 1.8px),radial-gradient(circle at 62% 66%,rgba(212,168,84,.9) 0 1.2px,transparent 1.8px),radial-gradient(circle at 80% 30%,rgba(255,255,255,.7) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 80%,rgba(212,168,84,.7) 0 1px,transparent 1.5px)}
+  .sig-spiral{background:conic-gradient(from 200deg at 44% 54%,rgba(255,255,255,.62) 0 70deg,transparent 70deg);-webkit-mask-image:radial-gradient(circle at 44% 54%,transparent 0 5px,#000 6px 11px,transparent 12px);mask-image:radial-gradient(circle at 44% 54%,transparent 0 5px,#000 6px 11px,transparent 12px)}
+  .sig-sheen{background:linear-gradient(58deg,transparent 26%,rgba(255,255,255,.30) 44%,rgba(255,255,255,.62) 52%,rgba(255,255,255,.30) 60%,transparent 78%)}
+  .sig-clouds{background:repeating-linear-gradient(180deg,transparent 0 3px,rgba(255,255,255,.62) 3px 5.5px,transparent 5.5px 7.5px)}
+  .sig-scan{background:repeating-linear-gradient(180deg,transparent 0 3.5px,rgba(255,255,255,.34) 3.5px 4.2px,transparent 4.2px 7px),linear-gradient(180deg,transparent 46%,rgba(255,255,255,.75) 49% 51%,transparent 54%)}
+  .sig-aurora{background:linear-gradient(180deg,rgba(95,227,176,.5) 0%,rgba(87,183,224,.42) 38%,rgba(169,139,214,.4) 68%,transparent 92%);-webkit-mask-image:repeating-linear-gradient(90deg,#000 0 4px,transparent 4px 12px);mask-image:repeating-linear-gradient(90deg,#000 0 4px,transparent 4px 12px);opacity:.55}
+  .sig-ripple{background:radial-gradient(circle at 40% 60%,transparent 0 5px,rgba(255,255,255,.5) 5.5px 6.5px,transparent 7px),radial-gradient(circle at 40% 60%,transparent 0 11px,rgba(255,255,255,.32) 11.5px 12.5px,transparent 13px),radial-gradient(circle at 70% 36%,transparent 0 4px,rgba(255,255,255,.4) 4.5px 5.5px,transparent 6px)}
+  .sig-zirong{background:radial-gradient(circle at 26% 36%,rgba(207,227,107,.9) 0 1.4px,transparent 2px),radial-gradient(circle at 60% 62%,rgba(230,195,132,.85) 0 1.3px,transparent 1.9px),radial-gradient(circle at 78% 30%,rgba(207,227,107,.7) 0 1.1px,transparent 1.6px),radial-gradient(circle at 44% 78%,rgba(143,179,106,.7) 0 1.1px,transparent 1.6px)}
+  .sig-gruvbox{background:radial-gradient(circle at 30% 82%,rgba(224,123,63,.9) 0 1.3px,transparent 1.9px),radial-gradient(circle at 55% 66%,rgba(200,85,61,.8) 0 1.2px,transparent 1.8px),radial-gradient(circle at 70% 40%,rgba(216,176,113,.7) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 30%,rgba(224,123,63,.5) 0 .9px,transparent 1.4px)}
   .theme-card .tc-name{font-size:var(--fs-xs);font-weight:600;color:var(--text);line-height:1}
   /* 项目拷打 */
   .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
@@ -1025,6 +1050,13 @@
   .hm-pop{position:fixed;z-index:95;background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:8px 12px;border-radius:var(--r-md);font-size:var(--fs-sm);box-shadow:var(--e-lift);opacity:0;pointer-events:none;transition:opacity var(--dur-fast);max-width:270px;line-height:1.6}
   .hm-pop.show{opacity:1}
   .hm-pop b{color:var(--accent)}
+  /* 明细气泡里的战报入口（隐藏入口，只有"已过完且有记录"的日子才渲染）。
+     父层 .hm-pop 是 pointer-events:none 的纯提示，这里必须显式收回指针事件 ——
+     否则按钮画得出、点不到（点击会穿透到气泡背后，还会被"点别处关闭"的逻辑顺手关掉） */
+  .hm-war{display:flex;align-items:center;justify-content:center;pointer-events:auto;width:100%;
+    margin:7px 0 1px;padding:2px 8px;min-height:var(--ctl-sm);font-family:inherit;font-size:var(--fs-xs);
+    color:var(--accent);background:transparent;border:1px solid var(--line2);border-radius:var(--r-xs);cursor:pointer}
+  .hm-war:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),.12)}
   /* 未刷题 / 今年还没到的日期 / 1/1 前与 12/31 后的域外余格：统一走 .hm-cell 的同一个灰底，
      年度图是一整块完整的矩形、不留空洞；三者的区别只在悬停提示（未刷题 / 未开始 / 无提示） */
 
@@ -1096,7 +1128,7 @@
      结果手指按住按钮/卡片时零视觉反馈，只有抬手瞬间页面跳变。
      必须放在样式表最末：要压过前面同权重的 hover 规则（含 hover:none 里的复位）。
      按下按 .08s 快速响应，抬手沿用各元素原有的 .15~.22s 回弹。 */
-  .btn:active,.iconbtn:active,.theme-tab:active,
+  .btn:active,.iconbtn:active,
   .theme-card:active,.grill-mode-card:active,.grill-dur-btn:active,
   .modal-x:active,.grade-btn:active{transform:scale(.97);transition-duration:.08s}
   .btn.primary:active{filter:brightness(.94);box-shadow:0 1px 6px rgba(0,0,0,.3)}
@@ -1119,9 +1151,9 @@
      2) 控件（按钮/标签/表头/图标键）长按不选中：手机没有 hover，长按会弹文字选择与复制菜单，
         点按就变成"选字"。正文与答案（.q / .memory-card / .answer）保持可选，方便复制。
      只列交互元素、不写 * —— 全站禁选会让答案复制不了。 */
-  .btn,.iconbtn,.tab,.theme-tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x,.tag-item,
+  .btn,.iconbtn,.tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x,.tag-item,
   .q,.ov-card,.memory-card,.theme-card,.grill-mode-card,.pbar,.bigbar,.hm-cell,.dt-count{touch-action:manipulation}
-  .btn,.iconbtn,.tab,.theme-tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x{
+  .btn,.iconbtn,.tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x{
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
   /* 进度条/热力图/等级条/预测柱等数据块：全主题统一用圆角（不再为某个主题特殊收成方角）。 */
@@ -1135,7 +1167,7 @@
   /* ---------- 无障碍：键盘焦点可见环 ----------
      顶栏标签/主题卡等用了 tabindex，但此前没有 :focus-visible 样式，暗色下浏览器默认焦点环几乎看不见。
      用 --accent 画环、:where() 保持零特异度（不抢既有样式的优先级），只在键盘导航时出现。 */
-  :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.theme-tab,.q,.memory-card,.iconbtn,
+  :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.q,.memory-card,.iconbtn,
          .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt,.sr-item,.backtop,.ov-card,.an-card):focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
   /* 焦点光晕单独一条、不套 :where()：:where 特异度为 0，光晕会被元素自身的 box-shadow 盖掉
@@ -1183,7 +1215,7 @@
      而它每帧都要重画两道光晕（整屏），等于在最重的一段时间里白烧光栅，这里直接停掉。
      渐变本身保留：不支持 VT / 开了减动效时走"直接应用"分支，那时它才是可见的过渡效果。 */
   .theme-vt,.theme-vt body{transition:none}
-  /* 背景动效（极光的 background-position 漂移、星雾的 opacity 呼吸）同理：快照盖着时看不见，
+  /* 背景动效（松星的星雾 opacity 呼吸与流星位移）同理：快照盖着时看不见，
      却仍在每帧重绘整屏，扩散期间一并暂停；canvas 那层由 JS 暂停（见 holdThemeCanvas） */
   .theme-vt body::before,.theme-vt body::after{animation-play-state:paused}
 
@@ -1210,7 +1242,6 @@
        这里只保留"窄屏更宽松"的手感调整，以及相邻图标键的间距
        （★掌握 与 🗑删除 只差 6px，手指容易点错） */
     .btn.sm{padding:6px 9px}
-    .theme-tab{padding:7px 12px}
     .grill-dur-btn{padding:7px 10px}
     .tag-item{padding:5px 8px}
     .backtop{width:44px;height:44px}
@@ -1231,9 +1262,10 @@
     fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .topbar .search .search-ic{width:14px;height:14px;color:var(--muted);flex:none}
 
-  /* ---------- 浅底主题（素笺 / 粼光 / 子良 / 子荣 / 玫瑰黎明）的收尾微调 ----------
-     body.light 由 applyTheme 一直挂着，但此前 CSS 里没有一条 .light 规则 —— 钩子在、没人接。
-     这里只做一类调整：**收敛发光**。几何与排版一律不动，5 个浅底主题之外零影响。
+  /* ---------- 浅底主题（绢 / 云海）的收尾微调 ----------
+     body.light 由 applyTheme 按底色明度挂着（isLightColor），主题集里只要还有浅底主题，
+     这一段就得在 —— 同理「跟随系统浅色」那条路的落点也是它。
+     这里只做一类调整：**收敛发光**。几何与排版一律不动，浅底主题之外零影响。
      理由：彩色外发光在深空底上是氛围，在纸面上是脏斑（色块旁边糊一团颜色）。 */
   body.light .hm-cell.l4{box-shadow:none}
   body.light .pbar>i.lv5{box-shadow:0 0 0 1px rgba(139,92,246,.45)}
@@ -1359,11 +1391,6 @@
      会贴到视口最右、离主题按钮几百像素（2560px 屏上尤其明显）。那一段由 placeThemePopup() 在打开时
      按按钮实测位置覆盖 right/top；移动端不介入，保持这里的原样。 -->
 <div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:calc(48px + env(safe-area-inset-top, 0px))">
-  <div class="theme-tabs" id="themeTabs">
-    <div class="theme-tab active" data-tab="canvas">✨ 动态</div>
-    <div class="theme-tab" data-tab="classic">🎨 经典</div>
-    <div class="theme-tab" data-tab="custom">💎 定制</div>
-  </div>
   <div class="theme-grid" id="themeGrid"></div>
   <div class="theme-grid" id="themeBgRow" style="border-top:1px solid var(--line);padding-top:6px;margin-top:2px"></div>
   <button type="button" class="btn sm" id="uploadBgBtn" style="width:100%;justify-content:center;font-size:var(--fs-xs);padding:6px;margin-top:4px">📤 上传背景图</button>
@@ -1421,11 +1448,12 @@
   </div>
 </div>
 
-<!-- 昨日战报 MODAL：结构写死、内容由 renderWarReport 填充；每天首次进入弹一次（见 maybeShowWarReport） -->
-<div class="modal-bg" id="warReportModal" role="dialog" aria-modal="true" aria-label="昨日战报">
+<!-- 战报 MODAL：结构写死、内容由 renderWarReport 填充；入口是热力图「当天明细」气泡里的隐藏按钮
+     （见 openWarReport）—— 不再是每天自动弹一次，所以内容按"任意一天"设计 -->
+<div class="modal-bg" id="warReportModal" role="dialog" aria-modal="true" aria-label="当日战报">
   <div class="modal season-modal">
     <div class="season-head">
-      <span class="season-badge">昨日战报</span>
+      <span class="season-badge">当日战报</span>
       <span class="season-date" id="warDate"></span>
     </div>
     <div class="season-body">
@@ -1438,7 +1466,7 @@
     </div>
     <div class="season-foot">
       <button type="button" class="btn primary" id="warGo" type="button">开始今天的复习</button>
-      <button type="button" class="btn" id="warClose" type="button">知道了</button>
+      <button type="button" class="btn" id="warClose" type="button">关闭</button>
     </div>
   </div>
 </div>
@@ -1935,12 +1963,30 @@ function celebrateConfetti(opts){
 /* ===== 按钮粒子爆发（评分/关键操作的局部反馈，比全屏礼炮轻）=====
    从点击点向外迸发一小撮主题色粒子，带重力，约 0.55s 后自灭 */
 let _burstCanvas = null;
+/* ===== 评分爆发：形态随主题走 =====
+   五种运动学（dot / ray / spiral / bloom / ring）+ 一张参数表 —— 不给 11 套主题各写一个帧循环。
+   表里没有的主题（含用户自建配色）落回默认参数：原来的"弹道圆点"。
+   这些都是一次性小动画，不参与主渲染循环；画布按 1:1 像素建（不吃 dpr，够用且省）。 */
+const BURST_STYLE = {
+  sunset:   { kind:'ray',    n:10, sp:[170,380], drag:2.1, r:2.2, alpha:0.42, tail:0.075 },   // 斜光：光柱
+  particle: { kind:'dot',    n:14, sp:[95,265],  grav:520,  r:2.8, alpha:0.55, link:true },   // 粒子：连线成网
+  songxing: { kind:'dot',    n:12, sp:[35,115],  grav:-26,  r:2.4, alpha:0.46, twinkle:true },// 松星：上飘星点
+  night:    { kind:'spiral', n:15, sp:[75,205],  spin:[2.2,4.8], r:2.6, alpha:0.50 },         // 星河：螺旋甩出
+  paper:    { kind:'bloom',  n:3,  grow:[95,150],  r:7,  alpha:0.24, ink:true },              // 绢：墨点晕开
+  ziliang:  { kind:'bloom',  n:4,  grow:[110,170], r:11, alpha:0.30, white:true },            // 云海：云团推开
+  nord:     { kind:'ray',    n:13, sp:[110,300], drag:2.6, r:1.6, alpha:0.48, tail:0.045, crystal:true }, // 霜原：冰晶
+  aurora:   { kind:'spiral', n:14, sp:[70,210],   spin:[2.0,4.2], r:2.4, alpha:0.50 },   // 极光：螺旋甲出
+  ripple:   { kind:'ring',   n:3,  grow:[120,200], r:2, alpha:0.30 },                    // 波纹：同心圆扩散
+  zirong:   { kind:'dot',    n:11, sp:[30,110],   grav:-18, r:2.6, alpha:0.5, twinkle:true }, // 流萤：暖点呼吸
+  gruvbox:  { kind:'dot',    n:13, sp:[40,150],   grav:-140, r:2.2, alpha:0.5 }           // 余烬：暖火星上飘
+};
 function burstParticles(x, y, opts){
   opts = opts || {};
   if(prefersReduce()) return;
   if(_burstCanvas) return;   // 已有一场在播：不叠加
-  const count = opts.count || 10;
-  const th = getTheme(currentTheme) || THEMES.aurora;
+  const th = getTheme(currentTheme) || THEMES.particle;
+  const prof = BURST_STYLE[currentTheme] || { kind:'dot', n:10, sp:[90,240], grav:720, r:3, alpha:0.6 };
+  const count = opts.count || prof.n || 10;
   const colors = opts.colors || [th.bad, th.warn, th.accent, th.good, th.accent3];
   const cvs = document.createElement('canvas');
   cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:70';
@@ -1951,42 +1997,111 @@ function burstParticles(x, y, opts){
   const ctx = cvs.getContext('2d');
   if(!ctx){ cvs.remove(); _burstCanvas = null; return; }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const rand = (a,b) => a + Math.random()*(b-a);
+  const needGrow = (prof.kind === 'bloom' || prof.kind === 'ring');
   const parts = [];
   for(let i=0;i<count;i++){
     const ang = Math.random()*Math.PI*2;
-    const sp = 90 + Math.random()*240;
+    const sp = prof.sp ? rand(prof.sp[0], prof.sp[1]) : 120;
     parts.push({
-      x, y,
-      vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp - 40,
-      size: 2.5 + Math.random()*3.5,
-      color: colors[i%colors.length],
-      life: 0.45 + Math.random()*0.3
+      x, y, ang, sp,
+      vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp,
+      size: prof.r || 3,
+      color: colors[i % colors.length],
+      max: needGrow ? 0.9 : (0.45 + Math.random()*0.3),
+      life: needGrow ? 0.9 : (0.45 + Math.random()*0.3),
+      grow: prof.grow ? rand(prof.grow[0], prof.grow[1]) : 0,
+      spin: prof.spin ? rand(prof.spin[0], prof.spin[1]) : 0,   // 角速度必须每颗固定：逐帧取随机数会让轨迹发抖
+      rad: 0, ph: Math.random()*6.283
     });
   }
+  /* 软光斑精灵：bloom 用它，避免逐帧建径向渐变（与主画布同一套规矩）。
+     两种色：墨（用主题文字色，浅底上是黑墨、深底上是白墨）与白（云/过曝） */
+  const inkRGB = hexToRgbStr(th.text) || '40,40,40';
+  const sprInk = glowSprite('burstInk', 32, [0,'rgba(' + inkRGB + ',0.55)',0.5,'rgba(' + inkRGB + ',0.18)',1,'rgba(0,0,0,0)']);
+  const sprWhite = glowSprite('burstWhite', 32, [0,'rgba(255,255,255,0.60)',0.5,'rgba(255,255,255,0.20)',1,'rgba(0,0,0,0)']);
   let last = 0;
   function frame(ts){
     const dt = last ? Math.min((ts-last)/1000, .05) : .016; last = ts;
     ctx.clearRect(0, 0, W, H);
     let alive = 0;
+    const linkPts = [];
     for(const p of parts){
       if(p.life <= 0) continue;
       p.life -= dt;
-      p.vy += 720*dt;               // 重力
-      p.vx *= Math.exp(-2.2*dt);    // 阻尼
-      p.vy *= (1 - 0.8*dt);
-      p.x += p.vx*dt; p.y += p.vy*dt;
-      if(p.y > H + 20){ p.life = 0; continue; }
+      if(p.life <= 0) continue;
+      const k = Math.max(0, Math.min(1, p.life / p.max));    // 1 → 0
+      // ── 按运动学推进 ──
+      if(prof.kind === 'bloom' || prof.kind === 'ring'){
+        p.rad += p.grow*dt;                                   // 原地扩散，不位移
+      } else if(prof.kind === 'ray'){
+        p.x += p.vx*dt; p.y += p.vy*dt;
+        const d = Math.exp(-(prof.drag || 2.2)*dt);
+        p.vx *= d; p.vy *= d;
+      } else if(prof.kind === 'spiral'){
+        p.ang += p.spin*dt;                                   // 角速度与半径同时长 → 螺旋臂被"拉"出来
+        p.sp += 12*dt;                                        // 越转越快地被甩出去
+        p.rad += p.sp*dt;
+        p.x = x + Math.cos(p.ang)*p.rad;
+        p.y = y + Math.sin(p.ang)*p.rad;
+      } else {                                                // dot：弹道 + 重力
+        if(prof.grav){ p.vy += prof.grav*dt; }
+        p.vx *= Math.exp(-2.2*dt);
+        p.vy *= (1 - 0.8*dt);
+        p.x += p.vx*dt; p.y += p.vy*dt;
+        if(p.y > H + 24){ p.life = 0; continue; }
+      }
       alive++;
-      ctx.globalAlpha = Math.max(0, Math.min(1, p.life/0.3));
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+      // ── 按形态绘制 ──
+      if(prof.kind === 'bloom'){
+        ctx.globalAlpha = Math.min(1, k*prof.alpha*2.2);
+        ctx.drawImage(prof.ink ? sprInk : sprWhite, x - p.rad, y - p.rad, p.rad*2, p.rad*2);
+      } else if(prof.kind === 'ring'){
+        ctx.globalAlpha = Math.max(0, Math.min(1, k*prof.alpha));
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(x, y, p.rad, 0, Math.PI*2); ctx.stroke();
+      } else if(prof.kind === 'ray'){
+        // 一条沿速度方向的短划（冰晶更短更细，光柱更长）
+        const tl = prof.tail || 0.06;
+        ctx.globalAlpha = Math.max(0, Math.min(1, k*prof.alpha));
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = prof.crystal ? 1.1 : 1.8;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - p.vx*tl, p.y - p.vy*tl);
+        ctx.stroke();
+        if(prof.crystal){ ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.fill(); }
+      } else {
+        const tw = prof.twinkle ? (0.55 + 0.45*Math.sin(ts*0.012 + p.ph)) : 1;
+        ctx.globalAlpha = Math.max(0, Math.min(1, k*prof.alpha*tw));
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size*(prof.splash ? (0.7 + 0.6*k) : 1), 0, Math.PI*2); ctx.fill();
+        if(prof.slender){                                      // 垂帘：光屑带一点竖向拉长
+          ctx.globalAlpha *= 0.7;
+          ctx.fillRect(p.x - 0.5, p.y - p.size*2.2, 1, p.size*3.4);
+        }
+        if(prof.link) linkPts.push(p.x, p.y);
+      }
+    }
+    // 粒子主题：把这一小群点就近连起来（"星链"的微观版）
+    if(prof.link && linkPts.length >= 4){
+      const maxD2 = (Math.min(W,H)*0.20)*(Math.min(W,H)*0.20);
+      ctx.globalAlpha = 0.16; ctx.strokeStyle = colors[2]; ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      for(let i=0;i<linkPts.length;i+=2){
+        for(let j=i+2;j<linkPts.length;j+=2){
+          const dx = linkPts[i]-linkPts[j], dy = linkPts[i+1]-linkPts[j+1];
+          if(dx*dx + dy*dy < maxD2){ ctx.moveTo(linkPts[i], linkPts[i+1]); ctx.lineTo(linkPts[j], linkPts[j+1]); }
+        }
+      }
+      ctx.stroke();
     }
     if(alive > 0) requestAnimationFrame(frame);
     else { cvs.remove(); _burstCanvas = null; }
   }
   requestAnimationFrame(frame);
 }
-
 /* ===== 烟花庆祝（通关等大节点，比礼炮更隆重）=====
    中上部随机位置定时"爆炸"成径向火花，带轻重力与拖尾，约 7 响 */
 let _fwCanvas = null;
@@ -2534,25 +2649,21 @@ function revLogUndo(at, qid){
   }
   return false;
 }
-// 「昨天」的日期键用日历减法 Date(y,m,d-1) 而不是 now-86400000：夏令时那两天不是整 24 小时，
+// 由日期键反推前几天：走日历减法 Date(y, m, d-back) 而不是减毫秒 —— 夏令时那两天不是整 24 小时，
 // 减毫秒会把战报指到前天或今天（热力图里踩过同样的坑）
-function warDayKeys(now){
-  const t = new Date(now);
-  return {
-    today: dayKeyOf(t),
-    yest: dayKeyOf(new Date(t.getFullYear(), t.getMonth(), t.getDate()-1)),
-    before: dayKeyOf(new Date(t.getFullYear(), t.getMonth(), t.getDate()-2))
-  };
+function warPrevKey(key, back){
+  const p = key.split('-').map(Number);
+  return dayKeyOf(new Date(p[0], p[1]-1, p[2] - (back || 1)));
 }
-// 汇总「昨天」这一个自然日；昨天没学过（或日志缺失）返回 null —— 不弹空战报。
+// 汇总某一个自然日（传入日期键，不再写死「昨天」—— 入口是热力图的任意一天）；那天没学过（或日志
+// 缺失）返回 null，入口据此不出现，不会摆出空战报。
 // 走 warDayAgg 的跨设备汇总：手机上答的与电脑上答的算同一天的战报（与趋势图/热力图同一份合计量）
-function buildWarReport(now){
-  const k = warDayKeys(now);
-  const d = warDayAgg(k.yest);
+function buildWarReport(dayKey){
+  const d = warDayAgg(dayKey);
   if(!d || !d.total) return null;
-  const prev = warDayAgg(k.before);
+  const prev = warDayAgg(warPrevKey(dayKey, 1));
   return {
-    dateKey: k.yest, total: d.total, uniq: d.uniq, c: d.c,
+    dateKey: dayKey, total: d.total, uniq: d.uniq, c: d.c,
     newQ: d.nw, mUp: d.mUp, mDown: d.mDown, up: d.up, down: d.down,
     recall: Math.round((d.c[Rate.GOOD-1] + d.c[Rate.EASY-1]) / d.total * 100),   // 记得率 =（记得+简单）/ 总次数
     prevTotal: prev ? prev.total : null
@@ -2600,16 +2711,13 @@ function renderWarReport(r){
   $('#warRows').innerHTML = rows.map(x => '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>').join('');
   $('#warQuip').textContent = warQuip(r);
 }
-/* 每天首次进入弹一次。标记值 = 当天日期键，跨天自然失效，不需要任何清理逻辑；
-   昨天没数据时既不弹也不写标记 —— 今天学了，明天的战报照常有。 */
-const WARREPORT_SEEN = 'learnAppWarReportSeen';
-function maybeShowWarReport(now){
-  const ts = now || Date.now();
-  const todayKey = warDayKeys(ts).today;
-  if(safeLocalGet(WARREPORT_SEEN,'') === todayKey) return;
-  const r = buildWarReport(ts);
-  if(!r) return;
-  safeLocalSet(WARREPORT_SEEN, todayKey);   // 先落标记再渲染：万一渲染异常也不会每次进页面都弹
+/* 打开某一天的战报。唯一入口是热力图「当天明细」气泡里的隐藏按钮（见 showHmDetail）。
+   以前是每天首次进入自动弹一次、靠一个"当天日期键"标记去重，但它会在云端还没拉完时先用本机
+   数据弹出来（本机标记 ~250ms 就落了，而云端检查要一个网络往返），等合并进另一台设备的记录后
+   反而再也看不了。改成随时可看：不写任何标记，看几次都行。 */
+function openWarReport(dayKey){
+  const r = buildWarReport(dayKey);
+  if(!r) return;   // 入口只挂在有记录的日子上；万一取不到就当没点（宁可不弹也不摆空数据）
   try{ renderWarReport(r); }catch(e){ warnSilent('战报渲染失败', e); }
   showModal($('#warReportModal'));
 }
@@ -2972,7 +3080,7 @@ function syncSystemBarsTone(isLight){
 // 按"当前主题"重算系统栏明暗并下发。幂等：值没变时 syncSystemBarsTone 直接返回
 function resyncSystemBarsTone(name){
   const id = name || currentTheme;
-  const t = getTheme(id) || THEMES.aurora;
+  const t = getTheme(id) || THEMES.particle;
   let light = isLightColor(t.bg);
   // 自定义背景图主题：状态栏区域显示的就是图片顶部，亮图要用深色图标才看得见
   // （与 renderBgLayer 判断"亮图加暗纱"同源，读的是上传图片时算好的 isBright）
@@ -3040,7 +3148,7 @@ const BACK_BTN_BY_VIEW = {
 function consumeBackPress(){
   // 1) 确认框在最上层（z-index 9999）：返回 = 取消。复用 Esc 那条分支，避免按钮与返回键两套结论
   if(typeof _confirmCancel === 'function' && _confirmCancel){ try{ _confirmCancel(); return true; }catch(e){ warnSilent('确认框取消回调失败', e); } }
-  // 2) 普通弹窗 / 主题气泡：关最上面那个（名单与 Esc 分支一致，含每天首次自动弹出的战报）
+  // 2) 普通弹窗 / 主题气泡：关最上面那个（名单与 Esc 分支一致，含从热力图打开的战报）
   const modals = [$('#addModal'), $('#editModal'), $('#dataModal'), $('#warReportModal')].filter(el => el && el.classList.contains('show'));
   if(modals.length){
     const top = modals[modals.length-1];
@@ -3802,9 +3910,9 @@ function toggleMaster(qid){
   if(btn){ btn.classList.toggle('on', p.mastered); btn.setAttribute('aria-pressed', p.mastered ? 'true' : 'false'); }   // 与视觉态同步（见 OPT：仅靠颜色区分状态对读屏不可见）
   renderStatsBar();
 }
-// FLIP 删除动画：先把目标卡片淡出/微缩，再提交数据变更，最后对“存活卡片”按新旧位置差做反向 transform 归位
-// → 下方卡片平滑上移补位，不再“向上跳一格”。
-// commit 现在是“可能局部收尾、也可能整页重建”：删题走局部（见 syncBrowseAfterDelete），
+// FLIP 删除动画：先把目标卡片淡出/微缩，再提交数据变更，最后对"存活卡片"按新旧位置差做反向 transform 归位
+// → 下方卡片平滑上移补位，不再"向上跳一格"。
+// commit 现在是"可能局部收尾、也可能整页重建"：删题走局部（见 syncBrowseAfterDelete），
 // 有分页截断、已不在本页等情况下回退整页重建。所以这里刻意不缓存节点引用 ——
 // 两条路径都必须在 commit **之后**重新查询存活元素（局部路径下存活卡片仍是原节点，只是位置变了）。
 // reduced-motion / 无 WAAPI 时直接提交。
@@ -3931,7 +4039,7 @@ function submitAddQuestion(){
   hideModal($('#addModal'));   // 走 hideModal：把焦点归还给「添加题目」按钮，键盘用户不会掉到 body
   toast('已添加题目');
   renderAll();
-  // 新题出现在列表末尾：给它一个淡入上浮的入场，避免“凭空冒出来”
+  // 新题出现在列表末尾：给它一个淡入上浮的入场，避免"凭空冒出来"
   const _nc = document.querySelector('.content .q[data-qid="'+CSS.escape(id)+'"]');
   if(_nc && typeof _nc.animate==='function' && !prefersReduce()){
     _nc.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}], { duration:320, easing:EASE.out });
@@ -4021,7 +4129,7 @@ function completeLevel(){
   renderAll();   // 用 renderAll 而非 renderContent，确保顶部统计条同步刷新
 }
 // 刷题模式换题：与记忆模式同款「旧卡横向飞出 → 新卡反向滑入」的翻卡动效，消除同视图内换题的硬跳变。
-// 返回 true 表示已发起换题（含动画中吞掉多余点击），false 表示已到边界（交给调用方处理“完成/提示”）。
+// 返回 true 表示已发起换题（含动画中吞掉多余点击），false 表示已到边界（交给调用方处理"完成/提示"）。
 let _pBusy = false;
 let _pracWrap = null;     // 刷题页骨架（.practice-wrap）的引用
 let _pracQid = null;      // 卡面当前显示哪道题：题面 / 答案 / AI 块只在换题时重写
@@ -4109,7 +4217,7 @@ function bindPractice(c){
   w.querySelector('#prevBtn').onclick = () => { practiceStep(-1); };
   w.querySelector('#nextBtn').onclick = () => {
     if(practiceStep(1)) return;   // 正常前进（带动画）
-    // 已到最后一题：保持原有“完成/提示”逻辑（atLast 与门槛都现算，骨架只绑了一次）
+    // 已到最后一题：保持原有"完成/提示"逻辑（atLast 与门槛都现算，骨架只绑了一次）
     const q = pQuestion(); if(!q) return;
     markPracticed(q.id);
     if(practice.index === practice.order.length-1){
@@ -4577,12 +4685,25 @@ function undoMemoryGrade(){
   else delete PROGRESS[undoneQid];   // 该题原本无进度，撤销后恢复为"无记录"，避免残留空对象
   saveProgress();   // 内部已含 markDirty 与记忆队列缓存失效，无需重复调用
   memory.flipped = false;
+  if(memory._skipped) memory._skipped = new Set();   // 撤销 = 重开一次看题：清掉本轮跳过标记，让被跳过的题重新参与
   memory.queue = buildMemoryQueue(); // 撤销后强制重建，不使用缓存
   // 撤销后定位到被撤销的那道题
   const targetIdx = memory.queue.findIndex(item => item.q.id === undoneQid);
   memory.index = targetIdx >= 0 ? targetIdx : Math.min(memory.index, Math.max(0, memory.queue.length - 1));   // 未找到时安全钳位，不用魔法数
   if(memory.index >= memory.queue.length) memory.index = Math.max(0, memory.queue.length - 1);
   renderAll();
+}
+// 跳过当前题目：纯游标推进 —— 不动队列数组、不写 PROGRESS、不进撤销栈、不喂趁热榜。
+// 与评分刻意分开：评分会落 FSRS 账，跳过只是「这道先不看，下次队列重建时它仍在」，
+// 因此这里只做 index++ 与翻面态复位，其余一律不碰（越界由渲染层出空态，空队列直接空转）。
+// 唯一新增：把本题记进本轮的 _skipped 集合（会话内状态，不入任何存储），
+// 让“只靠跳过”也能把本轮刷完（见 renderMemory 越界分支）：本轮不再回到它，下次进记忆模式照常重现。
+function skipMemoryQuestion(){
+  if(!memory.queue || !memory.queue.length) return;
+  const it = memory.queue[memory.index];
+  if(it && it.q){ if(!memory._skipped) memory._skipped = new Set(); memory._skipped.add(it.q.id); }
+  memory.index++;
+  memory.flipped = false;
 }
 // 展开/收起记忆卡的答案区（点击卡片与键盘 Enter/空格 共用）：
 // 答案本体交给 CSS 的 .rv 做高度过渡（grid-rows 0fr→1fr），评分栏与撤销栏补一个上浮淡入，
@@ -4792,6 +4913,13 @@ function renderMemory(c){
     // 由 resetMemoryState() 显式处理。
     memory.queue = buildMemoryQueue(true);
     memory.index = 0; memory.flipped = false;
+    // 本轮里被跳过的题不再回到眼前（下次进记忆模式、队列重建时它仍在 —— 跳过零副作用，不落存储）。
+    // 否则“一路只点跳过”会因缓存命中返回同一条队列、index 归 0 → 永远绕回第一题、刷不完。
+    if(memory.queue.length && memory._skipped && memory._skipped.size){
+      memory.queue = memory.queue.filter(it => !memory._skipped.has(it.q.id));
+    }
+    // 本轮被跳过、尚未重看的题数：用于区分“真·无到期”与“只是全被跳过”两种空态（后者不能报“全部掌握”）
+    const _skippedN = memory._skipped ? memory._skipped.size : 0;
     if(!memory.queue.length){
       _memWrap = null;   // 切到空态：作废答题卡骨架
       const _ms = computeAllStats();
@@ -4799,6 +4927,14 @@ function renderMemory(c){
       if(!_ms.tq){
         c.innerHTML = `<div class="flash-empty"><div class="big">📚</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">题库还是空的</div><div style="color:var(--muted)">记忆模式按 FSRS 给题目排期。先导入 JSON / Markdown 题库（或新建文档），再回到这里。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="memImport">⬆️ 导入题库（JSON / Markdown）</button></div></div>`;
         const mi = $('#memImport'); if(mi) mi.onclick = () => openImportPicker();
+        return;
+      }
+      // 本轮仍有到期题、只是全被跳过：不能报“全部掌握！”（题其实还在），给“重看跳过”的出口；
+      // 不做也行的提醒：下次进记忆模式这些题会照常重现（跳过零副作用、不落存储）。
+      if(_skippedN > 0){
+        _memWrap = null;
+        c.innerHTML = `<div class="flash-empty"><div class="big">⏭️</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">本轮已刷完</div><div style="color:var(--muted)">还跳过着 <b style="color:var(--text)">${_skippedN}</b> 题——它们仍在复习计划里，下次进记忆模式会再次出现（适合先去电脑上改掉题目再来）。也可现在就重看一遍。</div><div style="margin-top:14px"><button type="button" class="btn primary" id="memSkippedAgain">↩ 重看本轮跳过的 ${_skippedN} 题</button></div></div>`;
+        const ag = $('#memSkippedAgain'); if(ag) ag.onclick = () => { memory._skipped = new Set(); memory.flipped = false; memory.index = 0; memory.queue = buildMemoryQueue(true); renderAll(); };
         return;
       }
       const streak = _ms.streak;
@@ -4841,9 +4977,10 @@ function renderMemory(c){
         <div class="reveal-hint" id="memHint">👆 点击卡片查看答案</div>
         <div class="grade-row mem-grade-row" id="memGradeRow"></div>
         <div class="pcontrols" id="memControls" style="margin-top:14px"></div>
+        <div class="mem-skip-row"><button type="button" class="btn sm" id="memSkip" title="不评分，先看下一道；这道题下次进记忆模式会再出现">⏭ 跳过</button></div>
       </div>
       </div>
-      <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-4 评分（忘了 → 简单）</div>
+      <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-4 评分（忘了 → 简单），S 跳过</div>
     </div>
   `;
     _memWrap = c.querySelector('.feature-wrap');
@@ -4875,11 +5012,12 @@ function bindMemoryCard(c){
     if(isNaN(rate)) return;
     const it = cur(); if(!it) return;
     const curQid = it.q.id;
-    // 评分按钮局部粒子爆发：颜色随档位（忘了红 / 困难橙 / 记得主色 / 简单绿），增强"评下去了"的手感
-    const _th = getTheme(currentTheme) || THEMES.aurora;
+    // 评分爆发：颜色随档位（忘了红 / 困难橙 / 记得主色 / 简单绿），**形态随主题**
+    // （不传 count → 由 BURST_STYLE 里那一套自己决定几个、怎么飞：墨点晕开 / 环荡开 / 水花 / 冰晶…）
+    const _th = getTheme(currentTheme) || THEMES.particle;
     const _rateColor = {1:_th.bad, 2:_th.warn, 3:_th.accent, 4:_th.good}[rate] || _th.accent;
     const _rct = r.getBoundingClientRect();
-    burstParticles(_rct.left + _rct.width/2, _rct.top + _rct.height/2, { count: 9, colors: [_rateColor, _rateColor, '#ffffff'] });
+    burstParticles(_rct.left + _rct.width/2, _rct.top + _rct.height/2, { colors: [_rateColor, _rateColor, '#ffffff'] });
     if(!memory._history) memory._history = [];
     const stack = w.querySelector('#memStack');
     const finish = () => {
@@ -4931,6 +5069,14 @@ function bindMemoryCard(c){
     e.stopPropagation();
     const it = cur(); if(!it) return;
     askAICode(it.q.id);
+  };
+  // 跳过：纯游标推进（不动队列/不写进度/不进撤销栈），与评分共用 busy 锁防连点双跳
+  w.querySelector('#memSkip').onclick = (e) => {
+    e.stopPropagation();
+    if(_memGradeBusy) return;
+    skipMemoryQuestion();
+    memory._justGraded = true;
+    renderMemory(c);
   };
 }
 // 只写变化的字段（换题 / 评分 / 撤销后共用）
@@ -5106,12 +5252,16 @@ function hmDayCounts(){
 }
 function hmLvOf(n){ return n<=0 ? 0 : n<=2 ? 1 : n<=5 ? 2 : n<=10 ? 3 : 4; }
 function hmScaleHtml(){ return [0,1,2,3,4].map(l=>`<i class="hm-cell l${l}"></i>`).join(''); }
+// 格子序号 → 本地日期键（与 WARLOG / dayKeyOf 同一套口径）。
+// hmCivil 返回的是 UTC 零点：日期字段必须取 UTC 版，否则 UTC 负偏移的时区整体错一天
+function hmDayKey(dayNo){
+  const d = hmCivil(dayNo), p = n => String(n).padStart(2,'0');
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth()+1) + '-' + p(d.getUTCDate());
+}
 // 某天的明细文案：题量 + 当天四档评分（评分来自 WARLOG，只覆盖最近 45 天；无评分则不展示）
 function hmDayDetail(dayNo, counts, plain){
-  // hmCivil 返回的是 UTC 零点：日期字段必须取 UTC 版，否则 UTC 负偏移的时区整体错一天
-  const d = hmCivil(dayNo);
-  const p = n => String(n).padStart(2,'0');
-  const key = d.getUTCFullYear() + '-' + p(d.getUTCMonth()+1) + '-' + p(d.getUTCDate());
+  const d = hmCivil(dayNo);   // 文案里要拼"几月几日"：日期字段同样只能取 UTC 版（见 hmDayKey 的说明）
+  const key = hmDayKey(dayNo);
   const count = (counts || hmDayCounts()).get(dayNo) || 0;
   const wl = warDayAgg(key);   // 跨设备汇总：与上面"复习 N 题"（PROGRESS 口径，本身就会同步）说的是同一天的事
   // plain=true 返回纯文本：title 属性与 aria-label 里写 <b> 会原样显示成字面量标签（明细气泡仍走 HTML 加粗）
@@ -5125,12 +5275,30 @@ function hmDayDetail(dayNo, counts, plain){
   }
   return parts.join(' · ');
 }
-let _hmPop = null;
+/* 明细气泡该不该给战报入口：给的话返回那天的日期键，不给返回 null。
+   只给「已经过完、且那天真有记录」的日子 —— 今天不放是因为当天还没过完，战报里的"全天"与
+   四档占比都不成立；没记录不放是因为战报本身在无数据时返回 null，入口跟着不出现，不摆空数据。 */
+function warEntryKey(dayNo){
+  const key = hmDayKey(dayNo);
+  return (key < dayKeyOf(Date.now()) && buildWarReport(key)) ? key : null;
+}
+let _hmPop = null, _hmPopCell = null;   // _hmPopCell：弹出气泡的那个格子 —— 关闭时把焦点交还给它
 function showHmDetail(dayNo, el){
   hideHmDetail();
+  _hmPopCell = el || null;
   _hmPop = document.createElement('div');
   _hmPop.className = 'hm-pop';
   _hmPop.innerHTML = hmDayDetail(dayNo);
+  /* 藏在明细气泡底部的战报入口（该不该给由 warEntryKey 决定）。
+     它不再是纯提示了，所以用真 <button>：读屏报得出、键盘按得到（焦点交接见下面的 hideHmDetail） */
+  const ek = warEntryKey(dayNo);
+  if(ek){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hm-war'; b.dataset.warDay = ek;
+    b.textContent = '📜 查看当日战报';
+    b.onclick = () => { hideHmDetail(); openWarReport(ek); };
+    _hmPop.appendChild(b);
+  }
   document.body.appendChild(_hmPop);
   const r = el.getBoundingClientRect();
   const pw = _hmPop.offsetWidth, ph = _hmPop.offsetHeight;
@@ -5142,9 +5310,20 @@ function showHmDetail(dayNo, el){
   const maxTop = window.innerHeight - ph - 8;
   if(top > maxTop) top = Math.max(8, maxTop);
   _hmPop.style.left = left + 'px'; _hmPop.style.top = top + 'px';
-  requestAnimationFrame(()=> _hmPop.classList.add('show'));
+  /* 键盘用户 Enter 打开格子后，焦点直接落到战报入口 —— 气泡里唯一的可聚焦元素，不必再 Tab 一圈。
+     preventScroll 是必须的：气泡 fixed 定位、本就贴着格子，让浏览器"把它滚进视野"会把整页顶走。
+     鼠标点击不匹配 :focus-visible，所以也不会凭空多一圈高亮；焦点与淡入动画无关，不必等下一帧。 */
+  const wb = _hmPop.querySelector('.hm-war');
+  if(wb){ try{ wb.focus({preventScroll:true}); }catch(_){ wb.focus(); } }
+  requestAnimationFrame(()=>{ if(_hmPop) _hmPop.classList.add('show'); });   // 这一帧前已被关掉就不再碰它
 }
-function hideHmDetail(){ if(_hmPop){ _hmPop.remove(); _hmPop = null; } }
+function hideHmDetail(){
+  if(!_hmPop) return;
+  // 焦点还在气泡里就先交还格子：节点被移除后焦点会掉到 body，热力图的方向键导航会断在这儿
+  const back = _hmPop.contains(document.activeElement) ? _hmPopCell : null;
+  _hmPop.remove(); _hmPop = null; _hmPopCell = null;
+  if(back && typeof back.focus === 'function'){ try{ back.focus({preventScroll:true}); }catch(_){ } }
+}
 /* 浮层是 fixed 定位、坐标在打开时算好：页面纵向滚动或热力图横向滚动之后，
    它会停在旧坐标、指向错误的格子（底部还可能被顶出屏幕）。滚动/缩放时直接关掉，
    比"跟着重定位"更可预期。capture 才能收到内部滚动容器（.hm-wrap）的 scroll */
@@ -6580,129 +6759,133 @@ searchInput.oninput = () => {
    漏背景渐变则页面底色与卡片不搭（不报错，只能靠肉眼发现）。
    这里合并成唯一数据源：加主题只写一处，下面的派生代码负责补齐其余三张表，
    其余代码的读取路径完全不变（仍是 THEMES[id] / THEME_CONFIG[id] / CSS_FX[id] / BODY_BG_MAP[id]）。
-   注：CSS 动效只有 aurora（极光本体）与 songxing（星雾 + 流星）需要，其余主题的光效全部由
-   CSS 变量 + Canvas 引擎负责，因此只有那两个主题带 cssFx 字段。 */
+  注：CSS 动效只有 songxing（星雾 + 流星）需要，其余主题的光效全部由 CSS 变量 + Canvas 引擎负责，
+  因此只有它带 cssFx 字段。 */
 const THEME_SPEC = {
-  // 动态组配色来源（均为 GitHub 高星开源配色体系，再按本项目变量语义适配）：
-  //   aurora 星云 ← Tokyo Night  │ midnight 子夜 ← Catppuccin Mocha │ sunset 斜光 ← Kanagawa
-  //   ripple 粼光 ← Catppuccin Latte │ particle 粒子 ← 现代深空青紫（Linear/Vercel 风）
-  //   gold 流光 ← Rosé Pine Gold │ paper 素笺 ← Flexoki（墨纸）     │ shuangren 霜刃 ← Iceberg
-  //   night 星闪 ← Ayu Mirage
-  // ── 动态组：全部带Canvas粒子特效 ──
-  aurora: {
-    group:'canvas', name:'极光', canvas:'aurora',
-    colors:{bg:'#0d0e17',bg2:'#13141f',panel:'#171927',panel2:'#1d2032',card:'#171927',line:'#242940',line2:'#333a58',text:'#c0caf5',muted:'#8f9bc4',faint:'#565f89',accent:'#7aa2f7',accent2:'#bb9af7',accent3:'#7dcfff',good:'#9ece6a',warn:'#e0af68',bad:'#f7768e'},
-    // 三层光晕布局：左上主色 → 右上辅色 → 底部环境色，比原来的双色更具纵深
-    bodyBg:`radial-gradient(1100px 620px at 18% -6%, rgba(122,162,247,.17) 0%, transparent 58%), radial-gradient(900px 540px at 88% 6%, rgba(187,154,247,.14) 0%, transparent 55%), radial-gradient(700px 420px at 55% 92%, rgba(125,207,255,.07) 0%, transparent 60%), var(--bg)`,
-    // 星云 ← Aceternity UI「Aurora Background」按原参数的 CSS 复刻（原作本就是纯 CSS 效果）：
-    // ① 两层 repeating-linear-gradient：底色条纹压在上层负责"切"出光带，下层是蓝紫青极光（100deg 斜向）
-    // ② background-size 300%/200% + 60s 匀速横移（50%→350%）得到 seamless 的极慢流动
-    // ③ opacity .5 + 右上角径向 mask（原作 mask-image: radial-gradient(ellipse at 100% 0%)）
-    // ④ 原作还有 blur(10px)，这里刻意去掉 —— 它是全应用最贵的一笔每帧开销：
-    //    动效动的是 background-position，这个属性浏览器没法交给合成器，只能每帧在工作线程上重绘整屏；
-    //    再压一层 10px 全屏高斯模糊，等于每帧重做一次整屏模糊，长期占满光栅线程 ——
-    //    表现出来就是"所有动画都不丝滑"（换肤的圆形扩散、展开卡片、切页全都排在它后面）。
-    //    条纹边缘本来就有 3%~4% 的色标过渡（≈40~60px），10px 模糊只多补了一点柔度，
-    //    观感差异极小；若哪天觉得质感不够，正确方向是把动效改成 transform 位移（可合成，每帧成本≈0），
-    //    而不是把 blur 加回来。
-    cssFx:`@keyframes acAurora{0%{background-position:50% 50%,50% 50%}100%{background-position:350% 50%,350% 50%}}body::before{content:'';position:fixed;inset:-10px;pointer-events:none;z-index:0;background-image:repeating-linear-gradient(100deg,#0d0e17 0%,#0d0e17 7%,transparent 10%,transparent 12%,#0d0e17 16%),repeating-linear-gradient(100deg,#7aa2f7 10%,#a5b4fc 15%,#7dcfff 20%,#c4b5fd 25%,#60a5fa 30%);background-size:300%,200%;background-position:50% 50%,50% 50%;opacity:.5;animation:acAurora 60s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%)}@media (prefers-reduced-motion:reduce){body::before{animation:none}}`,
-  },
-  midnight: {
-    group:'canvas', name:'子夜', canvas:'midnight',
-    colors:{bg:'#11111b',bg2:'#181825',panel:'#1e1e2e',panel2:'#24243a',card:'#1e1e2e',line:'#313244',line2:'#45475a',text:'#cdd6f4',muted:'#a6adc8',faint:'#6c7086',accent:'#cba6f7',accent2:'#89b4fa',accent3:'#94e2d5',good:'#a6e3a1',warn:'#fab387',bad:'#f38ba8'},
-    bodyBg:`radial-gradient(1000px 560px at 22% 4%, rgba(203,166,247,.13) 0%, transparent 55%), radial-gradient(900px 520px at 82% 10%, rgba(137,180,250,.10) 0%, transparent 55%), radial-gradient(800px 460px at 50% 96%, rgba(148,226,213,.06) 0%, transparent 60%), var(--bg)`,
-  },
+  /* 主题集：7 套 + 自定义背景图，**每套一个独立机制**（判断留删看机制，不看色温 —— 这条踩过）：
+       斜光   丁达尔光束（光锥 + 锥内浮尘）
+       粒子   星链成网（近距连线）
+       松星   两色星点缓慢漂移
+       星河   螺旋星流（极坐标外涌 + 差速旋转）
+       绢     斜纹织物 + 大面积高光斜掠        ← 浅色
+       云海   FBM 云 + 透视压缩 + 地平线       ← 浅色
+       霜原   冰晶自边缘生长 + 冰面反光
+     2026-10 下线四套（雨窗 / 垂帘 / 年轮 / 默片）：四套都是 WebGL2"物理型"，反复重做多轮
+     仍达不到真实材质的观感，与其占着主题位不如撤掉；四个 id 在 THEME_ALIAS 里就近映射。
+     命名一律用"画面里能看到的现象"，不再用配色出处（原来的"北欧""复古"其实都是在说出处）。
+     配色来源（GitHub 高星开源配色体系，或本项目自研，再按变量语义适配）：
+       sunset 斜光 ← Kanagawa │ particle 粒子 ← 现代深空青紫（Linear/Vercel 风）
+       paper  绢 ← Flexoki（象牙纸）│ night 星河 ← Ayu Mirage │ songxing 松星 ← 自研
+       nord   霜原 ← Nord（压冷压暗）│ ziliang 云海 ← 自研
+     主题 id 保持不变（改的是名字与机制）→ 老存档的偏好不需要迁移；
+     删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
+     更早删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
+     另有两条与主题绑定的"手感"：缩略图签名（SWATCH_SIG + .sig-*）与评分爆发形态（BURST_STYLE）——
+     前者的表在主题选择器那段，后者的表在 burstParticles 上方，加主题时两处都要登记。 */
+  // ── 全部带 Canvas 特效（绢是纯纹理、云海是纯几何，见各自的绘制函数与播种分支）──
   sunset: {
     group:'canvas', name:'斜光', canvas:'sunset',
     colors:{bg:'#15120f',bg2:'#1d1917',panel:'#232019',panel2:'#2b2721',card:'#232019',line:'#3b332a',line2:'#524636',text:'#f0e6d2',muted:'#c0ab8e',faint:'#847460',accent:'#ffa066',accent2:'#ff5d62',accent3:'#e6c384',good:'#98bb6c',warn:'#e6c384',bad:'#e46876'},
     bodyBg:`radial-gradient(1200px 620px at 22% -4%, rgba(255,160,102,.17) 0%, transparent 55%), radial-gradient(900px 520px at 78% 4%, rgba(255,93,98,.12) 0%, transparent 52%), radial-gradient(1000px 520px at 50% 108%, rgba(230,195,132,.10) 0%, transparent 60%), var(--bg)`,
   },
-  // 粼光 ← Catppuccin Latte（github.com/catppuccin/catppuccin，MIT）：teal 主色 / blue 深水 / lavender 浪影
-  // 缩略图渐变带取「主题真实的主色 → 辅色」。粼光/星河 原先写的是别家配色的色值（Nord 的青蓝 / Everforest 的草绿），
-  // 与主题自身的 accent 体系不符，缩略图与实际效果对不上，这里按 THEMES 里的 accent/accent2 核对修正
-  ripple: {
-    group:'canvas', name:'粼光', canvas:'ripple',
-    colors:{bg:'#EFF1F5',bg2:'#E6E9EF',panel:'#F7F9FC',panel2:'#FFFFFF',card:'#F7F9FC',line:'#DCE0E8',line2:'#BCC0CC',text:'#4C4F69',muted:'#6a6d83',faint:'#6b6e79',accent:'#179299',accent2:'#1E66F5',accent3:'#7287FD',good:'#40A02B',warn:'#DF8E1D',bad:'#D20F39'},
-    bodyBg:`radial-gradient(1100px 600px at 25% 0%, rgba(94,129,172,.13) 0%, transparent 55%), radial-gradient(900px 520px at 80% 12%, rgba(136,192,208,.13) 0%, transparent 55%), radial-gradient(800px 460px at 50% 100%, rgba(76,86,106,.07) 0%, transparent 60%), var(--bg)`,
-  },
   particle: {
     group:'canvas', name:'粒子', canvas:'particle',
-    colors:{bg:'#08090d',bg2:'#0d0f16',panel:'#111420',panel2:'#171b2a',card:'#12151f',line:'#1f2433',line2:'#2d3549',text:'#e8ebf5',muted:'#98a2bd',faint:'#5c6684',accent:'#5eead4',accent2:'#a78bfa',accent3:'#38bdf8',good:'#4ade80',warn:'#fbbf24',bad:'#f87171'},
-    bodyBg:`radial-gradient(1000px 560px at 15% 6%, rgba(94,234,212,.11) 0%, transparent 55%), radial-gradient(900px 520px at 85% 4%, rgba(167,139,250,.13) 0%, transparent 55%), radial-gradient(700px 400px at 50% 98%, rgba(56,189,248,.06) 0%, transparent 60%), var(--bg)`,
+    colors:{bg:'#141821',bg2:'#191e29',panel:'#1d2330',panel2:'#242b3a',card:'#1d2330',line:'#2c3444',line2:'#3b4560',text:'#e4e9f2',muted:'#a6b1c7',faint:'#8b97b0',accent:'#6fb7c9',accent2:'#8f9fd6',accent3:'#d8b071',good:'#7fbf8f',warn:'#d8b071',bad:'#d97b7b'},
+    bodyBg:`radial-gradient(1000px 560px at 15% 6%, rgba(111,183,201,.10) 0%, transparent 55%), radial-gradient(900px 520px at 85% 4%, rgba(143,159,214,.11) 0%, transparent 55%), radial-gradient(700px 400px at 50% 98%, rgba(216,176,113,.05) 0%, transparent 60%), var(--bg)`,
   },
-  gold: {
-    group:'canvas', name:'流光', canvas:'gold',
-    colors:{bg:'#100d09',bg2:'#181309',panel:'#1e1811',panel2:'#261f15',card:'#1f190f',line:'#33291a',line2:'#4b3b25',text:'#f4e8d2',muted:'#c2a77e',faint:'#836d4c',accent:'#f6c177',accent2:'#e0a34a',accent3:'#ffe6b0',good:'#a3be8c',warn:'#f6c177',bad:'#e35d6a'},
-    bodyBg:`radial-gradient(1100px 560px at 28% 10%, rgba(246,193,119,.16) 0%, transparent 55%), radial-gradient(900px 480px at 76% 2%, rgba(224,163,74,.12) 0%, transparent 55%), radial-gradient(800px 400px at 50% 92%, rgba(255,230,176,.06) 0%, transparent 60%), var(--bg)`,
-  },
-  // 素笺 ← Flexoki（github.com/kepano/flexoki，MIT）：纸底 paper / 墨字 black / 青墨 cyan-600 ↔ 钢笔蓝 blue-600
-  // id 取 paper；旧存档里保存的 'void'（上一版"点阵"）由 THEME_ALIAS 自动映射到本主题，用户偏好不丢
+  /* 绢（配色沿用 Flexoki 的象牙纸底，github.com/kepano/flexoki，MIT）：
+     id 仍是 paper —— 改的是名字与机制，id 不动，所以老存档的偏好不需要迁移；
+     更早的旧存档里保存的 'void'（上一版"点阵"）由 THEME_ALIAS 自动映射到本主题。
+     配色刻意没动：浅底主题的 text / muted / faint 是按 WCAG AA 逐个核过的，
+     换一个色值就得整套重新核算 —— 这类"看着更顺眼一点"的改动不值得拿可读性去换。 */
   paper: {
-    group:'canvas', name:'素笺', canvas:'paper',
+    group:'canvas', name:'绢', canvas:'paper',
     colors:{bg:'#F7F5EA',bg2:'#EFEDE2',panel:'#FFFCF0',panel2:'#FFFEF9',card:'#FFFCF0',line:'#E6E4D9',line2:'#CECDC3',text:'#1C1B1A',muted:'#575653',faint:'#72706c',accent:'#24837B',accent2:'#205EA6',accent3:'#BC5215',good:'#66800B',warn:'#AD8301',bad:'#AF3029'},
     // 光晕压到极淡——它要当"纸"，任何明显的光晕都会变成刷题时的干扰源
-    bodyBg:`radial-gradient(1100px 620px at 28% 4%, rgba(36,131,123,.055) 0%, transparent 60%), radial-gradient(1000px 560px at 80% 2%, rgba(32,94,166,.045) 0%, transparent 58%), radial-gradient(900px 500px at 50% 100%, rgba(188,82,21,.032) 0%, transparent 62%), var(--bg)`,
-  },
-  shuangren: {
-    group:'canvas', name:'霜刃', canvas:'shuangren',
-    colors:{bg:'#0a0d15',bg2:'#111624',panel:'#151b2b',panel2:'#1b2335',card:'#141a29',line:'#232d44',line2:'#32405c',text:'#d5deee',muted:'#98a9c7',faint:'#5f708d',accent:'#89b8c2',accent2:'#8fb0e0',accent3:'#c3e8f0',good:'#8fd6c0',warn:'#e2c08d',bad:'#e27878'},
-    bodyBg:`radial-gradient(1100px 600px at 22% 4%, rgba(137,184,194,.14) 0%, transparent 55%), radial-gradient(900px 520px at 82% 0%, rgba(143,176,224,.12) 0%, transparent 55%), radial-gradient(800px 440px at 50% 100%, rgba(195,232,240,.06) 0%, transparent 60%), var(--bg)`,
+    scene:{
+      glows:[[0.28, 0.04,1100,620,'#24837B',0.055,0.60],
+             [0.80, 0.02,1000,560,'#205EA6',0.045,0.58],
+             [0.50, 1.00, 900,500,'#BC5215',0.032,0.62]],
+      light:[-0.35,-0.55],
+    },
   },
   // 星闪 ← Ayu Mirage（github.com/ayu-theme/ayu-colors）：深夜蓝底 + 招牌暖金 + 冷调星蓝
   // 「星闪」更名「星河」：特效由静态星野换成绕心旋转、向外涌出的螺旋星流，名字跟着画面走（id 不变，老存档偏好不受影响）
   night: {
     group:'canvas', name:'星河', canvas:'night',
-    colors:{bg:'#1F2430',bg2:'#232834',panel:'#262C3A',panel2:'#2C3342',card:'#262C3A',line:'#313849',line2:'#3D4658',text:'#CBCCC6',muted:'#8A93A5',faint:'#5C6773',accent:'#FFCC66',accent2:'#73D0FF',accent3:'#95E6CB',good:'#BAE67E',warn:'#FFD580',bad:'#F07178'},
+    colors:{bg:'#1F2430',bg2:'#232834',panel:'#262C3A',panel2:'#2C3342',card:'#262C3A',line:'#313849',line2:'#3D4658',text:'#CBCCC6',muted:'#98a1b3',faint:'#8b95ab',accent:'#f0c368',accent2:'#7cb8e0',accent3:'#8fd0bb',good:'#a9d47f',warn:'#e8c98a',bad:'#e07b82'},
     // 光晕围着画面上部的星流中心铺（冷光垫底），暖金/水青退到两个角落做星温层次
-    bodyBg:`radial-gradient(1100px 620px at 50% 36%, rgba(115,208,255,.075) 0%, transparent 62%), radial-gradient(900px 500px at 16% 4%, rgba(255,204,102,.055) 0%, transparent 55%), radial-gradient(900px 520px at 84% 92%, rgba(149,230,203,.045) 0%, transparent 60%), var(--bg)`,
+    bodyBg:`radial-gradient(1100px 620px at 50% 36%, rgba(124,184,224,.07) 0%, transparent 62%), radial-gradient(900px 500px at 16% 4%, rgba(240,195,104,.05) 0%, transparent 55%), radial-gradient(900px 520px at 84% 92%, rgba(143,208,187,.04) 0%, transparent 60%), var(--bg)`,
   },
-  // 定制组（松星保留原样，子良/子荣用中国画色彩体系）：
-  //   子良 晨雾青黛 ← 雾白底 + 青黛主色（配层叠远山）│ 子荣 丹青墨韵 ← 宣纸底 + 朱砂/靛青
-  // ── 定制组：子良/松星/子荣（松星为定制主题，保持原样）──
+  /* 垂帘 / 雨窗 / 年轮 / 默片四套已整体下线（2026-10）：四套都是"物理型"WebGL2 主题，
+     反复重做多轮仍达不到"真实材质"的标准（雨窗的折射、年轮的木纹、默片的单色胶片、垂帘的帘幕轮廓）——
+     与其留四套不像东西的效果占着主题位，不如只留做得下来的（云海 / 霜原 / 绢）。
+     四个 id 全部登记在 THEME_ALIAS 里就近映射（垂帘、雨窗 → 星河；年轮、默片 → 斜光），
+     老存档里存着这四套的用户不会因此退回"跟随系统明暗"。 */
+  /* 云海（自研，id 仍是 ziliang）：浅色 —— 云是暖白，天光在右上，云海从画面的下三分之二铺开。
+     与"绢"一起承担浅色模式（跟随系统）的落点；配色沿用原来那套（同样按 WCAG AA 核过，不动）。 */
   ziliang: {
-    group:'custom', name:'子良', canvas:'ziliang',
+    group:'canvas', name:'云海', canvas:'ziliang',
     colors:{bg:'#eaeff0',bg2:'#e0e7e8',panel:'#f2f6f7',panel2:'#fafcfc',card:'#f6f9f9',line:'#d3dcdd',line2:'#bfcbcd',text:'#22333a',muted:'#4d6470',faint:'#5f6f76',accent:'#2f6f78',accent2:'#4a8a94',accent3:'#b8763f',good:'#4f8a5f',warn:'#b8763f',bad:'#b04a44'},
-    // 晨光落在右上、雾气沉在下半幅——远山剪影从下方"浮"出来，天光要压在山的上面
-    bodyBg:`radial-gradient(1000px 560px at 78% 4%, rgba(255,252,240,.62) 0%, transparent 56%), radial-gradient(1000px 620px at 28% 14%, rgba(74,138,148,.085) 0%, transparent 60%), linear-gradient(180deg, rgba(255,255,255,.30) 0%, rgba(216,228,230,.22) 52%, rgba(196,214,216,.34) 100%), var(--bg)`,
+    // 天光落在右上（云顶被照亮），云海自下而上叠起来 —— 越靠下的云越厚、越白
+    scene:{
+      glows:[[0.78, 0.04,1000,560,'#FFFCF0',0.62,0.56],
+             [0.28, 0.14,1000,620,'#4A8A94',0.085,0.60],
+             [0.50, 1.00,1200,700,'#E4EEF0',0.22,0.55]],
+      light:[0.45,-0.55],
+    },
+  },
+  /* 霜原（配色基于 Nord，github.com/nordtheme/nord，MIT，id 仍是 nord）：
+     把底色整体压冷压暗、把主色提白，画面因此从"蓝灰"走到"霜白"；名字也跟着从配色出处
+     换成了画面本身（原来的"北欧"是以配色来源命名的，不是在描述画面）。
+     顺手修掉一处既有问题：旧配色的 muted / faint 对 panel 只有 4.45 / 2.76 —— 低于 4.5 的小字标准，
+     而这两个色正是用在热力图坐标、图表轴标签这类 9~10px 小字上。新配色全部核算过：
+     text 8.89 / muted 5.32 / faint 4.81（对 panel），bg 上更高。 */
+  nord: {
+    group:'canvas', name:'霜原', canvas:'scan',
+    colors:{bg:'#1e232c',bg2:'#252b35',panel:'#2f3743',panel2:'#39424f',card:'#2f3743',line:'#3f4a58',line2:'#4e5a6b',text:'#d8dee9',muted:'#a3adc0',faint:'#9aa4bb',accent:'#9fd9e8',accent2:'#7fb0d8',accent3:'#b48ead',good:'#a3be8c',warn:'#ebcb8b',bad:'#bf616a'},
+    scene:{
+      glows:[[0.18,-0.10,1100,620,'#9fd9e8',0.13,0.58],
+             [0.85, 0.10, 900,540,'#7fb0d8',0.10,0.55],
+             [0.50, 1.02, 820,480,'#b48ead',0.06,0.60]],
+      light:[-0.45,-0.55],
+    },
   },
   songxing: {
-    group:'custom', name:'松星', canvas:'songxing',
-    colors:{bg:'#060410',bg2:'#0a081a',panel:'#0e0c20',panel2:'#121026',card:'#121026',line:'#1e1838',line2:'#2a2250',text:'#d8d0f0',muted:'#9080c0',faint:'#605890',accent:'#a78bfa',accent2:'#c084fc',accent3:'#d4a854',good:'#6ee7b7',warn:'#d4a854',bad:'#f06a6a'},
-    bodyBg:`radial-gradient(1200px 700px at 25% 10%, #a78bfa1a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #d4a85412 0%, transparent 50%), var(--bg)`,
-    cssFx:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.24),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.16),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.12),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.14),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
+    group:'canvas', name:'松星', canvas:'songxing',
+    colors:{bg:'#17131f',bg2:'#1d1829',panel:'#221c30',panel2:'#2a2239',card:'#221c30',line:'#322a44',line2:'#443a5c',text:'#e0daf0',muted:'#a89ec6',faint:'#8a80ad',accent:'#a49ad8',accent2:'#c4b3e6',accent3:'#cfa869',good:'#85c39a',warn:'#cfa869',bad:'#d98a86'},
+    bodyBg:`radial-gradient(1200px 700px at 25% 10%, #a49ad81a 0%, transparent 50%), radial-gradient(1000px 600px at 75% 5%, #cfa86912 0%, transparent 50%), var(--bg)`,
+    cssFx:`@keyframes sxNebA{0%,100%{opacity:.65}50%{opacity:1}}@keyframes sxNebB{0%,100%{opacity:1}50%{opacity:.55}}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 1200px 800px at 20% 15%,rgba(124,93,250,.15),transparent 55%),radial-gradient(ellipse 1000px 700px at 75% 30%,rgba(168,139,250,.10),transparent 55%),radial-gradient(ellipse 900px 650px at 50% 85%,rgba(212,168,84,.08),transparent 60%);animation:sxNebA 20s ease-in-out infinite}body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 750px 350px at 35% 40%,rgba(216,208,240,.09),transparent 60%),radial-gradient(ellipse 700px 320px at 60% 55%,rgba(212,168,84,.1),transparent 60%);animation:sxNebB 24s ease-in-out infinite}.app::before{content:'';position:fixed;top:6%;right:8%;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(224,208,255,.75),rgba(224,208,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot3 12s linear infinite 2s}.main::after{content:'';position:fixed;top:18%;right:2%;width:90px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(212,168,84,.7),rgba(212,168,84,.15),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot4 14s linear infinite 6s}.app::after{content:'';position:fixed;top:14%;right:45%;width:80px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(180,160,255,.65),rgba(180,160,255,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot5 11s linear infinite 4s}.main::before{content:'';position:fixed;top:22%;right:55%;width:70px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(255,200,130,.65),rgba(255,200,130,.2),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:0% 50%;animation:sxShoot6 13s linear infinite 7s}.content::before{content:'';position:fixed;top:2%;right:0;width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,224,160,.8),rgba(255,224,160,.3),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot1 11s linear infinite}.content::after{content:'';position:fixed;top:10%;right:0;width:100px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,rgba(168,139,250,.7),rgba(168,139,250,.25),transparent);pointer-events:none;z-index:0;opacity:0;transform-origin:100% 50%;animation:sxShoot2 13s linear infinite 3s}@keyframes sxShoot3{0%{transform:rotate(-38deg) translateX(0);opacity:0}1%{opacity:.9}6%{transform:rotate(-38deg) translateX(-115vw);opacity:.55}10%{transform:rotate(-38deg) translateX(-115vw);opacity:.06}15%{opacity:0}100%{transform:rotate(-38deg) translateX(-115vw);opacity:0}}@keyframes sxShoot4{0%{transform:rotate(-32deg) translateX(0);opacity:0}1%{opacity:.85}5.5%{transform:rotate(-32deg) translateX(-105vw);opacity:.5}9%{transform:rotate(-32deg) translateX(-105vw);opacity:.05}14%{opacity:0}100%{transform:rotate(-32deg) translateX(-105vw);opacity:0}}@keyframes sxShoot5{0%{transform:rotate(-20deg) translateX(0);opacity:0}2%{opacity:.75}10%{transform:rotate(-20deg) translateX(-60vw);opacity:.45}16%{transform:rotate(-20deg) translateX(-60vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-20deg) translateX(-60vw);opacity:0}}@keyframes sxShoot6{0%{transform:rotate(-25deg) translateX(0);opacity:0}2%{opacity:.7}10%{transform:rotate(-25deg) translateX(-70vw);opacity:.4}16%{transform:rotate(-25deg) translateX(-70vw);opacity:.05}24%{opacity:0}100%{transform:rotate(-25deg) translateX(-70vw);opacity:0}}@keyframes sxShoot1{0%{transform:rotate(-35deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-35deg) translateX(-120vw);opacity:.7}9%{transform:rotate(-35deg) translateX(-120vw);opacity:.1}13%{opacity:0}100%{transform:rotate(-35deg) translateX(-120vw);opacity:0}}@keyframes sxShoot2{0%{transform:rotate(-30deg) translateX(0);opacity:0}1%{opacity:1}5%{transform:rotate(-30deg) translateX(-110vw);opacity:.6}8.5%{transform:rotate(-30deg) translateX(-110vw);opacity:.08}13%{opacity:0}100%{transform:rotate(-30deg) translateX(-110vw);opacity:0}}`,
   },
+  /* 极光（id 保持 aurora）：随高度绿→青→紫渐变、缓慢飘移的光幕，走 WebGL2。
+     scene 的三团光晕在天空顶部铺开（绿主、水青次、紫退到一侧），无 WebGL2 时靠它做 2D 静态兜底。 */
+  aurora: {
+    group:'canvas', name:'极光', canvas:'aurora',
+    colors:{bg:'#0c1220',bg2:'#111a2b',panel:'#152033',panel2:'#1b2942',card:'#152033',line:'#243452',line2:'#33476b',text:'#e3ecf5',muted:'#a3b4cd',faint:'#7d8fa9',accent:'#5fe3b0',accent2:'#57b7e0',accent3:'#a98bd6',good:'#7fd6a0',warn:'#e6c384',bad:'#e07b82'},
+    scene:{
+      glows:[[0.22, 0.10, 780,420,'#5fe3b0',0.12,0.50],
+             [0.55, 0.04, 900,360,'#57b7e0',0.08,0.45],
+             [0.80, 0.16, 640,460,'#a98bd6',0.07,0.55]],
+      light:[0.10,-0.60],
+    },
+  },
+  // 波纹（id 保持 ripple）：2D 同心水波纹环（时间驱动，不依赖粒子），冷青水色系
+  ripple: {
+    group:'canvas', name:'波纹', canvas:'ripple',
+    colors:{bg:'#0b1015',bg2:'#101822',panel:'#141d28',panel2:'#1a2531',card:'#141d28',line:'#233242',line2:'#31465c',text:'#dfe9ef',muted:'#9fb3c2',faint:'#7a8c9b',accent:'#63c7d6',accent2:'#7c93c4',accent3:'#cfe3e6',good:'#7fbf8f',warn:'#e6c384',bad:'#d97b7b'},
+    bodyBg:`radial-gradient(1100px 600px at 30% 20%, rgba(99,199,214,.10) 0%, transparent 55%), radial-gradient(900px 520px at 78% 8%, rgba(124,147,196,.10) 0%, transparent 55%), radial-gradient(1000px 520px at 50% 108%, rgba(207,227,230,.05) 0%, transparent 60%), var(--bg)`,
+  },
+  // 流萤（id 保持 zirong）：暖黄萤火虫（横向游走 + 呼吸明灭），暮绿黑底
   zirong: {
-    group:'custom', name:'子荣', canvas:'zirong',
-    colors:{bg:'#f4efe6',bg2:'#ece5da',panel:'#faf6ee',panel2:'#fffdf8',card:'#fcf8f1',line:'#e2d7c6',line2:'#d0c0a8',text:'#26201a',muted:'#5a4c40',faint:'#7a6b5c',accent:'#b4322e',accent2:'#2c5f7a',accent3:'#c8912f',good:'#4a7a4c',warn:'#c8912f',bad:'#b4322e'},
-    bodyBg:`radial-gradient(1100px 600px at 24% 8%, rgba(180,50,46,.07) 0%, transparent 55%), radial-gradient(900px 520px at 82% 6%, rgba(44,95,122,.07) 0%, transparent 55%), radial-gradient(700px 420px at 52% 96%, rgba(200,145,47,.06) 0%, transparent 60%), var(--bg)`,
+    group:'canvas', name:'流萤', canvas:'zirong',
+    colors:{bg:'#0e140f',bg2:'#141b15',panel:'#182019',panel2:'#1f2a21',card:'#182019',line:'#2a352c',line2:'#3a473d',text:'#e6ecdf',muted:'#adbbab',faint:'#87957f',accent:'#cfe36b',accent2:'#e6c384',accent3:'#8fb36a',good:'#98bb6c',warn:'#e6c384',bad:'#d98a86'},
+    bodyBg:`radial-gradient(1000px 560px at 22% 12%, rgba(207,227,107,.08) 0%, transparent 55%), radial-gradient(900px 520px at 82% 8%, rgba(230,195,132,.07) 0%, transparent 55%), radial-gradient(1000px 520px at 50% 100%, rgba(143,179,106,.06) 0%, transparent 60%), var(--bg)`,
   },
-  // Dracula（github.com/dracula/dracula-theme，MIT）
-  // ── 经典组：编辑器配色生态 ──
-  //    这里刻意只留 4 套，而且每套配一个**各自独立**的 canvas 特效（不再共用同一个绘制分支）。
-  //    原来这里放着 11 套，全部声明 canvas:'stardust' —— 几何、数量、运动逐像素一致，只有三色跟着
-  //    主题变，等于同一片星尘换 11 次配色；而且其中 Catppuccin 占 2 套（另两套在动态组）、
-  //    Rosé Pine 占 3 套、One Dark 与 Nord 同温度、GitHub 与极光同温度 —— 族内重复也高。
-  //    筛掉同族与同温度的那些，只留色温上真正互补的四套，各自给一个机制不同的特效：
-  //      德古拉 品红/紫 → 上升余烬 │ 北欧 冷蓝 → 寒潮扫描 │ 复古 暖橙 → 胶片颗粒 │ 常青 墨绿 → 林间萤火
-  //    被删掉的 7 个 id 在 THEME_ALIAS 里登记到最近的保留主题，老存档的偏好不会丢（也不会误入跟随系统）。
-  dracula: {
-    group:'classic', name:'德古拉', canvas:'ember',
-    colors:{bg:'#1d1e27',bg2:'#23242f',panel:'#282a36',panel2:'#343646',card:'#282a36',line:'#44475a',line2:'#565970',text:'#f8f8f2',muted:'#b6bccf',faint:'#6272a4',accent:'#bd93f9',accent2:'#8be9fd',accent3:'#ff79c6',good:'#50fa7b',warn:'#ffb86c',bad:'#ff5555'},
-  },
-  // Nord（github.com/nordtheme/nord，MIT）
-  nord: {
-    group:'classic', name:'北欧', canvas:'scan',
-    colors:{bg:'#272c36',bg2:'#2e3440',panel:'#3b4252',panel2:'#434c5e',card:'#3b4252',line:'#4c566a',line2:'#59627a',text:'#d8dee9',muted:'#a3adc0',faint:'#7c869e',accent:'#88c0d0',accent2:'#81a1c1',accent3:'#b48ead',good:'#a3be8c',warn:'#ebcb8b',bad:'#bf616a'},
-  },
-  // Gruvbox（github.com/morhetz/gruvbox，MIT）Hard Dark
+  // 余烬（id 保持 gruvbox）：底部升起的暖橙火星（上飘 + 闪灭 + 顶端渐隐），炭褐底
   gruvbox: {
-    group:'classic', name:'复古', canvas:'film',
-    colors:{bg:'#1d2021',bg2:'#282828',panel:'#32302f',panel2:'#3c3836',card:'#282828',line:'#504945',line2:'#665c54',text:'#ebdbb2',muted:'#bdae93',faint:'#a89984',accent:'#83a598',accent2:'#d3869b',accent3:'#fe8019',good:'#b8bb26',warn:'#fabd2f',bad:'#fb4934'},
-  },
-  // Everforest（github.com/sainnhe/everforest，MIT）
-  everforest: {
-    group:'classic', name:'常青', canvas:'firefly',
-    colors:{bg:'#232a2e',bg2:'#2d353b',panel:'#343f44',panel2:'#3d484d',card:'#343f44',line:'#3d484d',line2:'#4a565c',text:'#d3c6aa',muted:'#9da9a0',faint:'#7a8478',accent:'#7fbbb3',accent2:'#83c092',accent3:'#d699b6',good:'#a7c080',warn:'#dbbc7f',bad:'#e67e80'},
+    group:'canvas', name:'余烬', canvas:'gruvbox',
+    colors:{bg:'#161010',bg2:'#1d1615',panel:'#221a18',panel2:'#2b211d',card:'#221a18',line:'#3a2c26',line2:'#4e3b32',text:'#efe4d8',muted:'#c0aa94',faint:'#98856f',accent:'#e07b3f',accent2:'#c8553d',accent3:'#d8b071',good:'#98bb6c',warn:'#e6c384',bad:'#e46876'},
+    bodyBg:`radial-gradient(1100px 640px at 50% 104%, rgba(224,123,63,.16) 0%, transparent 58%), radial-gradient(900px 520px at 20% 6%, rgba(200,85,61,.10) 0%, transparent 55%), radial-gradient(800px 460px at 82% 10%, rgba(216,176,113,.08) 0%, transparent 58%), var(--bg)`,
   },
   // ── 自定义组：上传背景图 ──
   'img-bg': {
@@ -6726,17 +6909,21 @@ for (const id of Object.keys(THEME_SPEC)) {
   // （特效分派走下面派生出的 id 清单，缩略图从 colors 的 accent/accent2 现算），留着就是下一个漂移源
   THEME_CONFIG[id] = { group: t.group, name: t.name };
   if (t.cssFx) CSS_FX[id] = t.cssFx;
-  if (t.bodyBg) BODY_BG_MAP[id] = t.bodyBg;
+  // 底色两个来源：物理型主题由 scene 派生（CSS 兜底底色 / 2D 静态兜底 / 着色器同一份描述），
+  // 其余主题仍是字面量 bodyBg。两者都写时以 scene 为准（避免同一件事有两个说法）
+  if (t.scene) BODY_BG_MAP[id] = sceneToCss(t.scene);
+  else if (t.bodyBg) BODY_BG_MAP[id] = t.bodyBg;
   if (!t.canvas || t.canvas === 'none') continue;
   ALL_CANVAS_THEMES.push(id);
   if (t.canvas === 'stardust') STARDUST_THEMES.push(id);
 }
 /* 分派键 = THEME_SPEC 声明的 canvas key，**不是主题 id**。
-   早期 12 套的 id 与 key 恰好同名（aurora→aurora、night→night），所以拿 id 去 switch
-   "碰巧"一直是对的；从「经典组」起两者拆开（dracula→ember / nord→scan / gruvbox→film /
-   everforest→firefly），再用 id 分派就会**静默**落进 default 的星尘 —— 不报错、只是没有特效，
-   而且 nord/gruvbox 连粒子都没播种（initThemeParticles 按 id 分支），画面上是一张死图。
-   自建配色主题在 THEME_SPEC 里没有条目，落回自身 id → 无 case → default 星尘（正确）。 */
+   这条曾经真出过一次事故：早期 12 套的 id 与 key 恰好同名，拿 id 去 switch "碰巧"一直是对的；
+   后来加了四套 id 与 key 拆开的主图（dracula→ember / nord→scan / gruvbox→film / everforest→firefly），
+   那四套就**静默**落进了 default 的星尘 —— 不报错、只是没有特效，其中两套连粒子都没播种，
+   画面上是一张死图。如今收敛后内置主题的 id 与 key 又全部同名了，但这座桥必须留着：
+   一是老存档/自建配色主题（THEME_SPEC 里没有条目）要落回自身 id，二是防止将来再拆开时重蹈覆辙。
+   门禁里有一条把「canvas 声明集合」与「case 集合」逐个对账的断言守着这件事。 */
 function canvasKeyOf(id){
   const t = THEME_SPEC[id];
   return (t && t.canvas && t.canvas !== 'none') ? t.canvas : id;
@@ -6763,12 +6950,17 @@ function getThemeConfig(id){ return CUSTOM_CONFIG[id] || THEME_CONFIG[id]; }
    ⚠️ 不登记是不行的：savedThemeId() 解析到不存在的 id 会返回空串，于是应用会退回「跟随系统深浅」
    并且**开始实时跟随系统明暗** —— 用户会觉得「每次打开主题都在变」。这是删主题时最容易漏的一步。 */
 const THEME_ALIAS = {
-  void:'paper',
-  // 下面 7 个是本次主题集收敛时删掉的（同族换色）：Catppuccin 另两个变体 → 子夜，
-  // 玫瑰三变体 → 德古拉（同为冷紫调）与素笺（唯一的浅纸感），One Dark → 北欧，GitHub → 极光
-  frappe:'midnight', macchiato:'midnight',
-  rosepine:'dracula', rosepineMoon:'dracula', rosepineDawn:'paper',
-  onedark:'nord', github:'aurora',
+  /* 浅底的一律归绢（几套浅色主题里它的质感最明确） */
+  void:'paper',          // 上一版「点阵」
+  rosepineDawn:'paper',  // Rosé Pine Dawn
+  /* 冷蓝 / 深夜底的归星河（Ayu Mirage 深夜蓝） */
+  frappe:'night', macchiato:'night', rosepine:'night', onedark:'night', shuangren:'night',
+  /* 紫黑底的归松星（紫黑底 + 紫白/暖金两色星点） */
+  rosepineMoon:'songxing', midnight:'songxing', dracula:'songxing',
+  /* 深空青紫的归粒子（青/紫/蓝三色星链） */
+  github:'particle', everforest:'particle',
+  /* 暖色底的归斜光（橙金暖调） */
+  gold:'sunset',
 };
 // "当前该用哪个主题"的唯一读取入口：解析别名 + 兜底非法值，避免各处直接读 localStorage 造成行为不一致
 function savedThemeId(){
@@ -6778,7 +6970,7 @@ function savedThemeId(){
 }
 
 
-let currentTheme = 'aurora';
+let currentTheme = 'particle';   // 默认主题（也是所有 getTheme 兜底用的那一套）
 const themeVars = document.createElement('style'); themeVars.id='themeVars'; document.head.appendChild(themeVars);
 
 // hex → "r,g,b"（供 rgba(var(--accent-rgb),x) 使用）
@@ -6869,17 +7061,34 @@ let _uAlphaBase = 1;
 // 抛出的 ReferenceError 又会被 applyTheme 的 try/catch 吞掉（见 startUnifiedCanvas 里的解析期判断）
 let _uHidden = false;
 let _vtHold = false;
-// 说明：曾有一条"静态画面型主题"的分支（STATIC_CANVAS_THEMES 名单 + _uStaticTheme + drawStaticCanvasFrame），
-// 名单早已为空数组、四个判断恒假，纯属误导后人的死路径 —— 子良改为动态画面后就整体删掉了。
-// 将来真要做"静物型主题"，应该在 tickUnified 里按主题注册生成器，而不是恢复这条恒假分支。
+/* WebGL2 图层（"物理型"主题）的状态。放在本区的原因与上面 2D 那组相同：startUnifiedCanvas 会在脚本
+   解析期经 initTheme → applyTheme 被调用（解析完前它会提前 return，但 resize 监听可能更早触发
+   resizeGLTheme），声明晚于调用点就会命中 TDZ。 */
+let _uGLCanvas = null, _uGL = null, _uGLProg = null, _uGLLoc = null;
+let _uGLKey = '';        // 当前挂在 GPU 上的 canvas key（'' = 未启用）
+let _uGLFail = false;    // 本会话内已确认不可用 / 上下文已丢失：不再重试（免得每切一次主题闪一次）
+let _uGLStep = 0;        // 自适应像素预算档位（0/1/2，见 paintGLFrame 的掉帧判定）
+let _uGLSlow = 0, _uGLFrames = 0;   // 慢帧累计：按 rAF 的**实际帧间隔**判断，而不是 drawArrays 的 JS 耗时
+let _uGLDbgGrid = false, _uGLDbgEl = null;   // ?shaderdebug：7 套并排画出来（含编译状态），供人工比对
+const _uGLDbgProgs = {};   // 调试网格里每个 shader 各留一个 program
+let _uGLNote = '';         // 失败原因（编译/链接信息日志、异常信息）：非空时在页面上叠一条说明
+const _uGLBadKeys = {};    // 编译失败过的 shader：同一段不再反复重试，并在诊断条上标出来
+let _uGLChecked = 0;       // 首帧自检（readPixels 读一次，确认不是"跑起来了但输出全黑"）是否已做
+// 说明：曾有一条"静态画面型主题"的分支（一份 STATIC_CANVAS_THEMES 名单 + _uStaticTheme + 静态帧函数），
+// 名单早已为空数组、四个判断恒假，纯属误导后人的死路径，后来整体删掉了。
+// 将来真要做"静物型主题"，应该在 tickUnified 里按主题注册生成器，而不是恢复那条恒假分支。
 // 主题特效的组织方式：**一套主题一个独立特效**（2026-10 起），不再「多套主题共用一条绘制分支」——
 // 共用会让几何、数量、运动完全一致，只有颜色跟着变，用户看到的就是同一片动画换配色。
-// 新增一套主题要动三处：THEME_SPEC 里声明 canvas key、分派表加一个 case、写一个 drawX 函数。
-// ⚠️ 两个静默坑，改完务必跑冒烟测试：
-//   ① 漏掉分派表的 case → 回落到兜底的星尘（不报错）；
+// 特效分两条渲染路径，由 canvas key 决定（两者互斥，同一时刻只有一层画布存在）：
+//   · 粒子型（斜光/粒子/星河/松星）→ Canvas 2D 引擎：THEME_SPEC 声明 canvas key + 分派表一个 case
+//     + 一个 drawX 函数（+ 需要粒子时在 initThemeParticles 里加分支）。
+//   · 物理型（云海/霜原/绢）→ WebGL2 图层：THEME_SPEC 里额外写一个 scene
+//     （背景光晕，CSS 兜底底色由它派生）+ 在 GL_SHADER_OF 里登记 key→着色器名 + 写一段片元着色器。
+// ⚠️ 三个静默坑，改完务必跑冒烟测试：
+//   ① 漏掉分派表的 case / 漏登记 GL_SHADER_OF → 回落到兜底的星尘（不报错，只是"没动效"）；
 //   ② **分派键必须是 canvas key，不是主题 id** —— 见 canvasKeyOf。id 与 key 同名的主题用 id
-//      分派也碰巧正确，只有像 dracula→ember 这种拆开的才暴露（这条已经真出过一次）。
-// 另外：若主题需要粒子，还要在 initThemeParticles 里加对应分支（漏了就是「不报错但一个粒子都没有」）。
+//      分派也碰巧正确，只有像 dracula→ember 这种拆开的才暴露（这条已经真出过一次）；
+//   ③ 走 GPU 的主题若漏了 scene，着色器会拿到全 0 的光晕与底色（画面漆黑，且不报错）。
 // 清单本身由上面的派生循环生成（见那里对 STARDUST_THEMES / ALL_CANVAS_THEMES 的说明）。
 // 主题特效的常量一律就近声明在其绘制函数上方（函数体只在帧循环里执行，不存在解析期引用 → 无 TDZ 风险）；
 // 只有 initThemeParticles 也要用的量才提前到本区（它可能在解析期被 initTheme → applyTheme 调用）。
@@ -6936,7 +7145,7 @@ window.addEventListener('resize', markParticleMaskStale, {passive:true});
 // ======== applyTheme：从配置表驱动 ========
 function applyTheme(name, opts){
   currentTheme = name;
-  const t = getTheme(name)||THEMES.aurora;
+  const t = getTheme(name)||THEMES.particle;
   // 注：此处曾取一份 cfg = getThemeConfig(name) 但全函数从未使用它 —— 已删。
   // getThemeConfig 本身保留：它与 getTheme 是一对统一读取入口（先查自建主题再回落内置），
   // 主题选择器那边的整表合并仍依赖同一套约定。
@@ -6953,7 +7162,7 @@ function applyTheme(name, opts){
   if(gr) cssVars += ';--good-rgb:'+gr;
   if(wr) cssVars += ';--warn-rgb:'+wr;
   if(br) cssVars += ';--bad-rgb:'+br;
-  // 中性底色（未刷题格子/空柱/进度槽）用文字色分量：写死白色在浅色主题（素笺/粼光/子良/子荣）下会隐形
+  // 中性底色（未刷题格子/空柱/进度槽）用文字色分量：写死白色在浅色主题（绢）下会隐形
   if(tr) cssVars += ';--text-rgb:'+tr;
   /* accent3 在调色板里是按「装饰 / 渐变」给的（浅底主题上作小字只有 2~3:1），而它同时被当成标签
      小字色用在好几处（.ptag / .panswer .label / 连续打卡天数…）。这里派生 --accent3-ink：只在「作文字」
@@ -7095,13 +7304,31 @@ function pickTheme(id, evt){
 }
 
 // ======== 主题选择器 UI 构建 ========
-// 缩略图 = 迷你主题预览：底色用主题真实背景色，顶部渐变带取主色→辅色，右下圆点取第三强调色
+/* 缩略图签名表：主题 id → 那个小记号用的类（样式见 <style> 里的 .sig-*）。
+   加这张表的理由：11 个缩略图如果只有"色带 + 圆点"，在选择器里就是 11 条颜色带，看不出哪套是什么机制。 */
+const SWATCH_SIG = {
+  songxing: 'sig-stars',     // 松星：两色星点
+  night:    'sig-spiral',    // 星河：一道旋臂
+  paper:    'sig-sheen',     // 绢：一道斜向高光
+  ziliang:  'sig-clouds',    // 云海：三层云带
+  nord:     'sig-scan',      // 霜原：细扫描线 + 一道亮线
+  sunset:   'sig-rays',      // 斜光：几道斜向光带（类已定义）
+  particle: 'sig-link',      // 粒子：点连成网（类已定义）
+  aurora:   'sig-aurora',    // 极光：竖向渐变色幕
+  ripple:   'sig-ripple',    // 波纹：同心环
+  zirong:   'sig-zirong',    // 流萤：稀疏暖点
+  gruvbox:  'sig-gruvbox'    // 余烬：底部上飘暖点
+};
+// 缩略图 = 迷你主题预览：底色用主题真实背景色，顶部渐变带取主色→辅色，右下圆点取第三强调色，另有签名元素
 function themeSwatchHTML(id){
-  const t = getTheme(id) || THEMES.aurora;
+  const t = getTheme(id) || THEMES.particle;
   const rawBg = (t && typeof t.bg === 'string') ? t.bg : '';
   const bg = /^#[0-9a-f]{3,8}$/i.test(rawBg) ? rawBg : 'var(--bg2)';
   const c1 = t.accent || '#7aa2f7', c2 = t.accent2 || c1, c3 = t.accent3 || c2;
-  return `<div class="tc-swatch" style="background:${bg}"><span class="tc-band" style="background:linear-gradient(90deg,${c1},${c2})"></span><span class="tc-dot" style="background:${c3}"></span></div>`;
+  // 签名元素：让缩略图能"看出灵魂"。表里没有的 id（含旧存档里的自建配色主题）不加签名，
+  // 退回原来的"色带 + 圆点"——自建主题本来就没有对应机制。
+  const sig = SWATCH_SIG[id];
+  return `<div class="tc-swatch" style="background:${bg}"><span class="tc-band" style="background:linear-gradient(90deg,${c1},${c2})"></span><span class="tc-dot" style="background:${c3}"></span>${sig ? '<span class="tc-sig ' + sig + '"></span>' : ''}</div>`;
 }
 function buildThemeGrid(filterGroup){
   const grid = $('#themeGrid');
@@ -7155,29 +7382,10 @@ function buildThemeGrid(filterGroup){
   });
 }
 
-// 初始化主题卡片（默认显示动态组）
-buildThemeGrid('canvas');
-
-// 标签切换
-document.querySelectorAll('#themeTabs .theme-tab').forEach(tab=>{
-  // 与 .set-head / 模式卡同款：纯 div 必须补 tabindex + role，否则键盘用户切不了分组
-  // （全局 keydown 里已有 [role="button"][tabindex] 的 Enter/Space 激活分支）
-  tab.tabIndex = 0; tab.setAttribute('role','button');
-  // 用 aria-pressed 而不是 aria-selected：后者只属于 tab / option / row 这些角色，
-  // 挂在 role=button 上读屏不会念出选中状态。与拷打模式卡那组按钮保持同一套表达。
-  tab.setAttribute('aria-pressed', tab.classList.contains('active') ? 'true' : 'false');
-  tab.onclick = (e)=>{
-    e.stopPropagation();
-    document.querySelectorAll('#themeTabs .theme-tab').forEach(t=>{
-      t.classList.remove('active');
-      t.setAttribute('aria-pressed','false');
-    });
-    tab.classList.add('active');
-    tab.setAttribute('aria-pressed','true');
-    const group = tab.dataset.tab;
-    buildThemeGrid(group==='all'?null:group);
-  };
-});
+/* 主题卡只渲染一次，且**不过滤分组**（传 null）：主题收敛到一套之后，「动态 / 经典 / 定制」
+   三个标签里有两个会是空的，留着只是让用户多按两次；而且老存档里的自建配色主题原先藏在
+   「定制」标签下，撤掉标签后反而不会再有"切走就选不回来"的死角。 */
+buildThemeGrid(null);
 
 /* 宽屏下顶栏内容是居中的（.topbar{justify-content:center} 且铺满宽度），而浮层的 right 写死 12px，
    于是它贴在视口最右、离主题按钮几百像素。打开时按按钮的实测位置覆盖 right/top 即可对齐。
@@ -7201,10 +7409,8 @@ $('#themeBtn').onclick = (e)=>{
   const popup = $('#themePopup');
   popup.classList.toggle('show');
   if(popup.classList.contains('show')){
-    // 根据当前激活的标签重新渲染
-    const activeTab = document.querySelector('#themeTabs .theme-tab.active');
-    const group = activeTab ? activeTab.dataset.tab : 'canvas';
-    buildThemeGrid(group==='all'?null:group);
+    // 重渲染一遍：选中态（.sel）可能已被别处改过
+    buildThemeGrid(null);
     // 必须在 buildThemeGrid 之后：浮层宽度/高度由格子内容撑开，先量会得到上一组的尺寸
     placeThemePopup();
   }
@@ -7444,16 +7650,16 @@ loadCustomThemes();   // 必须在 initTheme 前加载：用户上次保存的�
     const saved = savedThemeId();   // 含旧 id 别名解析
     if(saved === 'img-bg'){
       window._imgBgPending = true;
-      applyTheme('aurora', {persist:false});   // 临时兜底主题：不能覆盖用户已保存的 img-bg 偏好
+      applyTheme('particle', {persist:false});   // 临时兜底主题：不能覆盖用户已保存的 img-bg 偏好
     } else if(saved){
       applyTheme(saved);
     } else {
-      // 从未手动选过主题：跟随系统深浅给一个默认（浅色系统→素笺，深色→极光），并实时跟随直到用户手动选择
+      // 从未手动选过主题：跟随系统深浅给一个默认（浅色系统→绢，深色→粒子），并实时跟随直到用户手动选择
       const _light = !!(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
-      applyTheme(_light ? 'paper' : 'aurora', {persist:false});
+      applyTheme(_light ? 'paper' : 'particle', {persist:false});
       try{
         const mq = matchMedia('(prefers-color-scheme: light)');
-        const onSys = () => { if(savedThemeId()) return; applyTheme(mq.matches ? 'paper' : 'aurora', {persist:false}); };
+        const onSys = () => { if(savedThemeId()) return; applyTheme(mq.matches ? 'paper' : 'particle', {persist:false}); };
         if(mq.addEventListener) mq.addEventListener('change', onSys); else if(mq.addListener) mq.addListener(onSys);
       }catch(_){}
     }
@@ -7488,7 +7694,7 @@ document.querySelectorAll('.set-head').forEach(h => {
 // 数据弹窗
 $('#closeModalX').onclick = (e) => { e.stopPropagation(); hideModal($('#dataModal')); };
 $('#dataModal').onclick = e => { if(e.target.id==='dataModal'){ e.stopPropagation(); hideModal($('#dataModal')); } };
-// 昨日战报弹窗：点遮罩或「知道了」关闭；「开始今天的复习」关掉后直接切到记忆队列
+// 战报弹窗（从热力图当天明细打开）：点遮罩或「关闭」收起；「开始今天的复习」关掉后直接切到记忆队列
 $('#warClose').onclick = (e) => { e.stopPropagation(); hideModal($('#warReportModal')); };
 $('#warReportModal').onclick = e => { if(e.target.id==='warReportModal'){ e.stopPropagation(); hideModal($('#warReportModal')); } };
 $('#warGo').onclick = (e) => {
@@ -7924,7 +8130,7 @@ $('#resetBtn').onclick = async () => {
 async function deleteDocument(docId){
   const d = docById(docId); if(!d) return;
   if(!await confirmDialog(`确定删除文档「${d.title}」及其全部题目？`)) return;
-  // 只在“文档网格页”内删除时做 FLIP 补位；从浏览页删整档会切到总览（视图切换自带入场），无需 FLIP
+  // 只在"文档网格页"内删除时做 FLIP 补位；从浏览页删整档会切到总览（视图切换自带入场），无需 FLIP
   const card = (view===Views.DOCS) ? document.querySelector('.content .q[data-godoc="'+CSS.escape(docId)+'"]') : null;
   flipAway(card, () => {
   d.questions.forEach(q=>{ delete PROGRESS[q.id]; });
@@ -8297,7 +8503,10 @@ document.addEventListener('keydown', e => {
   if(e.key==='Escape'){
     // 确认框是最高层（z-index 9999）：优先交给它，否则会先命中下面打开的弹窗分支
     if(_confirmCancel){ e.preventDefault(); _confirmCancel(); return; }
-    // 战报排在最后：它每天首次进入时自动弹出，是"最上层"的那个
+    // 热力图明细气泡（含它底部的战报入口）：与返回键同一套层级处理（见 consumeBackPress），
+    // 关掉时 hideHmDetail 会把焦点交还给格子
+    if(_hmPop){ e.preventDefault(); hideHmDetail(); return; }
+    // 战报排在名单最后：同时开着多个时它是后打开、更靠上的那个
     const modals = [$('#addModal'), $('#editModal'), $('#dataModal'), $('#warReportModal')].filter(el => el && el.classList.contains('show'));
     if(modals.length){ e.preventDefault(); hideModal(modals[modals.length-1]); return; }
     const tp = $('#themePopup');
@@ -8399,11 +8608,12 @@ document.addEventListener('keydown', e => {
     }
     return;
   }
-  // 记忆模式：数字键 1-4 评分（与按钮 data-rate 同一套编号：1 完全忘了 … 4 倒背如流），Enter/空格 翻转卡片
+  // 记忆模式：数字键 1-4 评分（与按钮 data-rate 同一套编号：1 完全忘了 … 4 倒背如流），Enter/空格 翻转卡片，S 跳过（不评分看下一道）
   if(view===Views.MEMORY){
     const digit = parseInt(e.key);
     if(digit>=1&&digit<=4&&memory.flipped){ const btn = document.querySelector('.grade-btn[data-rate="'+digit+'"]'); if(btn) btn.click(); }
     else if((e.key==='Enter'||e.key===' ')&&!e.repeat){ e.preventDefault(); memory.flipped=!memory.flipped; try{ applyMemFlip(); }catch(_){} }
+    else if(e.key==='s'||e.key==='S'){ const btn = document.querySelector('#memSkip'); if(btn) btn.click(); }
     return;
   }
   // 趁热打铁：Enter/空格 翻看答案（评分靠按钮 1=记住、2=还没）
@@ -8554,16 +8764,17 @@ function introFit(c, dark){
   return c;
 }
 function introPalette(){
-  const t = getTheme(savedThemeId() || 'aurora') || THEMES.aurora;
+  const t = getTheme(savedThemeId() || 'particle') || THEMES.particle;
   const dark = !isLightColor(t.bg);
-  const bg2 = introRgbOf(t.bg2, dark ? [19,20,31]  : [239,237,226]);
-  const bg  = introRgbOf(t.bg,  dark ? [13,14,23]  : [247,245,234]);
+  // 兜底色取默认主题（粒子）与绢的底色：取不到主题值时入场动画也不会突然换成一屏黑
+  const bg2 = introRgbOf(t.bg2, dark ? [13,15,22] : [239,237,226]);
+  const bg  = introRgbOf(t.bg,  dark ? [8,9,13]   : [247,245,234]);
   return {
     bg1: bg2.join(','),
     bg2: bg.join(','),
     bg3: (dark ? introScale(bg, 0.55) : introScale(bg2, 0.93)).join(','),
     cols: [t.text, t.accent2, t.accent].map(v => introFit(introRgbOf(v, [200,202,245]), dark).join(',')),
-    speedK: dark ? 1 : 0.8   // 浅底主题（素笺/粼光/子良/子荣）放慢一档：纸上飘的是尘，不该像在穿越星野
+    speedK: dark ? 1 : 0.8   // 浅底主题（绢）放慢一档：纸上飘的是尘，不该像在穿越星野
   };
 }
 const INTRO_ALPHAS = [0.30, 0.56, 0.80, 1.00];                    // 亮度档 → 透明度（再乘整体渐显）
@@ -8791,7 +9002,7 @@ function syncKeyboardInset(){
     window._imgBgPending = false;
     loadBgFromDB(function(bgUrl){
       if(bgUrl) applyTheme('img-bg');
-      else safeLocalSet('learnAppTheme', 'aurora');   // 没上传过图：持久化回退默认主题
+      else safeLocalSet('learnAppTheme', 'particle');   // 没上传过图：持久化回退默认主题
     });
   }
   const blank = !!(window.SEED && window.SEED.blank);
@@ -8894,18 +9105,13 @@ function syncKeyboardInset(){
   checkDegradedResidue();
 // 页面加载时询问是否拉取云端数据
   askPullOnStart();
-  // 昨日战报：每天首次进入弹一次。要等两件事同时结束 —— 入场星空的遮罩已被移除（它 z-index 9999，
-  // 会整个压住弹层），且云端确认框不在屏上（confirmDialog 同为 9999，同屏会抢层）。
-  // 每 250ms 看一眼、上限 12 次：正常路径下不与动画撞车，异常路径下也不会永远不弹。
-  (function whenScreenClear(tries){
-    if((!document.getElementById('appLoader') && !_confirmOpen) || tries >= 12){ maybeShowWarReport(); return; }
-    setTimeout(() => whenScreenClear(tries + 1), 250);
-  })(0);
+  // （原来这里还有一段轮询：等入场遮罩与云端确认框都退场后再弹「昨日战报」。战报已改成从热力图
+  //   按需打开，不再需要争抢弹层时机 —— 而那段时序恰恰会让战报在云端数据拉回来之前就先弹出来。）
   // 启动定时自动推送（每 10 分钟，在线且有变更才推）
   startAutoSyncTimer();
   // 启动主题画布。这里原来是空 catch：画布起不来时粒子/星野会整块消失，而控制台里连一行都没有 ——
   // 与 5790 那段"被空 catch 吞掉导致粒子永远不启动"的旧坑是同一个错误，必须留痕
-  try{ startUnifiedCanvas(savedThemeId()||'aurora'); }catch(e){ warnSilent('主题画布启动失败', e); }
+  try{ startUnifiedCanvas(savedThemeId()||'particle'); }catch(e){ warnSilent('主题画布启动失败', e); }
 })().catch(e => {
   // 初始化异常时也要给可见反馈并收起遮罩（原先会永久转圈，用户看到的是"卡在加载中"）
   warnSilent('应用初始化失败', e);
@@ -8917,9 +9123,633 @@ function syncKeyboardInset(){
   resyncSystemBarsTone();
 });
 
+// ======== 统一 WebGL2 渲染层（"物理型"主题） ========
+/* 为什么这几套要另开一层：Canvas 2D 没有逐片元着色能力，"体积云 / 各向异性高光 /
+   冰晶生长"这类效果只能靠逐帧拼几何去糊，糊出来就是一层贴纸感 —— 这个版本之前真踩过：
+   绢是 8px 棋盘格、云海是渐变条带。
+   这些效果的权威实现全在 GLSL 侧，所以单独开一层 WebGL2 画布，只在"物理型"主题下启用；
+   粒子型主题（斜光/粒子/星河/松星）仍走 2D 引擎，两套渲染器**互斥**：同一时刻只有一层画布存在。
+   2026-10 备注：雨窗/垂帘/年轮/默片四套原本也在这一层，反复重做多轮仍达不到真实材质的观感，
+   已整体下线（见 THEME_SPEC 上方的说明），它们的着色器与参考出典一并删除。
+   GPU 那条有三条硬约束：
+     ① 无 WebGL2 / 着色器编译失败 / 上下文丢失 → 落到 **2D 静态兜底**（用同一份 scene 描述画背景），
+        绝不出现"空画布"；门禁里有断言守着这条路；
+     ② 片元着色器是填充率敏感的：后备缓冲按**像素预算**封顶（GL_PIXEL_BUDGET），不拿 dpr 直通，
+        并按实际帧间隔自适应降档（见 paintGLFrame）；
+     ③ 生命周期与 2D 完全一致：同一套 _uRaf / _uHidden / _vtHold / prefersReduce / resize 入口，
+        不新增定时器与监听 —— 否则两层的"后台暂停"语义会分叉。 */
+
+/* 场景描述（单一数据源）：一套主题一份，写在 THEME_SPEC 里。
+   同一条 glow 数组派生三处 —— CSS 的 bodyBg（无画布时的底色）、2D 静态兜底的 createRadialGradient、
+   以及着色器里的 sceneBg() —— 公式一致，因此不会出现"着色器与 CSS 底色不是同一件事"。
+   glow 每项：[中心x, 中心y, 半径x(px), 半径y(px), 颜色, alpha, 收束位置(0~1)]，
+   与 CSS 写法 radial-gradient(rx ry at x% y%, rgba(c,a) 0%, transparent s%) 逐项对应。 */
+function hexRgb(hex){
+  const n = parseInt(String(hex || '#000000').slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function sceneToCss(scene){
+  const pct = v => (Math.round(v * 1000) / 10) + '%';
+  const parts = (scene.glows || []).map(g => {
+    const c = hexRgb(g[4]);
+    return 'radial-gradient(' + g[2] + 'px ' + g[3] + 'px at ' + pct(g[0]) + ' ' + pct(g[1]) + ', rgba(' +
+      c[0] + ',' + c[1] + ',' + c[2] + ',' + g[5] + ') 0%, transparent ' + pct(g[6]) + ')';
+  });
+  parts.push('var(--bg)');
+  return parts.join(', ');
+}
+/* 哪些主题走 GPU：canvas key → 片元着色器名。这张表与 GL_FS 的键必须一一对应（门禁对账），
+   而"声明了 canvas 却既没有 2D case 也没有在这里登记"的主题会落进兜底星尘（静默失效）。 */
+const GL_SHADER_OF = {
+  ziliang:'clouds',   // 云海
+  scan:'frost',       // 霜原（主题 id 是 nord，canvas key 是 scan）
+  paper:'silk',       // 绢
+  aurora:'aurora',    // 极光（id 与 canvas key 与着色器名同名）
+};
+/* GPU 图层是**背景层**，与 2D 引擎那层不是一回事：
+   · 粒子型主题（2D 引擎）是"稀疏的光点"，**故意压在内容之上**才有氛围感 —— 这是本项目原本的契约，
+     它们足够透明，压着也不影响阅读（见 <style> 里 .app 那段的训诫）。
+   · 物理型主题是**场景与材质**（一面雨窗 / 一片云海 / 一块木头），本质不透明。压在内容之上就会把页面
+     整个盖住 —— 这轮真出过：切过去要么整屏黑、要么只剩特效、内容全没了。
+     所以这一层放在内容**下面**（z-index:-1），与"自定义背景图"那条路径同一做法（见 applyTheme 里 img-bg 段）。
+   两个附带好处：内容永远不会被遮住；即使着色器坏掉画出一整屏黑，也只是"背景黑了"，UI 依然可读。
+   z-index:-1 依赖"html 背景透明 → body 的背景被提升为画布背景"这条 CSS 规则（applyTheme 里 img-bg 已踩过）。 */
+function glMount(){
+  if(!_uGLCanvas || _uGLCanvas.isConnected) return;
+  document.body.insertBefore(_uGLCanvas, document.body.firstChild);
+}
+const GL_PIXEL_BUDGET = 1100000;   // 后备缓冲像素上限（约 1.1MP ≈ 1280×860；着色器是填充率敏感）
+
+/* ── 着色器公共前导 ──
+   #version 必须落在拼接结果的第一行，所以这一段不含它（由 glProgramSource 拼在最前面）。 */
+const GL_VS = `void main(){
+  // 无 VBO 的全屏三角形：用 gl_VertexID 现算顶点（WebGL2/GLSL ES 3.00 才有），省掉缓冲区与 VAO 配置
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+const GL_PRELUDE = `
+precision highp float;
+uniform vec2 uRes;          // 画布尺寸（设备像素）
+uniform float uTime;        // 秒（引擎的 _uTime，切主题归零）
+uniform float uFade;        // 主题切换淡入 0→1（与 2D 侧的 _uFadeIn 是同一个量）
+uniform vec3 uBg;           // 主题底色 / 第二底色
+uniform vec3 uBg2;
+uniform vec3 uAcc[3];       // accent / accent2 / accent3（切主题自动跟随）
+uniform vec3 uGlowC[3];     // 场景光晕颜色（与 CSS 兜底底色同源，见 sceneToCss）
+uniform vec4 uGlowP[3];     // 光晕：xy = 中心（uv 空间），zw = 半径（uv 空间）
+uniform vec2 uGlowA[3];     // 光晕：x = alpha，y = 收束位置
+uniform vec2 uLight;        // 主光方向（屏幕空间，左上为负）
+out vec4 outColor;
+
+float hash11(float p){ p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+float hash21(vec2 p){
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+vec2 hash22(vec2 p){
+  vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.xx + p3.yz) * p3.zy);
+}
+// 值噪声 + 固定 4/5 层 fbm（定长循环，避免不同驱动对动态上界的差异；每层加偏移消网格感）
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i), b = hash21(i + vec2(1.0, 0.0)), c = hash21(i + vec2(0.0, 1.0)), d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+float fbm4(vec2 p){
+  float s = 0.0, a = 0.5;
+  for(int i = 0; i < 4; i++){ s += a * vnoise(p); p = p * 2.03 + vec2(17.3, -9.1); a *= 0.5; }
+  return s;
+}
+float fbm5(vec2 p){
+  float s = 0.0, a = 0.5;
+  for(int i = 0; i < 5; i++){ s += a * vnoise(p); p = p * 2.01 + vec2(-11.7, 23.5); a *= 0.5; }
+  return s;
+}
+// 背景 = 底色 + 若干光晕（source-over 叠色，与 CSS radial-gradient 的合成方式一致）
+vec3 sceneBg(vec2 uv){
+  vec3 col = uBg;
+  for(int i = 0; i < 3; i++){
+    vec2 d = (uv - uGlowP[i].xy) / max(uGlowP[i].zw, vec2(1e-4));
+    float f = clamp(1.0 - length(d) / max(uGlowA[i].y, 1e-3), 0.0, 1.0);
+    col = mix(col, uGlowC[i], uGlowA[i].x * f);
+  }
+  return col;
+}
+vec2 screenUV(){ return vec2(gl_FragCoord.x / uRes.x, 1.0 - gl_FragCoord.y / uRes.y); }
+`;
+
+
+/* ── 云海 ──
+   参考：FBM 云的标准做法（iq / Sebastian Lague 一脉，Godot 与 three 社区通用）——
+   值噪声叠 4~5 层（振幅减半、频率翻倍）得到分形云，再用第二组高频噪声当"云顶细节"、
+   用 1/(深度) 做透视压缩模拟"从上往下俯瞰云海"。这里刻意不写体积云（raymarching）：
+   那需要逐像素几十次采样，在"陪伴型背景"这个定位上性价比完全不成立。
+   与浅底主题的关系：云是**近白**的，所以唯一的对比度来源是云的明暗面 —— 天空（sceneBg）几乎全亮，
+   靠云顶暖、云谷冷这一点点差别把形状读出来。这也是"云海"能当浅色主题的原因。 */
+const CLOUD_FS = `
+void main(){
+  vec2 uv = screenUV();
+  float asp = uRes.x / max(uRes.y, 1.0);
+  float t = uTime * 0.013;                         // 极慢：这套要陪刷题，不是演示
+  /* 换成**风景构图**：上半是天空（带一层高空渐变），下半是俯瞰的云海，中间一条明确的地平线。
+     原来的做法是"整屏铺一层噪声" —— 那只能得到一团白糊，因为风景靠的是**边界与层次**，
+     不是噪声本身的密度。 */
+  const float horizon = 0.42;
+  vec3 col = sceneBg(uv);
+  float skyT = clamp(uv.y / horizon, 0.0, 1.0);      // 天顶 → 地平线
+  col = mix(mix(uBg, uAcc[1], 0.18), col, skyT);     // 天顶偏冷（accent2），地平线附近露出主题底色
+  if(uv.y > horizon){
+    float d = (uv.y - horizon) / (1.0 - horizon);   // 0 远 → 1 近
+    float persp = 0.14 + d * 0.86;                  // 越小越远：远景被压扁
+    vec2 q = vec2((uv.x - 0.5) * asp / persp, (uv.y - horizon) / (persp * persp)) * 1.3 + vec2(t * 0.5, -t * 0.7);
+    float n1 = fbm5(q);
+    float n2 = fbm4(q * 2.7 + vec2(31.7, -12.3) - vec2(t * 0.4, 0.0));
+    float dens = n1 * 0.62 + n2 * 0.38;
+    /* 覆盖度曲线拉陡（0.46→0.62 之间完成过渡）：云的**边界**要清楚，
+       云与云之间的间隙要真的露出来（大片连续的白 = 糊）。 */
+    float cov = smoothstep(0.46, 0.62, dens) * mix(0.55, 1.0, smoothstep(0.0, 0.30, d));
+    float top = smoothstep(0.44, 0.86, n2);         // 云顶细节：受光面
+    vec3 shade = mix(uBg2 * 0.84, uAcc[1], 0.22);   // 云谷：冷灰（阴影面）
+    vec3 litc = mix(uBg, vec3(1.0), 0.62);          // 云顶：被天光照到，接近白
+    vec3 cc = mix(shade, litc, top);
+    cc += uAcc[2] * top * 0.14;                     // 暖色只加在受光面（accent3）
+    // 云顶的亮边：密度中段那一圈"堡状"边（有一点过曝感的窄带，云才有体积）
+    cc += vec3(1.0) * smoothstep(0.50, 0.68, dens) * (1.0 - smoothstep(0.68, 0.88, dens)) * 0.12;
+    col = mix(col, cc, clamp(cov, 0.0, 1.0) * 0.96);
+    // 云与云之间的间隙压暗 → 云才有厚度（否则就是平铺的一片白）
+    col *= 1.0 - 0.12 * (1.0 - clamp(cov, 0.0, 1.0)) * smoothstep(0.0, 0.45, d);
+  }
+  // 地平线的暖光：这是"云海"最容易被一眼认出的线索（太阳就在地平线附近）
+  float hz = exp(-pow((uv.y - horizon) * 9.0, 2.0));
+  col += mix(uAcc[2], vec3(1.0, 0.96, 0.88), 0.5) * hz * 0.15;
+  outColor = vec4(col * uFade, 1.0);
+}`;
+
+
+/* ── 霜原 ──
+   参考：frost / 冰晶生长这一脉的着色器做法 —— 域扭曲（fbm(p + fbm(p))）把噪声拉成针状，
+   再锐化出枝晶的脊；真实玻璃结霜还有两个特征：**从边缘向内蔓延**（中心最后结）、
+   以及冰面稀疏的反光点。旧版是"等距细线 + 一条亮线"，那是坐标纸，不是霜。 */
+const FROST_FS = `
+void main(){
+  vec2 uv = screenUV();
+  float asp = uRes.x / max(uRes.y, 1.0);
+  float t = uTime * 0.012;
+  vec3 col = sceneBg(uv);
+  vec2 p = vec2(uv.x * asp, uv.y) * 3.4;
+  /* 域扭曲本身在极缓慢地蠕动：冰晶是"在长的"，冻住的一层霜看起来就是一张贴图
+     （这条是被量出来的：改之前 t=6s 与 t=8s 之间像素变化 0%） */
+  vec2 w = vec2(fbm4(p * 0.9 + 11.3 + vec2(0.0, -uTime * 0.030)), fbm4(p * 0.9 - 7.1 + vec2(uTime * 0.022, 0.0)));
+  float n = fbm5(p + w * 1.6);
+  float crystal = pow(clamp((n - 0.34) * 2.1, 0.0, 1.0), 1.7);   // 枝晶主体
+  float veins = abs(fbm4(p * 3.1 + w * 2.2) - 0.5) * 2.0;
+  crystal = max(crystal, pow(1.0 - veins, 6.0) * 0.55);          // 细冰针的脊
+  /* 生长：先从玻璃四边结起，中心最后（边缘距离 + 噪声扰动 → 不是规则的等距边）。
+     reach 随时间往复推进 → 霜在"往中心爬"，一个来回约一分钟（陪伴型背景，不抢注意力）。
+     ⚠️ 这里的时间系数**不能乘 FROST_FS 顶部那个 0.012 的缩放**：乘上去两秒只挪半个像素，
+     量出来"像素变化 0%"，等于冻住的一张贴图（真出过一次）。 */
+  vec2 e = min(uv, 1.0 - uv) * vec2(asp, 1.0);
+  float wobble = (fbm4(p * 0.6 + uTime * 0.10) - 0.5) * 0.12;
+  float reach = 0.40 + 0.10 * sin(uTime * 0.12);
+  float grow = 1.0 - smoothstep(0.0, reach, min(e.x, e.y) + wobble);
+  float cover = clamp(crystal * grow, 0.0, 1.0);
+  col = mix(col, mix(col, vec3(0.93, 0.96, 1.0), 0.85), cover * 0.55);   // 霜是"白而半透明"
+  float gl = pow(max(0.0, fbm5(p * 6.0 + t * 0.6) - 0.72) * 3.6, 2.0);   // 冰面反光点
+  col += vec3(0.85, 0.93, 1.0) * gl * cover * 0.5;
+  outColor = vec4(col * uFade, 1.0);
+}`;
+
+
+
+/* ── 绢 ──
+   参考：织物渲染的两条共识 —— ① 经纬**纱线截面**是圆柱（截面处亮、边缘暗）+ 交点环境遮蔽；
+   ② 丝/缎的视觉签名是**各向异性高光**（一条窄而长的光带，方向随纱线，而不是一个圆点）。
+   组织用斜纹（三上一下），这比平纹更像"绢"而不是"帆布"。旧版是 8px 棋盘格平铺 —— 那是网格。 */
+const SILK_FS = `
+void main(){
+  vec2 uv = screenUV();
+  float asp = uRes.x / max(uRes.y, 1.0);
+  float t = uTime * 0.12;                                          // 光带斜掠的节奏（约 45 秒走一遍）
+  vec3 col = sceneBg(uv);
+  /* 折痕：丝的"魂"在褶皱里 —— 一块展平的绢看上去只是一张纸。
+     三组不同频率与方向的低频脊叠成起伏，光带扫过时明暗跟着走。
+     （改之前这里没有折痕，量出来 t=6s→8s 像素变化 0%，而且画面读起来就是一张网格纸。） */
+  float wave = sin((uv.x * asp) * 2.1 + t * 0.5 + 1.3)
+             + 0.55 * sin(uv.y * 3.3 - t * 0.34)
+             + 0.30 * sin(((uv.x * asp) + uv.y) * 5.2 + t * 0.2);
+  float shade = 0.86 + 0.14 * (wave / 1.85);                       // ≈0.79~0.93 的明暗起伏
+  /* 织纹：纱线截面 + 斜纹组织，**刻意压到 ±3.5%**。
+     第一版把经纬做成了二值高对比（0.80~1.00）→ 远看就是一张坐标纸/纱窗，
+     而真实的绢在正常观看距离上只有极淡的织理。 */
+  float W = 74.0;
+  vec2 q = vec2(uv.x * asp, uv.y) * W;
+  vec2 cell = floor(q), f = fract(q);
+  float twill = mod(cell.x - cell.y, 4.0) < 2.0 ? 1.0 : 0.0;       // 斜纹（斜向的经纬浮沉）
+  float warpY = sqrt(max(0.0, 1.0 - (f.y * 2.0 - 1.0) * (f.y * 2.0 - 1.0)));
+  float weftX = sqrt(max(0.0, 1.0 - (f.x * 2.0 - 1.0) * (f.x * 2.0 - 1.0)));
+  float weave = 0.965 + 0.035 * mix(weftX, warpY, twill);
+  // 各向异性高光：一条窄而长的光带沿折痕方向缓慢斜掠（丝与缎的视觉签名，不是圆点高光）
+  float band = exp(-pow((uv.x * asp * 0.75 + uv.y * 0.55 - 0.62 - 0.22 * sin(t * 0.7)) * 3.0, 2.0));
+  float rib = 0.62 + 0.38 * sin((q.x + q.y) * 0.35);               // 光带里的细密丝理
+  vec3 silk = mix(uBg, uBg2, 0.5) * shade * weave;
+  silk += uAcc[2] * band * rib * 0.30;                             // 高光偏暖（象牙底的丝）
+  silk += vec3(1.0) * band * band * 0.10;
+  col = mix(col, silk, 0.96);
+  outColor = vec4(col * uFade, 1.0);
+}`;
+
+/* ── 极光 ──
+   参考：aurora ribbons（极光帘幕）—— 竖向光帘（一条细密竖纹）+ 幕布下缘最亮、向上渐隐，
+   沿高度做绿→水青→紫红的色散；用域扭曲 fbm 让幕布左右弯折、缓慢飘动。
+   刻意不追“真实气体物理”（上一版这么失败的），只取“看得出的极光现象”。 */
+const AURORA_FS = `
+void main(){
+  vec2 uv = screenUV();
+  float asp = uRes.x / max(uRes.y, 1.0);
+  float t = uTime * 0.05;
+  vec3 col = sceneBg(uv);
+  vec2 p = vec2(uv.x * asp, uv.y);
+  // 域扭曲：warp 让竖纹左右弯折，fold 让下缘起伏
+  float warp = fbm4(vec2(p.x * 1.4 + t, p.y * 0.7 - t * 0.3));
+  float fold = fbm4(vec2(p.x * 2.2 - t * 0.5, p.y * 1.1 + warp * 1.4));
+  // 竖向光帘：横坐标受 warp 扰动后拉成细密竖纹（pow 锐化）
+  float rays = pow(0.5 + 0.5 * sin((p.x * 6.0 + warp * 5.0 + fold * 2.0) * 1.3), 3.0);
+  // 幕布轮廓：下缘在 uv.y≈0.30~0.48 起伏；下缘以上才有幕、顶部收进夜空、贴下缘最亮
+  float lowEdge  = 0.34 + 0.14 * fold;
+  float aboveEdge = smoothstep(lowEdge - 0.05, lowEdge + 0.06, uv.y);
+  float fadeTop   = 1.0 - smoothstep(0.5, 0.95, uv.y);
+  float bottomGlow = 1.0 - smoothstep(lowEdge, lowEdge + 0.28, uv.y);
+  float curtain = clamp(aboveEdge * fadeTop * (0.35 + 0.65 * rays) * (0.45 + 0.55 * bottomGlow), 0.0, 1.0);
+  // 高度色散：下缘偏绿(uAcc[0]) → 中部水青(uAcc[1]) → 顶部偏紫红(uAcc[2])
+  float up = clamp((uv.y - lowEdge) / 0.5, 0.0, 1.0);
+  vec3 aur = mix(uAcc[0], mix(uAcc[1], uAcc[2], smoothstep(0.35, 0.9, up)), smoothstep(0.0, 0.5, up));
+  col += aur * curtain * 0.9;
+  col += mix(aur, vec3(1.0), 0.25) * pow(curtain, 3.0) * 0.4;   // 最亮处一道接近白的芯（砍弱，防过曝发死白）
+  outColor = vec4(col * uFade, 1.0);
+}`;
+
+const GL_FS = { clouds: CLOUD_FS, frost: FROST_FS, silk: SILK_FS, aurora: AURORA_FS };
+
+// ── 程序构建与生命周期 ──
+const GL_UNIFORM_NAMES = ['uRes', 'uTime', 'uFade', 'uBg', 'uBg2', 'uAcc', 'uGlowC', 'uGlowP', 'uGlowA', 'uLight'];
+/* canvas key → 着色器名。
+   ⚠️ 这张映射必须在这里被**真正用上**，这是一个踩过的坑：GL_FS 是按"着色器名"索引的，
+   而外面传进来的是"canvas key"。早先这里直接写 `GL_FS[key]`，于是凡是 canvas key 与着色器名不同的主题
+   （ripple / ziliang / scan / paper / zirong）全都查不到 → 静默退到下面那段"默认空着色器" →
+   **整屏纯黑、没有任何报错**（只有 aurora 与 film 恰好同名，所以那两套是好的）。
+   当时门禁只查了"GL_SHADER_OF 的值都在 GL_FS 里"，没查"这张映射有没有被用上"—— 现在补上了。 */
+function glShaderNameOf(key){ return GL_SHADER_OF[key] || key; }
+function glProgramSource(key){
+  return {
+    vs: '#version 300 es\n' + GL_VS,
+    fs: '#version 300 es\n' + GL_PRELUDE + (GL_FS[glShaderNameOf(key)] || 'void main(){ outColor = vec4(0.0, 0.0, 0.0, 1.0); }'),
+  };
+}
+function buildGLProgram(gl, key){
+  /* 可用性判据一律取**真实返回值/编译状态**，不能只看 `if(!gl)`：
+     测试桩的 canvas.getContext 忽略参数、恒返回一个 truthy 的 2D 代理，createShader/compile 都返回
+     undefined —— 也只有这样，桩环境才会正确地落到 2D 静态兜底（门禁依赖这条路径）。 */
+  try{
+    const src = glProgramSource(key);
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    if(!vs) return null;
+    gl.shaderSource(vs, src.vs); gl.compileShader(vs);
+    if(gl.getShaderParameter(vs, gl.COMPILE_STATUS) !== true){ failGLShader(key, '顶点着色器编译失败', gl.getShaderInfoLog(vs)); return null; }
+    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+    if(!fs) return null;
+    gl.shaderSource(fs, src.fs); gl.compileShader(fs);
+    if(gl.getShaderParameter(fs, gl.COMPILE_STATUS) !== true){
+      failGLShader(key, '片元着色器编译失败', gl.getShaderInfoLog(fs)); return null;
+    }
+    const p = gl.createProgram();
+    if(!p) return null;
+    gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+    if(gl.getProgramParameter(p, gl.LINK_STATUS) !== true){ failGLShader(key, '着色器链接失败', gl.getProgramInfoLog(p)); return null; }
+    gl.deleteShader(vs); gl.deleteShader(fs);
+    return p;
+  }catch(e){ failGLShader(key, '着色器构建异常', e); return null; }
+}
+/* 着色器级别的失败：记下这一段（同一段不再反复重试、也不逐帧刷日志），并把原因显示在页面上。
+   这类失败在屏幕上只有"黑屏 / 静止"一个样子，不主动报出来就只能靠猜。 */
+function failGLShader(key, what, detail){
+  _uGLBadKeys[key] = 1;
+  glFailNote(what + '（' + key + '）', detail);
+}
+/* 数组型 uniform 的元素个数：必须逐个取 location。
+   ⚠️ 这里踩过一次大的：GL_UNIFORM_NAMES 里存的是**基名**（uAcc / uGlowC / uGlowP / uGlowA），
+   而 glSetScene 上传时用的是**带下标的名字**（'uAcc[0]'）。早先只为基名建 location，
+   于是 loc['uAcc[0]'] 是 undefined，而 gl.uniform3f(undefined,...) 在 WebGL 里是**静默 no-op** ——
+   结果整套光晕与三个强调色从来没上传过（底衬只剩纯底色、年轮甚至整块变黑），且没有任何报错。 */
+const GL_ARRAY_UNIFORMS = { uAcc: 3, uGlowC: 3, uGlowP: 3, uGlowA: 3 };
+function glLocations(gl, prog){
+  const o = {};
+  for(const n of GL_UNIFORM_NAMES){
+    o[n] = gl.getUniformLocation(prog, n);
+    const cnt = GL_ARRAY_UNIFORMS[n];
+    if(cnt) for(let i = 0; i < cnt; i++) o[n + '[' + i + ']'] = gl.getUniformLocation(prog, n + '[' + i + ']');
+  }
+  return o;
+}
+// 调试开关：?shaderdebug 或 #shaderdebug。这里刻意不用正则字面量 —— 静态门禁会把正则里的
+// 裸标识符当成"引用了但没声明的变量"（它把正则抹成空白的能力只覆盖部分写法）
+function glDebugWanted(){
+  const s = String(location.search || '') + String(location.hash || '');
+  return s.indexOf('shaderdebug') >= 0;
+}
+function glContext(){
+  if(_uGLFail) return null;
+  if(_uGL) return _uGL;
+  try{
+    const cv = document.createElement('canvas');
+    const gl = cv.getContext('webgl2', { alpha:false, antialias:false, depth:false, stencil:false, powerPreference:'low-power' });
+    const probe = (gl && gl.createShader) ? gl.createShader(gl.VERTEX_SHADER) : null;   // 真对象才有返回值（见 buildGLProgram 的说明）
+    if(!probe){ _uGLFail = true; return null; }
+    gl.deleteShader(probe);
+    _uGLCanvas = cv;
+    // z-index:-1 = 放在内容**下面**（它是背景层，不是压着内容的氛围层 —— 理由见 glMount）
+    cv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1';
+    /* 上下文丢失在移动端是真会发生的（切后台、显存吃紧）。不尝试恢复：反复重建会把"偶发丢帧"
+       升级成"持续卡顿"，这里直接改走 2D 静态兜底并记住本次会话不再启用。 */
+    cv.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      warnSilent('WebGL 上下文丢失，本会话改用 2D 静态兜底');
+      _uGLFail = true;
+      glTeardown();
+      if(_uTheme && GL_SHADER_OF[canvasKeyOf(_uTheme)]){ ensure2DCanvas(); paintUnifiedFrame(0.016); }
+    }, false);
+    _uGL = gl;
+    return gl;
+  }catch(e){ _uGLFail = true; warnSilent('WebGL2 初始化失败（本会话改用 2D 静态兜底）', e); return null; }
+}
+function uGLSceneOf(id){
+  const t = THEME_SPEC[id];
+  if(t && t.scene) return t.scene;
+  /* 没声明 scene 时的兜底：按主题色合成一组光晕（左上主色 / 右上辅色 / 底部第三色），
+     布局与 applyTheme 里 bodyBg 的兜底写法同一套。
+     为什么要有这条：漏写 scene 的后果是着色器拿到全 0 的底色与光晕 —— 画面漆黑且不报错。
+     门禁里另有一条"走 GPU 的主题必须声明 scene"的断言负责在提交前抓住它，
+     这里只保证"万一漏了也不会黑屏"。 */
+  const c = getTheme(id) || (THEMES && THEMES.particle) || {};
+  if(!c.accent) return null;
+  return { glows: [[0.12, -0.08, 1200, 700, c.accent, 0.16, 0.55],
+                   [1.00,  0.00, 1000, 600, c.accent2 || c.accent, 0.14, 0.50],
+                   [0.50,  1.05,  900, 520, c.accent3 || c.accent, 0.06, 0.60]] };
+}
+function glSetScene(gl, loc, theme, wRef, hRef){
+  const c = getTheme(theme) || {};
+  const sc = uGLSceneOf(theme) || { glows: [] };
+  const put3 = (name, hex) => { const v = hexRgb(hex); gl.uniform3f(loc[name], v[0] / 255, v[1] / 255, v[2] / 255); };
+  put3('uBg', c.bg); put3('uBg2', c.bg2);
+  const acc = [c.accent, c.accent2, c.accent3];
+  for(let i = 0; i < 3; i++) put3('uAcc[' + i + ']', acc[i] || c.accent);
+  // 光晕半径在 CSS 里是"像素"，着色器里要的是 uv —— 换算需要参考尺寸；
+  // 调试网格每格是一块小视口，所以尺寸可以由调用方传入（默认整张位图）
+  const W = wRef || (_uGLCanvas ? _uGLCanvas.width : 1), H = hRef || (_uGLCanvas ? _uGLCanvas.height : 1);
+  for(let i = 0; i < 3; i++){
+    const g = sc.glows[i];
+    if(g){
+      put3('uGlowC[' + i + ']', g[4]);
+      gl.uniform4f(loc['uGlowP[' + i + ']'], g[0], g[1], g[2] / W, g[3] / H);
+      gl.uniform2f(loc['uGlowA[' + i + ']'], g[5], g[6]);
+    }else{
+      put3('uGlowC[' + i + ']', '#000000');
+      gl.uniform4f(loc['uGlowP[' + i + ']'], 0, 0, 1, 1);
+      gl.uniform2f(loc['uGlowA[' + i + ']'], 0, 1);
+    }
+    // 光晕位置在 uv 空间、半径也是 uv 空间（px → uv 的换算需要当前位图尺寸）——
+    // 尺寸变化的处理见 resizeGLTheme（它会在改完尺寸后重上一次场景 uniforms）
+  }
+  const li = (sc.light && sc.light.length === 2) ? sc.light : [-0.42, -0.62];
+  gl.uniform2f(loc.uLight, li[0], li[1]);
+}
+function startGLTheme(theme){
+  const key = canvasKeyOf(theme);
+  if(_uGLBadKeys[key]){ _uGLProg = null; _uGLKey = key; return false; }   // 这段之前就失败过：不再重试（原因已在诊断条上）
+  const gl = glContext();
+  if(!gl){ _uGLProg = null; _uGLKey = key; return false; }   // 无 WebGL2：交给 2D 静态兜底（能力差异，不算故障）
+  if(_uGLProg && _uGLKey === key && !_uGLDbgGrid){
+    // 同一套主题：直接复用（在两套 GPU 主题之间来回切时不重复编译）
+    glMount();
+    resizeGLTheme();
+    return true;
+  }
+  const prog = buildGLProgram(gl, key);
+  // 失败时**必须把旧 program 清掉**：否则 paintGLFrame 会拿上一套主题的 program 去画，
+  // 配上这一套的 uniforms —— 画面既不是新主题、也不是兜底，而是随机的第三种东西
+  if(!prog){ _uGLProg = null; _uGLLoc = null; _uGLKey = key; return false; }
+  _uGLProg = prog;
+  _uGLLoc = glLocations(gl, prog);
+  _uGLKey = key;
+  // 首帧自检要**每套都做**：它曾经是"一个会话只做一次"，于是只有第一套主题被验过，
+  // 后面几套明明全黑也没人发现（这轮排查时正是这个原因让日志只报了一套）
+  _uGLChecked = 0;
+  _uGLStep = 0; _uGLSlow = 0; _uGLFrames = 0;
+  gl.useProgram(prog);
+  gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);   // 整屏不透明背景：不做混合，省一次逐像素读
+  resizeGLTheme();                                   // 内部会重上一次场景 uniforms（半径依赖位图尺寸）
+  glMount();
+  if(glDebugWanted()){ _uGLDbgGrid = true; glDebugOverlay(); }
+  return true;
+}
+function glTeardown(){
+  if(_uGLCanvas && _uGLCanvas.isConnected) _uGLCanvas.remove();
+  _uGLProg = null; _uGLLoc = null; _uGLKey = '';
+}
+function resizeGLTheme(){
+  if(!_uGLCanvas) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  /* 像素预算：dpr 直通在手机上会把填充率翻 4 倍（dpr=3 → 9 倍）。取「dpr 上限 1.5」与
+     「预算内最大缩放」的较小值，再按自适应档位折减。效果层是低对比的氛围，降采样看不出来，
+     但换来的是稳定 60fps —— 这一条比分辨率重要。 */
+  const budget = Math.sqrt(GL_PIXEL_BUDGET / Math.max(1, W * H));
+  const scale = Math.max(0.6, Math.min(dpr, 1.5, budget) * (1 - _uGLStep * 0.18));
+  _uGLCanvas.width = Math.max(1, Math.round(W * scale));
+  _uGLCanvas.height = Math.max(1, Math.round(H * scale));
+  _uGLCanvas.style.width = W + 'px';
+  _uGLCanvas.style.height = H + 'px';
+  if(_uGL){
+    _uGL.viewport(0, 0, _uGLCanvas.width, _uGLCanvas.height);
+    if(_uGLProg && _uGLLoc){ _uGL.useProgram(_uGLProg); glSetScene(_uGL, _uGLLoc, _uTheme); }   // 半径按新位图尺寸重算
+  }
+}
+/* 2D 静态兜底：无 WebGL2 / 编译失败 / 上下文丢失时接手。
+   它画的**不是"能动的替代品"**，而是一张与着色器同源的静止背景（同一份 scene）——
+   这既是无障碍要求里的"静态替代"，也保证了降级路径一定不是一块空白画布。 */
+function paintGLFallback(){
+  const ctx = _uCtx;
+  if(!ctx) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  const sc = uGLSceneOf(_uTheme);
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = _uFadeIn;
+  /* 刻意**不铺底色**：底色与这组光晕在 CSS 的 body 背景里已经有一份（由同一个 scene 派生），
+     这里再铺一层不透明底反而会把 CSS 那层盖住 —— 结果是"降级后比原主题更黑"（真踩过：
+     底色 #0b111c 几乎全黑，盖上去看起来就是一块黑屏）。让它透明，整体就等于
+     "CSS 底色 + 这组光晕"，与原主题的静态观感一致。 */
+  for(const g of ((sc && sc.glows) || [])){
+    const rgb = hexRgb(g[4]);
+    const grd = ctx.createRadialGradient(g[0] * W, g[1] * H, 0, g[0] * W, g[1] * H, Math.max(1, (g[2]) * (g[6])));
+    grd.addColorStop(0, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + g[5] + ')');
+    grd.addColorStop(1, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0)');
+    ctx.fillStyle = grd;
+    ctx.save();
+    ctx.translate(g[0] * W, g[1] * H);
+    ctx.scale(1, g[3] / Math.max(1, g[2]));     // 圆 → 椭圆（匹配 CSS 的 rx/ry）
+    ctx.translate(-g[0] * W, -g[1] * H);
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function paintGLFrame(key){
+  const gl = _uGL;
+  if(!gl || !_uGLCanvas || !_uGLProg){ paintGLFallback(); return; }
+  if(_uGLDbgGrid){ paintGLDebugGrid(); return; }
+  try{
+    gl.useProgram(_uGLProg);
+    gl.uniform2f(_uGLLoc.uRes, _uGLCanvas.width, _uGLCanvas.height);
+    gl.uniform1f(_uGLLoc.uTime, _uTime);
+    gl.uniform1f(_uGLLoc.uFade, _uFadeIn);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    /* 首帧自检：GPU 路径最坏的一种情况是"着色器跑起来了、但输出全黑"—— 不透明画布上那就是黑屏，
+       却没有任何异常可抓（编译、链接、drawArrays 全都"成功"）。所以自己读一次像素：
+       本项目的主题底色都不是纯黑（最深的 #0b111c 也有 11/17/28），全黑只可能是"没画出来"。
+       取中间一行 16 像素，代价一次、只在首帧。 */
+    if(!_uGLChecked){
+      _uGLChecked = 1;
+      const px = new Uint8Array(64);
+      gl.readPixels(0, Math.max(0, (_uGLCanvas.height >> 1) - 1), 16, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let mx = 0;
+      for(let i = 0; i < px.length; i += 4) mx = Math.max(mx, px[i], px[i + 1], px[i + 2]);
+      if(mx < 4){
+        _uGLProg = null;
+        failGLShader(key, '首帧输出全黑（背景与光照都没画出来）', '自检 readPixels 最大通道=' + mx);
+        glTeardown();
+        ensure2DCanvas();
+        paintGLFallback();
+        return;
+      }
+    }
+  }catch(e){
+    /* 逐帧异常：第一次就切到静态兜底并说明原因，不吞、也不逐帧刷日志。
+       为什么必须兜这一层：GPU 路径抛异常时画布是**不透明**的，用户看到的就是一块黑屏，
+       而异常本身只在控制台里 —— "黑屏且毫无提示"是这类问题最难查的形态。 */
+    _uGLProg = null;
+    failGLShader(key, '渲染异常', e);
+    glTeardown();
+    ensure2DCanvas();
+    paintGLFallback();
+  }
+}
+/* 自适应降档：按 **rAF 的实际帧间隔** 判断（不看 drawArrays 的 JS 耗时 —— GPU 是异步的，那个数字没有意义）。
+   rAF 是跟着 vsync 走的：一旦 GPU 跟不上，合成器丢帧，帧间隔就会翻到 2 个 vsync 以上。
+   连续 90 帧平均超过 22ms 就降一档像素预算，最多降两档；档位在会话内保留（设备能力是稳定属性）。 */
+function glTrackFrame(dt){
+  if(!_uGLProg) return;
+  _uGLSlow += dt; _uGLFrames++;
+  if(_uGLFrames >= 90){
+    if(_uGLSlow / _uGLFrames > 0.022 && _uGLStep < 2){ _uGLStep++; resizeGLTheme(); }
+    _uGLSlow = 0; _uGLFrames = 0;
+  }
+}
+/* 诊断条：GL 画布里画不出字，而"没写对"和"没生效"在屏幕上表现为同一个现象（黑屏 / 静止），
+   所以状态只能靠 DOM 叠一层。只在两种情况出现：?shaderdebug，或**真的出错了**（编译/链接/渲染异常）
+   —— 正常路径不创建这个节点，不影响任何用户。 */
+function glDebugOverlay(){
+  const lines = [];
+  if(_uGLNote) lines.push('⚠ ' + _uGLNote);
+  lines.push('webgl2 ' + (_uGLFail ? '不可用' : '可用') + ' · 当前层 ' + (_uGLProg ? 'GPU' : '静态兜底'));
+  const keys = Object.keys(GL_FS);
+  if(keys.length) lines.push(keys.map(k => k + ':' + (_uGLBadKeys[k] ? '失败' : 'ok')).join('  '));
+  if(!_uGLDbgEl){
+    _uGLDbgEl = document.createElement('div');
+    _uGLDbgEl.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:2147483000;pointer-events:none;' +
+      'font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#fff;background:rgba(0,0,0,.78);' +
+      'padding:5px 8px;border-radius:6px;white-space:pre-wrap;max-width:92vw';
+    document.body.appendChild(_uGLDbgEl);
+  }
+  _uGLDbgEl.textContent = lines.join('\n');
+}
+/* 这一层出了"本不该出"的问题（编译/链接/渲染异常）：记下能看懂的原因并显示出来。
+   注意区分：设备本身没有 WebGL2 不是 bug（那是能力差异），只安静降级、不打扰用户。 */
+function glFailNote(what, detail){
+  _uGLNote = what + (detail ? '：' + String(detail).slice(0, 360) : '');
+  warnSilent('WebGL 图层 ' + _uGLNote);
+  glDebugOverlay();
+}
+function paintGLDebugGrid(){
+  const gl = _uGL, cv = _uGLCanvas;
+  if(!gl || !cv) return;
+  const keys = Object.keys(GL_FS);
+  const cols = cv.width >= 900 ? 3 : 2;
+  const rows = Math.ceil(keys.length / cols);
+  const tw = Math.floor(cv.width / cols), th = Math.floor(cv.height / rows);
+  for(let i = 0; i < keys.length; i++){
+    const key = keys[i];
+    if(!(key in _uGLDbgProgs)) _uGLDbgProgs[key] = buildGLProgram(gl, key) || null;
+    const prog = _uGLDbgProgs[key];
+    const cx = (i % cols) * tw, cy = Math.floor(i / cols) * th;
+    gl.viewport(cx, cv.height - cy - th, tw, th);            // 视口 y 轴朝上：从上往下排
+    if(!prog){ gl.clearColor(0.22, 0.03, 0.05, 1); gl.clear(gl.COLOR_BUFFER_BIT); continue; }
+    gl.useProgram(prog);
+    const loc = glLocations(gl, prog);          // 调试模式每帧取一次可以接受：正常路径不会走到这里
+    glSetScene(gl, loc, themeIdOfCanvasKey(key), tw, th);
+    gl.uniform2f(loc.uRes, tw, th);
+    gl.uniform1f(loc.uTime, _uTime);
+    gl.uniform1f(loc.uFade, 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  gl.viewport(0, 0, cv.width, cv.height);
+  glDebugOverlay();
+}
+/* 主题 id 反查（调试网格用）：既能按 canvas key 查，也能按**着色器名**查 ——
+   调试网格遍历的是 GL_FS 的键（着色器名），与 canvas key 不一定同名；
+   早先这里只按 canvas key 查，于是凡"不同名"的主题在调试网格里都拿不到配色（uniforms 全 0）。 */
+function themeIdOfCanvasKey(key){
+  const want = GL_SHADER_OF[key] || key;
+  for(const id of Object.keys(THEME_SPEC)) if((GL_SHADER_OF[canvasKeyOf(id)] || canvasKeyOf(id)) === want) return id;
+  return '';
+}
+
 // ======== 统一 Canvas 2D 引擎（所有动态主题） ========
 // 引擎状态（_uCanvas/_uCtx/_uRaf/_uTheme/_uParticles/_uFadeIn/_uAlphaBase/_spriteCache 等）
 // 已在 applyTheme 之前声明，这里只保留绘制逻辑
+// 2D 画布的创建/复用（2D 主题，以及"GPU 不可用 → 静态兜底"这条路径共用同一处创建逻辑）
+function ensure2DCanvas(){
+  if(_uCanvas) return;
+  _uCanvas = document.createElement('canvas');
+  _uCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
+  document.body.appendChild(_uCanvas);
+  _uCtx = _uCanvas.getContext('2d');
+  resizeUnified();
+}
+/* 停掉 2D 那一层（帧循环、画布、粒子、离屏位图缓存）。
+   GPU 那层由 glTeardown 负责，两者刻意分开：从一套 GPU 主题切到另一套时只拆 2D 那层，
+   着色器的 program 可以继续复用（否则每切一次主题都要重新编译一次着色器）。 */
+function stop2DLayer(clearFirst){
+  if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+  if(_uCanvas){
+    if(clearFirst && _uCtx){ try{ _uCtx.clearRect(0, 0, _uCanvas.width, _uCanvas.height); }catch(_){ } }
+    _uCanvas.remove();
+    _uCanvas = null; _uCtx = null;
+  }
+  _uParticles = [];
+  // 离屏精灵与平铺 pattern 属于「上一主题的位图」，这里必须清：
+  // 否则从 canvas 主题切到纯配色主题后，它们仍在内存里常驻
+  _spriteCache.clear(); _patCache.clear();
+}
+function stopCanvasLayers(clearFirst){
+  stop2DLayer(clearFirst);
+  glTeardown();
+}
+// 是否有一层画布在跑：tickUnified / restartCanvasLoop 的存活判据（两条渲染路径都要认）
+function canvasLayerActive(){ return !!(_uGLProg && _uGLCanvas) || !!(_uCanvas && _uCtx); }
 function startUnifiedCanvas(theme){
   // 解析期不启动引擎：initTheme() → applyTheme() 会在脚本还没解析完时就走到这里，而各主题绘制函数用到的
   // 常量都"就近声明"在引擎区（7600 行往后），此刻仍在 TDZ —— 真去画那一帧就会抛 ReferenceError，
@@ -8927,48 +9757,58 @@ function startUnifiedCanvas(theme){
   // 表现就是"首次进入完全没有动效，手动切一次主题才活"：因为切换发生在解析之后。
   // 解析期只登记不启动，交给 init 末尾那次 startUnifiedCanvas 真正拉起。
   if(document.readyState === 'loading') return;
-  // 系统开启「减少动态效果」时，不启动粒子引擎（无障碍降级）
+  // 系统开启「减少动态效果」时，两层都不启动（无障碍降级）：页面只剩 CSS 的静态底色
   if(prefersReduce()){
-    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
-    if(_uCanvas){ _uCanvas.remove(); _uCanvas = null; _uCtx = null; }
-    _uParticles = []; _uTheme = ''; _uTime = 0;
+    stopCanvasLayers(false);
+    _uTheme = ''; _uTime = 0;
     return;
   }
   // 直接吃派生清单：此前这里又手写了一遍 12 个 id 再 concat，与 THEME_SPEC 的 canvas 声明是三份信息
   const canvasThemes = ALL_CANVAS_THEMES;
   if(!canvasThemes.includes(theme) && !CUSTOM_THEMES[theme]){
-    // 非 Canvas 主题：停止动画、清除画布、移除 Canvas
-    if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
-    if(_uCanvas){
-      _uCtx.clearRect(0, 0, _uCanvas.width, _uCanvas.height);
-      _uCanvas.remove();
-      _uCanvas = null; _uCtx = null;
-    }
-    _uParticles = [];
+    // 非 Canvas 主题：两层都停掉、清干净
+    stopCanvasLayers(true);
     _uTime = 0;
     _uTheme = '';
-    // 离屏精灵与平铺 pattern 属于「上一主题的位图」，这里也要清：
-    // 否则从 canvas 主题切到纯配色主题后，它们仍在内存里常驻（canvas→canvas 分支已有同样清理）
-    _spriteCache.clear(); _patCache.clear();
     return;
   }
-  // Canvas 主题：创建或复用 Canvas
   if(_uTheme === theme) return;
-  _spriteCache.clear();   // 切主题时清掉上一主题的精灵，避免常驻内存（按需懒生成会自动重建）
-  _patCache.clear();      // 平铺 pattern 同理（纹理重建后旧 pattern 已失效）
-  if(!_uCanvas){
-    _uCanvas = document.createElement('canvas');
-    _uCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
-    document.body.appendChild(_uCanvas);
-    _uCtx = _uCanvas.getContext('2d');
-    resizeUnified();
-  }
   _uTheme = theme;
   _uParticles = [];
   _uTime = 0; _uLastTs = 0;
   // 切换主题时淡入：0→1。但换肤扩散期间不淡入 —— 快照要拍"最终长相"，
   // 从 0 起步会让铺开的那一片明显偏暗、和最终画面不一致（非扩散路径仍保留淡入）
   _uFadeIn = _vtHold ? 1 : 0;
+  if(GL_SHADER_OF[canvasKeyOf(theme)]){
+    // ── 物理型主题：整层交给 WebGL2（两层画布互斥，先把 2D 那层拆掉）──
+    /* GPU 图层是**不透明**的（alpha:false），对它做"从 0 淡入"等于每次切过来先显示一帧纯黑、
+       再淡上来 —— 2D 主题之所以能这么做，是因为它下面是 CSS 底色，黑不了。
+       所以这里直接把淡入置满：不透明图层没有"淡入"这个选项，只有"闪一次黑"。
+       （进这个分支时 _vtHold 可能为真也可能为假，两种都不该从黑起步。） */
+    _uFadeIn = 1;
+    /* html 的背景必须透明：GPU 图层在 z-index:-1，而 CSS 里 html,body 都写着 background:var(--bg) ——
+       不透明底会盖住负层级元素（applyTheme 里 img-bg 段已踩过同一个坑）。
+       html 透明后 body 的背景会被"提升为画布背景"（CSS 2.1 §14.2），仍在最底层，GPU 图层正好压在它上面。
+       切走时不需要在这里还原：applyTheme 的非 img-bg 分支会把 html 背景重置为空。 */
+    document.documentElement.style.background = 'transparent';
+    stop2DLayer(true);
+    if(!startGLTheme(theme)){
+      /* 无 WebGL2 / 着色器编译失败 → 2D 静态兜底（同一份 scene 画出来的静止背景）。
+         它刻意**不做动画**：与其糊一段假的动态，不如给一张与着色器同源的静图 ——
+         既满足无障碍的"静态替代"，也保证降级路径永远不是一块空白画布。 */
+      warnSilent('主题「' + ((getThemeConfig(theme) || {}).name || theme) + '」改用 2D 静态兜底（无 WebGL2 或着色器不可用）');
+      ensure2DCanvas();
+    }else{
+      if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; }
+      paintUnifiedFrame(0.016);
+      _uRaf = requestAnimationFrame(tickUnified);
+      return;
+    }
+  }else{
+    stop2DLayer(true);
+    glTeardown();
+    ensure2DCanvas();
+  }
   initThemeParticles(theme);
   // 先同步画一帧再排队（原因见 paintUnifiedFrame）：换肤扩散的新快照依赖这一帧已经是新主题。
   // 同时撤掉在途的那一帧，避免旧主题的帧插进来、也避免重复调度
@@ -8977,6 +9817,7 @@ function startUnifiedCanvas(theme){
   _uRaf = requestAnimationFrame(tickUnified);
 }
 function resizeUnified(){
+  resizeGLTheme();          // GPU 那层（没有 GL 画布时是空操作）：尺寸变化要重设视口与位图
   if(!_uCanvas) return;
   // dpr 上限 2 + 逐帧绘制，与桌面完全一致。
   // 曾按窄屏做过"降到 1.5 倍 + 30fps 限帧"的省电降级，但限帧会让背景与前景的动画节奏不一致、
@@ -9006,7 +9847,7 @@ if(window.matchMedia){
     if(_mqReduce.addEventListener) _mqReduce.addEventListener('change', () => {
       invalidateReduceMotion();   // 偏好变了：让 prefersReduce() 的缓存作废（否则其余降级分支仍按旧值走）
       if(_mqReduce.matches){ startUnifiedCanvas(''); }   // 进入 reduce 分支：停止并清理画布
-      else startUnifiedCanvas(savedThemeId()||'aurora');
+      else startUnifiedCanvas(savedThemeId()||'particle');
     });
   }catch(_){}
 }
@@ -9016,44 +9857,8 @@ function initThemeParticles(theme){
   const W = window.innerWidth, H = window.innerHeight;
   const isMobile = W < 768;
 
-  // ── aurora: 极光尘（极光本体由 CSS 承担；canvas 层沿光带方向定向流动 + 拉长，见 drawAurora）──
-  if(theme==='aurora'){
-    const n = isMobile?22:46;
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        size:0.5+Math.random()*1.6,
-        alpha:0.14+Math.random()*0.42,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.4,
-        vx:0.22+Math.random()*0.42,   // 横向漂移 px/帧@60fps ≈ 13~38px/s：与 CSS 光带的横移同向
-        tint:Math.random()<0.18?1:0   // 0 冷白 / 1 淡青
-      });
-    }
-  }
-  // ── midnight: 银河带 + 星点 + 流星（银河由 MILKY_BLOBS 旋转铺开）──
-  else if(theme==='midnight'){
-    const n = isMobile?70:130;
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        size:0.4+Math.random()*1.3, alpha:0.10+Math.random()*0.36,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.3,
-        tint:Math.random()<0.14?1:0,   // 0 冷白 / 1 淡金
-        type:'star'
-      });
-    }
-    const mCount = isMobile?3:8;
-    for(let i=0;i<mCount;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H*-0.4,
-        vx:-1.6-Math.random()*4.5, vy:2.6+Math.random()*5.5,
-        size:0.9+Math.random()*1.6, alpha:0.5+Math.random()*0.5,
-        type:'meteor', lifeLeft:2+Math.random()*6
-      });
-    }
-  }
   // ── sunset: 浮尘（沿光轴向外流淌，投影落进光柱才被点亮，见 drawSunset）──
-  else if(theme==='sunset'){
+  if(theme==='sunset'){
     const n = isMobile?34:64;
     for(let i=0;i<n;i++){
       _uParticles.push({
@@ -9067,8 +9872,6 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── ripple: 焦散光斑群由 causticPts 的 12×8 网格 + 位移场驱动（见 drawRipple），不走粒子通道 ──
-  else if(theme==='ripple'){ /* no particles */ }
   // ── particle: 星链（粒子间近距连线成网；节点走青/紫/蓝三色）──
   else if(theme==='particle'){
     const n = isMobile?38:72;
@@ -9079,36 +9882,6 @@ function initThemeParticles(theme){
         size:0.8+Math.random()*1.8, alpha:0.35+Math.random()*0.5,
         phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*1.5,
         tint:i%3   // 0 青 / 1 紫 / 2 天蓝（固定三色，光晕精灵可复用，缓存不膨胀）
-      });
-    }
-  }
-  // ── gold: 金尘（虹彩底纹由 iridSprite 的两张 384² 彩纹交叉淡入驱动，见 drawGold）──
-  else if(theme==='gold'){
-    const n = isMobile?30:62;
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.35, vy:-(0.08+Math.random()*0.45),
-        size:0.7+Math.random()*2.1, alpha:0.12+Math.random()*0.42,
-        phase:Math.random()*Math.PI*2, speed:0.3+Math.random()*1.5,
-        sparkle:Math.random()<0.22
-      });
-    }
-  }
-  // ── paper: 素笺是纯纹理 + 柔光（见 drawPaper），不需要粒子 ──
-  else if(theme==='paper'){ /* no particles */ }
-  // ── shuangren: 六角冰晶 + 细雪（大晶体稀疏、细雪密集，拉开景深）──
-  else if(theme==='shuangren'){
-    const n = isMobile?40:80;
-    for(let i=0;i<n;i++){
-      const big = Math.random()<0.22;
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H*-1,
-        vx:(Math.random()-0.5)*0.4, vy:0.15+Math.random()*0.8,
-        size: big ? 1.8+Math.random()*2.6 : 0.5+Math.random()*1.2,
-        alpha: big ? 0.30+Math.random()*0.35 : 0.14+Math.random()*0.30,
-        rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.025,
-        big: big, sparkle:Math.random()<0.14
       });
     }
   }
@@ -9126,6 +9899,36 @@ function initThemeParticles(theme){
         vx:(Math.random()-0.5)*1, vy:(Math.random()-0.5)*1,
         size:0.5+Math.random()*2,
         gold:i%5===0, ph:seed*30
+      });
+    }
+  }
+  // ── zirong: 流萤（萤火虫：无方向缓慢游荡 + 周期性窄脉冲闪光）──
+  else if(theme==='zirong'){
+    const n=isMobile?22:40;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        dir:Math.random()*6.283,               // 航向（游走）
+        spd:0.06+Math.random()*0.16,           // 很慢的飘速
+        rate:0.18+Math.random()*0.35,          // 闪光频率（每几秒闪一下）
+        size:1.1+Math.random()*2.2,
+        ph:Math.random()*6.283,
+        tint:i%2
+      });
+    }
+  }
+  // ── gruvbox: 余烬（底部上升的暖橙火星，带闪灭）──
+  else if(theme==='gruvbox'){
+    const n=isMobile?34:64;
+    for(let i=0;i<n;i++){
+      _uParticles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.15,
+        vy:-(0.2+Math.random()*0.5),
+        size:0.8+Math.random()*1.8,
+        ph:Math.random()*6.283,
+        sp:0.5+Math.random()*1.2,
+        tint:i%3
       });
     }
   }
@@ -9153,38 +9956,6 @@ function initThemeParticles(theme){
       });
     }
   }
-  // ── zirong: 彩波是纯几何（Aceternity Wavy Background），不需要粒子 ──
-  else if(theme==='zirong'){ /* no particles */ }
-  // ── dracula: 上升余烬（位置在 drawDraculaEmber 里推进，这里只播种）──
-  else if(theme==='dracula'){
-    const n = isMobile?20:40;
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vy:0.25+Math.random()*0.75,          // 上浮速度（px/帧@60fps）
-        sway:0.10+Math.random()*0.35,        // 侧向摆动幅度
-        size:0.5+Math.random()*1.5,
-        alpha:0.16+Math.random()*0.40,
-        phase:Math.random()*Math.PI*2, speed:0.35+Math.random()*1.1,
-        tint:Math.random()<0.72?0:1,         // 0 品红 / 1 紫：余烬以品红为主
-        flick:Math.random()<0.22             // 少数会间歇爆亮（像被风一吹）
-      });
-    }
-  }
-  // ── everforest: 林间萤火（游走轨迹在 drawEverforestFirefly 里算，这里只播种）──
-  else if(theme==='everforest'){
-    const n = isMobile?8:14;                 // 刻意稀少：萤火的要点就是「不多」
-    for(let i=0;i<n;i++){
-      _uParticles.push({
-        x:Math.random()*W, y:Math.random()*H,
-        sway:0.55+Math.random()*0.85,        // 游走速度（比余烬快，才像「飞」）
-        size:0.7+Math.random()*1.4,
-        alpha:0.30+Math.random()*0.45,
-        phase:Math.random()*Math.PI*2,
-        tint:Math.random()<0.78?0:1          // 0 暖黄绿 / 1 草绿
-      });
-    }
-  }
   // ── 用户自建配色主题：通用星尘（三种色相 + 稀疏亮星，颜色在 drawStardust 里按主题实时取）──
   //    注：内置主题已无一使用 stardust（每套都有自己的特效），这条现在只服务旧存档里的自建主题；
   //    drawStardust 也仍是分派表的兜底分支，所以两者都不是死代码。
@@ -9202,7 +9973,9 @@ function initThemeParticles(theme){
       });
     }
   }
-  // 注：canvasThemes 白名单里 sunset/ziliang（纯几何）、ripple/paper/zirong（纯几何）不走粒子，其余主题均在上方有显式分支
+  // 注：绢是纯纹理（不走粒子通道，所以这里没有它的分支，落到下面空数组即可），
+  //     其余内置主题在上方都有显式分支（要用粒子的就播种，纯几何的也留一行占位说明）；
+  //     旧存档里的自建配色主题走下面那条通用星尘。
 }
 /* 换肤扩散期间挂起画布的帧循环：这 520ms 里页面被旧/新两张快照盖着，逐帧动画在快照后面看不见，
    却仍在抢光栅 —— 而圆形扩散恰恰最吃这个。注意只是"停帧循环"，不是"不切主题"：
@@ -9215,7 +9988,9 @@ function holdThemeCanvas(on){
   restartCanvasLoop();
 }
 function restartCanvasLoop(){
-  if(_uCanvas && _uCtx && !_uRaf){
+  // 判据用 canvasLayerActive() 而不是只看 2D：GPU 主题下 _uCtx 是 null，
+  // 旧写法会让「切回前台」这条路径对 GPU 主题完全失效（背景停在那一帧不动）
+  if(canvasLayerActive() && !_uRaf){
     _uLastTs = 0; // 重置时间基准，避免切回前台后 dt 跳变导致特效瞬移
     _uRaf = requestAnimationFrame(tickUnified);
   }
@@ -9233,7 +10008,7 @@ document.addEventListener('visibilitychange', () => {
   syncWakeLock();
 });
 function tickUnified(ts){
-  if(!_uCanvas || !_uCtx){ _uRaf = null; return; }
+  if(!canvasLayerActive()){ _uRaf = null; return; }
   // 后台 / 换肤扩散期间停止调度，分别由 visibilitychange、holdThemeCanvas 重新拉起
   if(_uHidden || _vtHold){ _uRaf = null; return; }
   _uRaf = requestAnimationFrame(tickUnified);
@@ -9249,29 +10024,25 @@ function paintUnifiedFrame(dt){
   // 主题切换淡入（按真实时间推进，避免高刷屏淡入过快）
   if(_uFadeIn < 1){ _uFadeIn = Math.min(1, _uFadeIn + dt * 1.8); }
   _uAlphaBase = _uFadeIn;
+  // 物理型主题：整层交给 GPU（或它的 2D 静态兜底）。注意这条路**不能**碰 _uCtx ——
+  // GPU 生效时它是 null（2D 画布已被拆掉），沿用下面的 clearRect 会直接抛。
+  const gkey = canvasKeyOf(_uTheme);
+  if(GL_SHADER_OF[gkey]){ glTrackFrame(dt); paintGLFrame(gkey); return; }
   // 注意：ctx 已被 setTransform(dpr) 缩放，坐标须用逻辑像素（innerWidth/Height），
   // 而非 canvas.width/height（物理像素），否则特效会挤在屏幕左上角。
   const ctx = _uCtx, W = window.innerWidth, H = window.innerHeight;
+  if(!ctx) return;
   if(_uMaskEls.length && _uMaskStale){ _uMaskStale = false; refreshParticleMaskRects(); }   // 仅在滚动/窗口变化后的第一帧重算
   ctx.clearRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = _uFadeIn;
   switch(canvasKeyOf(_uTheme)){
-    case 'aurora': drawAurora(ctx,W,H,dt); break;
-    case 'midnight': drawMidnight(ctx,W,H,dt); break;
     case 'sunset': drawSunset(ctx,W,H,dt); break;
-    case 'ripple': drawRipple(ctx,W,H,dt); break;
     case 'particle': drawParticle(ctx,W,H,dt); break;
-    case 'gold': drawGold(ctx,W,H,dt); break;
-    case 'paper': drawPaper(ctx,W,H,dt); break;
-    case 'shuangren': drawShuangren(ctx,W,H,dt); break;
     case 'night': drawNight(ctx,W,H,dt); break;
     case 'songxing': drawSongxing(ctx,W,H,dt); break;
-    case 'zirong': drawZirong(ctx,W,H,dt); break;
-    case 'ziliang': drawZiliang(ctx,W,H,dt); break;
-    case 'ember': drawDraculaEmber(ctx,W,H,dt); break;
-    case 'scan': drawNordScan(ctx,W,H,dt); break;
-    case 'film': drawGruvboxFilm(ctx,W,H,dt); break;
-    case 'firefly': drawEverforestFirefly(ctx,W,H,dt); break;
+    case 'ripple': drawRipple(ctx,W,H,dt);  break;
+    case 'zirong': drawFirefly(ctx,W,H,dt); break;
+    case 'gruvbox': drawGruvbox(ctx,W,H,dt); break;
     // 兜底仍是星尘：如今没有内置主题用它了，但**用户自建配色主题**（旧存档里的 custom2 组）
     // 声明的就是 canvas:'stardust'，所以这条不是死分支；顺带也接住将来任何未登记的特效 key。
     default: drawStardust(ctx,W,H,dt); break;
@@ -9285,140 +10056,11 @@ function paintUnifiedFrame(dt){
 //   全屏层（颗粒/扫描线）不做逐段避让 —— 峰值 α 压到 0.10 以内，比热力图底色还低一个量级，
 //   既不会被误读成数据，也做不到「逐 x 变 α」而不把描边拆成几十段。
 
-// ── ember: 上升余烬（德古拉）──
-// 概念：德古拉的底色是夜，但它的两个强调色是品红与紫。比起星尘的「原地闪」，这里做「上升的余烬」——
-// 缓慢上浮 + 横向摆动（被热气流托着）+ 各自的明灭相位，偶尔一颗被风一吹爆亮。
-// 与其余主题的区别：方向向上（星尘静止、松星下落、金尘上浮但无摆动），且带侧向漂移。
-const DR_EMBER = [
-  [0,'rgba(255,121,198,1)',0.45,'rgba(255,121,198,0.22)',1,'rgba(0,0,0,0)'],   // 品红（多数）
-  [0,'rgba(189,147,249,1)',0.45,'rgba(189,147,249,0.20)',1,'rgba(0,0,0,0)'],   // 紫（少数）
-];
-const DR_EMBER_RGB = ['255,121,198','189,147,249'];
-function drawDraculaEmber(ctx,W,H,dt){
-  const t = _uTime, f = dt*60;
-  const spr = [glowSprite('drE0',26,DR_EMBER[0]), glowSprite('drE1',26,DR_EMBER[1])];
-  for(const p of _uParticles){
-    // 上升 + 侧向摆动；出了顶部从底部重来（横向也环绕，免得摆动把它们堆到一边）
-    p.y -= p.vy*f;
-    p.x += sinLut(t*0.5 + p.phase)*p.sway*f;
-    if(p.y < -14){ p.y = H+14; p.x = Math.random()*W; }
-    if(p.x < -14) p.x = W+14; else if(p.x > W+14) p.x = -14;
-    const ma = maskFactor(p.x,p.y); if(ma <= 0) continue;
-    const tw = 0.42 + 0.58*sinLut(t*p.speed + p.phase);
-    // 爆亮：只有少数粒子带 flick，且是间歇性的（sinLut(t*9) 的负半周不加成）
-    const fl = p.flick ? 1 + 0.9*Math.max(0, sinLut(t*9 + p.phase)) : 1;
-    const a = p.alpha*tw*fl;
-    const i = p.tint;
-    blit(ctx, spr[i], p.x, p.y, p.size*3.0, a);            // blit 内部已乘遮罩
-    ctx.fillStyle = 'rgba(' + DR_EMBER_RGB[i] + ',' + Math.min(1, a*1.1*ma) + ')';
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.42,0,Math.PI*2); ctx.fill();
-  }
-}
-
-// ── scan: 寒潮扫描（北欧）──
-// 概念：北欧的底色是冷、静、极简，所以给它一个**结构感**而不是「飘东西」：
-// 等距水平细线恒速向下滚动（示波器/终端），每隔一个周期再有一条更亮的线扫过全屏，
-// 像极夜里风一层层推过雪面。它是主题集里唯一的「线条平移」机制，也完全不用精灵。
-// 避让：见上方红线里的说明（峰值 α 0.10 以内，不做逐段避让）。
-const NORD_SCAN_GAP = 88;      // 线间距（逻辑 px）
-const NORD_SCAN_PERIOD = 11;   // 亮线扫过的周期（秒）
-function drawNordScan(ctx,W,H,dt){
-  const t = _uTime;
-  const th = getTheme(_uTheme) || THEMES.nord;
-  const rgb = hexToRgbStr(th.accent) || '136,192,208';
-  const A = _uAlphaBase;
-  const off = (t*34) % NORD_SCAN_GAP;
-  const y0 = -NORD_SCAN_GAP + off;
-  ctx.lineWidth = 1;
-  for(let y = y0; y < H + NORD_SCAN_GAP; y += NORD_SCAN_GAP){
-    // 首尾各留 18% 屏高做渐隐，免得线在屏幕边缘硬断（读出「贴纸感」）
-    const edge = Math.min(1, Math.min(y, H-y) / (H*0.18));
-    if(edge <= 0) continue;
-    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.035*edge*A) + ')';
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-  }
-  // 亮线：本体的上下各配一条更淡的伴随线当作柔光（三层描边 ≈ blur，与子荣那条旧做法同一套）
-  const hy = -60 + ((t % NORD_SCAN_PERIOD) / NORD_SCAN_PERIOD) * (H + 120);
-  const he = Math.min(1, Math.min(hy, H-hy) / (H*0.22));
-  if(he > 0){
-    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.055*he*A) + ')';
-    ctx.beginPath(); ctx.moveTo(0,hy-2); ctx.lineTo(W,hy-2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0,hy+2); ctx.lineTo(W,hy+2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.10*he*A) + ')';
-    ctx.beginPath(); ctx.moveTo(0,hy); ctx.lineTo(W,hy); ctx.stroke();
-  }
-}
-
-// ── film: 复古胶片（Gruvbox）──
-// 概念：低饱和暖色的 70 年代质感 —— 全屏颗粒在缓慢流动，叠一层极淡的暖色晕影呼吸。
-// 与素笺的区别：素笺是「静态纸纹 + 墨团游动」（有纤维质感、有具体形状），
-// 这里是「噪点自身在流动」（无形状、无墨团），机制上是主题集里唯一的「纹理平移」。
-// 复用现成的 grainSprite（满幅双向噪声）+ texPattern；每帧只有 2 次 fillRect。
-function drawGruvboxFilm(ctx,W,H,dt){
-  const t = _uTime, A = _uAlphaBase;
-  const th = getTheme(_uTheme) || THEMES.gruvbox;
-  const warm = hexToRgbStr(th.accent3) || '254,128,25';
-  // ① 暖色晕影：从四角向内一层很淡的暖橙，约 26s 一次呼吸（复古冲印的偏色感）
-  const breathe = 0.5 + 0.5*sinLut(t*0.24);
-  ctx.save();
-  ctx.globalAlpha = (0.05 + 0.035*breathe)*A;
-  const vg = ctx.createRadialGradient(W*0.5,H*0.46,Math.min(W,H)*0.28, W*0.5,H*0.46,Math.max(W,H)*0.78);
-  vg.addColorStop(0,'rgba(0,0,0,0)');
-  vg.addColorStop(1,'rgba(' + warm + ',1)');
-  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
-  ctx.restore();
-  // ② 流动颗粒：两张噪声纹理反向平移交错。单张平移会看出「整块在动」，反向交错才像颗粒在原地翻涌
-  ctx.save();
-  const d1x = (t*7)%128, d1y = (t*4.5)%128;
-  ctx.globalAlpha = 0.055*A;
-  ctx.translate(-d1x, -d1y);
-  ctx.fillStyle = texPattern(ctx,'gvFilm0',grainSprite(0));
-  ctx.fillRect(0,0,W+128,H+128);
-  ctx.restore();
-  ctx.save();
-  const d2x = 128 - ((t*11)%128), d2y = 128 - ((t*3)%128);
-  ctx.globalAlpha = 0.045*A;
-  ctx.translate(-d2x, -d2y);
-  ctx.fillStyle = texPattern(ctx,'gvFilm1',grainSprite(1));
-  ctx.fillRect(0,0,W+128,H+128);
-  ctx.restore();
-}
-
-// ── firefly: 林间萤火（常青）──
-// 概念：常青的底色是墨绿，配给的意象是入夜的林子 —— 少量萤火各自游走、明灭，偶尔聚一聚又散开。
-// 与星尘的区别：星尘**坐标静止**只闪；萤火会**游走**（用两条不可通约的 sinLut 慢速摆动当游走，
-// 不用逐帧随机数：既不抖动、又零 RNG 开销）。粒子数刻意很少（14/8）——「稀少」正是萤火的要点。
-const EF_FIRE = [
-  [0,'rgba(215,219,138,1)',0.42,'rgba(215,219,138,0.22)',1,'rgba(0,0,0,0)'],   // 暖黄绿（多数）
-  [0,'rgba(167,192,128,1)',0.40,'rgba(167,192,128,0.20)',1,'rgba(0,0,0,0)'],   // 草绿（少数）
-];
-const EF_FIRE_RGB = ['215,219,138','167,192,128'];
-function drawEverforestFirefly(ctx,W,H,dt){
-  const t = _uTime, f = dt*60;
-  const spr = [glowSprite('efF0',34,EF_FIRE[0]), glowSprite('efF1',34,EF_FIRE[1])];
-  for(const p of _uParticles){
-    // 游走：两条不可通约的频率各自驱动 x/y，得到不重复的漂移轨迹（周期约 20s 与 27s）
-    p.x += sinLut(t*0.31 + p.phase)*p.sway*f;
-    p.y += sinLut(t*0.23 + p.phase*1.7)*p.sway*0.7*f;
-    // 环绕而不是重生：萤火不该「突然出现在别处」
-    if(p.x < -20) p.x = W+20; else if(p.x > W+20) p.x = -20;
-    if(p.y < -20) p.y = H+20; else if(p.y > H+20) p.y = -20;
-    const ma = maskFactor(p.x,p.y); if(ma <= 0) continue;
-    // 明灭：平方让「暗着的时间」明显长于「亮着的时间」，更像真的萤火
-    const tw = 0.5 + 0.5*sinLut(t*0.55 + p.phase);
-    const a = p.alpha*tw*tw;
-    const i = p.tint;
-    blit(ctx, spr[i], p.x, p.y, p.size*3.4, a);
-    ctx.fillStyle = 'rgba(' + EF_FIRE_RGB[i] + ',' + Math.min(1, a*1.4*ma) + ')';
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
-  }
-}
-
 // ── stardust: 通用星尘（现在只服务「用户自建配色主题」）──
 // 三种色相粒子 + 少量亮星呼吸闪烁；颜色从当前主题 accent/accent2/accent3 实时取，切主题自动换色
 function drawStardust(ctx,W,H,dt){
   const t = _uTime;
-  const th = getTheme(_uTheme) || THEMES.aurora;
+  const th = getTheme(_uTheme) || THEMES.particle;
   const RGB = [hexToRgbStr(th.accent)||'192,202,245', hexToRgbStr(th.accent2)||'192,202,245', hexToRgbStr(th.accent3)||hexToRgbStr(th.accent2)||'192,202,245'];
   /* 每个色调的发光精灵在这里算一次就够了（其余绘制函数同此处理）。
      glowSprite 内部虽然按 key 缓存了位图，但**参数里的模板串与 5 元素色标数组是逐次构造的** ——
@@ -9469,105 +10111,8 @@ function blit(ctx, spr, x, y, r, alpha){
   ctx.drawImage(spr, x - r, y - r, r*2, r*2);
   ctx.globalAlpha = _uAlphaBase;
 }
-// ======== 新 Canvas 特效 ========
+// ======== 主题特效：一套主题一个独立机制（不再"多套主题共用一条绘制分支"）========
 
-// ── aurora: 极光尘（Aurora Motes）──
-// 极光本体在 CSS 里（CSS_FX.aurora：两层 repeating-linear-gradient(100deg) + 60s 横向 300% 平移）。
-// canvas 这层原来洒的是「静止闪烁的冷白/淡青圆点」—— 那与通用星尘 drawStardust **逐行同源**：
-// 同一个循环、同一个 blit+arc 成对、同一个 0.5+0.5sin 闪烁公式，只换了配色与数量。
-// 等于给极光配了一片星尘 —— 看不出这个主题自己的意思，也正是「好几套主题共用一条绘制分支」的残留。
-// 现在改成「被极光吹出来的光屑」，两个细节都与上层光带对齐：
-//   · 流向 —— 横向漂移，与 background-position 的横移同向，于是整幅画面的动势是一致的；
-//   · 姿态 —— 光屑沿光带长轴躺下（拉长 3.4 倍）。推导：CSS 渐变角 θ（自「上」起顺时针）对应的方向
-//     向量是 (sinθ, −cosθ)，光带长轴即它的正交方向 (cosθ, sinθ)；而 ctx.rotate(φ) 把 x 轴映到
-//     (cosφ, sinφ)。两者相等当且仅当 φ = θ —— 所以画布旋转角直接用 100deg，不必再加直角修正。
-// 与其它粒子主题的运动方式刻意错开：星尘静止闪烁 / 金尘上浮 / 余烬上升并侧摆 / 萤火无向游走 / 雪下落自转。
-const AUR_ROT = 100/180*Math.PI;                  // 光带长轴的画布旋转角（= CSS 的 100deg，推导见上）
-const AUR_RGB = ['192,202,245', '125,207,255'];   // 冷白 / 淡青（Tokyo Night 的 fg 与 cyan）
-const AUR_STOPS = AUR_RGB.map(rgb => [0,`rgba(${rgb},1)`,0.5,`rgba(${rgb},0.22)`,1,'rgba(0,0,0,0)']);
-function drawAurora(ctx,W,H,dt){
-  const t = _uTime, f = dt*60;
-  // 两种色相的精灵在这里算一次；色标数组已提到模块常量，这里只查表（见 drawStardust 的训诫）
-  const sprites = AUR_STOPS.map((s,i)=>glowSprite('aurS'+i, 32, s));
-  for(const p of _uParticles){
-    // 横向漂移，穿出画面后从另一侧重入（纵向不做位移，免得它们被吹成一条斜线）
-    p.x += p.vx*f;
-    if(p.x > W+60) p.x -= W+120; else if(p.x < -60) p.x += W+120;
-    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
-    // 明灭放慢（周期 3~10s）：让「在流动」压过「在闪」，与星尘的原地闪烁区分开
-    const tw = 0.42 + 0.58*Math.sin(t*p.speed*0.6 + p.phase);
-    const a = p.alpha*tw*0.9;
-    const ti = p.tint ? 1 : 0;
-    blitRot(ctx, sprites[ti], p.x, p.y, p.size*2.6, a, AUR_ROT, 3.4);
-    ctx.fillStyle = `rgba(${AUR_RGB[ti]},${Math.min(1,a*1.25*ma)})`;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.size*0.45, 0, Math.PI*2); ctx.fill();
-  }
-}
-
-// ── midnight: 银河带 + 星点 + 流星 ──
-// 银河：整体旋转 -0.42rad 后铺 5 个拉扁的光斑精灵（旋转一次、drawImage 五次，不逐帧建渐变）
-const MILKY_BLOBS = [
-  {x:-0.34, y:0.02,  rx:0.30, ry:0.10, a:0.11, rgb:'203,166,247'},
-  {x:-0.12, y:-0.02, rx:0.26, ry:0.09, a:0.10, rgb:'137,180,250'},
-  {x:0.06,  y:0.01,  rx:0.28, ry:0.10, a:0.12, rgb:'205,214,244'},
-  {x:0.26,  y:-0.01, rx:0.24, ry:0.08, a:0.09, rgb:'148,226,213'},
-  {x:0.44,  y:0.03,  rx:0.20, ry:0.07, a:0.08, rgb:'203,166,247'}
-];
-function drawMidnight(ctx,W,H,dt){
-  const t = _uTime, f = dt*60;
-  // 银河带
-  ctx.save();
-  ctx.translate(W*0.5, H*0.42);
-  ctx.rotate(-0.42);
-  const L = Math.max(W,H)*1.25;
-  for(let i=0;i<MILKY_BLOBS.length;i++){
-    const b = MILKY_BLOBS[i];
-    const a = (0.85+0.15*Math.sin(t*0.08+i))*_uAlphaBase;
-    if(a<=0.004) continue;
-    const spr = glowSprite('milk'+i, 64, [0,`rgba(${b.rgb},${b.a})`,0.45,`rgba(${b.rgb},${b.a*0.45})`,1,'rgba(0,0,0,0)']);
-    const rx = b.rx*L, ry = b.ry*L;
-    ctx.globalAlpha = a;
-    ctx.drawImage(spr, b.x*L-rx, b.y*L-ry, rx*2, ry*2);
-  }
-  ctx.globalAlpha = _uAlphaBase;
-  ctx.restore();
-  // 星点：冷白为主，少量淡金；高亮时刻补一圈光晕（比单纯放大更"闪"）
-  // 两种色各预计算一个精灵（见 drawStardust 的说明：参数里的色标数组不该每粒子每帧重建）
-  const MN_RGB = ['205,214,244', '249,226,175'];
-  const mnSprites = MN_RGB.map((rgb, i) => glowSprite('mnS'+i, 32, [0,`rgba(${rgb},0.9)`,0.5,`rgba(${rgb},0.2)`,1,'rgba(0,0,0,0)']));
-  for(const p of _uParticles){
-    if(p.type!=='star') continue;
-    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
-    const tw = 0.5+0.5*Math.sin(t*p.speed+p.phase);
-    const a = p.alpha*(0.35+0.65*tw)*ma;
-    const ti = p.tint ? 1 : 0;
-    const rgb = MN_RGB[ti];
-    ctx.fillStyle = `rgba(${rgb},${a})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
-    if(tw>0.86){
-      blit(ctx, mnSprites[ti], p.x, p.y, p.size*5, (tw-0.86)/0.14*0.5);
-    }
-  }
-  // 流星：发光头部 + 渐隐拖尾（右上→左下）
-  for(const p of _uParticles){
-    if(p.type!=='meteor') continue;
-    p.x += p.vx*f; p.y += p.vy*f; p.lifeLeft -= dt;
-    if(p.lifeLeft<=0 || p.y>H+60 || p.x<-60){
-      p.x = Math.random()*W*0.8+W*0.15; p.y = -12-Math.random()*60;
-      p.vx = -1.6-Math.random()*4.5; p.vy = 2.6+Math.random()*5.5;
-      p.lifeLeft = 2+Math.random()*6; p.alpha = 0.5+Math.random()*0.5;
-    }
-    const tailX = p.x - p.vx*7, tailY = p.y - p.vy*7;
-    const g = ctx.createLinearGradient(p.x, p.y, tailX, tailY);
-    g.addColorStop(0, `rgba(226,232,255,${p.alpha})`);
-    g.addColorStop(0.35, `rgba(137,180,250,${p.alpha*0.42})`);
-    g.addColorStop(1, 'rgba(137,180,250,0)');
-    ctx.strokeStyle = g; ctx.lineWidth = p.size; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tailX,tailY); ctx.stroke();
-    const spr = glowSprite('mnMet', 32, [0,'rgba(240,244,255,1)',0.4,'rgba(180,200,255,0.35)',1,'rgba(0,0,0,0)']);
-    blit(ctx, spr, p.x, p.y, p.size*3.2, p.alpha);
-  }
-}
 
 // ── sunset: 丁达尔光束（God Rays）──
 // 参考：React Bits「LightRays」（github.com/DavidHDev/react-bits，MIT）——"从画布外某点射入的光锥"。
@@ -9603,28 +10148,6 @@ const SUNSET_BEAMS = (() => {
 // 浮尘判定用的预计算槽（每帧写入，避免逐帧 new 数组）
 const SUNSET_TAN = new Float32Array(SUNSET_BEAMS.length);
 const SUNSET_BWB = new Float32Array(SUNSET_BEAMS.length);
-// 预渲染颗粒：亮暗各半的双向噪声（各半 → 平均亮度中性，不会让画面整体偏灰），用途是抖动（dithering）——
-// 大面积低 α 的渐变在 8-bit 画布上必然分成宽色阶带（见 drawNight 的说明），要靠噪声把量化边界随机化。
-// 这里纹理用**满幅**（alpha 255），抖动幅度完全交给调用方的 globalAlpha —— 这一点是关键：
-// 之前把幅度写进纹理（alpha 0~46，均值 0.09）、再乘 0.022 的 globalAlpha，最终扰动只有 0.002，
-// 连一个色阶（1/255≈0.0039）都不到，等于白加；现在由 globalAlpha 给 ±0.012 ≈ 3 个色阶才真正有效。
-function grainSprite(i){
-  const key = 'grain'+i;
-  let c = _spriteCache.get(key);
-  if(c) return c;
-  const S = 128;
-  c = document.createElement('canvas'); c.width = c.height = S;
-  const g = c.getContext('2d');
-  const img = g.createImageData(S,S);
-  const d = img.data;
-  for(let p=0;p<S*S;p++){
-    d[p*4] = d[p*4+1] = d[p*4+2] = Math.random()<0.5 ? 0 : 255;
-    d[p*4+3] = 255;
-  }
-  g.putImageData(img,0,0);
-  _spriteCache.set(key,c);
-  return c;
-}
 function drawSunset(ctx,W,H,dt){
   const t = _uTime, A = _uAlphaBase;
   const mobile = W < 768;
@@ -9712,83 +10235,6 @@ function drawSunset(ctx,W,H,dt){
   ctx.restore();
 }
 
-// ── ripple: 粼光（水光斑群 / Caustics）──
-// 表现介质既不是线、也不是网格，而是一片被"波场"推着游动的水光斑群 ——
-// 水面折射会把阳光聚成成串的亮点与暗纹（焦散），这里用一组小柔光点做等价近似：
-//   · 位移：每个光斑的偏移 = 三个不可通约频率的正弦叠加（低频项定"水波推挤"、高频项给闪烁），
-//     相邻光斑的相位由网格位置递推（只叠一点随机）→ 它们成串地聚拢/散开，形成流动的网纹，而不是各自乱走；
-//   · 深浅交错：约三分之一是暗斑（青灰，source-over 压在浅底上 = 水里的暗纹），其余是亮斑
-//     （青白，lighter 提亮）。明暗一交织，浅色底上才有"水"的通透感 —— 只叠亮斑在 #EFF1F5 上几乎
-//     看不见（底色本身就接近白，加白等于没加）；
-//   · 尺寸取舍：光斑半径约 60px、峰值 α 约 0.2 —— 这是"不会出现色阶环带"的量级（成因详见 drawNight 的说明）。
-// 配色：Catppuccin Latte（github.com/catppuccin/catppuccin，MIT）的 teal / blue。
-const CAU_COLS = 12, CAU_ROWS = 8;
-let _cauPts = null;
-function causticPts(){
-  if(_cauPts) return _cauPts;
-  const out = [];
-  for(let r=0;r<CAU_ROWS;r++){
-    for(let c=0;c<CAU_COLS;c++){
-      out.push({
-        u: (c + 0.5)/CAU_COLS, v: (r + 0.5)/CAU_ROWS,        // 归一化网格位置
-        ph: (c*0.9 + r*1.3)*1.7 + (Math.random()-0.5)*0.9,   // 相位按位置递推：相邻光斑才"成串"
-        ph2: Math.random()*6.283,
-        sz: 0.55 + Math.random()*0.80,                       // 尺寸倍率
-        amp: 0.55 + Math.random()*0.90,                      // 位移倍率
-        dark: Math.random() < 0.34                           // 暗斑 / 亮斑
-      });
-    }
-  }
-  _cauPts = out;
-  return out;
-}
-// 波场：归一化坐标 + 时间 → 二维位移（写进 out，逐帧零分配）
-function causticDisp(u, v, t, ph, out){
-  const P = 3.1416;
-  const a = sinLut((u*3.1 + v*1.7)*P + t*0.52 + ph);
-  const b = sinLut((u*1.3 - v*2.9)*P - t*0.34 + ph*1.7);
-  const c = sinLut((u*6.2 + v*5.1)*P + t*0.88 + ph*2.3);
-  out[0] = a*0.55 + b*0.35 + c*0.20;
-  out[1] = b*0.50 + a*0.30 + sinLut((u*6.2 - v*4.3)*P + t*0.76 + ph*1.2)*0.22;
-}
-const _cauD = new Float32Array(2);
-function drawRipple(ctx,W,H,dt){
-  const t = _uTime, A = _uAlphaBase;
-  const mobile = W < 768;
-  const pts = causticPts();
-  const baseR = Math.min(W,H)*0.058;               // 光斑基准半径
-  const dxAmp = W*0.062, dyAmp = H*0.085;          // 位移幅度（纵向更大 → 像水面的上下起伏）
-  const skip = mobile ? 2 : 1;                     // 窄屏隔列取用，光斑数减半
-  ctx.save();
-  // ① 暗斑：水波压出来的暗纹（浅底上"变暗"才是水的主要体感）
-  ctx.globalCompositeOperation = 'source-over';
-  const sprDark = glowSprite('cauDark', 96, [0,'rgba(58,104,116,1)',0.45,'rgba(58,104,116,0.30)',1,'rgba(0,0,0,0)']);
-  for(let i=0;i<pts.length;i+=skip){
-    const p = pts[i];
-    if(!p.dark) continue;
-    const a = (0.09 + 0.10*sinLut(t*0.51 + p.ph))*A;
-    if(a <= 0.006) continue;
-    causticDisp(p.u, p.v, t, p.ph, _cauD);
-    const r = baseR*p.sz*(1 + 0.16*sinLut(t*0.66 + p.ph2));
-    ctx.globalAlpha = a;
-    ctx.drawImage(sprDark, p.u*W + _cauD[0]*dxAmp*p.amp - r, p.v*H + _cauD[1]*dyAmp*p.amp - r, r*2, r*2);
-  }
-  // ② 亮斑：被水面聚起来的光
-  ctx.globalCompositeOperation = 'lighter';
-  const sprLit = glowSprite('cauLit', 96, [0,'rgba(238,251,252,0.95)',0.42,'rgba(198,234,242,0.32)',1,'rgba(0,0,0,0)']);
-  for(let i=0;i<pts.length;i+=skip){
-    const p = pts[i];
-    if(p.dark) continue;
-    const a = (0.09 + 0.12*sinLut(t*0.47 + p.ph2))*A;
-    if(a <= 0.006) continue;
-    causticDisp(p.u, p.v, t, p.ph, _cauD);
-    const r = baseR*p.sz*(1 + 0.16*sinLut(t*0.66 + p.ph2));
-    ctx.globalAlpha = a;
-    ctx.drawImage(sprLit, p.u*W + _cauD[0]*dxAmp*p.amp - r, p.v*H + _cauD[1]*dyAmp*p.amp - r, r*2, r*2);
-  }
-  ctx.restore();
-}
-
 // ── particle: 星链（近距连线成网，节点走青/紫/蓝三色）──
 const PARTICLE_TINTS = ['94,234,212','167,139,250','56,189,248'];
 function drawParticle(ctx,W,H,dt){
@@ -9847,62 +10293,6 @@ function drawParticle(ctx,W,H,dt){
   }
 }
 
-// ── gold: 薄膜虹彩（Iridescence）──
-// 参考：React Bits「Iridescence」（github.com/DavidHDev/react-bits，MIT）——薄膜干涉的流动彩光。
-// 原作里没有噪声：8 轮迭代中 a 与 d 互相喂入（a += cos(i - d - a·u)、d += sin(v·i + a)），
-// 是典型的 plasma 廉价伪噪声 —— 无哈希、无采样、完全确定性。颜色走嵌套余弦调色板，三通道靠相位常数
-// 错开，而 cos 的自变量被压在很窄的区间里 → 色相跨度窄、永不发黑，这正是薄膜"高级"的来源
-//（整条饱和彩虹反而廉价）。原作也没有独立的高光 pass，层次全靠这套干涉条纹自己长出来。
-// canvas 2D 的落地：逐像素算不动，改成「预生成 2 张 384² 彩纹 + 交叉淡入淡出」——
-// 两张相位不同，交替显隐时图案是在"变形"而不是"平移"（等价于原作 d 的对称漂移）。
-// 纹理按正方形对齐铺满屏幕（超出裁掉）：薄膜彩带本就是大尺度，拉伸放大反而更自然。
-const GOLD_ROT = -0.55;                   // 保留原角度：与其它主题的斜向错开，画面有辨识度
-const IRID_SIZE = 384;                    // 纹理边长（一次逐像素生成，之后一直复用）
-const IRID_SC = 2.4;                      // 纹理内坐标缩放：384px 里约 6 个彩带周期
-const IRID_HUE = [0, 2.2, 4.0];           // 三通道相位差（≈120° 错开 → 金 → 香槟 → 玫瑰 → 藕紫的循环）
-function iridSprite(variant){
-  const key = 'iridTex'+variant;
-  let c = _spriteCache.get(key);
-  if(c) return c;
-  const S = IRID_SIZE, HALF_PI = Math.PI*0.5;
-  c = document.createElement('canvas'); c.width = c.height = S;
-  const g = c.getContext('2d');
-  const img = g.createImageData(S,S);
-  const px = img.data;
-  const ph = variant ? 2.6 : 0;            // 两张变体的相位差
-  for(let y=0;y<S;y++){
-    const v = y/S*IRID_SC;
-    for(let x=0;x<S;x++){
-      const u = x/S*IRID_SC;
-      // ① plasma 场：a 与 d 互相喂入（原作 8 轮，这里 6 轮 —— 观感无异，省四分之一计算）
-      let a = 0, d = ph;
-      for(let i=0;i<6;i++){
-        a += sinLut(i - d - a*u);
-        d += sinLut(v*(i+1) + a);
-      }
-      // ② 余弦调色板：hue 取 a、d 的合成相位，三通道错开 → 暖金为主的虹彩循环
-      const hue = a*0.32 + d*0.17 + HALF_PI;
-      let r = 0.60 + 0.34*sinLut(hue + IRID_HUE[0]);
-      let gg = 0.50 + 0.30*sinLut(hue + IRID_HUE[1]);
-      let b = 0.46 + 0.34*sinLut(hue + IRID_HUE[2]);
-      // ③ 二次嵌套（原作 col*cos(vec3(d,a,2.5))）→ 细密的干涉条纹
-      const m = 0.86 + 0.14*sinLut(d*1.3 + a*0.4);
-      r *= m; gg *= m; b *= m;
-      const o = (y*S+x)*4;
-      px[o]   = r>1 ? 255 : (r<0 ? 0 : r*255);
-      px[o+1] = gg>1 ? 255 : (gg<0 ? 0 : gg*255);
-      px[o+2] = b>1 ? 255 : (b<0 ? 0 : b*255);
-      px[o+3] = 255;
-    }
-  }
-  g.putImageData(img,0,0);
-  _spriteCache.set(key,c);
-  return c;
-}
-// 柔光带精灵：横向两端淡出 + 纵向上下渐隐
-// 单张径向渐变换不出"带状"光，这里用两次渐变相乘（横向渐变填充后再用 destination-in 乘纵向渐变）
-// h：纵向分辨率。贴图会被纵向拉伸很多倍，h 太小会出现肉眼可见的色阶断层，调用方按拉伸比给值
-// flat：纵向均匀（不叠渐隐）。体积光柱要的是"无限长的带"，两端靠光核/屏幕外自然收束
 function softBandSprite(key, rgb, alpha, h, flat){
   const hh = Math.max(4, h||64);
   const ck = 'band|'+key+'|'+hh+'|'+(flat?1:0);
@@ -9928,183 +10318,14 @@ function softBandSprite(key, rgb, alpha, h, flat){
   _spriteCache.set(ck, c);
   return c;
 }
-// ── gold: 薄膜虹彩 · 绘制入口（常量与 iridSprite 就近声明在上方）──
-// 结构：① 两张彩纹（见 iridSprite）以 ±GOLD_ROT 交叉铺开 + 交叉显隐（周期约 48s）+ 5% 缩放呼吸
-//       → 一层斜向、一层反向，交替显隐时彩膜在"变形"；② 金尘（粒子层，向上飘散）。
-// 刻意不做大面积的柔光与扫光带：它们跨度大、峰值低，8-bit 的色阶会被拉成几十像素宽的条
-//（成因详见 drawNight 的星云说明）；而彩纹是逐像素位图、尘埃是小光点，两者都不含大跨度渐变。
-function drawGold(ctx,W,H,dt){
-  const t = _uTime, f = dt*60, A = _uAlphaBase;
-  const SS = Math.max(W,H)*1.08*(1 + 0.05*Math.sin(t*0.07))*1.45;   // 旋转后仍要铺满
-  // A/B 交叉淡入淡出（周期约 48s）：两者始终可见，图案不会"整片消失再浮现"。
-  // 透明度压到每层 0.10~0.18（合计峰值 0.36）——虹彩是"氛围"不是"前景"：
-  // 之前每层 0.30~0.54，整片彩膜会浮在卡片之上、把内容盖住
-  const k = 0.5 + 0.5*Math.sin(t*0.13);
-  ctx.save();
-  ctx.translate(W*0.5, H*0.5);
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = (0.10 + 0.08*k)*A;
-  ctx.rotate(GOLD_ROT);
-  ctx.drawImage(iridSprite(0), -SS*0.5, -SS*0.5, SS, SS);
-  ctx.globalAlpha = (0.10 + 0.08*(1-k))*A;
-  ctx.rotate(-GOLD_ROT*2 + Math.sin(t*0.045)*0.10);      // 反向 + 缓慢摆动
-  ctx.drawImage(iridSprite(1), -SS*0.5, -SS*0.5, SS, SS);
-  ctx.restore();
-  // 金尘：向上飘散的金色微粒（闪点更亮）
-  // 普通点与闪点各预计算一个精灵（见 drawStardust 的说明）
-  const GOLD_RGB = ['220,180,100', '255,240,180'];
-  const goldSprites = GOLD_RGB.map((c, i) => glowSprite('goldD'+i, 48, [0,`rgba(${c},1)`,0.5,`rgba(${c},0.2)`,1,'rgba(0,0,0,0)']));
-  for(const p of _uParticles){
-    p.y += p.vy*f; p.x += p.vx*f;
-    if(p.y<-10){ p.y = H+10; p.x = Math.random()*W; }
-    if(p.x<-10)p.x=W+10; if(p.x>W+10)p.x=-10;
-    const ma = maskFactor(p.x, p.y); if(ma <= 0) continue;
-    const pulse = Math.sin(t*p.speed+p.phase);
-    const alpha = p.alpha*(0.4+0.6*(pulse+1)/2);
-    const si = p.sparkle ? 1 : 0;
-    const c = GOLD_RGB[si];
-    const spr = goldSprites[si];
-    blit(ctx,spr,p.x,p.y,p.size*2.5,alpha);
-    ctx.fillStyle = `rgba(${c},${Math.min(1,alpha*1.1*ma)})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
-  }
-}
 // ── 通用：1024 项正弦查表 ──
-// 粼光每帧要算近千次波场求值、流光/子良的纹理还要逐像素跑三角函数，Math.sin 会成为热点；
+// 逐像素生成纹理（绢的斜纹、星河的星尘）要在初始化时跑上万次三角函数，Math.sin 会成为热点；
 // 查表把单次调用压成一次乘法+取整。负数取补码低位正好落在 [0,1024)，截断误差 <0.006，视觉上看不出来。
 const SIN_LUT = new Float32Array(1024);
 for(let i=0;i<1024;i++) SIN_LUT[i] = Math.sin(i/1024*Math.PI*2);
 const SIN_K = 1024/(Math.PI*2);
 function sinLut(x){ return SIN_LUT[((x*SIN_K)|0) & 1023]; }
 
-// ── paper: 素笺（Paper）──
-// 设计前提：这是一张「刷题时一直铺在眼睛底下的纸」。上一版点阵把三千多个高对比墨点铺满全屏，
-// 每个点都在和正文抢注意力 —— 小尺寸、高对比的实体（点/线/格子）本质上都会变成视觉噪音。
-// 所以这一版只用大尺度、低对比的柔光，全层峰值透明度 ≤ 6%：看得出纸在"呼吸"，但绝不与文字竞争。
-// 四层（由底到面）：
-//   ① 纸纹：离屏预渲染的颗粒 + 纤维，pattern 平铺（每帧 1 次 fillRect，几乎零成本）
-//   ② 墨韵：3 团极淡的墨色/青墨沿 Lissajous 轨迹缓慢洇动（周期 60~90s），像纸上的水痕在游走
-//   ③ 窗光：一条超宽暖白柔光带约 55s 缓缓扫过一次
-//   ④ 暗角：四周一圈极淡的暖灰，给纸一点"包浆"和纵深
-// 配色：Flexoki（github.com/kepano/flexoki，MIT）纸墨体系。
-const PAPER_BLOBS = [
-  { rx:0.44, ry:0.36, a:0.055, rgb:'28,27,26',   sx:0.0132, sy:0.0091, px:0.4, py:2.2 },
-  { rx:0.36, ry:0.30, a:0.042, rgb:'36,131,123', sx:0.0094, sy:0.0152, px:2.7, py:0.9 },
-  { rx:0.42, ry:0.32, a:0.038, rgb:'28,27,26',   sx:0.0161, sy:0.0113, px:4.6, py:3.6 }
-];
-// 纸纹：一次性预渲染 256² 的颗粒 + 纤维，之后靠 pattern 平铺复用（不逐帧生成随机数）
-function paperTexSprite(){
-  let c = _spriteCache.get('paperTex');
-  if(c) return c;
-  const S = 256;
-  c = document.createElement('canvas'); c.width = c.height = S;
-  const g = c.getContext('2d');
-  for(let i=0;i<2400;i++){   // 颗粒：亮暗各半，形成纸浆的细微凹凸
-    const dark = Math.random() < 0.5;
-    g.fillStyle = dark ? `rgba(16,15,15,${0.05+Math.random()*0.20})` : `rgba(255,255,255,${0.10+Math.random()*0.34})`;
-    g.fillRect(Math.random()*S, Math.random()*S, 1, 1);
-  }
-  g.lineWidth = 0.6;
-  for(let i=0;i<64;i++){     // 纤维：极短的浅色细线，纸纹的"骨"
-    const x = Math.random()*S, y = Math.random()*S, a = Math.random()*Math.PI, ln = 6+Math.random()*18;
-    g.strokeStyle = `rgba(255,255,255,${0.10+Math.random()*0.20})`;
-    g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*ln, y+Math.sin(a)*ln); g.stroke();
-  }
-  _spriteCache.set('paperTex', c);
-  return c;
-}
-function drawPaper(ctx,W,H,dt){
-  const t = _uTime, A = _uAlphaBase, L = Math.hypot(W,H);
-  // ① 纸纹 —— 走统一的 texPattern（星河与子良也用它）：它缓存的是「pattern + 创建它的 ctx + 纹理」三元组，
-  // 切主题后 _spriteCache 清空、纹理重建，下一次调用会自动换新。
-  // 这里原来自己维护一套「pattern + 纹理 + ctx」的三元组变量 —— 与 texPattern 做的是**同一件事**，
-  // 两套实现并存意味着改一处漏一处就是「平铺纹理整块不显示」（texPattern 的注释正是这么写的），收拢到一套。
-  ctx.globalAlpha = 0.055*A;
-  ctx.fillStyle = texPattern(ctx, 'paperTex', paperTexSprite());
-  ctx.fillRect(0,0,W,H);
-  // ② 墨韵：三团柔光缓慢洇动（source-over —— 墨是"沉"在纸里的，用 lighter 会变成发光，就假了）
-  ctx.globalAlpha = A;
-  for(let i=0;i<PAPER_BLOBS.length;i++){
-    const b = PAPER_BLOBS[i];
-    const x = W*(0.5 + 0.34*Math.sin(t*b.sx*6.283 + b.px));
-    const y = H*(0.5 + 0.30*Math.sin(t*b.sy*6.283 + b.py));
-    const rx = b.rx*L, ry = b.ry*L;
-    const spr = glowSprite('paperBlob'+i, 64, [0,`rgba(${b.rgb},${b.a})`,0.5,`rgba(${b.rgb},${b.a*0.40})`,1,'rgba(0,0,0,0)']);
-    ctx.drawImage(spr, x-rx, y-ry, rx*2, ry*2);
-  }
-  // ③ 窗光：斜向暖白柔光带缓缓扫过（周期约 55s；精灵峰值 0.55 × globalAlpha 0.10 ≈ 5.5% 白）
-  const sweep = (((t*0.018)%1)+1)%1;
-  ctx.save();
-  ctx.translate(W*0.5, H*0.5);
-  ctx.rotate(-0.52);
-  const span = L*1.7, band = span*0.30;
-  ctx.globalAlpha = 0.10*A;
-  ctx.drawImage(softBandSprite('paperLight', '255,250,236', 0.55, 8, true),
-                -span*0.5, -span*0.5 + sweep*span - band*0.5, span, band);
-  ctx.restore();
-  // ④ 暗角：四周极淡的暖灰，给纸一点包浆
-  ctx.globalAlpha = A;
-  const vg = ctx.createRadialGradient(W*0.5,H*0.46,Math.min(W,H)*0.34,W*0.5,H*0.46,Math.max(W,H)*0.82);
-  vg.addColorStop(0,'rgba(28,27,26,0)');
-  vg.addColorStop(1,`rgba(28,27,26,${0.06*A})`);
-  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
-}
-function drawShuangren(ctx,W,H,dt){
-  const f = dt*60, t = _uTime;
-  // 冷雾：顶部极淡的寒色 + 底部"雪原反光"，比原来单一中心渐变更像雪地场景
-  const bgGrad = ctx.createLinearGradient(0,0,0,H);
-  bgGrad.addColorStop(0,'rgba(137,184,194,0.05)');
-  bgGrad.addColorStop(0.7,'rgba(137,184,194,0.015)');
-  bgGrad.addColorStop(1,'rgba(195,232,240,0.10)');
-  ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
-  for(const fl of _uParticles){
-    fl.y += fl.vy*f;
-    fl.x += (fl.vx + Math.sin(t*1.6+fl.rot)*0.08)*f;
-    fl.rot += fl.rotV*f;
-    if(fl.y>H+12){ fl.y = -12; fl.x = Math.random()*W; }
-    if(fl.x<-12) fl.x = W+12; if(fl.x>W+12) fl.x = -12;
-    const ma = maskFactor(fl.x, fl.y); if(ma <= 0) continue;   // 冰晶/细雪是直接描边填充，不经过 blit，需自己避让
-    const a = fl.alpha*_uAlphaBase*ma;
-    if(a<=0.004) continue;
-    if(fl.big){
-      // 大晶体：六角骨架（主枝 + 每枝两对小分叉），中心亮核
-      ctx.save();
-      ctx.translate(fl.x, fl.y);
-      ctx.rotate(fl.rot);
-      ctx.strokeStyle = `rgba(195,232,240,${a})`;
-      ctx.lineWidth = 0.7;
-      ctx.beginPath();
-      for(let i=0;i<6;i++){
-        const ra = i*Math.PI/3;
-        const ex = Math.cos(ra)*fl.size, ey = Math.sin(ra)*fl.size;
-        ctx.moveTo(0,0); ctx.lineTo(ex,ey);
-        ctx.moveTo(Math.cos(ra+1.05)*fl.size*0.55, Math.sin(ra+1.05)*fl.size*0.55);
-        ctx.lineTo(ex*0.55, ey*0.55);
-        ctx.moveTo(Math.cos(ra-1.05)*fl.size*0.55, Math.sin(ra-1.05)*fl.size*0.55);
-        ctx.lineTo(ex*0.55, ey*0.55);
-      }
-      ctx.stroke();
-      ctx.fillStyle = `rgba(230,248,255,${a*0.9})`;
-      ctx.beginPath(); ctx.arc(0,0,fl.size*0.16,0,Math.PI*2); ctx.fill();
-      ctx.restore();
-    } else {
-      // 细雪：小实心圆点
-      ctx.fillStyle = `rgba(200,232,245,${a})`;
-      ctx.beginPath(); ctx.arc(fl.x,fl.y,fl.size*0.7,0,Math.PI*2); ctx.fill();
-    }
-    // 反光星芒：偶发十字高光（大晶体更长）
-    if(fl.sparkle){
-      const tw = 0.4+0.6*Math.abs(Math.sin(t*3+fl.x));
-      const L = fl.size*(fl.big?2.6:1.8);
-      ctx.strokeStyle = `rgba(220,245,255,${a*tw})`;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(fl.x-L,fl.y); ctx.lineTo(fl.x+L,fl.y);
-      ctx.moveTo(fl.x,fl.y-L); ctx.lineTo(fl.x,fl.y+L);
-      ctx.stroke();
-    }
-  }
-}
 // ── songxing: 星点两色（紫白 / 暖金，金色与主题 accent3 #d4a854 同族）──
 // 色表与光晕精灵的渐变参数在循环外备好：逐帧只做 2 次精灵缓存命中，
 // 不再按星点重复拼颜色字符串、建渐变参数数组（桌面端 120 颗/帧）
@@ -10124,6 +10345,96 @@ function drawSongxing(ctx,W,H,dt){
     const gi=p.gold?1:0, c=SX_STAR_RGB[gi];
     blit(ctx, gi?sprGold:sprCool, p.x, p.y, p.size*3, alpha);
     ctx.fillStyle=`rgba(${c},${Math.min(1,alpha*1.2)})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.6,0,Math.PI*2);ctx.fill();
+  }
+}
+// ── ripple: 波纹（2D 同心水波纹环，时间驱动、不依赖粒子）──
+// 3 个“落点”沿李萨如轨迹缓慢游走、边移动边周期性起波；环画成略扁的椭圆（更像俯瞰水面），
+// 节奏慢、半径大。环上缘叠一道更亮的短弧读作“水面反光”。直接 stroke → 逐处乘 maskFactor 做图表避让（红线）。
+const RIPPLE_SRC = [
+  {ax:0.34,ay:0.40,rx:0.20,ry:0.13,f1:0.030,f2:0.041,p1:0.4,p2:1.9,ph:0.0,per:7.5},
+  {ax:0.64,ay:0.58,rx:0.18,ry:0.15,f1:0.026,f2:0.035,p1:2.3,p2:0.7,ph:2.4,per:8.6},
+  {ax:0.50,ay:0.30,rx:0.22,ry:0.11,f1:0.034,f2:0.022,p1:4.1,p2:3.0,ph:4.8,per:6.9},
+];
+function drawRipple(ctx,W,H,dt){
+  const t=_uTime;
+  const th=getTheme(_uTheme)||THEMES.ripple;
+  const rgb=hexToRgbStr(th.accent)||'99,199,214';
+  const rgb2=hexToRgbStr(th.accent3)||'207,227,230';
+  const span=Math.min(W,H)*0.32, squash=0.62;   // 竖向压扁 → 椭圆，读作“俯瞰的水面”
+  ctx.save(); ctx.lineWidth=1;
+  for(const s of RIPPLE_SRC){
+    const cx=(s.ax + s.rx*Math.sin(t*s.f1*6.283 + s.p1))*W;
+    const cy=(s.ay + s.ry*Math.sin(t*s.f2*6.283 + s.p2))*H;
+    const ma=maskFactor(cx,cy); if(ma<=0) continue;
+    for(let k=0;k<3;k++){
+      const phase=(((t + s.ph)/s.per) + k/3) % 1.0;
+      const r=phase*span;
+      const a=(1-phase)*0.12*ma;                // 峰值 α 比热力图底色低一个量级
+      if(a<=0.004||r<=0.5) continue;
+      ctx.globalAlpha=a; ctx.strokeStyle=`rgba(${rgb},1)`;
+      ctx.beginPath(); ctx.ellipse(cx,cy,r,r*squash,0,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=Math.min(1,a*1.6); ctx.strokeStyle=`rgba(${rgb2},1)`;   // 顶部高光弧
+      ctx.beginPath(); ctx.ellipse(cx,cy,r,r*squash,0,Math.PI*1.15,Math.PI*1.85); ctx.stroke();
+    }
+  }
+  ctx.restore(); ctx.globalAlpha=_uAlphaBase;
+}
+// ── zirong: 流萤（萤火虫：平时暗、周期性“骤然闪一下” + 无方向缓慢游荡）──
+// 与余烬的关键区别：① 发光不是持续呼吸，而是“暗→骤亮→熄灭”的窄脉冲（真实萤火虫的闪光）；
+// ② 运动是航向缓慢游走的飘忽，不是向上；③ 冷调黄绿为主。
+// 函数名故意不叫 drawZirong（旧「年轮」的 2D 实现名，门禁禁止其复活，见 smoke-test 的 deadDraws）。
+const ZIRONG_RGB = ['207,227,107','230,195,132'];
+const ZIRONG_STOPS = ZIRONG_RGB.map(c=>[0,`rgba(${c},1)`,0.5,`rgba(${c},0.22)`,1,'rgba(0,0,0,0)']);
+function drawFirefly(ctx,W,H,dt){
+  const t=_uTime,f=dt*60;
+  const spr0=glowSprite('zyP0',44,ZIRONG_STOPS[0]);
+  const spr1=glowSprite('zyP1',44,ZIRONG_STOPS[1]);
+  for(let p of _uParticles){
+    p.dir += (Math.random()-0.5)*0.06*f;                 // 航向随机游走 → 飘忽
+    p.x += Math.cos(p.dir)*p.spd*f;
+    p.y += Math.sin(p.dir)*p.spd*f*0.6 + Math.sin(t*0.8+p.ph)*0.10*f;   // 叠加一点上下浮沉
+    if(p.x<-16){p.x=W+16;} else if(p.x>W+16){p.x=-16;}
+    if(p.y<-16){p.y=H+16;} else if(p.y>H+16){p.y=-16;}
+    const c=((t*p.rate)+p.ph)%1.0;                       // 闪光周期
+    const flare=Math.pow(Math.max(0,Math.sin(c*Math.PI*2)*0.5+0.5), 6.0);   // pow 制造窄峰
+    const a=0.09 + flare*0.42;                         // 平时是淡而持续的萤光，闪光只是“再加一口”
+    const gi=p.tint||0, c2=ZIRONG_RGB[gi]||ZIRONG_RGB[0];
+    blit(ctx, gi?spr1:spr0, p.x, p.y, p.size*(2.0+flare*2.2), a);   // 闪光时光晕也胀大
+    ctx.fillStyle=`rgba(${c2},${Math.min(1,a*1.2)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2); ctx.fill();
+  }
+}
+// ── gruvbox: 余烬（底部一条暖橙火光源 + 火星上升、越升越小越暗、快速闪灭）──
+// 与流萤的关键区别：① 画面底部有一条持续的“火源”辉光带（流萤没有，一眼可分）；
+// ② 火星只向上、明显收缩、更快、快闪；③ 暖橙→炭红。
+const GRUVBOX_RGB = ['224,123,63','200,85,61','240,170,90'];
+const GRUVBOX_STOPS = GRUVBOX_RGB.map(c=>[0,`rgba(${c},1)`,0.5,`rgba(${c},0.28)`,1,'rgba(0,0,0,0)']);
+let _emberBand=null, _emberBandKey=-1, _emberBandCtx=null;   // 底部火光渐变缓存（按 ctx+量化色重建）
+function drawGruvbox(ctx,W,H,dt){
+  const t=_uTime,f=dt*60;
+  const spr=GRUVBOX_RGB.map((c,i)=>glowSprite('gbP'+i,36,GRUVBOX_STOPS[i]));
+  // 底部火光源：一条自底向上快速衰减的暖光带（按 ctx+量化色缓存渐变，不再每帧新建）。
+  // 满宽 fillRect → 按红线自己乘 maskFactor（取带中心的避让值），峰值 α 压到 ≤0.10（与热力图底色同量级或更低）。
+  const bh=Math.min(H*0.22,240);
+  const bm=maskFactor(W/2, H-bh/2);   // 若底部被图表占据 → 光带渐隐，不盖数据
+  const bandKey=((0.085+0.015*Math.sin(t*1.3))*100)|0;   // 呼吸量化到 1/100 → 每秒只重建几次
+  if(bm>0.004 && (_emberBandKey!==bandKey || _emberBandCtx!==ctx)){
+    const band=ctx.createLinearGradient(0,H,0,H-bh);
+    band.addColorStop(0,`rgba(${GRUVBOX_RGB[0]},${(bandKey/100).toFixed(3)})`);
+    band.addColorStop(1,'rgba(0,0,0,0)');
+    _emberBand=band; _emberBandKey=bandKey; _emberBandCtx=ctx;
+  }
+  if(bm>0.004){ ctx.save(); ctx.globalAlpha=_uAlphaBase*bm; ctx.fillStyle=_emberBand; ctx.fillRect(0,H-bh,W,bh); ctx.restore(); }
+  for(let p of _uParticles){
+    p.y+=p.vy*f;
+    p.x+=(Math.sin(t*p.sp+p.ph)*0.5 + p.vx)*f;            // 上升中左右湍流摆
+    if(p.y<-10){ p.y=H+8; p.x=Math.random()*W; }
+    const rise=1-(p.y/(H+10));                            // 0 底 → 1 顶
+    const flick=0.55+0.45*Math.sin(t*(9+p.sp*6)+p.ph);   // 快闪
+    const a=Math.max(0,0.16+(1-rise)*0.40)*flick;         // 越往上越暗
+    const sz=p.size*(1-rise*0.55);                        // 越往上越小（收缩）
+    const ti=p.tint||0, c=GRUVBOX_RGB[ti]||GRUVBOX_RGB[0];
+    if(sz>0.2){ blit(ctx, spr[ti]||spr[0], p.x, p.y, sz*2.6, a); }
+    ctx.fillStyle=`rgba(${c},${Math.min(1,a)})`; ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.2,sz*0.5),0,Math.PI*2); ctx.fill();
   }
 }
 // ── night: 四角星芒精灵（星形来自 Aceternity UI「Sparkles」，但只补给亮星）──
@@ -10324,167 +10635,9 @@ function drawNight(ctx,W,H,dt){
   // 说明：这里曾经叠过一层全屏颗粒做"抖动"（给色阶边界做随机化）。实测在深空底上会显成一整片麻点，
   // 观感代价远大于它压掉的那点色阶，已删除。星云若还有残留色阶，只能靠"缩小 + 提亮"继续压。
 }
-// ── zirong: 砚墨晕开（同心墨环）──
-// 这里曾写着「Aceternity「Wavy Background」的 canvas 版／多条彩色波浪路径叠加 + blur(10px)」，
-// 那是改造前的实现；标题与下方机制说明曾长期两套说法并存，已统一。
-// 唯一沿用的手法：同一条路径描 3 层（线宽递增、透明递减）等效那道模糊，避开 filter:blur 的高开销；
-// 配色沿用中国画色系：朱砂 / 靛青 / 赭石 / 墨 / 苍绿
-const ZIRONG_WAVES = [
-  {y:0.32, amp:0.045, freq:0.0024, speed: 0.030, rgb:'180,50,46',  a:0.20},
-  {y:0.45, amp:0.055, freq:0.0019, speed:-0.022, rgb:'44,95,122',  a:0.18},
-  {y:0.58, amp:0.050, freq:0.0028, speed: 0.026, rgb:'200,145,47', a:0.16},
-  {y:0.70, amp:0.062, freq:0.0016, speed:-0.018, rgb:'38,32,26',   a:0.13},
-  {y:0.82, amp:0.052, freq:0.0021, speed: 0.020, rgb:'96,120,104', a:0.11}
-];
-/* 子荣（丹青墨韵）：原实现与子良是**同一个模板换参** —— 都是「多条横向正弦曲线按色分层」，
-   只是一个描边一个填充。这条改成「砚墨晕开」：几点朱砂/靛青在宣纸上缓慢晕出的同心细环，
-   扩散到极大半径后淡尽、再从别处另起一枚 —— 中国画里墨滴入水的那种静气。
-   机制上与全站其它主题都不同：粼光（ripple）是**网格光斑的位移场**（无环状结构、无生命周期），
-   这里是**规则同心环 + 扩散淡出的生命周期**；也不同于任何粒子/光束类。
-   复用原有的 ZIRONG_WAVES 常量：每一条的 rgb / a 就是一枚环的颜色与峰值透明度，
-   y 是环心的纵向落点，amp 定最大半径、speed 定扩散速度、freq 用来错开各环的起始相位。
-   避让：环是横跨画面的稀疏细线，峰值透明度压到 0.10 以内（见上方红线），不做逐段避让。 */
-let _zrRings = null;
-function drawZirong(ctx,W,H,dt){
-  const t = _uTime;
-  if(!_zrRings){
-    _zrRings = ZIRONG_WAVES.map((w,i)=>({
-      w: w,
-      x: (0.12 + 0.19*i)*W,                  // 开场先均匀铺一次，之后每轮换落点
-      cyc: 0,
-      born: -i*4.2,                          // 出生时刻错开，开场就不会 5 枚环同时炸开
-    }));
-  }
-  for(const r of _zrRings){
-    const w = r.w;
-    const age = t - r.born;
-    if(age < 0) continue;                    // 还没到它的出场时刻
-    // 寿命写成显式周期：常量表里的 amp/speed 是"波浪"时代的参数（amp 是振幅比例、speed 是每秒漂移的屏宽比例），
-    // 直接拿它们反推寿命会差三个数量级（实测第一版算出 9900s，环永远长不出来）。
-    // 这里用 18s 为基准、由 freq 错开成 17~21s，各环不同步；speed 改作环心上下漂移的频率。
-    const span = 18 * (0.70 + w.freq*160);
-    const cyc = Math.floor(age/span);
-    if(cyc !== r.cyc){ r.cyc = cyc; r.x = (0.12 + 0.76*Math.random())*W; }   // 上一轮已淡尽 → 换个落点另起
-    const k = (age/span) - cyc;              // 本轮的生命进度 0→1
-    const rad = k * w.amp*H*2.2;
-    // 透明度：sin 把两头都收干净（刚出生淡入、临近最大半径淡尽）
-    const a = w.a*0.55*Math.sin(Math.PI*k)*_uAlphaBase;
-    if(a <= 0.004 || rad <= 2) continue;
-    const cy = w.y*H + sinLut(t*Math.abs(w.speed)*2.3 + w.freq*600)*H*0.03;   // 环心极缓抬落，画面不死
-    // 三层同心描边 ≈ blur：宽而淡 → 窄而实（与旧实现同一套柔化手法，不用 filter）
-    ctx.strokeStyle = 'rgba(' + w.rgb + ',' + (a*0.28) + ')'; ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
-    ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(' + w.rgb + ',' + a + ')'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(r.x, cy, rad, 0, Math.PI*2); ctx.stroke();
-  }
-}
-// ── ziliang: 远山晨雾（Layered Peaks at Dawn）──
-// 参考：React Bits「Topography」（github.com/DavidHDev/react-bits，MIT）的"多层曲线 + 极缓形变"骨架，
-//       与 Haikei「Layered Peaks」的层叠山脊构图 —— 两者都是把山脉抽象成几条由谐波驱动的平滑曲线。
-// 与中国画色彩体系（晨雾青黛）的对应：
-//   ① 天光：右上角一枚极淡的暖白晨光，约 40s 一次呼吸；
-//   ② 远山：4 层山脊剪影（远 → 近），每层 = 3 个整数波数谐波的叠加（同一公式换相位 → 山形各异，
-//      不用噪声也不用随机；逐帧成本 = 4 层 × 60 点 × 3 次查表）；层色从雾白走到青黛，靠空气透视拉开纵深；
-//   ③ 山形呼吸：谐波相位以 2~4 分钟为周期极缓漂移 —— 单帧看不出在动，但画面不是一张死图（同原作"形变驱动流动"）；
-//   ④ 晨雾：横向流动的柔光带把山脚"蚀"掉 —— 中国画"云锁山腰"的做法，也是全画唯一的明显动态。
-// 与前景数据的关系：全是"大而柔"的形（无小方块、无高频对比），不会和热力图 / 等级格抢注意力；
-// 雾要"擦除"而不是"叠白"：浅底上叠白色几乎看不见，擦掉山色露出一层更亮的底色才像云真的把山吃掉了。
-const ZL_PEAKS = [
-  { y:0.46, amp:0.10, drift:0.0055, mix:0.10, f:[1.0,2.3,4.7], ph:[0.0,1.7,3.9] },   // 最远（最淡）
-  { y:0.58, amp:0.13, drift:0.0082, mix:0.22, f:[1.4,3.1,6.3], ph:[2.1,0.4,5.2] },
-  { y:0.72, amp:0.16, drift:0.0117, mix:0.38, f:[1.1,2.7,5.1], ph:[4.3,2.8,0.9] },
-  { y:0.88, amp:0.20, drift:0.0163, mix:0.58, f:[0.7,2.0,4.3], ph:[1.2,5.6,3.1] }    // 最近（最深）
-];
-const ZL_SEG = 60;          // 每层山脊的采样点数（60 点在 1080p 上已足够平滑）
-// 远 → 近的"青黛"四档（取自子良主题的 accent #2f6f78 与 text #22333a 之间的同色系明度阶）
-const ZL_MOUNT_COLS = [[150,176,182],[116,152,162],[79,118,130],[47,92,104]];
-const ZL_MIST = [
-  { y:0.50, h:0.20, sp:0.012, a:0.55, sw:0.30 },
-  { y:0.66, h:0.24, sp:-0.009, a:0.62, sw:0.26 },
-  { y:0.84, h:0.30, sp:0.007, a:0.70, sw:0.22 }
-];
-let _zlPts = new Float32Array(0);   // 山脊顶点缓冲（复用，每帧零分配）
-function drawZiliang(ctx,W,H,dt){
-  const t = _uTime, A = _uAlphaBase;
-  const mobile = W < 768;
-  const seg = mobile ? 34 : ZL_SEG;
-  const need = (seg+1)*2;
-  if(_zlPts.length < need) _zlPts = new Float32Array(need);
-  const pts = _zlPts;
-  // ① 天光：右上角的晨光（呼吸周期约 40s）。半径压到短边的 0.30 —— 大面积柔光的色阶环带
-  //（成因见 drawNight 的星云说明）在这里一样存在：半幅天光的铺陈交给 BODY_BG_MAP 的 CSS 渐变，
-  // canvas 只负责这一小片"晨光"的实体感（半径 320px、峰值 α0.32 → 色阶间距约 4px）
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = (0.80+0.20*Math.sin(t*0.157))*A;
-  const sunR = Math.min(W,H)*0.30;
-  ctx.drawImage(glowSprite('zlDawn', 256, [0,'rgba(255,250,236,0.32)',0.40,'rgba(255,238,208,0.13)',1,'rgba(0,0,0,0)']),
-                W*0.84-sunR, H*0.05-sunR, sunR*2, sunR*2);
-  ctx.restore();
-  // ② 山层：由远及近，先填山体、再描脊线（描在后 → 轮廓压在山体上，不会被填充盖住半条）
-  for(let li=0; li<ZL_PEAKS.length; li++){
-    const L = ZL_PEAKS[li], col = ZL_MOUNT_COLS[li];
-    const baseY = H*L.y, amp = H*L.amp;
-    for(let i=0;i<=seg;i++){
-      const u = i/seg - 0.5;
-      const hh = 0.52*sinLut(L.f[0]*6.283*u + L.ph[0] + t*L.drift)
-               + 0.30*sinLut(L.f[1]*6.283*u + L.ph[1] + t*L.drift*1.6)
-               + 0.18*sinLut(L.f[2]*6.283*u + L.ph[2] - t*L.drift*1.1);
-      pts[i*2] = i/seg*W;
-      pts[i*2+1] = baseY - amp*hh;
-    }
-    // 山体：脊线再连到底边闭合后填充
-    ctx.beginPath();
-    ctx.moveTo(pts[0], pts[1]);
-    for(let i=1;i<=seg;i++) ctx.lineTo(pts[i*2], pts[i*2+1]);
-    ctx.lineTo(W, H+2); ctx.lineTo(0, H+2); ctx.closePath();
-    // 四层填充会累加出"空气透视"的纵深，单层必须很薄（峰值 0.105）——否则画面下半幅整体发青，
-    // 压在卡片上就是一层灰纱
-    ctx.fillStyle = 'rgba('+col[0]+','+col[1]+','+col[2]+','+((0.035+0.070*L.mix)*A).toFixed(4)+')';
-    ctx.fill();
-    // 脊线：极细一笔，比填充略深，让山的轮廓清楚
-    ctx.beginPath();
-    ctx.moveTo(pts[0], pts[1]);
-    for(let i=1;i<=seg;i++) ctx.lineTo(pts[i*2], pts[i*2+1]);
-    ctx.strokeStyle = 'rgba('+col[0]+','+col[1]+','+col[2]+','+((0.14+0.16*L.mix)*A).toFixed(4)+')';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  // ③ 晨雾：横向流动的柔光带擦掉山脚（destination-out），云锁山腰
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-out';
-  for(let i=0;i<ZL_MIST.length;i++){
-    const m = ZL_MIST[i];
-    const x = W*(0.5 + m.sw*Math.sin(t*m.sp + i*2.1));
-    const hw = W*1.05, hh = H*m.h;
-    ctx.globalAlpha = m.a*A;
-    ctx.drawImage(softBandSprite('zlMist'+i, '255,255,255', 0.85, 8, false), x-hw*0.5, H*m.y-hh*0.5, hw, hh);
-  }
-  ctx.restore();
-  // ④ 四周径向淡出
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-out';
-  const mask = ctx.createRadialGradient(W*0.5,H*0.45,Math.min(W,H)*0.22,W*0.5,H*0.45,Math.max(W,H)*0.80);
-  mask.addColorStop(0,'rgba(0,0,0,0)');
-  mask.addColorStop(0.66,'rgba(0,0,0,0.30)');
-  mask.addColorStop(1,'rgba(0,0,0,1)');
-  ctx.fillStyle = mask; ctx.fillRect(0,0,W,H);
-  ctx.restore();
-  // ⑤ 抖动兜底：打散残留色阶（浅底上同样的幅度看着更"脏"，所以比星河那层再淡一档）。
-  // 幅度按色阶来定：≥ 1/255 才有意义，这里 ±0.010 ≈ 2.5 个色阶
-  ctx.save();
-  ctx.globalAlpha = 0.010*A;
-  const gIdx = ((t*4)|0)&1;
-  ctx.fillStyle = texPattern(ctx, 'grainZiliang'+gIdx, grainSprite(gIdx));
-  ctx.fillRect(0,0,W,H);
-  ctx.restore();
-}
-
 </script>
 <script>
-const SW_VERSION = '121';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '137';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
