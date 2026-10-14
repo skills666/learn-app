@@ -1,8 +1,8 @@
-# 规格：记忆模式跳过行为（skip-behavior）
+# 规格：记忆模式跳过行为（memory-skip）
 
 > 说明：下面的 `Requirement:` / `Scenario:` / `SHALL` / `WHEN` / `THEN` 是给 AI 与工具识别的记号（类似表单里固定的字段名），不是要求谁去读的英文。`Requirement` = 一条需求，`Scenario` = 一个可验证的场景，`SHALL/WHEN/THEN` = "必须做到 / 当……时 / 那么……"。正文一律中文。
 
-## ADDED Requirements（新增需求）
+## ADDED Requirements
 
 ### Requirement: 记忆卡跳过操作
 
@@ -19,12 +19,12 @@
 - **AND** 趁热打铁队列（HOT）不变（跳过不喂热榜）
 - **AND** `memory.queue` 数组内容不变（不 splice / 不 push / 不 rebuild）
 
-#### Scenario: 跳过队列里的最后一道题
+#### Scenario: 只靠跳过也能把本轮收尾
 
-- **WHEN** 用户对队列里的最后一道题点跳过
-- **THEN** `memory.index` 达到或超过 `memory.queue.length`
-- **AND** 记忆页进入完成/空态（复用现有渲染分支，不新增分支）
-- **AND** 被跳过的那道题在下次进入记忆模式、队列重建后仍会按到期正常出现
+- **WHEN** 用户把本轮到期题逐一跳过、`memory.index` 到达队列末尾
+- **THEN** 记忆页显示「本轮已刷完 · 仍跳过 N 题」的收尾态，而不是误报「全部掌握」
+- **AND** 本轮内被跳过的题不再回到眼前（游标不再绕回第一题死循环）
+- **AND** 这些题在下次进入记忆模式、队列重建后按到期正常出现
 
 #### Scenario: 答案未翻面时也能跳过
 

@@ -794,10 +794,6 @@
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
   @media (hover:hover){ .grade-btn.mem-grade:hover{background:var(--panel2)} }
   .grade-btn.mem-grade:active{transform:scale(.97)}
-  /* 记忆卡「跳过」行：始终可见（不受翻面态控制），低调靠右，不抢四档评分按钮的视觉焦点 */
-  .mem-skip-row{text-align:right;margin-top:6px}
-  .mem-skip-row .btn{font-size:var(--fs-xs);opacity:.7}
-  .mem-skip-row .btn:active{opacity:1}
   /* 悬停预览"这一档会是什么颜色"：四档评分按钮此前悬停一律点亮成 --accent2（紫），
      与点下去之后才出现的绿/黄/红不是一套色 —— 悬停时先给出该档的语义色，点选是"确认"而不是"意外" */
   @media (hover:hover){ .grade-btn:hover{border-color:var(--accent2)} }
@@ -4977,7 +4973,6 @@ function renderMemory(c){
         <div class="reveal-hint" id="memHint">👆 点击卡片查看答案</div>
         <div class="grade-row mem-grade-row" id="memGradeRow"></div>
         <div class="pcontrols" id="memControls" style="margin-top:14px"></div>
-        <div class="mem-skip-row"><button type="button" class="btn sm" id="memSkip" title="不评分，先看下一道；这道题下次进记忆模式会再出现">⏭ 跳过</button></div>
       </div>
       </div>
       <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-4 评分（忘了 → 简单），S 跳过</div>
@@ -5054,11 +5049,17 @@ function bindMemoryCard(c){
     anim.onfinish = once;
     setTimeout(once, 420);   // 保底：动画事件丢失时也要放行，避免卡死
   };
-  // 撤销同样走委托：按钮随翻转态被整块重写
+  // 撤销/跳过同处 #memControls 行，按钮随翻转态被 paintMemoryCard 整块重写 → 均走容器级委托
   w.querySelector('#memControls').onclick = (e) => {
-    if(!e.target.closest('#flashUndo')) return;
-    e.stopPropagation();
-    undoMemoryGrade();
+    if(e.target.closest('#flashUndo')){ e.stopPropagation(); undoMemoryGrade(); return; }
+    // 跳过：纯游标推进（不动队列/不写进度/不进撤销栈），与评分共用 busy 锁防连点双跳
+    if(e.target.closest('#memSkip')){
+      e.stopPropagation();
+      if(_memGradeBusy) return;
+      skipMemoryQuestion();
+      memory._justGraded = true;
+      renderMemory(c);
+    }
   };
   w.querySelector('#flashEdit').onclick = (e) => {
     e.stopPropagation();
@@ -5069,14 +5070,6 @@ function bindMemoryCard(c){
     e.stopPropagation();
     const it = cur(); if(!it) return;
     askAICode(it.q.id);
-  };
-  // 跳过：纯游标推进（不动队列/不写进度/不进撤销栈），与评分共用 busy 锁防连点双跳
-  w.querySelector('#memSkip').onclick = (e) => {
-    e.stopPropagation();
-    if(_memGradeBusy) return;
-    skipMemoryQuestion();
-    memory._justGraded = true;
-    renderMemory(c);
   };
 }
 // 只写变化的字段（换题 / 评分 / 撤销后共用）
@@ -5136,7 +5129,9 @@ function paintMemoryCard(c){
   w.querySelector('#memGradeRow').style.display = memory.flipped ? '' : 'none';
   // 撤销按钮：同理整块重写（有无取决于撤销栈长度）
   const mc = w.querySelector('#memControls');
-  mc.innerHTML = (memory._history&&memory._history.length>0) ? `<button type="button" class="btn sm" id="flashUndo">↩ 撤销</button>` : '';
+  const _undoHtml = (memory._history&&memory._history.length>0) ? `<button type="button" class="btn sm" id="flashUndo">↩ 撤销</button>` : '';
+  // 撤销（有才出）靠左 + 撑开的 spacer + 跳过 恒靠右；整行随 #memControls 的 flipped 显隐
+  mc.innerHTML = `${_undoHtml}<span class="spacer"></span><button type="button" class="btn sm" id="memSkip" title="不评分，先看下一道；这道题下次进记忆模式会再出现">⏭ 跳过</button>`;
   mc.style.display = memory.flipped ? '' : 'none';
 }
 // 统计条中的待复习数
@@ -8613,7 +8608,7 @@ document.addEventListener('keydown', e => {
     const digit = parseInt(e.key);
     if(digit>=1&&digit<=4&&memory.flipped){ const btn = document.querySelector('.grade-btn[data-rate="'+digit+'"]'); if(btn) btn.click(); }
     else if((e.key==='Enter'||e.key===' ')&&!e.repeat){ e.preventDefault(); memory.flipped=!memory.flipped; try{ applyMemFlip(); }catch(_){} }
-    else if(e.key==='s'||e.key==='S'){ const btn = document.querySelector('#memSkip'); if(btn) btn.click(); }
+    else if((e.key==='s'||e.key==='S')&&memory.flipped){ const btn = document.querySelector('#memSkip'); if(btn) btn.click(); }
     return;
   }
   // 趁热打铁：Enter/空格 翻看答案（评分靠按钮 1=记住、2=还没）
@@ -10637,7 +10632,7 @@ function drawNight(ctx,W,H,dt){
 }
 </script>
 <script>
-const SW_VERSION = '137';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '138';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

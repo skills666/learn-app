@@ -763,8 +763,8 @@ console.log('\n[关键实现点静态断言]');
   ok(!/if\(!hadQueue\) memory\._history = \[\]/.test(html), '队列重建不再顺手清掉撤销栈（切走再回来仍能撤销）');
   ok(/^let _memGradeBusy = false;/m.test(html) && !/let _memBusy/.test(html),
      '评分锁是模块级（渲染闭包里的锁会被"动画期切走再切回"绕过，导致同题双评分）');
-  ok(/function skipMemoryQuestion\(\)/.test(html) && /id="memSkip"/.test(html),
-     '记忆模式跳过：独立函数 skipMemoryQuestion + #memSkip 按钮均在位（零副作用，不碰队列/进度）');
+  ok(/function skipMemoryQuestion\(\)/.test(html) && /mc\.innerHTML[^\n]*id="memSkip"/.test(html) && !/mem-skip-row/.test(html),
+     '记忆模式跳过：skipMemoryQuestion 独立函数 + #memSkip 由 paintMemoryCard 填入 #memControls 控件行（不再有独立 .mem-skip-row）');
   ok(/function warLogUndo\(at, qid, g, pr, newLvl, newMastered\)/.test(html), '战报支持反向回滚（撤销评分时同步回退计数）');
   // —— 复习节奏：档位设置已移除，参数固定（老存档的键由 init 迁移清掉）——
   ok(!/PACES|renderPaceUI|function setPace|paceGrid|paceStatus/.test(html), '「复习节奏」设置卡 / 档位表 / 切换函数均已移除');

@@ -335,7 +335,7 @@ console.log('\n[有数据 · 各页面渲染]');
   const hMem = render(T.views.MEMORY, '记忆');
   ok(hMem.indexOf('lvbar') !== -1 || hMem.indexOf('全部掌握') !== -1, '记忆页含全库等级条（或如实显示已复习完）');
   ok(hMem.indexOf('id="memGradeRow"') !== -1 && /<button type="button" class="grade-btn mem-grade/.test(html), '记忆四档评分是真按钮（骨架建好后由 paintMemoryCard 填入）');
-  ok(hMem.indexOf('id="memSkip"') !== -1 || /id="memSkip"/.test(html), '记忆卡骨架含「跳过」按钮（#memSkip，零副作用游标推进）');
+  ok(/mc\.innerHTML[^\n]*id="memSkip"/.test(html) && !/class="mem-skip-row"/.test(html), '记忆卡「跳过」由 paintMemoryCard 填入 #memControls 控件行（非独立 .mem-skip-row；随展开态显隐）');
 
   const hHot = render(T.views.HOT, '趁热');
   ok(hHot.indexOf('hotCard') !== -1 || hHot.indexOf('热榜是空的') !== -1, '趁热页渲染正常');
