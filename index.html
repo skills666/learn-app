@@ -2816,7 +2816,14 @@ function pruneOrphanProgress(){
 }
 /* ---------- 工具 ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function renderTitle(s){ return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+// 标题渲染：先还原 Markdown 反斜杠转义（\< \> \- \_ … → 字面符），再转义并处理 **加粗**。
+// 反斜杠先转成占位符（记录原始字符），回填时再 esc，确保还原出的 * / 尖括号 不会被下面的加粗正则二次解释。
+function renderTitle(s){
+  const bs = [];
+  let t = String(s==null?'':s).replace(/\\([!-\/:-@\[-`{-~])/g, (m, ch) => { bs.push(ch); return '\u0002B' + (bs.length - 1) + '\u0002'; });
+  t = esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return t.replace(/\u0002B(\d+)\u0002/g, (m, i) => esc(bs[+i]));
+}
 // 剥离 Markdown 标记（**粗体**、`行内代码`、# 标题、***分隔线），保留内部文字
 function stripMarkdown(s){
   if(!s) return s;
@@ -2826,6 +2833,16 @@ function stripMarkdown(s){
   let t = String(s).replace(/```[\s\S]*?```/g, m => { fences.push(m); return '\u0001MD' + (fences.length - 1) + '\u0001'; });
   t = t.replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+?)`/g, '$1').replace(/^#{1,6}\s+/gm, '').replace(/\n?\*{3,}\s*$/g, '').replace(/\n?\-{3,}\s*$/g, '').replace(/\n?_{3,}\s*$/g, '');
   return t.replace(/\u0001MD(\d+)\u0001/g, (m, i) => fences[+i]);
+}
+// 将一段 Markdown 降为「纯文本」（供搜索摘要这类不做 HTML 渲染的场景）：
+// 先还原代码块外的反斜杠转义（与 renderAnswer 同口径），再复用 stripMarkdown 去 **/`/#，
+// 最后清掉代码围栏标记。绝不产出 HTML，避免摘要里出现裸 \< 或注入标签。
+function mdToPlain(t){
+  if(t == null) return '';
+  let s = String(t).replace(/\\([!-\/:-@\[-`{-~])/g, '$1');
+  s = stripMarkdown(s);
+  s = s.replace(/^```[^\n]*\n/gm, '').replace(/```/g, '');
+  return s;
 }
 function md2html(s){
   // 统一换行，避免 \r 干扰正则
@@ -2862,25 +2879,61 @@ function md2html(s){
 }
 function renderAnswer(t){
   if(!t) return '';
-  let s = esc(t).replace(/\r\n?/g, '\n');   // 统一换行：\r 会让 \n{2,} 段落切分失效、整段退化成 <br>
-  // 先提取代码块，避免内部 ** / ` 被误处理，并保留代码格式
+  // 统一换行：\r 会让 \n{2,} 段落切分失效、整段退化成 <br>
+  let s = String(t).replace(/\r\n?/g, '\n');
+  // 1) 代码围栏最先按原文抽出（内容自行转义），内部字符一律不参与后续处理
   const codeBlocks = [];
   s = s.replace(/```([\w+-]*)[ \t]*\n?([\s\S]*?)```/g, (m, lang, code) => {
-    codeBlocks.push('<pre><code>' + code.replace(/\n$/, '') + '</code></pre>');
+    codeBlocks.push('<pre><code>' + esc(code.replace(/\n$/, '')) + '</code></pre>');
     return '\u0001CB' + (codeBlocks.length - 1) + '\u0001';
   });
+  // 2) 行内代码同样先抽走：其中的 \ 或 * 不应被反斜杠还原/加粗规则误伤
+  const inlineCodes = [];
+  s = s.replace(/`([^`]+?)`/g, (m, code) => {
+    inlineCodes.push('<code>' + esc(code) + '</code>');
+    return '\u0001IC' + (inlineCodes.length - 1) + '\u0001';
+  });
+  // 3) 反斜杠转义还原：\X（X=ASCII 标点，CommonMark 集合）→ 占位符（存已转义的字面字符），
+  //    既去掉多余的 \，又让还原出的 * / ` 不被后面的加粗/代码正则二次解释；\ + 字母/数字（C:\temp、\d）不动
+  const bsEsc = [];
+  s = s.replace(/\\([!-\/:-@\[-`{-~])/g, (m, ch) => {
+    bsEsc.push(esc(ch));
+    return '\u0002B' + (bsEsc.length - 1) + '\u0002';
+  });
+  // 4) 正文转义 + 行内加粗
+  s = esc(s);
   s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/`([^`]+?)`/g, '<code>$1</code>');
-  // 代码块占位符是块级元素，必须独占一段：包进 <p> 会生成 <p><pre>…</pre></p> 这类非法嵌套，
-  // 浏览器会强行闭合 <p>，代码块上下凭空多出空段落。所以先按占位符切分，再对纯文本部分段落化。
+  // 5) 块级：代码块占位符独占；其余逐行扫描——相邻列表项（含跨空行的松列表）聚成一个 <ul>/<ol>，
+  //    有序列表按首项序号设 start；只有遇到非空且非列表行才打断列表；普通行聚成 <p>（段内单换行→<br>）
+  //    列表项须「标记 + 空白 + 内容」，故 -- / -词 / 3.14 不会被误判
+  const LI_RE = /^(\s*)(?:([-*+])|(\d+)\.)\s+(\S[\s\S]*)$/;
   s = s.split(/(\u0001CB\d+\u0001)/).map(seg => {
     if(/^\u0001CB\d+\u0001$/.test(seg)) return seg;
-    return seg.split(/\n{2,}/).map(p => {
-      const t = p.trim();   // 去掉段落首尾空白：紧贴代码块的段落原本会在结尾留下多余的 <br>
-      if(!t) return '';
-      return '<p>' + t.split('\n').join('<br>') + '</p>';
-    }).join('');
+    const out = [];
+    let list = null;   // { tag:'ul'|'ol', start:number, items:[] }
+    let para = [];
+    const flushPara = () => { if(para.length){ const t = para.join('<br>').trim(); if(t) out.push('<p>' + t + '</p>'); para = []; } };
+    const flushList = () => { if(list){ const st = (list.tag === 'ol' && list.start !== 1) ? ' start="' + list.start + '"' : ''; out.push('<' + list.tag + st + '>' + list.items.map(x => '<li>' + x + '</li>').join('') + '</' + list.tag + '>'); list = null; } };
+    for(const line of seg.split('\n')){
+      const m = line.match(LI_RE);
+      if(m){
+        flushPara();
+        const ordered = m[3] !== undefined;
+        const tag = ordered ? 'ol' : 'ul';
+        if(!list || list.tag !== tag){ flushList(); list = { tag, start: ordered ? parseInt(m[3], 10) : 0, items: [] }; }
+        list.items.push(m[4]);
+        continue;
+      }
+      if(line.trim() === ''){ flushPara(); continue; }   // 空行：段落断开，但松列表保持打开
+      flushList();
+      para.push(line);
+    }
+    flushList(); flushPara();
+    return out.join('');
   }).join('');
+  // 6) 依次回填：行内码 → 反斜杠字面符 → 代码块（三种占位符互不冲突）
+  s = s.replace(/\u0001IC(\d+)\u0001/g, (m, i) => inlineCodes[+i]);
+  s = s.replace(/\u0002B(\d+)\u0002/g, (m, i) => bsEsc[+i]);
   return s.replace(/\u0001CB(\d+)\u0001/g, (m, i) => codeBlocks[+i]);
 }
 const AI_BLOCK_HEAD = '<div class="ai-head">🤖 AI 回复</div>';
@@ -6586,9 +6639,10 @@ function renderSearch(c){
     showResults.map(({doc,q,al})=>{
       // 摘要围绕命中位置截取：只截答案前 90 字时，命中在答案中段的关键词在卡片上根本看不到，
       // 用户只能点进去逐题找
-      const raw = q.answer||'';
-      // 命中位置在小写串上找（al 来自索引，长度与 raw 一一对应），再拿这个下标去截原串以保留大小写
-      const hit = (al != null ? al : raw.toLowerCase()).indexOf(term);
+      // 摘要读的是存库原文 q.answer（只有走 renderAnswer 才在渲染期 clean，这里不经过），
+      // 先 mdToPlain 还原反斜杠/去 Markdown 标记，避免搜索卡片露出 \< \- 等符号
+      const raw = mdToPlain(q.answer||'');
+      const hit = raw.toLowerCase().indexOf(term);
       const from = hit > 30 ? hit - 30 : 0;
       const snip = (from > 0 ? '…' : '') + raw.slice(from, from + 90).replace(/\n/g,' ') + (from + 90 < raw.length ? '…' : '');
       // 标签也参与匹配（见上方 hitTag），那就得让它可见，否则用户不知道这条为什么被命中
@@ -8108,7 +8162,8 @@ function parseMarkdownToDoc(text, fallbackTitle){
     const next = qHeads[idx+1] ? qHeads[idx+1].start : lines.length;
     const body = lines.slice(h.start+1, next).join('\n').trim();
     return { title:stripMarkdown(h.title), answer:stripMarkdown(body) };
-  }).map((q,i)=>({ id:`${cleanTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[cleanTitle] }));
+  // 丢弃「到下一个标题之间无正文」的标题（分类名等），不为其生成题目
+  }).filter(q => q.answer && q.answer.trim() !== '').map((q,i)=>({ id:`${cleanTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[cleanTitle] }));
   return { title: cleanTitle, questions };
 }
 
@@ -10641,7 +10696,7 @@ function drawNight(ctx,W,H,dt){
 }
 </script>
 <script>
-const SW_VERSION = '139';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '141';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'mdToPlain', 'parseMarkdownToDoc', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -186,7 +186,7 @@ ${rateMetaConst}
 ${schedConsts}
 ${lvConsts}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey });
+({ esc, renderTitle, stripMarkdown, mdToPlain, parseMarkdownToDoc, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -223,6 +223,57 @@ console.log('\n[renderAnswer]');
   ok(api.renderAnswer('```\ncode\n```') === '<pre><code>code</code></pre>', '整段皆为代码块', api.renderAnswer('```\ncode\n```'));
   const r6 = api.renderAnswer('文字\n```\nx\n```');
   ok(/^<p>文字\s*<\/p><pre><code>x<\/code><\/pre>$/.test(r6), '代码块紧贴文字也不拆散', r6);
+  // —— 反斜杠转义还原（导入题库里 \<form\> 这类露出的多余 \）——
+  ok(api.renderAnswer('创建\\<form\\>表单') === '<p>创建&lt;form&gt;表单</p>', '代码外还原 \\< \\>', api.renderAnswer('创建\\<form\\>表单'));
+  ok(api.renderAnswer('multipart/form\\-data') === '<p>multipart/form-data</p>', '代码外还原 \\-', api.renderAnswer('multipart/form\\-data'));
+  ok(api.renderAnswer('\\*\\*x\\*\\*') === '<p>**x**</p>', '\\*\\* 还原为字面 **（不加粗）', api.renderAnswer('\\*\\*x\\*\\*'));
+  ok(api.renderAnswer('C:\\temp') === '<p>C:\\temp</p>', '\\ + 字母不还原（护住 C:\\temp）', api.renderAnswer('C:\\temp'));
+  ok(api.renderAnswer('\\d+') === '<p>\\d+</p>', '\\ + 数字不还原', api.renderAnswer('\\d+'));
+  // —— 代码块 / 行内码内的反斜杠原样保留 ——
+  ok(api.renderAnswer('```java\nint a = 1; // a \\* b\n```').indexOf('a \\* b') !== -1, '围栏内 \\ 原样保留', api.renderAnswer('```java\nint a = 1; // a \\* b\n```'));
+  ok(api.renderAnswer('x `a\\*b` y').indexOf('a\\*b') !== -1, '行内码内 \\ 原样保留', api.renderAnswer('x `a\\*b` y'));
+  // —— 列表渲染 ——
+  ok(api.renderAnswer('- 前端部分') === '<ul><li>前端部分</li></ul>', '无序列表 → <ul><li>', api.renderAnswer('- 前端部分'));
+  ok(api.renderAnswer('1. 创建表单') === '<ol><li>创建表单</li></ol>', '有序列表 → <ol><li>', api.renderAnswer('1. 创建表单'));
+  ok(api.renderAnswer('- a\n- b') === '<ul><li>a</li><li>b</li></ul>', '连续项聚成一个 <ul>', api.renderAnswer('- a\n- b'));
+  ok(api.renderAnswer('- 用`码`创建').indexOf('<li>用<code>码</code>创建</li>') !== -1, '列表项内行内码正常', api.renderAnswer('- 用`码`创建'));
+  ok(api.renderAnswer('- a').indexOf('<p>') === -1, '列表块不被 <p> 包裹', api.renderAnswer('- a'));
+  // —— 误判抑制 ——
+  ok(api.renderAnswer('--') === '<p>--</p>', '-- 不当列表', api.renderAnswer('--'));
+  ok(api.renderAnswer('-词') === '<p>-词</p>', '标记后无空格不当列表', api.renderAnswer('-词'));
+  ok(api.renderAnswer('3.14') === '<p>3.14</p>', '点后非空格不当列表', api.renderAnswer('3.14'));
+  // —— 松列表（空行分隔）聚合为单个列表 + 有序起始号 ——
+  const loose = api.renderAnswer('1. 甲\n\n2. 乙\n\n3. 丙');
+  ok(loose === '<ol><li>甲</li><li>乙</li><li>丙</li></ol>', '空行分隔有序项聚成一个 <ol>', loose);
+  const looseU = api.renderAnswer('- 甲\n\n- 乙\n\n- 丙');
+  ok(looseU === '<ul><li>甲</li><li>乙</li><li>丙</li></ul>', '空行分隔无序项聚成一个 <ul>', looseU);
+  ok(api.renderAnswer('3. 丙\n\n4. 丁') === '<ol start="3"><li>丙</li><li>丁</li></ol>', '有序列表按首项序号设 start', api.renderAnswer('3. 丙\n\n4. 丁'));
+  ok(api.renderAnswer('- a\n\n普通段落') === '<ul><li>a</li></ul><p>普通段落</p>', '非空非列表行打断列表', api.renderAnswer('- a\n\n普通段落'));
+}
+
+console.log('\n[renderTitle]');
+{
+  ok(api.renderTitle('创建\\<form\\>表单') === '创建&lt;form&gt;表单', '标题还原 \\< \\>', api.renderTitle('创建\\<form\\>表单'));
+  ok(api.renderTitle('a\\_b') === 'a_b', '标题还原 \\_', api.renderTitle('a\\_b'));
+  ok(api.renderTitle('**粗**') === '<strong>粗</strong>', '标题加粗仍生效（回归）', api.renderTitle('**粗**'));
+  ok(api.renderTitle('') === '', '空标题返回空串');
+}
+
+console.log('\n[mdToPlain · 搜索摘要去符号]');
+{
+  ok(api.mdToPlain('创建\\<form\\>表单').indexOf('\\') === -1, '摘要无残留反斜杠', api.mdToPlain('创建\\<form\\>表单'));
+  ok(api.mdToPlain('创建\\<form\\>表单').indexOf('<form>') !== -1, '摘要显示 <form> 字面', api.mdToPlain('创建\\<form\\>表单'));
+  ok(api.mdToPlain('**粗**和`码`') === '粗和码', '摘要去掉 ** 与 ` 标记', api.mdToPlain('**粗**和`码`'));
+  ok(api.mdToPlain('a\n```\ncode\n```\nb').indexOf('```') === -1, '摘要去掉代码围栏标记', api.mdToPlain('a\n```\ncode\n```\nb'));
+}
+
+console.log('\n[parseMarkdownToDoc · 导入丢弃空标题]');
+{
+  const md = '# java\n\n# web\n\n## 你说一下前后端实现上传文件的步骤\n\n- 前端部分\n\n    - 创建\\<form\\>表单\n\n## 过滤器和拦截器的区别\n\n答：...';
+  const titles = api.parseMarkdownToDoc(md, 'java').questions.map(q=>q.title);
+  ok(titles.indexOf('java') === -1 && titles.indexOf('web') === -1, '空正文的分类标题不成题', JSON.stringify(titles));
+  ok(titles.indexOf('你说一下前后端实现上传文件的步骤') !== -1, '有正文的标题照常成题', JSON.stringify(titles));
+  ok(api.parseMarkdownToDoc('# a\n\n# b\n\n# c\n', 'x').questions.length === 0, '全空标题→不产生题目', '');
 }
 
 console.log('\n[stripMarkdown]');
