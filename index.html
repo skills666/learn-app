@@ -2203,7 +2203,7 @@ const RATE_META = {
 /* 排期参数（三项都刻意偏离 fsrs 库的默认值，直接决定用户看到的间隔天数）。
    不做成设置项：改它等于换一套复习节奏，属于产品决策，不该让用户自己操心： */
 const FSRS_RETENTION = 0.92;    // 目标保留率：库里默认 0.9；0.92 让间隔乘 ~0.77（复习更密、临考覆盖更全）
-const FSRS_MAX_INTERVAL = 14;   // 间隔上限（天）：库里默认 36500。压得住"熟练题越排越远"，代价是硬截断——S 越大被压得越狠
+const FSRS_MAX_INTERVAL = 7;    // 间隔上限（天）：库里默认 36500。面试随时可能发生，压到 7 天保证任何题最长一周就回来一次；代价是硬截断——S 越大被压得越狠
 const MASTERED_MIN_DAYS = 4;    // 掌握题的最小复习间隔（天）：FSRS 里没有这个概念，是纯产品规则
 /* 老存档里可能还留着「复习节奏」键（早期版本用它选间隔上限）。它已经没有任何作用，
    但键还在就说明入队时间是按别的参数排的：首屏加载后按现行参数重排一次再删掉它 ——
@@ -9064,6 +9064,15 @@ function syncKeyboardInset(){
     markDirty();   // 排期被重算也是数据变更：不标脏的话云端仍是旧排期，换设备拉回来会提前到期
   }
 
+  // 一次性重排：复习间隔上限收紧到 7 天后，存量里按旧上限（14 天）排到 >7 天的题不会自己收回，
+  // 首次遇本版本按新参数重排一次（rescheduleAllProgress 只改排期、不动稳定度/难度），完成即写标记不再重复。
+  if(!safeLocalGet('learnAppCap7_v1', '')){
+    rescheduleAllProgress();
+    Store.saveProgress(PROGRESS);
+    markDirty();
+    safeLocalSet('learnAppCap7_v1', '1');
+  }
+
   // 一次性修复：清掉旧版挖空功能遗留的 clozeNoAnchor 标记（该标记会把题永久判为"无可挖空"），
   // 并把因此变成 {} 的进度条目一并删除。
   if(!safeLocalGet('learnAppClozeFix_v1', '')){
@@ -10632,7 +10641,7 @@ function drawNight(ctx,W,H,dt){
 }
 </script>
 <script>
-const SW_VERSION = '138';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '139';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

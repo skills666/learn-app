@@ -374,15 +374,15 @@ console.log('\n[FSRS 调度数学 · 独立沙箱]');
   ok(iv(1) === 0.5, '首次「忘了」→ 半天后再来', iv(1));
   ok(iv(2) >= 1 && iv(3) >= 2, '首次「困难 / 记得」→ 至少 1 / 2 天', iv(2) + ' / ' + iv(3));
   ok(iv(4) > iv(3) && iv(3) > iv(2), '首次评分：间隔随评分单调递增', iv(2) + ' < ' + iv(3) + ' < ' + iv(4));
-  ok(iv(4) <= 14, '间隔不超过上限（14 天）', iv(4));
-  ok([0.5, 1, 5, 30, 365].every(s => { const d = fsrs.fsrsIntervalDays(s); return Number.isInteger(d) && d >= 1 && d <= 14; }),
+  ok(iv(4) <= 7, '间隔不超过上限（7 天）', iv(4));
+  ok([0.5, 1, 5, 30, 365].every(s => { const d = fsrs.fsrsIntervalDays(s); return Number.isInteger(d) && d >= 1 && d <= 7; }),
      '间隔恒为 [1, 上限] 内的整数（不出现 0 天或 NaN）');
   // 两处刻意偏离 fsrs 库默认值的产品参数（0.9 / 36500）：它们直接决定用户看到的间隔数字，
   // 所以锁死在断言里 —— 调参必须是有意识的，而不是顺手改掉
-  ok(fsrs.FSRS_RETENTION === 0.92 && fsrs.FSRS_MAX_INTERVAL === 14,
-     '保留率 0.92 / 上限 14 天固定写死（库里默认 0.9 / 36500）', fsrs.FSRS_RETENTION + ' / ' + fsrs.FSRS_MAX_INTERVAL);
-  ok(iv(4) === 12 && iv(3) === 2, '首次「记得 / 简单」= 2 / 12 天（= w[2]、w[3] 按 0.92 保留率折算后取整）', iv(3) + ' / ' + iv(4));
-  ok(fsrs.fsrsIntervalDays(21) === 14 && fsrs.fsrsIntervalDays(30) === 14, '长间隔被 14 天上限截断（S=21 本该 16 天）', fsrs.fsrsIntervalDays(21));
+  ok(fsrs.FSRS_RETENTION === 0.92 && fsrs.FSRS_MAX_INTERVAL === 7,
+     '保留率 0.92 / 上限 7 天固定写死（库里默认 0.9 / 36500）', fsrs.FSRS_RETENTION + ' / ' + fsrs.FSRS_MAX_INTERVAL);
+  ok(iv(4) === 7 && iv(3) === 2, '首次「记得」= 2 天；「简单」= 12 天被 7 天上限截断（w[2]/w[3] 按 0.92 保留率折算后取整）', iv(3) + ' / ' + iv(4));
+  ok(fsrs.fsrsIntervalDays(21) === 7 && fsrs.fsrsIntervalDays(30) === 7, '长间隔被 7 天上限截断（S=21 本该 16 天）', fsrs.fsrsIntervalDays(21));
   const forget = fsrs.fsrsStep({ interval:5, ef:2.5, srLevel:3, srNext:NOW, lastPracticed:NOW - 5*86400000 }, 1, NOW);
   ok(forget.interval === 0.5 && forget.card.lapses === 1, '已排程题「忘了」→ 回到半天档且遗忘数 +1', JSON.stringify(forget.card));
   const recall = fsrs.fsrsStep({ interval:3, ef:2.5, srLevel:2, srNext:NOW, lastPracticed:NOW - 86400000 }, 3, NOW);
@@ -769,7 +769,7 @@ console.log('\n[关键实现点静态断言]');
   // —— 复习节奏：档位设置已移除，参数固定（老存档的键由 init 迁移清掉）——
   ok(!/PACES|renderPaceUI|function setPace|paceGrid|paceStatus/.test(html), '「复习节奏」设置卡 / 档位表 / 切换函数均已移除');
   ok(/localStorage\.removeItem\('learnAppPace'\)/.test(html), '老存档的节奏键会被迁移清除（否则每次启动都重排一遍）');
-  ok(/const FSRS_RETENTION = 0\.92;/.test(html) && /const FSRS_MAX_INTERVAL = 14;/.test(html) && /const MASTERED_MIN_DAYS = 4;/.test(html),
+  ok(/const FSRS_RETENTION = 0\.92;/.test(html) && /const FSRS_MAX_INTERVAL = 7;/.test(html) && /const MASTERED_MIN_DAYS = 4;/.test(html),
      '固定参数集中声明一处（保留率 / 上限 / 掌握最小间隔）');
   // —— 进度页：展示 FSRS 的 DSR 状态（稳定性/难度），不再展示 SM-2 的 EF ——
   //    EF 是 SM-2 的概念，之前只是从 D 反推出来当展示字段；改回 EF 会让"平均 EF"这种看不懂的数字重新出现
