@@ -495,6 +495,11 @@
              background:linear-gradient(135deg,var(--accent),var(--accent2));
              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .ov-card .t{color:var(--muted);font-size:var(--fs-ui);margin-top:4px}
+  /* 总览待复习卡：「到期」与「未学」同字号同字重并排（过去未学只挂在大数字后面当小字尾巴，
+     而记忆队列其实是两者之和 —— 只读卡面的人会把自己的欠账看少一半）。
+     .n 的渐变字填充在 .ov-pair 里继续用（与单数字时一致），不加新的具名类就会被门禁报未使用 */
+  .ov-pair{display:flex;align-items:baseline;gap:10px}
+  .ov-pair > .n{flex:1 1 0;min-width:0;text-align:center}
   /* 总览：待复习行动卡 —— 纯色数字要覆盖 .n 的渐变文字填充；有到期题时轻微脉冲提示 */
   .ov-card .n.plain{background:none;-webkit-text-fill-color:currentColor}
   /* 提醒色走语义令牌：写死的橙在暖色主题（斜光）上与主色同调，等于没提醒 */
@@ -979,10 +984,31 @@
     .cfg-card{padding-bottom:80px}
     /* .grill-chat 的高度不在这里设：表末 ≤768 块已给出 40vh + 40dvh 双写，这里再写一遍只会被覆盖 */
   }
+  /* ---------- 手机顶栏：把“意外折行”改成“两层结构” ----------
+     实测（390px 视口）：六个标签共 216px + 搜索框 108px，第一行右边缘停在 345px；
+     而「设置 54 + 主题 29 + 两个 gap 12」要 95px，只剩 45px —— 这两个按钮于是被挤到第二行，
+     左端贴齐、右端空一整条，看着像掉下来的残骸。
+     折行临界约在 456px（440 内容 + 左右 padding 16），所以断点取 480 而不是沿用现有的 400：
+     375 / 390 / 411 / 414 这些主流机型全在折行区，只写 ≤400 会漏掉大半。
+     481~768 不放进来 —— 那一段带图标也单行放得下，强行两层是白占 41px 竖向空间。
+     还要说清一句：这不是“flex 项不肯收缩”那一类问题 —— 给 .tabs 补 min-width:0 在本断点毫无效果
+     （实测 .tabs 宽 226、scrollWidth 与 clientWidth 相等，根本没溢出），真正的缺口就是那 44px。 */
+  @media(max-width:480px){
+    /* 第一行：标签独占整行并六等分。原来 36px 一个，现在约 62px —— 热区翻倍
+       （窄屏控件“点不准”这条全站一直在治，见 .topbar .search 的 min-height 注释） */
+    .topbar .tabs{flex:1 1 100%;min-width:0}
+    .tab{flex:1 1 0;min-width:0;padding:4px 2px;font-size:var(--fs-sm)}
+    /* 第二行：搜索框吃掉剩余宽度，两个图标键靠右 —— 两行都满宽、左右边界对齐 */
+    .topbar .search{flex:1 1 auto;min-width:0}
+    .topbar .search input{flex:1 1 auto;min-width:0;width:auto}
+    /* 「设置」收成图标（齿轮认得出，它旁边那颗主题键本来就是纯图标）。
+       省下的两个字给搜索框。图标化之后名字只能靠 aria-label / title 提供，见按钮上的标注 */
+    #dataBtn .btn-label{display:none}
+  }
   @media(max-width:400px){
-    .tab{padding:3px 6px;font-size:var(--fs-xs)}
-    .tab .ic{display:none}
-    .topbar .search input{width:70px}
+    /* 顶栏那三条（藏图标 / 字号降到 --fs-xs / 搜索框 70px）已上移到上面的 ≤480 两层结构：
+       六等分后每个标签约 62px，图标 15 + 间距 3 + 两个字 24 + padding 4 ≈ 46px 放得下，
+       没有再砍掉图标的必要 —— 那六个 SVG 是照主题色 currentColor 描的，手机上一直不显示等于白画。 */
     .ov-grid{grid-template-columns:repeat(2,1fr);gap:6px}
     .memory-card{padding:14px 10px}
     .memory-card .ptitle{font-size:var(--fs-body)}
@@ -1087,8 +1113,7 @@
   .st-grid{display:flex;gap:var(--sp-1);align-items:flex-end;height:110px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
   .st-grid::-webkit-scrollbar{display:none}
   /* min-width 取 26px：日期标签（"MM-DD" 9.5px）实宽 19~26px。此前是 8px + flex 平分，
-     375px 下 14 列每列只有 18.5px，相邻标签直接压在一起。给足宽度让容器真的横向滚动。
-     （JS 注入的 --st-cols 从未被 CSS 使用，是死变量；这里不依赖它，按内容定宽更稳。） */
+     375px 下 14 列每列只有 18.5px，相邻标签直接压在一起。给足宽度让容器真的横向滚动。 */
   .st-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
   .st-bar{width:72%;max-width:26px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden;background:rgba(var(--text-rgb,255,255,255),.05)}
   .st-bar>i{display:block;width:100%;flex:none}
@@ -1140,6 +1165,12 @@
      桌面端卡片的悬停反馈（描边点亮 + 抬起 2px）与这条无关，见 .q:hover / .memory-card:hover。 */
   .tab:not(.active):active{background:var(--panel);color:var(--text)}
   .set-head:active{background:var(--panel2)}
+  /* 常规按钮与图标键的按压反馈：触屏上没有 hover，而此前只有 .btn.primary（1145 行那段）和
+     评分键（811 行 / 1155 行）带 :active —— 点其它按钮等于"没有任何东西回应这一指"。
+     形变量与评分键取同一档（.97）、时长同一档（.08s），不新增第三种按压手感。
+     遵守上面那条"谁被点、谁响应"：只给按钮自身加，不给它所在的卡片加。
+     .btn:not(.primary) 是为了不去抢 primary 已有的亮度反馈 —— 它按压时已经在变暗，再叠缩放就过了。 */
+  .btn:not(.primary):active,.iconbtn:active{transform:scale(.97);transition-duration:.08s}
 
   /* ---------- 触屏手感（App / 手机浏览器）----------
      1) touch-action:manipulation = 只关掉"双击缩放"，双指缩放照常可用。记忆模式的评分键位置固定，
@@ -1355,7 +1386,7 @@
     <div class="search">
       <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
     </div>
-    <button type="button" class="btn ghost" id="dataBtn"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M1 15h6M9 9h6M17 17h6"/></svg> 设置</button>
+    <button type="button" class="btn ghost" id="dataBtn" title="设置" aria-label="设置"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M1 15h6M9 9h6M17 17h6"/></svg><span class="btn-label">设置</span></button>
     <button type="button" class="btn ghost" id="themeBtn" title="切换主题" aria-label="切换主题"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 10.6C21.4 5.8 17.1 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7" r="1.2"/></svg></button>
   </div>
   <div class="stats-bar" id="statsBar"><span>加载中…</span></div>
@@ -1381,11 +1412,11 @@
 </div>
 
 <!-- THEME POPUP -->
-<!-- top 要叠加 safe-area-inset-top：App 是 edge-to-edge，顶栏高度 = 6px + 刘海/状态栏 (24~44px)，
-     手机窄屏下 6 个标签还会换行到 80~90px —— 写死 48px 会让浮层压在标签上、并盖住触发它的按钮。
+<!-- top 的这个内联值只是“JS 未跑成”时的兜底，真实位置由 placeThemePopup() 每次打开时按主题按钮的
+     实测下边缘给出。原因：顶栏高度不是常量 —— 单行 55px、手机两行 92px，写死任何值都会在某个断点上
+     把浮层拍在顶栏上（旧版就是如此：48px 遇上两行顶栏时重叠 44px，连触发它的那颗键都被盖住）。
      宽屏另有内联样式解决不了的问题：.topbar 是 justify-content:center 的全宽容器，浮层固定 right:12px
-     会贴到视口最右、离主题按钮几百像素（2560px 屏上尤其明显）。那一段由 placeThemePopup() 在打开时
-     按按钮实测位置覆盖 right/top；移动端不介入，保持这里的原样。 -->
+     会贴到视口最右、离主题按钮几百像素（2560px 屏上尤其明显），那一段也由同一个函数按实测覆盖。 -->
 <div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:calc(48px + env(safe-area-inset-top, 0px))">
   <div class="theme-grid" id="themeGrid"></div>
   <div class="theme-grid" id="themeBgRow" style="border-top:1px solid var(--line);padding-top:6px;margin-top:2px"></div>
@@ -1432,7 +1463,15 @@
           <div class="set-row2"><div class="set-field" style="flex:1"><label for="aiKey">API Key</label><input placeholder="sk-..." id="aiKey" type="password" aria-label="AI API Key"></div><div class="set-field" style="flex:1"><label for="aiModel">模型名</label><input placeholder="deepseek-ai/DeepSeek-V3" id="aiModel" aria-label="AI 模型名"></div></div>
         </div></div></div>
       </div>
-      <!-- 3. 进阶操作 -->
+      <!-- 3. 声音与反馈 -->
+      <div class="set-section">
+        <div class="set-head">🔊 声音与反馈 <span class="set-arrow">▾</span></div>
+        <div class="rv"><div class="rv-in"><div class="set-body">
+          <div class="set-hint">只在<b>评分那一下</b>出声（翻页、展开答案不响），每声不到 0.2 秒。音色跟随当前主题，换主题时会自动试听一声；四档的音高由低到高，和爆发粒子的颜色（红→橙→主色→绿）说的是同一件事。</div>
+          <div class="set-btns"><button type="button" class="btn sm" id="soundToggle" aria-pressed="true">🔊 答题音效：开</button> <button type="button" class="btn sm" id="soundPreview">🎵 试听四档</button></div>
+        </div></div></div>
+      </div>
+      <!-- 4. 进阶操作 -->
       <div class="set-section">
         <div class="set-head">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
@@ -2098,6 +2137,99 @@ function burstParticles(x, y, opts){
   }
   requestAnimationFrame(frame);
 }
+/* ===== 评分音效：BURST_STYLE 的听觉姊妹表（音色随主题走）=====
+   五条硬约束，改这里之前先读：
+   1) 只在「评分」这一个动作上响。一天要点几百次，翻页 / 展开答案 / 切标签都出声的话，
+      第三天就会来设置里关掉它 —— 反馈一旦变成噪音，功能就等于没了。
+   2) 每声 < 0.2s、峰值增益 0.05（≈系统通知的量级）。它是“这一下记上了”的回执，不是背景音。
+   3) 现场用 Web Audio 合成，**不引任何音频文件**：与 sync-www.js 那套按 KB 抠包体的纪律一致，
+      也不会给 sw.js 的 PRE_CACHE / manifest 的 icons 三处交叉校验再添新条目。
+   4) 四档音高单调上行（忘了最低 → 倒背如流最高），和同一时刻爆发粒子的颜色
+      （红→橙→主色→绿）说的是同一件事，不需要额外学。
+   5) 这里**刻意不看 prefersReduce()**：减动效是给前庭敏感的人挡“画面在动”的，与声音无关；
+      拿它当静音依据，会让“开着减动效、又想听音效”的人无论怎么设置都没声。静音只由设置面板
+      那一个开关决定（见 _soundOn）。
+   表里没有的主题（img-bg 与用户自建配色）落回 TONE_DEFAULT —— 与 BURST_STYLE 缺主题时同一套兜底。 */
+const TONE_DEFAULT = { wave:'sine', base:523.25, dec:.11 };
+/* 三个维度就够拉开差别：wave 定泛音多寡、base 定音区高低、dec 定延音长短；
+   oct 叠一层高八度（只有基音太“提示音”），lp 是低通截止（抹高频），vol 只给刺耳的波形压低。 */
+const TONE_STYLE = {
+  sunset:   { wave:'triangle', base:440.00, dec:.13 },                       // 斜光：暖中音，略带泛音的厚
+  particle: { wave:'sine',     base:659.25, dec:.10, oct:.18 },              // 粒子：清亮 + 一层八度泛音
+  songxing: { wave:'sine',     base:784.00, dec:.17, oct:.22 },              // 松星：星点，余韵最长的一档
+  night:    { wave:'triangle', base:587.33, dec:.15, oct:.15 },              // 星河：暖金，中等厚度
+  paper:    { wave:'sine',     base:523.25, dec:.075 },                      // 绢：全站最短最轻 —— 它要当纸
+  ziliang:  { wave:'sine',     base:493.88, dec:.09 },                       // 云海：略低于绢，不抢浅底页面的静
+  nord:     { wave:'sine',     base:880.00, dec:.065 },                      // 霜原：最高最脆，对应冰晶
+  aurora:   { wave:'triangle', base:659.25, dec:.20, oct:.25 },              // 极光：光幕，延音与泛音都最足
+  ripple:   { wave:'sine',     base:587.33, dec:.14, lp:2400 },              // 波纹：低通抹掉高频 → 水下的闷
+  zirong:   { wave:'triangle', base:740.00, dec:.11 },                       // 流萤：轻快的高位暖音
+  gruvbox:  { wave:'square',   base:392.00, dec:.09, lp:1600, vol:.042 }     // 余烬：方波的 8-bit 火星味；
+};                                                                            //   方波天生刺耳，所以同时压音量 + 低通砍谐波
+const TONE_VOL = 0.05, TONE_CUTOFF = 4200;   // 默认峰值增益 / 默认低通截止
+const GRADE_SEMI = {1:-7, 2:-3, 3:0, 4:5};   // 四档相对该主题根音的半音偏移，键与 Rate 的 1..4 对齐
+let _audioCtx = null;
+/* 默认开：这是用户主动要的功能，默认关等于功能不存在（装完没声音只会让人以为坏了）。
+   若要把这版发给别人用，这里改成 '0' 更稳妥 —— 图书馆/通勤场景里静音才是默认预期。 */
+let _soundOn = safeLocalGet('learnAppSound', '1') !== '0';
+
+// 半音 → 频率：十二平均律，偏移 -7 就是 2^(-7/12) 倍
+function toneHz(base, semi){ return base * Math.pow(2, semi / 12); }
+
+/* 播一个音。prof 定波形/时长/音量/低通，delay 是相对“现在”的起播秒数（双音用）。
+   任何一步失败都静默返回：音频是增强层，绝不能因为它不可用而拖垮评分。 */
+function playTone(freq, prof, delay){
+  if(!_soundOn || !(freq > 0)) return;
+  try{
+    if(!_audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;                       // 内核没有 Web Audio：本次不出声，不锁住偏好（设置里看得到状态）
+      _audioCtx = new AC();
+    }
+    const ctx = _audioCtx;
+    // 自动播放策略：上下文必须由点击带起来。评分和试听都是点击链上，这里只是兜底推一把
+    if(ctx.state === 'suspended' && ctx.resume) ctx.resume().catch(()=>{});
+    const t0 = ctx.currentTime + (delay || 0);
+    const vol = prof.vol || TONE_VOL, dec = prof.dec || .11;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = prof.lp || TONE_CUTOFF;
+    f.connect(ctx.destination);
+    // 基音 + （可选）一层高八度
+    const parts = [[freq, vol], [toneHz(freq, 12), vol * (prof.oct || 0)]];
+    for(const pt of parts){
+      const gain = pt[1];
+      if(!(gain > 0)) continue;
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = prof.wave || 'sine';
+      osc.frequency.value = pt[0];
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain, t0 + .006);          // 6ms 起播：够快，又不至于留下爆音
+      g.gain.exponentialRampToValueAtTime(.0001, t0 + dec);     // 指数衰减：自然声都这样掉，线性听着像被掐断
+      osc.connect(g); g.connect(f);
+      osc.start(t0); osc.stop(t0 + dec + .02);                  // stop 后节点自动断开回收，不留监听器
+    }
+  }catch(_){ /* 声卡被独占 / ctx 已关：忽略这一次，不拿它去影响评分 */ }
+}
+
+/* 评分回执音：档位定音高，主题定音色。delay 是起播的相对秒数（试听四档用它排程）。 */
+function playGradeTone(rate, delay){
+  if(!_soundOn) return;
+  const semi = GRADE_SEMI[rate]; if(semi === undefined) return;
+  const prof = TONE_STYLE[currentTheme] || TONE_DEFAULT;
+  const d = delay || 0;
+  playTone(toneHz(prof.base, semi), prof, d);
+  // 只给「倒背如流」补第二个上行的音（与同一时刻的撒花呼应）。另外三档保持单音：
+  // “忘了”恰恰是最需要冷静的一次，多加一个音就变成惩罚了
+  if(rate === Rate.EASY) playTone(toneHz(prof.base, semi + 4), prof, d + .09);
+}
+
+/* 主题试听：用在 pickTheme（切完响一声）与设置面板。
+   这里弹的是该主题的根音（不带档位偏移）—— 试听要展示的是“这套主题的音色”，不是某个评分结果。 */
+function playThemeTone(id){
+  const prof = TONE_STYLE[id || currentTheme] || TONE_DEFAULT;
+  playTone(prof.base, prof, 0);
+}
+
 /* ===== 烟花庆祝（通关等大节点，比礼炮更隆重）=====
    中上部随机位置定时"爆炸"成径向火花，带轻重力与拖尾，约 7 响 */
 let _fwCanvas = null;
@@ -2309,6 +2441,39 @@ function effectiveNextOf(p){
   const base = (p.lastPracticed || p.masteredAt || 0);
   return Math.max(p.srNext || 0, base + MASTERED_MIN_DAYS*86400000);
 }
+/* 逾期深度（欠了多少天）唯一的算法：进度表、导出、到期预测三处共用。
+   原先表格与图各写一遍减法，而「掌握题既无 lastPracticed 也无 masteredAt 时不能报欠两万天」
+   这道兜底只有表格有 —— 图会把那类数据算成欠几万天。合并到一处后兜底对三处同时生效。
+   走自然日口径（与 dayIndexOf 一致）：那是"欠几天"的整数字义，与 retrievabilityOf 的连续量不同。 */
+function overdueOf(p, effectiveNext, todayNo){
+  if(!p || !effectiveNext) return 0;
+  if(p.mastered && !(p.lastPracticed || p.masteredAt)) return 0;
+  return Math.max(0, todayNo - dayIndexOf(effectiveNext));
+}
+/* 可提取性 R：此刻能成功回忆的估计概率（DSR 三件套里唯一从没露出过界面的一个 ——
+   fsrsRetrievability 一直只在调度内部用，稳定性 S 与难度 D 却早就上了进度页）。
+   取值必须与 levelOf 走同一分支：有 fsrs.s 走快路径，只有旧 SM-2 字段的记录交给 fsrsStateOf 换算；
+   少这一步，老存档会集体显示「无数据」（与当年进度条集体掉到 Lv0 是同一类错）。
+   elapsed 刻意用真实经过时间、不跟 dayIndexOf 的自然日口径统一：调度内部就是这么算的（见 fsrsStep）。
+   「欠几天」要整数日语义，「还记得住的概率」要连续量，共用一把尺会出现
+   「进度页说 R=88%、记忆页说还没到期」这种自相矛盾。后来者请勿"顺手统一"。
+   返回 null = 没有可用的参考时刻（从未评分、或脏数据里没有练习时间），调用方必须显示占位，
+   不得显示 0%（谎报已忘）或 100%（谎报已会）。 */
+function retrievabilityOf(p, now){
+  if(!p) return null;
+  const t = now || Date.now();
+  const st = (p.fsrs && p.fsrs.s > 0) ? p.fsrs : fsrsStateOf(p, t);
+  if(!st || !(st.s > 0)) return null;
+  // 参考时刻只认"真的练过"的时间戳：fsrsStateOf 对缺 lastPracticed 的旧记录会把 st.last 兜成 now，
+  // 那等价于"刚刚练过"、算出 R=100%，正好是最该避开的谎报
+  const ref = p.lastPracticed || (p.fsrs && p.fsrs.last) || 0;
+  if(!ref) return null;
+  return fsrsRetrievability(Math.max(0, (t - ref) / 86400000), st.s);
+}
+// R 的分档阈值：只管"界面上怎么说这句话"，不参与任何排期（与 FSRS_RETENTION 无关）。
+// 两行各自单独声明：冒烟测试的 extractConst 按声明逐条取，合写一行就抽不出来
+const R_GOOD_TH = 0.9;   // R 不低于此值：还记得挺牢
+const R_WARN_TH = 0.7;   // R 低于此值：基本凉了
 /* 写入受阻（Store 被冻结）时拒绝「会产生新进度」的操作，返回 true = 已拦住，调用方直接 return。
    冻结意味着磁盘状态可能已半更新，此后写进内存的新进度刷新即丢 —— 与其让用户白做一轮，
    不如当场拦住并指路（横幅上有「导出当前数据」和「刷新页面」）。
@@ -2440,7 +2605,10 @@ function applyHotFromGist(gist){
    所以每天的记录再按「设备」分一层：本机只写自己那一层，拉取时逐设备取较新的那一份合并
    —— 同一台设备的同一份数据反复合并不会重复计数，两台设备看到的是同一个合计量。 */
 const WARLOG_KEY = 'learnAppWarLog';
-const WARLOG_KEEP = 45;   // 只留最近 45 天：战报只读「昨天」和「前天」（做对比），多留就是无效存储
+// 两个保留期各自单独成行声明（合写一行抽不进冒烟沙箱），它们担的是两件不同的事：
+// 清单保留期决定“那天还能不能精确去重 / 出明细”；打卡保留期决定“颜色能活多久”
+const WARLOG_QID_KEEP = 45;   // 逐题清单保留期：战报只读昨天与前天（做对比），多留清单就是无效存储
+const WARLOG_CHECKIN_KEEP = 370;  // 打卡保留期：年度视图最长 366 天（闰年）+ 几天余量，避免跨年/跳零点边界把年内已打卡的日子裁掉
 const WARLOG_DEV_KEY = 'learnAppWarDevId';   // 本机设备号（战报合并的最小单位：一台设备一个名字）
 const WARLOG_LEGACY_DEV = '_legacy';         // 云端若出现没有设备分层的旧桶，统一挂到这个名下（多端一致，不重复计数）
 const REVLOG_KEY = 'learnAppRevLog';
@@ -2511,23 +2679,71 @@ function warDayAgg(day){
   // 两种形状都要能读：旧版扁平桶（当天就是 {c,q,…}）与按设备分层（{设备号:{c,q,…}}）；
   // 迁移途中混在同一层时的兜底也顺带覆盖（下面按每个值是否带 c 过滤）
   const buckets = [e].concat(Object.keys(e).map(k => e[k]));
-  const out = { c:[0,0,0,0], q:[], nw:0, mUp:0, mDown:0, up:0, down:0, total:0, uniq:0 };
+  const out = { c:[0,0,0,0], q:[], qn:0, nw:0, mUp:0, mDown:0, up:0, down:0, total:0, uniq:0, est:false };
   buckets.forEach(b=>{
     if(!b || !b.c) return;
     for(let i=0;i<4;i++) out.c[i] += (+b.c[i] || 0);
-    const qs = Array.isArray(b.q) ? b.q : [];
-    for(let i=0;i<qs.length;i++) if(out.q.indexOf(qs[i]) === -1) out.q.push(qs[i]);
+    if(Array.isArray(b.q)){
+      for(let i=0;i<b.q.length;i++) if(out.q.indexOf(b.q[i]) === -1) out.q.push(b.q[i]);
+    }
+    // 折叠过的桶：题数只能相加（跨设备去不重），标 est 让明细文案改用「约」；
+    // 与未折叠的清单共存时两者相加，不重不漏
+    if(+b.qn){ out.qn += (+b.qn || 0); out.est = true; }
     out.nw += b.nw||0; out.mUp += b.mUp||0; out.mDown += b.mDown||0; out.up += b.up||0; out.down += b.down||0;
   });
   out.total = out.c.reduce((a,b)=>a+b, 0);
-  out.uniq = out.q.length;   // 覆盖题数 = 跨设备去重后的题号数
+  /* 覆盖题数：没被折叠时是跨设备去重后的精确值；一旦有折叠桶参与，只能退回计数之和，
+     那是个**上界**（两台设备当天刷了同一题会算两遍）。不补这条回退，老日子会显示「复习 0 题」
+     —— 可点却全空，比不给点更砸口碑（不跨年回看，但当年内的明细照旧要能点开）。 */
+  out.uniq = out.q.length + out.qn;
   return out;
 }
-// 只留最近 WARLOG_KEEP 天：日期键定长零填充 → 字典序即时间序
+// 某个日期键距今多少天：走日历构造而不是减毫秒（与 warPrevKey / hmDayNo 同一个道理，
+// 夏令时那两天不是整 24 小时，减毫秒会偶发差一天）
+function warDayAge(key){
+  const p = String(key).split('-').map(Number);
+  if(p.length !== 3 || !p[0]) return 0;
+  const now = new Date();
+  return hmDayNo(now) - hmDayNo(new Date(p[0], p[1]-1, p[2]));
+}
+// 日期键 → 本地当天零点（与 streak 里按 Date 逐日回推的口径一致）
+function warDayMidnight(key){
+  const p = String(key).split('-').map(Number);
+  return new Date(p[0], p[1]-1, p[2]).getTime();
+}
+// 两级保留：近期窗口留完整桶（含逐题清单 q）；超出清单保留期但仍在打卡保留期内的桶
+// 就地折叠为计数（qn 记下覆盖题数后删掉 q）；超出打卡保留期的整键删除。
+// 为何按"距今多少天"而不按"留多少个键"（旧写法是 keys.slice(0, len - KEEP)）：
+// 停练一阵后重新开学，旧键会被"键数上限"误删，而新积累的打卡事实正是本次要保住的东西。
+function warFoldBucket(b){
+  if(!b || !Array.isArray(b.q)) return;   // 幂等：已经折叠过的桶没有 q，直接走
+  // 累加而不是覆写：折叠后当天又被打了一笔（warLogAdd 会把清单建回来），
+  // 覆写会把之前那些题的计数弄丢
+  b.qn = (b.qn || 0) + b.q.length;
+  delete b.q;
+}
 function warLogTrim(){
-  const keys = Object.keys(WARLOG).sort();
-  const drop = keys.slice(0, Math.max(0, keys.length - WARLOG_KEEP));
-  drop.forEach(x => delete WARLOG[x]);
+  Object.keys(WARLOG).forEach(key=>{
+    const age = warDayAge(key);
+    if(age > WARLOG_CHECKIN_KEEP){ delete WARLOG[key]; return; }
+    if(age <= WARLOG_QID_KEEP) return;
+    const devs = WARLOG[key];
+    if(devs && devs.c) warFoldBucket(devs);                     // 旧扁平桶
+    else Object.keys(devs || {}).forEach(dev => warFoldBucket(devs[dev]));
+  });
+}
+/* 战报落盘防抖：以前每次评分都同步 JSON.stringify 整份 WARLOG（进度那条路径早有 600ms 防抖）。
+   打卡保留期拉长到近一年后，这道开销跟着线性变大（刷千题一天 = 一千次全量序列化）。
+   防抖必须与下面三处强制 flush 配套：pagehide / visibilitychange / Android 返回键退出。
+   只加防抖不补 flush，就是亲手重现 L3240 那段注释里已经修过的丢数据 bug —— 而这次丢的是打卡。 */
+let _warWriteTimer = null;
+function warLogScheduleWrite(){
+  clearTimeout(_warWriteTimer);
+  _warWriteTimer = setTimeout(flushWarLogWrite, 600);
+}
+function flushWarLogWrite(){
+  clearTimeout(_warWriteTimer); _warWriteTimer = null;
+  try{ safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG)); }catch(e){ warnSilent('战报落盘失败', e); }
 }
 // 把云端的战报并进本地（两条拉取路径共用）。为什么是"合并"而不是像热榜那样整份覆盖：
 // 云端那份可能来自另一台设备、也可能是本机更早推送的旧快照；覆盖会把本机这几天自己答的记录抹掉。
@@ -2554,7 +2770,7 @@ function warLogMerge(remote){
       if(!lb || (rb.at||0) > (lb.at||0)){ lmap[dev] = rb; changed++; }
     });
   });
-  if(changed){ warLogTrim(); safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG)); }
+  if(changed){ warLogTrim(); if(typeof invalidateMemQueue === 'function') invalidateMemQueue(); warLogScheduleWrite(); }
   return changed;
 }
 // 云端战报落库：与 applyHotFromGist 对称的入口。云端还没有这个文件（旧数据 / 首次推送前）时保持本地不动
@@ -2588,6 +2804,8 @@ function loadRevLog(){
 function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   const k = dayKeyOf(now);
   const d = warLocalBucket(k, true);
+  if(!Array.isArray(d.q)) d.q = [];   // 已折叠的老桶被再次写入（补录 / 时钟倒拨）：先把清单建回来，
+                                       // 否则下面 d.q.indexOf 直接抛；qn 里已有的计数不动
   // at = 这一层的"新旧标记"（合并时逐设备比对）。取单调值：撤销后计数变少，也得盖得过云端那份
   d.at = Math.max(now, (d.at || 0) + 1);
   d.c[g-1]++;
@@ -2599,8 +2817,8 @@ function warLogAdd(now, qid, g, pr, newLvl, newMastered){
   // 用排序权重比较：等级可能是 'M'，与数字直接比大小恒为 false，掌握被打回（M → Lv0）会漏计
   const oldRank = lvRank(levelOf(pr)), newRank = lvRank(newLvl);
   if(newRank > oldRank) d.up++; else if(newRank < oldRank) d.down++;
-  warLogTrim();   // 日期键定长零填充 → 字典序即时间序，只留最近 WARLOG_KEEP 天
-  safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG));
+  warLogTrim();   // 两级保留：折叠逐题清单 / 删除超出打卡保留期的整天
+  warLogScheduleWrite();
   markDirty();    // 战报也上云（warlog-data.json）：不标脏，定时自动推送就不会带它
   // 保留率日志：只记"有间隔的复习"（上次间隔 > 0），首刷没有"上次间隔"谈不上保持
   const days = pr && pr.interval;
@@ -3240,7 +3458,7 @@ function consumeBackPress(){
         // 退出前显式落一次盘：进度有 600ms 防抖，退出时刻正好落在窗口内时，最后一次评分只在内存里。
         // 不能指望 pagehide / visibilitychange 一定派发 —— Android 强杀不保证。
         // 退出应用本身走插件，不自己 finish Activity
-        flushProgressWrite(); saveGrillDraft(true);
+        flushProgressWrite(); flushWarLogWrite(); saveGrillDraft(true);
         try{ app.exitApp(); }catch(_){}
         return;
       }
@@ -3341,7 +3559,14 @@ function computeAllStats(){
   const today = new Date(now); today.setHours(0,0,0,0);
   const today0 = today.getTime();
   let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0, fresh = 0;
-  const reviewed = new Set();
+  /* 打卡日集合：来自按日累计的战报日志（与热力图同源，见 hmDayCounts 的口径说明）。
+     以前这里从 lastPracticed 建集合，而那个字段会被下一次练习覆盖 —— 连续天数的天花板
+     因此被排期上限钉死在约 7 天：一天不落刷满一年，界面也报不出「连续 30 天」。 */
+  const checked = new Set(Object.keys(WARLOG).filter(k => {
+    const e = WARLOG[k]; if(!e) return false;
+    if(e.c) return e.c.reduce((a, b) => a + b, 0) > 0;
+    return Object.keys(e).some(dev => e[dev] && e[dev].c && e[dev].c.reduce((a, b) => a + b, 0) > 0);
+  }).map(warDayMidnight));
   DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
@@ -3351,11 +3576,7 @@ function computeAllStats(){
     if(!p || !(p.practiced || p.seen || p.mastered || p.srLevel || p.srNext || p.lastPracticed)){ fresh++; return; }
     if(p.practiced || p.seen) ts++;
     if(p.mastered) tm++;
-    if(p.lastPracticed){
-      const d0 = new Date(p.lastPracticed); d0.setHours(0,0,0,0);
-      reviewed.add(d0.getTime());
-      if(p.lastPracticed >= today0) todayDone++;
-    }
+    if(p.lastPracticed && p.lastPracticed >= today0) todayDone++;   // "今日已刷"仍按推进口径，与打卡墙不是同一个问题
     if(p.mastered){
       // 口径统一在 effectiveNextOf（掌握题 = srNext 与「上次练习/标记掌握 + 最小间隔」取较晚者）。
       // masteredAt：手动标掌握的时间（老数据没有，只有 lastPracticed）；两者都无则时间戳落在 1970 年、
@@ -3370,11 +3591,11 @@ function computeAllStats(){
   const check = new Date(today);
   const prevDay = new Date(today); prevDay.setDate(prevDay.getDate()-1);
   // 今天没刷则从前一天起算；前一天也没有记录则连续天数为 0
-  if(reviewed.has(check.getTime()) || reviewed.has(prevDay.getTime())){
-    if(!reviewed.has(check.getTime())) check.setTime(prevDay.getTime());
-    // 上限 3650 天（约 10 年）：原来的 365 会让连续打卡满一年的用户恒定显示 365
+  if(checked.has(check.getTime()) || checked.has(prevDay.getTime())){
+    if(!checked.has(check.getTime())) check.setTime(prevDay.getTime());
+    // 循环上限 3650 天（约 10 年）：真正的钳制是打卡保留期 WARLOG_CHECKIN_KEEP，不是这个数
     for(let i=0;i<3650;i++){
-      if(reviewed.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
+      if(checked.has(check.getTime())){ streak++; check.setDate(check.getDate()-1); }
       else break;
     }
   }
@@ -3474,6 +3695,8 @@ function renderOverview(c){
   const tq = _ovStats.tq, ts = _ovStats.ts, tm = _ovStats.tm;
   const due = _ovStats.due, fresh = _ovStats.fresh;
   const todo = due + fresh;   // 记忆队列实际会排给你的题量（到期 + 从没刷过）
+  // 悬停提示里也不能写「未学 0」（卡面已经不显这个数了，提示里虚增一项同样谎报）
+  const dueTip = '点击进入记忆模式：' + (fresh > 0 ? `队列 = 到期 ${due} + 未学 ${fresh} = ${todo} 题` : `${todo} 题全部到期，开始复习`);
   const salary = tm * 100;
 
   /* 整体保留率（样本不足时为 null）。它是总览里唯一"越练越好看"的数字 ——
@@ -3508,9 +3731,12 @@ function renderOverview(c){
       <div class="ov-card"><div class="n" id="ovTotal">${tq}</div><div class="t">总数</div></div>
       <div class="ov-card"><div class="n" id="ovSeen">${ts}</div><div class="t">已学</div></div>
       <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
-      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` role="button" tabindex="0" style="cursor:pointer" title="点击进入记忆模式，开始复习${fresh?`（另有 ${fresh} 道未学）`:''}"`:''}>
-        <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
-        <div class="t">待复习${fresh>0?` · 未学 ${fresh}`:''}</div>
+      <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` role="button" tabindex="0" style="cursor:pointer" title="${dueTip}"`:''}>
+        <div class="${fresh>0?'ov-pair':''}">
+          <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
+          ${fresh>0?`<div class="n plain" id="ovFresh" style="color:var(--muted)">${fresh}</div>`:''}
+        </div>
+        <div class="t">${fresh>0?'待复习 · 未学':'待复习'}</div>
       </div>
       <!-- 原「文档」卡：文档数在文档页随时可见，而"我的记忆到底靠不靠得住"是总览里
            唯一能长期驱动复习的数字，所以用后者替掉它。样本不足时显示 —（见 RETENTION_MIN_SAMPLES） -->
@@ -4047,9 +4273,9 @@ function saveProgress(keepLv){   // keepLv 透传给 invalidateMemQueue：只有
   _progWriteTimer = setTimeout(flushProgressWrite, 600);
 }
 // 页面隐藏/卸载时把所有带防抖的落盘项立即 flush（各 600ms 防抖，不 flush 会丢掉最后一次评分/最后一次输入）
-window.addEventListener('pagehide', () => { flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); });
+window.addEventListener('pagehide', () => { flushProgressWrite(); flushWarLogWrite(); flushAiCfgSave(); saveGrillDraft(true); });
 document.addEventListener('visibilitychange', () => {
-  if(document.hidden){ flushProgressWrite(); flushAiCfgSave(); saveGrillDraft(true); return; }
+  if(document.hidden){ flushProgressWrite(); flushWarLogWrite(); flushAiCfgSave(); saveGrillDraft(true); return; }
   // 回前台补算一次键盘高度：键盘是「在后台被系统收起」的，那种收起不会派发 visualViewport 的 resize，
   // --kb 会留一个陈旧的非 0 值 —— 表现为弹窗被压矮、聚焦的输入框不回到可见区。
   try{ syncKeyboardInset(); }catch(_){}
@@ -4626,17 +4852,30 @@ function buildMemoryQueue(useCache){
       // 逾期只按"真实的上次练习时间"算：导入/云端数据可能只有 mastered 标记（既无 lastPracticed 也无 masteredAt），
       // 那时 effectiveNext 落在 1970 年，算出"最久欠两万天"这种离谱数字（会显示在卡片头部）
       const masteredDays = (p.lastPracticed||p.masteredAt) ? Math.max(0, todayNo - dayIndexOf(effectiveNext)) : 0;
-      queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,isNew:false,docOrder:i});
+      queue.push({q,d,level:-1,overdue:masteredDays,mastered:true,isNew:false,r:retrievabilityOf(p, now),docOrder:i});
       return;
     }
     const level=levelOf(p);   // 队列排序用的等级与进度条同口径（原先读 srLevel 计数器）
     const next=p.srNext||0;
     const isNew = !next;  // srNext为0才是真新题
+    // 可提取性：排序要用的 R 与卡片头部读的是同一个值，必须在这里算一次存进队列项
+    // （分开算会出现“卡片说 R=63%、排序却当它不存在”的分裂）
+    const r=retrievabilityOf(p, now);
     // 逾期天数走自然日序号相减（与进度页同一口径，见 dayIndexOf）
     const days=next?Math.max(0, todayNo - dayIndexOf(next)):0;
-    if(next===0||now>=next) queue.push({q,d,level,overdue:days,mastered:false,isNew,docOrder:i});
+    if(next===0||now>=next) queue.push({q,d,level,overdue:days,mastered:false,isNew,r,docOrder:i});
   }));
-  queue.sort((a,b)=>(b.isNew-a.isNew)||(b.overdue-a.overdue)||(a.level-b.level)||(a.docOrder-b.docOrder));
+  /* 排序：新题最前（它们从未进过排期，越晚铺越迟回来），其后按 R 从低到高 ——
+     先救最不可靠的。R 拿不到值的题（脏数据、只有旧字段却没练习时间）排到已知值之后，
+     不插队到最前：“算不出来”不等于“快忘了”。
+     overdue 降序作为 R 相同时的平手裁决保留（全库逾期时它区分度有限，但仍是信息），
+     level / docOrder 继续当稳定末位：同一份数据重复构建必须得到同一个顺序。 */
+  const R_UNKNOWN = 2;   // 界外哨兵值：R 恒在 0~1，用 2 把"未知"顶到已知值后面
+  queue.sort((a,b)=>(b.isNew-a.isNew)
+    ||((a.r===null?R_UNKNOWN:a.r)-(b.r===null?R_UNKNOWN:b.r))
+    ||(b.overdue-a.overdue)||(a.level-b.level)||(a.docOrder-b.docOrder));
+  // 欠账分段计数已移除（见 design.md D9）：它只解释系统怎么想的，对行动无指示力，
+  // 而唯一的决断信息（先刷哪个）已经由上面那条 R 升序排序承担
   // 队里最久的逾期天数：记忆卡头部每次渲染都要显示，顺手在这里算好（renderMemory 不再逐次遍历整条队列）
   queue.maxOverdue = queue.reduce((m,it)=>Math.max(m, it.overdue||0), 0);
   _memQueueCache = queue;
@@ -4954,6 +5193,18 @@ function renderHotDone(c){
 let _memWrap = null;      // 答题卡骨架（.feature-wrap）的引用
 let _memCardQid = null;   // 卡面当前显示哪道题：题面/答案/AI 块只在换题时重写，避免打断正在进行的流式写回
 let _memFlyAnim = null;   // 飞出动画的引用：节点复用后必须显式取消，它带 fill:'forwards'，会把卡片钉在飞出状态
+/* ---------- 记忆模式头部：可提取性 / 欠账构成 / 分段进度（都是纯字符串，方便冒烟单测） ---------- */
+// R 的读数与语气：无数据给占位而不是 0%/100%（见 retrievabilityOf 的说明）。
+// 未展开答案时只给数字不给色：那时用户还没作答，抢先染色等于评判一个没发生的行为
+function memRHtml(r, flipped){
+  if(r === null || r === undefined) return '<span title="这道题还没有记忆状态（从没评过分），概率估不出来">R —</span>';
+  const pct = Math.round(r * 100);
+  const tone = !flipped ? '' : (r >= R_GOOD_TH ? ' style="color:var(--good)"' : (r < R_WARN_TH ? ' style="color:var(--bad)"' : ' style="color:var(--warn)"'));
+  return `<span${tone} title="模型估计的此刻回忆概率，不是测量值">R ${pct}%</span>`;
+}
+// 欠账的语气：超过排期上限 = 停了一阵而不是“今天该复习”，
+// 用告警色等于劝退（specs：长期欠账不使用告警语气）
+function memOverdueTone(maxOverdue){ return maxOverdue > FSRS_MAX_INTERVAL ? 'var(--muted)' : 'var(--bad)'; }
 function renderMemory(c){
   if(!memory.queue.length||memory.index>=memory.queue.length){
     // 队列空（含刚进页面）或索引越界 → 重建队列并回到第一张。
@@ -5066,6 +5317,9 @@ function bindMemoryCard(c){
     const _rateColor = {1:_th.bad, 2:_th.warn, 3:_th.accent, 4:_th.good}[rate] || _th.accent;
     const _rct = r.getBoundingClientRect();
     burstParticles(_rct.left + _rct.width/2, _rct.top + _rct.height/2, { colors: [_rateColor, _rateColor, '#ffffff'] });
+    // 同一批到货的两个回执：形态随主题的视觉爆发（上面）+ 音色随主题的这一声（下面）。
+    // 放在评分成功之后、飞出动画之前：数字键 1-4 走的是 .click()，所以那条路径也会经过这里
+    playGradeTone(rate);
     if(!memory._history) memory._history = [];
     const stack = w.querySelector('#memStack');
     const finish = () => {
@@ -5145,7 +5399,8 @@ function paintMemoryCard(c){
         <span>
           <span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
           ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${sinceLastDays} 天`}
-          ${maxOverdue>0?` · <span style="color:var(--bad)" title="这是整个队列里最久的逾期天数，不是当前这道题">⚠ 队列最久欠 ${maxOverdue} 天</span>`:''}
+          · ${memRHtml(item.r, memory.flipped)}
+          ${maxOverdue>0?` · <span style="color:${memOverdueTone(maxOverdue)}" title="这是整个队列里最久的逾期天数，不是当前这道题">${maxOverdue>FSRS_MAX_INTERVAL?'🕒':'⚠'} 队列最久欠 ${maxOverdue} 天</span>`:''}
         </span>`;
   // 卡片：先取消上一次的飞出动画（不取消会把 #memStack 永久钉在飞出状态）
   const stack = w.querySelector('#memStack');
@@ -5212,12 +5467,13 @@ function buildAnalyticsData(){
       // 否则报表/CSV 里会出现"逾期两万天"
       // 逾期天数按自然日算（不再用 Math.round((now-next)/86400000)）：与记忆卡头部的"最久欠 N 天"必须一致，
       // 否则昨天 23:00 到期的题会在这里显示 0 天、在记忆页显示 1 天
-      const overdue = (mastered && !(p.lastPracticed||p.masteredAt)) ? 0
-        : (effectiveNext ? Math.max(0, todayNo - dayIndexOf(effectiveNext)) : 0);
+      const overdue = overdueOf(p, effectiveNext, todayNo);   // 唯一算法见 overdueOf
       // 展示 FSRS 原生的 DSR 状态，不再展示 SM-2 的 EF（EF 在 FSRS 里没有位置，之前只是拿它当展示字段）。
       // 老记录没有 fsrs 字段时由 fsrsStateOf 一次性换算（interval≈S、EF→D），所以历史数据同样有值
       const state = fsrsStateOf(p, now);
-      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, s:state?state.s:0, d:state?state.d:0, lastPracticed:p.lastPracticed||0, due, overdue });
+      // R 走共享口径函数 retrievabilityOf（与记忆卡、队列排序同一个值）；
+      // 无状态的题得到 null，下游必须当"没有这个数"处理，不能当 0
+      rows.push({ qid:q.id, title:q.title, doc:d.title, docId:d.id, lv, mastered, next: effectiveNext, interval:p.interval||0, s:state?state.s:0, d:state?state.d:0, r:retrievabilityOf(p, now), lastPracticed:p.lastPracticed||0, due, overdue });
       if(mastered) st.mastered++; if(due) st.due++;
       st.cnt++;
       st.overdueMax = Math.max(st.overdueMax, overdue);
@@ -5238,7 +5494,7 @@ function buildAnalyticsReport(o){
 掌握：${o.mastered}（${o.total?Math.round(o.mastered/o.total*100):0}%）
 待复习（今日需刷）：${o.due}
 平均复习间隔：${o.avgInterval} 天
-平均记忆稳定性 S：${o.avgS} 天 · 平均难度 D：${o.avgD}
+平均记忆稳定性 S：${o.avgS} 天 · 平均难度 D：${o.avgD} · 平均可提取性 R：${o.avgR}
 连续打卡：${o.streak} 天 · 今日已刷：${o.todayDone} 题
 
 等级分布（全库题目，含从未学过的 Lv0）：${lvLine}
@@ -5261,10 +5517,11 @@ function csvCell(v){
 }
 function exportAnalyticsCSV(rows){
   // 稳定性/难度是 FSRS 的 DSR 状态（老记录由 fsrsStateOf 换算）；没有状态的行留空，不写 0 以免被当成真实值
-  const header = ['qid','题目','文档','等级','掌握','下次复习','间隔(天)','稳定性(天)','难度','逾期(天)','待复习'];
+  const header = ['qid','题目','文档','等级','掌握','下次复习','间隔(天)','稳定性(天)','难度','逾期(天)','待复习','可提取性(%)'];
   const lines = [header.join(',')];
   rows.forEach(r=>{
-    const row = [csvCell(r.qid), csvCell(r.title), csvCell(r.doc), r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, r.s?r.s.toFixed(1):'', r.d?r.d.toFixed(1):'', r.overdue, r.due?'是':'否'];
+    // R 追加在最后一列：旧列序不变（用户自己的外部脚本按列位读也不会被打乱）；无状态留空，不写 0 以免被当成真值
+    const row = [csvCell(r.qid), csvCell(r.title), csvCell(r.doc), r.mastered?'M':('Lv'+r.lv), r.mastered?'是':'否', r.next?new Date(r.next).toLocaleDateString('zh-CN'):'', r.interval, r.s?r.s.toFixed(1):'', r.d?r.d.toFixed(1):'', r.overdue, r.due?'是':'否', r.r===null?'':Math.round(r.r*100)];
     lines.push(row.join(','));
   });
   const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
@@ -5278,22 +5535,24 @@ function copyText(t){
 function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); return ok; }
 
 /* ---------- 进度页：打卡热力图（对标 GitHub 贡献图） ----------
-   口径说明：PROGRESS 每题只保留"最后一次练习时间"，所以按 lastPracticed 归日得到的是
-   "当天推进过的题量"，不是精确的当日答题次数。要精确就得新增答题日志（每答一题追一条），
-   存储与迁移成本都不划算；而这张图要回答的是"哪天在学、密度如何"，现有数据完全够用。 */
+   口径：颜色来自「按日累计、只增」的打卡记录（WARLOG）。以前这里读 PROGRESS 每题的
+   "最后一次练习时间"，而那个字段会被下一次练习覆盖 —— 一道题被重刷，它就从前一天"搬走"，
+   亮过的格子因此熄灭；又因为间隔封顶 7 天，任何早于约一周的日子必然全灭。
+   这不是"精度不够"，是拿会被覆盖的字段当事件日志用 —— 所以改数据源而不是改描述。 */
 // ======== 打卡热力图（今年 1/1~12/31 单视图 + 点击格子看当天明细）========
 // 一切日期运算走「日历日序号」（当地年月日 → UTC 零点 ÷ 一天）：跨夏令时的两天相差不是整 24 小时
 function hmDayNo(d){ return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); }
 function hmCivil(no){ return new Date(no * 86400000); }
-// 当天题量映射（每题的"最后一次练习时间"归日）：年度/月视图/明细共用
+// 当天题量映射（按日累计的打卡记录归日）：年度/月视图/明细共用
 function hmDayCounts(){
   // 返回的 Map 只读（调用方只 get），所以可以整份缓存复用；进度/题库变更时由 invalidateMemQueue 作废
+  // （云端合并战报也会显式作废，见 warLogMerge）
   if(_hmCountsCache) return _hmCountsCache;
   const m = new Map();
-  Object.values(PROGRESS).forEach(p=>{
-    const lp = p && p.lastPracticed; if(!lp) return;
-    const no = hmDayNo(new Date(lp));
-    m.set(no, (m.get(no)||0)+1);
+  Object.keys(WARLOG).forEach(key=>{
+    const d = warDayAgg(key);                       // 跨设备合并：与堆叠柱/趋势同一份合计量
+    if(!d || !d.total || !d.uniq) return;           // 只有次数没有题号的脏桶不占格子
+    m.set(hmDayNo(new Date(warDayMidnight(key))), d.uniq);
   });
   _hmCountsCache = m;
   return m;
@@ -5315,7 +5574,7 @@ function hmDayDetail(dayNo, counts, plain){
   // plain=true 返回纯文本：title 属性与 aria-label 里写 <b> 会原样显示成字面量标签（明细气泡仍走 HTML 加粗）
   const b = s => plain ? String(s) : '<b>' + s + '</b>';
   const parts = [`${d.getUTCMonth()+1}月${d.getUTCDate()}日`];
-  parts.push(count > 0 ? `复习 ${b(count)} 题` : '未刷题');
+  parts.push(count > 0 ? `复习${wl && wl.est ? '约' : ''} ${b(count)} 题` : '未刷题');   // wl.est = 含已折叠的桶 → 题数是上界，不假装精确
   if(wl && wl.c){
     const names = ['😰 忘了','🤔 困难','😐 记得','😎 简单'];
     const cs = wl.c.map((n,i)=>`${names[i]} ${n}`).filter(s=>!/ 0$/.test(s));
@@ -5448,9 +5707,12 @@ function buildHeatmapHtml(){
 
 /* ---------- 进度页：未来到期预测 ----------
    把每道题的"下次复习时间"归到当天，提前看到哪天会积压（对标 fsrs4anki 的到期预测图）。
-   逾期题统一并入第 0 天：它们本来就该现在处理，摊到未来任何一天都会失真。
+   三种时间状态分开数：今天到期 / 逾期 / 从未排期。
+   以前第 0 列同时是这三种东西：逾期并进当日、从未排期的题也被当成逾期 —— 停练半个月后
+   该列是一根顶天柱，峰值提示顺带报成「今天 N 题」那个既做不到、也没要求做到的当日任务。
+   逾期题仍归第 0 天（它们本来就该现在处理，摊到未来任何一天都会失真），但内部按深度分段。
    窗口列数由调用方传（= FSRS_MAX_INTERVAL）：排期上限就是最远的入队时间，多画出来的列
-   必然是空柱 —— 这里曾写死 30 天，而题最多排到 14 天后，于是图右半截永远是一排空基线。 */
+   必然是空柱 —— 这里曾写死 30 天，于是图右半截永远是一排空基线。 */
 function buildForecastHtml(rows, days){
   const today = new Date(); today.setHours(0,0,0,0);
   const today0 = today.getTime();
@@ -5458,38 +5720,68 @@ function buildForecastHtml(rows, days){
   const buckets = new Array(days).fill(0);
   let overdue = 0;
   let later = 0;   // 排在窗口之外的题（只有带长间隔的老/导入数据才可能命中）
+  let undated = 0; // 从未排期：有进度但从没评过分，没有"哪天到期"这个属性，不能再冒充逾期
+  let maxOd = 0;
+  const seg = [0, 0, 0];   // 逾期深度三段：1~days / days+1~2*days / >2*days（边界由上限推导，不写死天数）
   rows.forEach(r=>{
     const n = r.next;
-    if(!n){ overdue++; return; }
+    if(!n){ undated++; return; }
+    // 深度只有一处算法（见 overdueOf）：以前图与表格各写一遍，"掌握题无时间戳不报欠两万天"这道兜底只在表格有
+    const od = overdueOf({ mastered: r.mastered, lastPracticed: r.lastPracticed }, n, todayNo);
+    if(od > 0){
+      overdue++; maxOd = Math.max(maxOd, od);
+      seg[od <= days ? 0 : (od <= days * 2 ? 1 : 2)]++;
+      buckets[0]++;   // 逾期题统一并入第 0 天：它们本来就该现在处理，摊到未来任何一天都会失真
+      return;
+    }
     // 按自然日归柱（不能用 Math.round((n-today0)/dayMs)）：今天 18:00 到期的题会被四舍五入进"明天"那一列，
     // 而第 0 列的口径是"今天到期 + 逾期"，两列的语义就互相矛盾了
     const idx = dayIndexOf(n) - todayNo;
-    if(idx < 0){ overdue++; return; }
+    if(idx < 0){ buckets[0]++; return; }   // 从兜底下来的"不算逾期"仍归今天：它们确实在队列里，不能静默丢
     // 窗口外的题不能静默丢弃：它不出柱子，但下面"共 N 题"的总数必须仍然诚实
     if(idx < days) buckets[idx]++; else later++;
   });
-  buckets[0] += overdue;
   const max = Math.max(1, ...buckets);
   const sum = buckets.reduce((a,b)=>a+b, 0);
-  const peakIdx = buckets.indexOf(max);
-  // 列日期同样走日历加法：today0 + i*dayMs 在夏令时切换那天会落到前一天/后一天
   const dayDate = i => { const d = new Date(today0); d.setDate(d.getDate() + i); return d; };
-  const pd = dayDate(peakIdx);
+  /* 峰值只看未来真正排期那些天（第 1 列起）：把欠账算进去会报出「峰值 今天 · 1000 题」
+     这种既做不到、也没要求做到的当日任务；欠账改由脚注单独说一句。 */
+  const future = buckets.slice(1);
+  const futureMax = future.length ? Math.max(...future) : 0;
+  const pd = dayDate(future.indexOf(futureMax) + 1);
+  /* 第 0 列内部按占比切成"今天到期 + 三段欠账"：用硬色标渐变而不是嵌套子节点 ——
+     冒烟断言按 /<i class=/g 数列数，样式也按"一列一个节点"写（见 .fc-strip 与 fc-empty 那条注释）。
+     三段欠账用同一色系的深浅而不是红橙黄：欠得久不等于出错，语义色留给真正的告警。 */
+  const parts = [buckets[0] - overdue, seg[0], seg[1], seg[2]];
+  const shades = ['rgba(var(--accent-rgb),1)', 'rgba(var(--accent-rgb),.72)', 'rgba(var(--accent-rgb),.46)', 'rgba(var(--accent-rgb),.24)'];
   const cells = buckets.map((n,i)=>{
     const d = dayDate(i);
     const h = n > 0 ? Math.max(8, Math.round(n/max*100)) : 4;   // 空日 4% ≈ 2.4px 基线
     // 类名用 fc-empty 而不是 empty：empty 会命中全局空状态样式（.empty{padding:64px 20px}），
     // 在 box-sizing:border-box 下把空柱撑到最小 120px 高，直接冲出 60px 高的容器
     const cls = n > 0 ? (i === 0 ? 'today' : '') : 'fc-empty';
-    return `<i class="${cls}" style="height:${h}%" title="${d.getMonth()+1}/${d.getDate()} · ${n} 题"></i>`;
+    let style = `height:${h}%`, tip = `${d.getMonth()+1}/${d.getDate()} · ${n} 题`;
+    if(i === 0 && overdue > 0 && n > 0){
+      let acc = 0; const stops = [];
+      parts.forEach((x, k)=>{
+        if(x <= 0) return;
+        const from = acc / n * 100; acc += x; const to = acc / n * 100;
+        if(x / n < 0.08) return;   // 占比太小的段画出来也看不分辩：宁可少画一段，数字仍在 title 与脚注里
+        stops.push(`${shades[k]} ${from.toFixed(1)}%, ${shades[k]} ${to.toFixed(1)}%`);
+      });
+      if(stops.length > 1) style += `;background:linear-gradient(to top,${stops.join(',')})`;
+      tip += `（今天到期 ${parts[0]} · 欠 1~${days} 天 ${parts[1]} · ${days+1}~${days*2} 天 ${parts[2]} · 超过 ${days*2} 天 ${parts[3]}）`;
+    }
+    return `<i class="${cls}" style="${style}" title="${tip}"></i>`;
   }).join('');
   return `
     <div class="fc-strip">${cells}</div>
     <div class="stat-foot">
-      <span>未来 ${days} 天共 <b>${sum}</b> 题待复习${overdue>0?` · <span style="color:var(--bad);font-weight:700">含逾期 ${overdue} 题</span>`:''}${later>0?` · <span style="color:var(--muted)">另有 ${later} 题排在 ${days} 天以后</span>`:''}</span>
-      ${sum>0?`<span class="hm-peak">📅 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${max} 题</span>`:`<span style="color:var(--good);font-weight:700">✅ ${days} 天内无排期</span>`}
+      <span>未来 ${days} 天共 <b>${sum}</b> 题待复习${overdue>0?` · <span style="color:${memOverdueTone(maxOd)};font-weight:700">含逾期 ${overdue} 题（1~${days} 天 ${seg[0]} · ${days+1}~${days*2} 天 ${seg[1]} · 超过 ${days*2} 天 ${seg[2]}）</span>`:''}${undated>0?` · <span style="color:var(--muted)">另有 ${undated} 题从未排期，进队列但无到期日</span>`:''}${later>0?` · <span style="color:var(--muted)">另有 ${later} 题排在 ${days} 天以后</span>`:''}</span>
+      ${futureMax>0?`<span class="hm-peak">📅 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${futureMax} 题</span>`:(sum>0?`<span style="color:var(--muted)">今天之后 ${days} 天内无新排期 · 欠账 ${overdue} 题</span>`:`<span style="color:var(--good);font-weight:700">✅ ${days} 天内无排期</span>`)}
     </div>`;
 }
+
 
 /* 整体真实保留率：所有「有上次间隔」的复习里，评「记得」的比例。
    与下面那条分桶曲线是同一个数据源（REVLOG）的两种切法：曲线按间隔看衰减趋势，
@@ -5557,7 +5849,7 @@ function buildStackedActivityHtml(days){
     </div>`;
   }).join('');
   return `
-    <div class="st-grid" style="--st-cols:${days}">${bars}</div>
+    <div class="st-grid">${bars}</div>
     <div class="stat-foot">
       <span>最近 ${days} 天每日复习构成</span>
       <span class="st-legend"><i style="background:var(--accent)"></i>复习 <i style="background:var(--accent2)"></i>掌握 <i style="background:var(--accent3)"></i>首刷</span>
@@ -5611,6 +5903,9 @@ function renderAnalytics(c){
   const avgInterval = rated.length ? (rated.reduce((s,r)=>s+r.interval,0)/rated.length).toFixed(1) : '—';
   const avgS = rated.length ? (rated.reduce((s,r)=>s+r.s,0)/rated.length).toFixed(1) : '—';
   const avgD = rated.length ? (rated.reduce((s,r)=>s+r.d,0)/rated.length).toFixed(1) : '—';
+  // 平均可提取性：只平均"估得出来"的行（r 为 null 的题不参与，也不能当 0 平均 —— 那会把均值拉开）
+  const ratedR = rows.filter(r=>r.r !== null && r.r !== undefined);
+  const avgR = ratedR.length ? Math.round(ratedR.reduce((s,r)=>s+r.r,0)/ratedR.length*100) + '%' : '—';
   const maxOverdue = rows.reduce((m,r)=>Math.max(m,r.overdue),0);
   const topOverdue = rows.slice().sort((a,b)=>b.overdue-a.overdue)[0];
   // 等级分布与记忆页共用 computeLvCounts()（统计全部题目，含从未学过的 Lv0）。
@@ -5630,9 +5925,10 @@ function renderAnalytics(c){
       <div class="an-card"><div class="n" id="anDue" style="color:var(--bad)">${due}</div><div class="t">待复习</div></div>
       <div class="an-card"><div class="n">${avgInterval}</div><div class="t">平均间隔(天)</div></div>
       <div class="an-card"><div class="n">${avgS}</div><div class="t">平均稳定性(天)</div></div>
+      <div class="an-card"><div class="n">${avgR}</div><div class="t" title="此刻还能回忆起来的平均概率（DSR 的 R），与目标保留率不是一回事">平均可提取性</div></div>
       <div class="an-card"><div class="n" id="anOverdue" style="color:${maxOverdue>0?'var(--bad)':'var(--good)'}">${maxOverdue}</div><div class="t">最久逾期(天)</div></div>
     </div>
-    <div class="an-sec">🗓️ 今年打卡热力图<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（点击格子看当天明细）</span></div>
+    <div class="an-sec">🗓️ 今年打卡热力图<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（点击格子看当天明细；颜色 = 那天练过的题数）</span></div>
     <div class="an-chart-card">${buildHeatmapHtml()}</div>
     <div class="an-sec">🧠 真实保留率<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（按上次间隔分桶的记得率）</span></div>
     <div class="an-chart-card">${buildRetentionHtml()}</div>
@@ -5670,7 +5966,7 @@ function renderAnalytics(c){
   }
   // 数据工具条：导出 CSV（全部题目明细，可用于 Excel/备份）、复制统计报告（发给 AI）、刷新
   $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
-  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgS,avgD,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
+  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgS,avgD,avgR,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
   $('#anRefresh').onclick = ()=> { _statsCache = null; renderAnalytics(c); };   // 连统计缓存一起清：否则"今日已刷/连续天数"还是 10 秒内的旧值
   // 热力图交互：点击格子看当天明细
   const bindHmChart = () => {
@@ -6829,8 +7125,10 @@ const THEME_SPEC = {
      主题 id 保持不变（改的是名字与机制）→ 老存档的偏好不需要迁移；
      删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
      更早删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
-     另有两条与主题绑定的"手感"：缩略图签名（SWATCH_SIG + .sig-*）与评分爆发形态（BURST_STYLE）——
-     前者的表在主题选择器那段，后者的表在 burstParticles 上方，加主题时两处都要登记。 */
+     另有三条与主题绑定的"手感"：缩略图签名（SWATCH_SIG + .sig-*）、评分爆发形态（BURST_STYLE）、
+     评分音色（TONE_STYLE）—— 前者在主题选择器那段，后两者在 burstParticles 区（爆发在上、音色在下），
+     **加主题时三处都要登记**。漏登记不会报错：缩略图没签名、爆发落回弹道圆点、
+     音色落回 TONE_DEFAULT —— 就是那一套主题在这三个地方默默退回默认样子。 */
   // ── 全部带 Canvas 特效（绢是纯纹理、云海是纯几何，见各自的绘制函数与播种分支）──
   sunset: {
     group:'canvas', name:'斜光', canvas:'sunset',
@@ -7316,7 +7614,7 @@ function applyTheme(name, opts){
 // 全平台一套，不做按机型的降级；只有两种真实的能力/偏好回退：内核不支持 VT、用户开了减动效。
 function pickTheme(id, evt){
   const root = document.documentElement;
-  const commit = () => { applyTheme(id); hideModal($('#themePopup')); };
+  const commit = () => { applyTheme(id); hideModal($('#themePopup')); playThemeTone(id); };   // 换完就试听这一套的音色：不试听，“每套主题音效不同”永远听不出来
   const reduce = prefersReduce();
   if(typeof document.startViewTransition === 'function' && !reduce){
     const x = (evt && evt.clientX) || (innerWidth - 30), y = (evt && evt.clientY) || 30;
@@ -7436,21 +7734,24 @@ function buildThemeGrid(filterGroup){
    「定制」标签下，撤掉标签后反而不会再有"切走就选不回来"的死角。 */
 buildThemeGrid(null);
 
-/* 宽屏下顶栏内容是居中的（.topbar{justify-content:center} 且铺满宽度），而浮层的 right 写死 12px，
-   于是它贴在视口最右、离主题按钮几百像素。打开时按按钮的实测位置覆盖 right/top 即可对齐。
-   窄屏（≤768）直接返回：那边按钮本就在右端，且有 @media(max-width:768px){#themePopup{right:6px!important}}，
-   不该由 JS 插手。 */
+/* top 不分断点，一律按主题按钮的实测下边缘给：顶栏高度不是常量 —— 单行 55px、手机两行 92px，
+   内联那个 calc(48px + safe-area) 只在单行时偶然对得上；顶栏一旦是两行，48px 就把浮层拍在
+   第二行上（实测重叠 44px），连带盖掉触发它的那颗主题键 —— 用户点不到按钮收起，只能点外部。
+   宽屏另有内联样式解决不了的问题：.topbar 是 justify-content:center 的全宽容器，而浮层的 right
+   写死 12px，于是它贴在视口最右、离主题按钮几百像素（2560px 屏上尤其明显），那一段再按实测覆盖 right。
+   窄屏的 right 仍不插手：那边按钮本就在右端，且有 @media(max-width:768px){#themePopup{right:6px!important}}，
+   JS 写了也会被那条 !important 盖掉。每次打开都重算，所以跨断点（旋转 / 拉伸窗口）不会残留旧值。 */
 function placeThemePopup(){
-  if(window.innerWidth <= 768) return;
   const btn = $('#themeBtn'), popup = $('#themePopup');
   if(!btn || !popup) return;
   const r = btn.getBoundingClientRect();
+  popup.style.top = Math.round(r.bottom + 8) + 'px';
+  if(window.innerWidth <= 768) return;
   const w = popup.offsetWidth || 340;
   // 右边缘与按钮对齐；再夹进视口 —— 按钮很靠左时（窄宽屏 + 标签换行）浮层会从左边溢出
   const right = Math.min(Math.max(Math.round(window.innerWidth - r.right), 6),
                          Math.max(Math.round(window.innerWidth - w - 6), 6));
   popup.style.right = right + 'px';
-  popup.style.top = Math.round(r.bottom + 8) + 'px';
 }
 
 $('#themeBtn').onclick = (e)=>{
@@ -8166,6 +8467,32 @@ function parseMarkdownToDoc(text, fallbackTitle){
   }).filter(q => q.answer && q.answer.trim() !== '').map((q,i)=>({ id:`${cleanTitle}#${i+1}`, title:q.title, answer:q.answer, tags:[cleanTitle] }));
   return { title: cleanTitle, questions };
 }
+
+/* ---------- 答题音效开关（设置面板「声音与反馈」）----------
+   开关用真 <button> + aria-pressed，不是 checkbox：与评分键同一取向（见 .grade-btn 那段
+   “键盘/读屏原生可达”的注释），而且 .btn 的 hover / :active / 触屏规则全是现成的，
+   不必为一个新的开关形态再造一套样式。文案就是状态，不靠颜色传达。 */
+function setSoundUI(){
+  const b = $('#soundToggle'); if(!b) return;
+  b.textContent = _soundOn ? '🔊 答题音效：开' : '🔇 答题音效：关';
+  b.setAttribute('aria-pressed', _soundOn ? 'true' : 'false');
+}
+$('#soundToggle').onclick = () => {
+  _soundOn = !_soundOn;
+  if(!safeLocalSet('learnAppSound', _soundOn ? '1' : '0')) toast('存不下（存储被禁用或已满）：这个选择只在本次会话有效');
+  setSoundUI();
+  if(_soundOn) playGradeTone(Rate.GOOD);   // 打开那一刻就给一声，让人确认“开”是什么动静
+  else toast('答题音效已关');
+};
+$('#soundPreview').onclick = () => {
+  // 主动点试听就是要听：音效关着时顺手打开，别让人点了没反应还以为坏了
+  if(!_soundOn){ _soundOn = true; safeLocalSet('learnAppSound', '1'); setSoundUI(); }
+  /* 四个音全部在**同一次点击的同步栈**里交给 Web Audio 自己的时钟排程。
+     不能交给 setTimeout：那样第一个音就离开手势链了，WebView 的自动播放策略
+     可能直接不给响（而桌面浏览器听得出差别，测起来最难对）。 */
+  [Rate.AGAIN, Rate.HARD, Rate.GOOD, Rate.EASY].forEach((r, i) => playGradeTone(r, i * .26));
+};
+setSoundUI();   // 静态 HTML 里的文案与 aria-pressed 是按“默认开”写的，若存的是关，这里校正一次
 
 $('#resetBtn').onclick = async () => {
   if(await confirmDialog('确定仅清除进度（已看/掌握标记）？题目数据与通关次数保留。')){
@@ -10111,7 +10438,7 @@ function paintUnifiedFrame(dt){
 // ── 主题特效的加分项与红线（新增特效前先读这段）──
 //   走 blit() 的元素自动获得「图表区避让」；直接 arc/fill/stroke 的必须自己乘 maskFactor/maskAlphaAt。
 //   颜色取自 getTheme(_uTheme)，切主题自动跟随；色标数组与模板串要在粒子循环**外**构造（见 drawStardust 的训诫）。
-//   循环里用 sinLut 而不是 Math.sin；不要每帧 new 数组、不要在循环里建渐变。
+//   不要在循环里每帧 new 数组、不要在循环里建渐变。
 //   全屏层（颗粒/扫描线）不做逐段避让 —— 峰值 α 压到 0.10 以内，比热力图底色还低一个量级，
 //   既不会被误读成数据，也做不到「逐 x 变 α」而不把描边拆成几十段。
 
@@ -10377,13 +10704,6 @@ function softBandSprite(key, rgb, alpha, h, flat){
   _spriteCache.set(ck, c);
   return c;
 }
-// ── 通用：1024 项正弦查表 ──
-// 逐像素生成纹理（绢的斜纹、星河的星尘）要在初始化时跑上万次三角函数，Math.sin 会成为热点；
-// 查表把单次调用压成一次乘法+取整。负数取补码低位正好落在 [0,1024)，截断误差 <0.006，视觉上看不出来。
-const SIN_LUT = new Float32Array(1024);
-for(let i=0;i<1024;i++) SIN_LUT[i] = Math.sin(i/1024*Math.PI*2);
-const SIN_K = 1024/(Math.PI*2);
-function sinLut(x){ return SIN_LUT[((x*SIN_K)|0) & 1023]; }
 
 // ── songxing: 星点两色（紫白 / 暖金，金色与主题 accent3 #d4a854 同族）──
 // 色表与光晕精灵的渐变参数在循环外备好：逐帧只做 2 次精灵缓存命中，
@@ -10696,7 +11016,7 @@ function drawNight(ctx,W,H,dt){
 }
 </script>
 <script>
-const SW_VERSION = '141';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '147';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
