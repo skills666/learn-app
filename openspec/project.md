@@ -4,12 +4,12 @@
 
 ## 一句话定位
 
-本地 · 离线 · 私有 · 基于 FSRS 间隔重复的面试闪卡记忆应用。前端是**单文件** `d:\tools\WorkBuddy-workspace\2026-08-02-19-57-34\learn-app\index.html`（零运行时框架依赖，可直接双击打开），外层用 Capacitor 7 打包 Android。
+本地 · 离线 · 私有 · 基于 FSRS 间隔重复的面试闪卡记忆应用。前端是**单文件** `d:\learn\learn-app\index.html`（零运行时框架依赖，可直接双击打开），外层用 Capacitor 7 打包 Android。
 
 ## 技术栈
 
 - 前端：单文件 HTML，内联 CSS + 原生 JavaScript（无框架、无构建期转译）。
-- 记忆调度：FSRS-5（权重与公式对齐 `ts-fsrs` 默认值）。产品参数集中在 `index.html` 的 `FSRS_RETENTION`（0.92）/ `FSRS_MAX_INTERVAL`（14 天）/ `MASTERED_MIN_DAYS`（4 天）三处声明。
+- 记忆调度：FSRS-5（权重与公式对齐 `ts-fsrs` 默认值）。产品参数集中在 `index.html` 的 `FSRS_RETENTION`（0.92）/ `FSRS_MAX_INTERVAL`（7 天，原 14 天已由归档变更 tighten-review-interval-cap 收紧）/ `MASTERED_MIN_DAYS`（4 天）三处声明。
 - 移动壳：Capacitor 7，插件 `@capacitor/app` / `@capacitor/filesystem` / `@capacitor/share` + 社区 `@capacitor-community/safe-area`。
 - 存储：全部走 `localStorage`（经 `safeLocalGet` / `safeLocalSet` 包装）；进度、题库、战报、趁热榜各自独立 key。
 

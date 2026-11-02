@@ -189,6 +189,13 @@ globalThis.__T = {
   setDocs: d => { DOCS = d; buildIndex(); globalThis.__T._bump(); },
   setProgress: p => { PROGRESS = p; globalThis.__T._bump(); },
   setHot: a => { HOT = a; },
+  // 记忆模式三个入口都是“整体重建 memory（置空队列 + 保留历史）”的语义：
+  // 用例换一个夹具时需要同样干净的起点，否则会拿着上一个夹具留下的队列
+  resetMemory: () => { memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] }; },
+  memQueueLen: () => memory.queue.length,
+  // 队列为每项存了什么：验证"R 与欠账构成真的进了队列项"，而不是只在纯函数层自证
+  memQueueOf: () => memory.queue.map(it => [it.q.id, it.r === null ? 'null' : Math.round(it.r * 100) + '%', it.overdue, it.isNew ? 1 : 0]),
+  freshQueueLen: () => buildMemoryQueue().length,
   setGrill: o => { Object.assign(grill, o); },
   /* 主题：逐套真切一遍并画一帧。删/改主题最容易留下"引用了已删常量"的绘制函数，
      而这类错误静态检查看不见，只有真的切过去、真的画一帧才会抛出来。
@@ -221,6 +228,9 @@ globalThis.__T = {
   // 软键盘避让的高度算法（--kb）：纯算术，直接问；DOM/CSS 侧已在真实浏览器里实测过
   kbInset: () => kbInset(),
   setWarLog: o => { WARLOG = o; },
+  // 热力图计数换了数据源（改成读 WARLOG）后，用例需要在换完数据后手动走一次产品自己的失效入口。
+  // 刻意不塞进 _bump：上面注释写明了理由（替产品藏 bug），用例要刷新就自己叫 invalidateMemQueue。
+  hmRefresh: () => { invalidateMemQueue(); },
   setRevLog: a => { REVLOG = a; },
   startPractice: scope => startPractice(scope),
   startMock: () => startMock(),
@@ -487,6 +497,102 @@ console.log('\n[软键盘避让：--kb 的算法]');
   ok(kb() === 360, '浏览器把可视区上移 40px 时按"实际被遮住的高度"算', 'kb=' + kb());
   ctx.innerHeight = oldH;
   delete ctx.visualViewport;   // 收尾
+}
+
+console.log('\n[总览待复习卡 · 到期与未学平级、可跟队列核对]');
+{
+  const D2 = Date.now(), DAY = 86400000;
+  T.setDocs([{ id: 'ov2', title: '两数', questions: [
+    { id: 'b1', title: 'B1', answer: 'x' }, { id: 'b2', title: 'B2', answer: 'x' },
+    { id: 'b3', title: 'B3', answer: 'x' }, { id: 'b4', title: 'B4', answer: 'x' }] }]);
+  // 1 题到期已学、3 题从未动过 —— 就是"卡面只报一半欠账"的那个现场
+  T.setProgress({ b1: { seen: true, srNext: D2 - DAY, lastPracticed: D2 - 2 * DAY, fsrs: { d: 5, s: 2, last: D2 - 2 * DAY, reps: 1, lapses: 0 } } });
+  T.resetMemory();
+  const hOv = render(T.views.OVERVIEW, '总览（含未学）');
+  ok(hOv.indexOf('ov-pair') !== -1 && hOv.indexOf('id="ovFresh"') !== -1,
+     '未学与到期同字号同字重并排，不再是小字尾巴', hOv.slice(0, 200));
+  ok(hOv.indexOf('ov-eq') === -1 && hOv.indexOf('记忆队列 4 题') === -1,
+     '等式文字已移除（它冗余，且单张卡多一行会顶高同一 grid 行的保留率卡）', hOv.slice(0, 300));
+  ok(T.freshQueueLen() === 4, '卡面两个数之和（1 + 3）等于记忆模式实际队列条数（跳页核对）');
+  // 没有未学时不得虚增占位
+  T.setProgress({ b1: { seen: true, srNext: D2 - DAY }, b2: { seen: true, srNext: D2 - DAY },
+    b3: { seen: true, srNext: D2 - DAY }, b4: { seen: true, srNext: D2 - DAY } });
+  const hOv2 = render(T.views.OVERVIEW, '总览（无未学）');
+  ok(hOv2.indexOf('id="ovFresh"') === -1 && hOv2.indexOf('未学 0') === -1,
+     'fresh=0 时不显示「未学 0」这种虚增项', hOv2.slice(0, 300));
+  ok(hOv2.indexOf('ov-act') === -1 || hOv2.indexOf('ov-pair') === -1, '单数字形态与并排形态不同时出现');
+}
+
+console.log('\n[长期停练 · 不裁剪、不拦人、分段进度条]');
+{
+  const DAY = 86400000, NOW = Date.now();
+  const mk = (s, od) => ({ seen: true, lastPracticed: NOW - (od + 1) * DAY, srNext: NOW - od * DAY, interval: 1,
+    fsrs: { d: 5, s, last: NOW - (od + 1) * DAY, reps: 2, lapses: 0 } });
+  T.setDocs([
+    { id: 'rb', title: '回归夹具', questions: [
+      { id: 'a1', title: 'A1', answer: 'x' }, { id: 'a2', title: 'A2', answer: 'x' },
+      { id: 'a3', title: 'A3', answer: 'x' }, { id: 'a4', title: 'A4', answer: 'x' },
+      { id: 'a5', title: 'A5', answer: 'x' }] },
+  ]);
+  // 4 题全部欠 15 天（稳定度故意拉开），第 5 题是从没评过分的新题
+  T.setProgress({ a1: mk(1, 15), a2: mk(2, 15), a3: mk(8, 15), a4: mk(20, 15) });
+  T.resetMemory();
+  ok(call('freshQueueLen', () => T.freshQueueLen()).v === 5, '全库停练 → 5 题全部进队列（不裁剪）');
+
+  const h2 = render(T.views.MEMORY, '记忆（长期停练后进入）');
+  ok(h2.indexOf('没复习了') === -1 && h2.indexOf('memBriefGo') === -1,
+     '长期停练后直接进答题卡，不出现打断式说明屏（specs：不插入打断式说明屏）', h2.slice(0, 120));
+  ok(call('memQueueLen', () => T.memQueueLen()).v === 5, '队列全量 5 题，未因任何解释性界面被裁剪');
+  // 分段条与 R 读数的具体内容写进的是每次换题重建的子节点，stub 里只能看到骨架层；
+  // 这里只验两件集成事实：① 分段进度条已整体移除（它跟等级分布条形状相同、语义不同，被当成残留）
+  // ② 队列项真的带上了 R，且顺序按 R 升序
+  ok(h2.indexOf('mem-prog') === -1 && h2.indexOf('memProg') === -1,
+     '分段进度条已移除：记忆页顶部只剩等级分布那一条横带', h2.slice(0, 160));
+  const ids = call('memQueueOf', () => T.memQueueOf()).v.map(x => x[0]).join(',');
+  ok(ids === 'a5,a1,a2,a3,a4',
+     '真实队列：新题最前，其余按 R 从低到高（a1 S=1 先于 a4 S=20）', ids);
+  const rv = call('memQueueOf', () => T.memQueueOf()).v;
+  // 夹具里 lastPracticed = 16 天前（逾期 15 + 间隔 1），所以 S=1 对应 ≈46%、S=20 ≈92%；
+  // 用区间而不是字面值：从造夹具到建队列会过掉几毫秒，不该让用例因为漂移而红
+  const pctOf = i => parseInt(rv[i][1], 10);
+  ok(pctOf(1) >= 45 && pctOf(1) <= 47 && pctOf(4) >= 91 && pctOf(4) <= 93,
+     '队列项里的 R 读数与手算一致（S=1 ≈46%、S=20 ≈92%）', rv.map(x => x.join(':')).join(' | '));
+  // 队列不再携带 seg 派生量：已由 smoke-test 的源码级守卫（!/queue\.seg/）把住，这里不重复
+
+  // 收尾：不把停练夹具留给后面的用例
+  T.setProgress({});
+  T.resetMemory();
+}
+
+console.log('\n[打卡墙换源后 · 连续天数不再被 7 天上限钳住]');
+{
+  const DAY = 86400000, now = Date.now(), z = n => String(n).padStart(2, '0');
+  const keyOf = ms => { const d = new Date(ms); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
+  const wl = {};
+  for(let i = 0; i < 10; i++){
+    const ids = ['a' + i, 'b' + i, 'c' + i];
+    wl[keyOf(now - i * DAY)] = { testdev: { c: [0, 0, 2, 1], q: ids, nw: 0, mUp: 0, mDown: 0, up: 0, down: 0, at: now - i * DAY } };
+  }
+  T.setWarLog(wl);
+  // PROGRESS 里只有"今天"的练习时间：旧实现（从 lastPracticed 归日）下 streak 只会是 1，
+  // 热力图也只有今天亮 —— 这正是「亮过的格子会熄灭」的同一个病因
+  T.setProgress({ b1: { seen: true, lastPracticed: now, srNext: now, interval: 2, fsrs: { d: 5, s: 2, last: now, reps: 1, lapses: 0 } } });
+  T.hmRefresh();
+  const st = call('stats(streak)', () => T.stats()).v || {};
+  ok(st.streak === 10, '连续打卡能数到 10 天（旧实现在这里被排期上限钳住）', 'streak=' + st.streak);
+  const hm = call('hmCounts(打卡源)', () => T.hmCounts()).v;
+  ok(hm && hm.size >= 10, '热力图有 10 天以上亮着（打卡只增，不重刷一次就灭）', hm ? String(hm.size) : '取用失败');
+  // R2「打卡由评分产生」：今天只在刷题模式翻过页（有 lastPracticed、没评分），不能算打卡日
+  const p2b = n => ('0' + n).slice(-2), dn = new Date(now);
+  delete wl[dn.getFullYear() + '-' + p2b(dn.getMonth() + 1) + '-' + p2b(dn.getDate())];
+  T.setWarLog(wl);
+  T.setProgress({ a1: { seen: true, lastPracticed: now, srNext: now + DAY, interval: 2, fsrs: { d: 5, s: 2, last: now, reps: 1, lapses: 0 } } });
+  T.hmRefresh();
+  const st2 = call('stats(只翻页今天)', () => T.stats()).v || {};
+  // 今天没打卡、昨天始终：streak 从昨天起算 = 9（而不是往今天身上接的 10）
+  ok(st2.streak === 9, '今天只翻页未评分 → 今天不算打卡日（否则会是 10）', 'streak=' + st2.streak);
+  ok(st2.todayDone === 1, '但「今日已刷」仍按推进口径计数（两个问题不混用）', 'todayDone=' + st2.todayDone);
+  T.setWarLog({}); T.setProgress({});
 }
 
 console.log('\n[运行时错误日志]');

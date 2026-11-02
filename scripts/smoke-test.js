@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'mdToPlain', 'parseMarkdownToDoc', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey'];
+const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'mdToPlain', 'parseMarkdownToDoc', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'fsrsRetrievability', 'retrievabilityOf', 'memRHtml', 'memOverdueTone', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'overdueOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey', 'hmDayCounts', 'hmDayNo', 'warDayAge', 'warFoldBucket', 'warDayMidnight'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -129,14 +129,24 @@ if (!rateConst) throw new Error('提取常量失败：Rate');
 // 评分档位表（四档）：与 Rate 同一套刻度，必须在 Rate 之后求值
 const rateMetaConst = extractConst('RATE_META');
 if (!rateMetaConst) throw new Error('提取常量失败：RATE_META');
-const warlogConsts = ['WARLOG_KEY', 'WARLOG_KEEP', 'WARLOG_DEV_KEY', 'WARLOG_LEGACY_DEV', 'REVLOG_KEY', 'REVLOG_MAX'].map(n => {
+const warlogConsts = ['WARLOG_KEY', 'WARLOG_QID_KEEP', 'WARLOG_CHECKIN_KEEP', 'WARLOG_DEV_KEY', 'WARLOG_LEGACY_DEV', 'REVLOG_KEY', 'REVLOG_MAX'].map(n => {
   const c = extractConst(n);
   if (!c) throw new Error('提取常量失败：' + n);
   return c;
 }).join('\n');
 // 调度阈值：掌握题最小间隔 / 最小稳定性（各自单独声明，便于 extractConst 逐条取出）
 // SM2_INIT_EF 与 SM2_MIN_EF 是同一条声明，取出前者即连带后者（分开取会重复声明）
-const schedConsts = ['MASTERED_MIN_DAYS', 'FSRS_MIN_STABILITY', 'SM2_INIT_EF'].map(n => {
+const schedConsts = ['MASTERED_MIN_DAYS', 'FSRS_MIN_STABILITY', 'SM2_INIT_EF', 'FSRS_MAX_INTERVAL'].map(n => {
+  const c = extractConst(n);
+  if (!c) throw new Error('提取常量失败：' + n);
+  return c;
+}).join('\n');
+// 遗忘曲线公式的两个常量写在同一条声明里（`const FSRS_DECAY = -0.5, FSRS_FACTOR = 19/81`），
+// extractConst 只能按「const 名字 =」开头匹配：取 FSRS_FACTOR 会抽不到，取 FSRS_DECAY 则整条连带 FACTOR 一起进来
+const fsrsCurveConst = extractConst('FSRS_DECAY');
+if (!fsrsCurveConst) throw new Error('提取常量失败：FSRS_DECAY（retrievabilityOf 的曲线常量）');
+// R 的分档阈值（各自单独成行声明，见 index.html 的注释）
+const rThConsts = ['R_GOOD_TH', 'R_WARN_TH'].map(n => {
   const c = extractConst(n);
   if (!c) throw new Error('提取常量失败：' + n);
   return c;
@@ -164,6 +174,9 @@ function fsrsStep(){ return { interval: 1, next: Date.now() + 86400000, card: { 
 let HOT = [];
 const localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 function saveHot(){}
+// 战报落盘防抖在产品里走 setTimeout，沙箱里没有定时器：替身按同步落盘，
+// 保住那些拿 LS['learnAppWarLog'] 校核的既有用例不变
+function warLogScheduleWrite(){ safeLocalSet(WARLOG_KEY, JSON.stringify(WARLOG)); }
 function questionById(){ return {}; }
 function hotHas(qid){ return HOT.some(h => h.qid === qid); }
 function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid }); return true; }
@@ -184,9 +197,11 @@ ${warlogConsts}
 ${rateConst}
 ${rateMetaConst}
 ${schedConsts}
+${fsrsCurveConst}
+${rThConsts}
 ${lvConsts}
 ${parts.join('\n')}
-({ esc, renderTitle, stripMarkdown, mdToPlain, parseMarkdownToDoc, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey });
+({ esc, renderTitle, stripMarkdown, mdToPlain, parseMarkdownToDoc, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, retrievabilityOf, R_GOOD_TH, R_WARN_TH, FSRS_MAX_INTERVAL, memRHtml, memOverdueTone, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey, hmDayCounts, hmDayNo, warLogTrim });
 `;
 const api = vm.runInContext(harness, vm.createContext({}), { filename: 'extracted.js' });
 
@@ -404,6 +419,96 @@ console.log('\n[记忆模式跳过 · 零副作用]');
   ok(M().index === 0, '空队列跳过 → 不越界（安全空转）', M().index);
 }
 
+console.log('\n[打卡墙 · 两级保留 / 折叠后仍供得出数 / 只增不减]');
+{
+  const W = api.getWarLog(), P = api.getProgress, DAY = 86400000, now = Date.now();
+  const dev = api.warDevId();
+  Object.keys(W).forEach(k => delete W[k]);
+  const key = n => api.dayKeyOf(now - n * DAY);
+  const mkBucket = (ids, at) => ({ [dev]: { c: [0, 0, ids.length, 0], q: ids.slice(), nw: 0, mUp: 0, mDown: 0, up: 0, down: 0, at } });
+  W[key(10)] = mkBucket(['x1', 'x2'], now); W[key(60)] = mkBucket(['x3', 'x4', 'x5'], now);
+  W[key(200)] = mkBucket(['x6'], now);      W[key(500)] = mkBucket(['x7'], now);
+  api.warLogTrim();
+  ok(!!W[key(10)][dev].q, '清单保留期内逐题清单原样留着（近 45 天行为不变）');
+  ok(!W[key(60)][dev].q && W[key(60)][dev].qn === 3, '超出清单保留期 → 折叠成计数，qn = 当天覆盖题数');
+  ok(!W[key(200)][dev].q && W[key(200)][dev].qn === 1, '更老的日子同样只剩计数（仍在打卡保留期内）');
+  ok(!W[key(500)], '超出打卡保留期 → 整键删除（保留期有界，不无限涨）');
+  api.warLogTrim();
+  ok(W[key(60)][dev].qn === 3, '折叠幂等：重复裁剪不会把计数抹成 0 或 NaN');
+  const agg = api.warDayAgg(key(60));
+  ok(agg.uniq === 3 && agg.est === true && agg.total === 3,
+     '折叠日期的题数与四档仍供得出（明细可点不是空的）并标记为上界', JSON.stringify(agg));
+
+  api.invalidateMemQueue();
+  const d10 = () => api.hmDayCounts().get(api.hmDayNo(new Date(now - 10 * DAY)));
+  ok(d10() === 2, '热力图按当天覆盖题数上色', String(d10()));
+  W[key(10)][dev].q.push('x9'); W[key(10)][dev].c[2]++;
+  api.invalidateMemQueue();
+  ok(d10() === 3, '当天多练一题 → 颜色加深');
+  // 把这批题的最后练习时间全搬到今天：旧实现下这天会当场归零（亮过的格子熄灭）
+  ['x1', 'x2', 'x9'].forEach(id => { P()[id] = { seen: true, lastPracticed: now, fsrs: { d: 5, s: 2, last: now, reps: 1, lapses: 0 } }; });
+  api.invalidateMemQueue();
+  ok(d10() === 3, '同批题后来被重刷、lastPracticed 全部前移 → 老日子不变暗（打卡只增）');
+  const n0 = W[key(10)][dev].q.length;
+  api.warLogUndo(now - 10 * DAY, 'x9', 3, { seen: true }, 1, false);
+  ok(W[key(10)][dev].q.length === n0, '撤销评分不回收当天清单 → 那天仍是打过卡的一天');
+  // 2.4 折叠与合并的先后顺序不影响结果（merge 内部也会 trim，两种顺序应得到同一形状）
+  const dayK = key(60);
+  const mkDev = (dev2, qids, at) => ({ [dev2]: { c: [0, 0, qids.length, 0], q: qids.slice(), nw: 0, mUp: 0, mDown: 0, up: 0, down: 0, at } });
+  delete W[dayK]; W[dayK] = mkDev('devB', ['r1'], now - 60 * DAY);
+  api.warLogTrim();                                                      // 先折叠
+  api.warLogMerge({ [dayK]: mkDev('devC', ['r2'], now - 60 * DAY + 1) });  // 再合并（内部再 trim）
+  const foldFirst = api.warDayAgg(dayK).uniq;
+  delete W[dayK]; W[dayK] = mkDev('devB', ['r1'], now - 60 * DAY);
+  api.warLogMerge({ [dayK]: mkDev('devC', ['r2'], now - 60 * DAY + 1) });  // 先合并
+  api.warLogTrim();                                                      // 再折叠
+  const mergeFirst = api.warDayAgg(dayK).uniq;
+  ok(foldFirst === mergeFirst && foldFirst === 2,
+     '折叠与合并的先后顺序不影响结果（两种顺序覆盖题数都是 2）', foldFirst + ' vs ' + mergeFirst);
+
+  // 5.3 防抖不丢对端写入：合并进来的记录经过落盘后仍在（沙箱里 warLogScheduleWrite 是同步替身）
+  const stored = JSON.parse(api.getLS()['learnAppWarLog'] || '{}');
+  ok(stored[dayK] && stored[dayK].devC,
+     '合并进来的对端记录经过（防抖后的）落盘仍在磁盘上');
+
+  // 4.3 跨年：热力图只枚举今年 1/1~12/31，去年那天的日序号不在区间内 → 结构上无格可落
+  ok(/const year = new Date\(\)\.getFullYear\(\)/.test(html)
+     && /new Date\(year, 0, 1\)/.test(html) && /new Date\(year, 11, 31\)/.test(html),
+     '热力图只枚举今年 1/1~12/31（跨年不显示；旧键另由打卡保留期裁掉）');
+
+  // 1.3「仅清除进度」不抹打卡墙：设置面板那条路径里不应出现 WARLOG 清理
+  ok(!/resetBtn'\)\.onclick[\s\S]{0,500}WARLOG/.test(html),
+     '「仅清除进度」不动 WARLOG（清进度后打卡墙与连续天数仍保留）');
+
+  api.invalidateMemQueue(); Object.keys(W).forEach(k => delete W[k]);
+}
+
+console.log('\n[可提取性 R · DSR 的第三个量上了界面]');
+{
+  const DAY = 86400000, NOW = Date.now();
+  const pct = r => Math.round(r * 100);
+  const mk = s => ({ lastPracticed: NOW - 15 * DAY, fsrs: { d: 5, s, last: NOW - 15 * DAY, reps: 3, lapses: 0 } });
+  // 逾期 15 天、稳定度各异的题：期望值来自手算 (1 + 19/81 · elapsed/S) ^ -0.5，不是拿代码自证
+  const cases = [[1, 47], [3, 68], [7, 82], [20, 92]];
+  cases.forEach(([s, want]) => {
+    const r = api.retrievabilityOf(mk(s), NOW);
+    ok(r !== null && Math.abs(pct(r) - want) <= 1, `S=${s} 天、逾期 15 天 → R≈${want}%（手算校核）`, r === null ? 'null' : pct(r) + '%');
+  });
+  ok(cases.every((c, i) => i === 0 || api.retrievabilityOf(mk(c[0]), NOW) > api.retrievabilityOf(mk(cases[i - 1][0]), NOW)),
+     '同一逾期时长下 S 越大 R 越高（不会把稳题算得比凉题更差）');
+  ok(api.retrievabilityOf(mk(5), NOW) > api.retrievabilityOf({ lastPracticed: NOW - 30 * DAY, fsrs: { d: 5, s: 5, last: NOW - 30 * DAY, reps: 2, lapses: 0 } }, NOW),
+     '同一道题拖得越久 R 越低');
+  // 只有旧 SM-2 字段的记录靠 fsrsStateOf 换算（S≈interval），不能显示成「无数据」
+  const legacy = api.retrievabilityOf({ interval: 1, srNext: NOW - 15 * DAY, srLevel: 2, lastPracticed: NOW - 15 * DAY }, NOW);
+  ok(legacy !== null && Math.abs(pct(legacy) - 47) <= 1, '只有旧 SM-2 字段的老记录：按 interval 换算 S=1 → R≈47%', legacy === null ? 'null' : pct(legacy) + '%');
+  ok(api.retrievabilityOf({ seen: true, lastPracticed: NOW }, NOW) === null, '只看过没评过分 → null（界面显示占位）');
+  // 脏数据兜底：有排期字段却没有任何练习时间 —— fsrsStateOf 会把 st.last 兜成 now，
+  // 不单独卡住就会报出 R=100%（谎报已会），这正是 specs 里「从未学过的题不谎报」要防的
+  ok(api.retrievabilityOf({ interval: 8, srNext: 1, srLevel: 2 }, NOW) === null, '缺练习时间的脏数据 → null，绝不谎报 100%');
+  ok(api.retrievabilityOf(null, NOW) === null && api.retrievabilityOf(undefined, NOW) === null, '无进度记录 → null（不抛异常）');
+  ok(api.R_GOOD_TH === 0.9 && api.R_WARN_TH === 0.7, '分档阈值可被逐条抽取（各自单独成行声明才抽得出）', api.R_GOOD_TH + '/' + api.R_WARN_TH);
+}
+
 console.log('\n[FSRS 调度数学 · 独立沙箱]');
 {
   // 主沙箱里 fsrsStep 是替身，调度数学本身没有任何断言覆盖 —— 这里用独立沙箱把它真正跑起来
@@ -552,6 +657,14 @@ console.log('\n[进度页 · 数据行带 FSRS 的 DSR 状态（不是 SM-2 的 
   ok(r2 && r2.s === 8 && Math.abs(r2.d - 5) < 1e-9, '只有 SM-2 字段的老记录：换算成 S=interval(8)、D=5', r2 && (r2.s + ' / ' + r2.d));
   ok(r3 && r3.s === 0 && r3.d === 0, '只看过没评分的题：没有 DSR 状态（s=0，不计入平均稳定性）', r3 && (r3.s + ' / ' + r3.d));
   ok(rows.every(r => !('ef' in r)), '数据行不再携带 EF 字段（进度页展示的是稳定性/难度）');
+  // —— R（DSR 的第三个量）同样要进报表，且无状态的行不能当 0 ——
+  ok(rows.every(r => 'r' in r), '数据行携带可提取性 r（DSR 三件套在报表里齐了）');
+  ok(r1 && r1.r > 0.99, '刚练过的题 R≈100%（此刻当然记得，与"无数据"是两回事）', r1 && String(r1.r));
+  ok(r2 && r2.r > 0.95 && r2.r < 0.965, '只有 SM-2 字段的老记录：换算 S=8、隔 3 天 → R≈96%', r2 && String(r2.r));
+  ok(r3 && r3.r === null, '只看过没评分的题 r=null（CSV 留空，不写 0）', r3 && String(r3.r));
+  const csvHead = (html.match(/const header = \['qid'[^\]]*\]/) || [''])[0];
+  ok(/'待复习','可提取性\(%\)'\]/.test(csvHead),
+     'CSV 把可提取性追加在末列（旧列序不变，外部脚本按列位读不受影响）', csvHead);
 }
 
 console.log('\n[进度页 · 未来到期预测（窗口 = 排期上限，窗口外不丢题）]');
@@ -568,26 +681,84 @@ console.log('\n[进度页 · 未来到期预测（窗口 = 排期上限，窗口
   ok(/14 天内无排期/.test(none) && !/未来无排期/.test(none), '窗口内无到期时只说"14 天内无排期"（窗口外可能还有）');
 }
 
+console.log('\n[到期预测 · 三类分开 / 欠账分段 / 峰值不算欠账]');
+{
+  const DAY = 86400000;
+  const t0 = new Date(); t0.setHours(0,0,0,0);
+  const todayNo = api.dayIndexOf ? api.dayIndexOf(t0.getTime()) : Math.round(t0.getTime() / DAY);
+  const at = d => ({ next: t0.getTime() + d * DAY });                 // d<0 = 欠了 |d| 天
+  const cols = s => (s.match(/<i class=/g) || []).length;
+
+  // 1) 从未排期不再冒充逾期
+  const u = api.buildForecastHtml([{ next: 0 }, { next: 0 }, at(-3)], 7);
+  ok(/另有 2 题从未排期/.test(u), '从未排期的题单列一句，不再计入逾期', u.slice(0, 400));
+  ok(/含逾期 1 题/.test(u), '真正的逾期仍按逾期报', u.slice(0, 400));
+  ok(/未来 7 天共 <b>1<\/b> 题/.test(u), '未排期不进"未来 N 天共 X 题"的总数（它们没有到期日这个属性）', u.slice(0, 400));
+
+  // 2) 欠账分三段，边界随窗口上限走（1 / 2 倍）
+  const s3 = api.buildForecastHtml([at(-3), at(-9), at(-20)], 7);
+  ok(/含逾期 3 题（1~7 天 1 · 8~14 天 1 · 超过 14 天 1）/.test(s3),
+     '三段欠账各报数（边界 = 上限的 1 倍与 2 倍，不写死天数）', s3.slice(0, 400));
+  const s14 = api.buildForecastHtml([at(-9), at(-20)], 14);
+  ok(/含逾期 2 题（1~14 天 1 · 15~28 天 1 · 超过 28 天 0）/.test(s14),
+     '上限改成 14 时分段边界跟着变（界由 days 推导，图上不残留旧的固定天数）', s14.slice(0, 400));
+  // 3) 第 0 列内部分段：多段才画渐变，单段不假装有构成；列数不变
+  ok(/linear-gradient/.test(s3) && cols(s3) === 7, '多段欠账 → 第 0 列用硬色标分段，且仍是一列一个节点');
+  const one = api.buildForecastHtml([at(-20), at(-21), at(-22)], 7);
+  ok(!/linear-gradient/.test(one), '欠账全落同一深段时不画假分段（只有一段就套一个渐变等于骗人）');
+  const tiny = api.buildForecastHtml([at(-1), ...Array.from({ length: 40 }, () => at(-20))], 7);
+  ok(!/linear-gradient/.test(tiny) || /超过 14 天 40/.test(tiny),
+     '占比 <8% 的段不画，但数字仍在脚注里（宁可少画也不给假精确）', tiny.slice(0, 400));
+
+  // 4) 峰值只算未来排期，欠账另起一句
+  const pk = api.buildForecastHtml([at(-2), at(-2), at(-2), at(5), at(5)], 7);
+  ok(/峰值 \d+月\d+日 · 2 题/.test(pk) && !/峰值 [^<]*今天/.test(pk),
+     '未来那天才是峰值，不报成"今天 3 题"这种当日任务', pk.slice(0, 400));
+  ok(/含逾期 3 题/.test(pk), '欠账在脚注里单独说一句');
+  const noFuture = api.buildForecastHtml([at(-2), at(-3)], 7);
+  ok(/今天之后 7 天内无新排期 · 欠账 2 题/.test(noFuture) && !/📅 峰值 今天/.test(noFuture),
+     '只有欠账、未来无排期 → 走专门的第三支文案（不谎报峰值，也不说"无题可刷"）', noFuture.slice(0, 400));
+
+  // 5) 长期欠账不用告警色
+  ok(/color:var\(--muted\);font-weight:700">含逾期/.test(api.buildForecastHtml([at(-20)], 7)),
+     '欠得超过上限时脚注走中性色，不再固定用 --bad');
+  ok(/color:var\(--bad\);font-weight:700">含逾期/.test(api.buildForecastHtml([at(-2)], 7)),
+     '刚逾期仍在告警色里（只降级长期欠账，不是把颜色全部抹平）');
+
+  // 6) 活的兜底：掌握题无任何时间戳 → 不能报成欠几万天（表格与图共用 overdueOf）
+  const dirty = api.buildForecastHtml([{ next: 345600000, mastered: true, lastPracticed: 0 }], 7);
+  ok(!/欠 [3-9]\d{3,} 天|欠\d{5,}天/.test(dirty) && cols(dirty) === 7,
+     '掌握但无时间戳的脏数据不会被算成欠几万天（兜底对三处同时生效）', dirty.slice(0, 400));
+  ok(/未来 7 天共 <b>1<\/b> 题/.test(dirty), '那道题仍计入总数（归今天），没被静默丢');
+}
+
 console.log('\n[昨日战报 · 按自然日归档]');
 {
   const W = api.getWarLog;
-  const tLate = new Date(2026, 0, 5, 23, 59, 0).getTime();
-  const tEarly = new Date(2026, 0, 6, 0, 1, 0).getTime();
-  ok(api.dayKeyOf(tLate) === '2026-01-05', '日键 = 本地自然日', api.dayKeyOf(tLate));
-  ok(api.dayKeyOf(tEarly) === '2026-01-06', '跨过午夜就翻篇', api.dayKeyOf(tEarly));
-  api.warLogAdd(tLate, 'w1', 1, {}, 0, false);                              // 忘了
-  api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 简单 → 新增掌握
-  api.warLogAdd(tLate, 'w2', 4, {}, 1, true);                               // 同一题再评
-  api.warLogAdd(tLate, 'w3', 3, { mastered:true, srLevel:3 }, 2, false);    // 已掌握被打回 + 掉级
-  const d = api.warDayAgg('2026-01-05');
+  const DAY = 86400000, now = Date.now();
+  const tLate = new Date(now - DAY); tLate.setHours(23, 59, 0, 0);
+  const tEarly = new Date(now); tEarly.setHours(0, 1, 0, 0);
+  const kLate = api.dayKeyOf(tLate.getTime()), kNone = api.dayKeyOf(now - 2 * DAY);
+  ok(api.dayKeyOf(new Date(2026, 0, 5, 23, 59, 0)) === '2026-01-05', '日键 = 本地自然日', api.dayKeyOf(new Date(2026, 0, 5, 23, 59, 0)));
+  ok(api.dayKeyOf(new Date(2026, 0, 6, 0, 1, 0)) === '2026-01-06', '跨过午夜就翻篇', api.dayKeyOf(new Date(2026, 0, 6, 0, 1, 0)));
+  ok(kLate !== api.dayKeyOf(tEarly) && kLate === api.dayKeyOf(tLate),
+     '23:59 与次日 00:01 必落两个日键（拿近期日期同样成立）', kLate + ' vs ' + api.dayKeyOf(tEarly));
+  // 上面的 dayKeyOf 校核用固定时间量（纯格式化，与保留期无关），
+  // 而归档本身用"昨天 23:59 / 今天 00:01"：打卡保留期会把 45 天前的桶折叠掉，
+  // 拿几个月前的日期写归档会误入那个路径，测的就不是"同日不串味"了
+  api.warLogAdd(tLate.getTime(), 'w1', 1, {}, 0, false);                        // 忘了
+  api.warLogAdd(tLate.getTime(), 'w2', 4, {}, 1, true);                         // 简单 → 新增掌握
+  api.warLogAdd(tLate.getTime(), 'w2', 4, {}, 1, true);                         // 同一题再评
+  api.warLogAdd(tLate.getTime(), 'w3', 3, { mastered:true, srLevel:3 }, 2, false);  // 已掌握被打回 + 掉级
+  const d = api.warDayAgg(kLate);
   ok(d && d.c[0] === 1 && d.c[2] === 1 && d.c[3] === 2, '四档次数分别归档', JSON.stringify(d && d.c));
   ok(d && d.q.length === 3, '覆盖题数去重（同题重复评分只算一道）', d && d.q.length);
   ok(d && d.mUp === 2 && d.mDown === 1, '掌握「新增 / 打回」分别计数', JSON.stringify(d && { mUp: d.mUp, mDown: d.mDown }));
   ok(d && d.up === 2 && d.down === 1, '等级「升 / 降」分别计数', JSON.stringify(d && { up: d.up, down: d.down }));
   ok(d && d.total === 4, '总次数 = 四档之和', d && String(d.total));
-  const day = W()['2026-01-05'];
+  const day = W()[kLate];
   ok(day && !day.c && Object.keys(day).length === 1, '当天按「设备」分层存放（合并的最小单位就是这一层）', JSON.stringify(day && Object.keys(day)));
-  ok(!W()['2026-01-06'], '别的一天不被串味');
+  ok(!W()[kNone], '别的一天不被串味');
 }
 
 console.log('\n[昨日战报 · 跨设备合并（同日相加 · 同设备取新 · 幂等）]');
@@ -775,6 +946,83 @@ console.log('\n[撤销评分 · 保留率日志同步回滚]');
   ok(api.revLogUndo(t, 'rv1') === true && R().length === 0, '撤销评分 → 该条保留率记录被精确删除');
 }
 
+console.log('\n[复习队列 · 欠账构成与 R 升序]');
+{
+  const P = api.getProgress, D = api.getDocs;
+  Object.keys(P()).forEach(k => delete P()[k]);
+  const doc = { id: 'sq', title: '排序文档', questions: [] };
+  ['n1', 'n2', 'r1', 'r2', 'r3', 'd1', 'dirty', 'm1'].forEach(id => doc.questions.push({ id, title: 'T-' + id, answer: 'A' }));
+  D().length = 0; D().push(doc);
+  const now = Date.now(), DAY = 86400000;
+  // 构造四档欠账：0（今天）/ 3（1~7）/ 8（8~14）/ 15（>14），稳定度故意与欠账天数不一致，
+  // 这样"按 R 排"与"按欠账排"会得出不同顺序，能真正区分两条规则
+  const mk = (s, od) => ({ lastPracticed: now - (od + 1) * DAY, srNext: now - od * DAY,
+    fsrs: { d: 5, s, last: now - (od + 1) * DAY, reps: 2, lapses: 0 } });
+  P().r1 = mk(20, 15);   // 欠得最久但很稳 → R 高，应该往后排
+  P().r2 = mk(1, 3);     // 欠得不久但极不稳 → R 低，应该往前排
+  P().r3 = mk(3, 8);
+  P().d1 = mk(5, 0);     // 今天到期
+  P().dirty = { srNext: now - 3 * DAY, interval: 2, srLevel: 1 };   // 脏数据：有排期却没练习时间 → R 拿不到
+  P().m1 = { mastered: true, seen: true, lastPracticed: now - 20 * DAY };   // 掌握题且无 fsrs 状态
+  const q = api.buildMemoryQueue();
+  const ids = q.map(it => it.q.id);
+  ok(ids[0] === 'n1' && ids[1] === 'n2', '未评过分的题仍然排最前（isNew 是第一优先级）', ids.slice(0, 3).join(','));
+  const rated = ['r1', 'r2', 'r3', 'd1'];
+  const order = ids.filter(x => rated.includes(x));
+  ok(order.join(',') === 'r2,r3,r1,d1',
+     '已评题按 R 从低到高而不是按欠账天数（r2 欠 3 天但 S=1 排在欠 15 天但 S=20 的 r1 前面；刚到期最稳的 d1 排最后）', order.join(','));
+  const nullPos = [ids.indexOf('dirty'), ids.indexOf('m1')];
+  ok(Math.min(...nullPos) > Math.max(...order.map(x => ids.indexOf(x))),
+     'R 拿不到值的题不插队到最前，排在所有已知 R 之后', nullPos.join(','));
+  ok(JSON.stringify(api.buildMemoryQueue().map(it => it.q.id)) === JSON.stringify(ids),
+     '数据不变而重复构建 → 顺序一致（可复现，不随机抖动）');
+
+  // 不变式：队列长度只由排期决定，与逾期规模无关（specs「不设每日题量上限」的守门断言）
+  const lenBefore = api.buildMemoryQueue().length;
+  Object.keys(P()).forEach(k => { const p = P()[k]; if (p && p.srNext) p.srNext -= 60 * DAY; });   // 欠账再推 60 天
+  P().m1.lastPracticed -= 60 * DAY;
+  const lenAfter = api.buildMemoryQueue().length;
+  ok(lenAfter === lenBefore && lenAfter === 8,
+     '逾期从几天推到几十天，队列条数不变（不得按天分批 / 不得每日限额）', lenBefore + ' -> ' + lenAfter);
+
+  // 旧口径回归护栏：只改排序不改 overdue 字段本身，进度页与卡片头部共用的那套天数必须还在
+  ok(api.buildMemoryQueue().find(it => it.q.id === 'r1').overdue > 15,
+     'overdue 字段语义未被排序改动破坏（r1 仍报真实欠账天数）');
+
+  // 撤销定位：排序改动不影响"撤销后回到那道题"
+  D().length = 0; D().push(doc);
+  const hist = [];
+  api.applySm2Grade('r1', 3, hist);
+  const afterGrade = api.buildMemoryQueue();
+  ok(!afterGrade.some(it => it.q.id === 'r1'), '评分后该题排到未来 → 本轮队列里不再出现', afterGrade.length);
+  api.getMemory()._history = hist;
+  api.undoMemoryGrade();
+  const afterUndo = api.getMemory();
+  ok(afterUndo.queue.some(it => it.q.id === 'r1') && afterUndo.queue[afterUndo.index] && afterUndo.queue[afterUndo.index].q.id === 'r1',
+     '撤销后能定位到被撤销那道题（findIndex 不依赖旧排序假设）', 'index=' + afterUndo.index);
+  Object.keys(P()).forEach(k => delete P()[k]);
+  D().length = 0;
+}
+
+console.log('\n[记忆模式头部 · R 读数]');
+{
+  ok(/R —/.test(api.memRHtml(null)) && !/style=/.test(api.memRHtml(null)), '无记忆状态 → 占位「R —」，不给 0% 也不给 100%');
+  ok(/R 95%/.test(api.memRHtml(0.95, false)) && !/color:/.test(api.memRHtml(0.95, false)), '答案未展开时只给数字不上色');
+  ok(/var\(--good\)/.test(api.memRHtml(0.95, true)) && /var\(--warn\)/.test(api.memRHtml(0.75, true)) && /var\(--bad\)/.test(api.memRHtml(0.5, true)),
+     '展开后按阈值分档上色：≥ 0.9 稳 / 0.7~0.9 有点虚 / < 0.7 凉了');
+  ok(api.memOverdueTone(api.FSRS_MAX_INTERVAL) === 'var(--bad)' && api.memOverdueTone(api.FSRS_MAX_INTERVAL + 1) === 'var(--muted)',
+     '欠账语气以排期上限为界：超限后改中性色，不再用红色劝退');
+  // 20 格分段进度条已整体移除（用户实测：与上方的等级分布条形状相同、语义不同，被当成残留）
+  ok(!/mem-prog|MEM_PROG_SEGS|buildMemProgHtml|memProgIdx|paintMemProg/.test(html),
+     '分段进度条已从源码彻底移除（不留死代码，也不许回潮）');
+
+  // 回潮守卫（用户实测后判定这两项无价值，见 design.md D9）：
+  // 说明屏、欠账分段计数与那个标记键都不许悄悄回来
+  ok(!/memReturnBriefNeeded|buildMemBriefHtml|memSegText|learnAppBrief_v1|memBriefRef/.test(html),
+     '回归说明屏与欠账分段计数已从源码彻底移除（不留死代码，也不许回潮）');
+  ok(!/queue\.seg/.test(html), '队列上不再挂 seg 派生量（两个消费者都没了）');
+}
+
 const smokeHtmlCsp = (html.match(/Content-Security-Policy[^>]*/) || [''])[0];
 console.log('\n[关键实现点静态断言]');
 {
@@ -826,8 +1074,8 @@ console.log('\n[关键实现点静态断言]');
   //    EF 是 SM-2 的概念，之前只是从 D 反推出来当展示字段；改回 EF 会让"平均 EF"这种看不懂的数字重新出现
   ok(!/平均 EF|avgEf|fsrsEfOf/.test(html), '「平均 EF」卡片 / avgEf / D→EF 反推函数均已移除');
   ok(!/\bef\s*:/.test(html), '新记录不再写 EF 字段（EF 只作为老记录换算的输入被读一次）');
-  ok(/const header = \['qid','题目','文档','等级','掌握','下次复习','间隔\(天\)','稳定性\(天\)','难度','逾期\(天\)','待复习'\];/.test(html),
-     'CSV 明细的 EF 列换成 FSRS 口径的稳定性 / 难度');
+  ok(/const header = \['qid','题目','文档','等级','掌握','下次复习','间隔\(天\)','稳定性\(天\)','难度','逾期\(天\)','待复习','可提取性\(%\)'\];/.test(html),
+     'CSV 明细：EF 列已换成 FSRS 口径的稳定性 / 难度，可提取性追加在末列（前面旧列序一字未动）');
   ok(/平均记忆稳定性 S：/.test(html), '复制给 AI 的报告用稳定性 S / 难度 D 描述掌握程度');
   ok(/const rated = rows\.filter\(r=>r\.s>0\);/.test(html), '进度页的平均值只统计已排期的题（分母不再含未评分的题）');
   // —— 到期预测：窗口 = 排期上限（14 天），窗口外不丢题 ——
@@ -1281,9 +1529,11 @@ console.log('\n[关键实现点静态断言]');
       && /const mutedColor = style\.getPropertyValue\('--muted'\)/.test(html)
       && !/faintColor/.test(html)
       && /\.q \.qnum\{flex:none;min-width:26px;height:26px;padding:0 5px;/.test(html)
-      && /flushProgressWrite\(\); saveGrillDraft\(true\);/.test(html)
-      && /try\{ syncKeyboardInset\(\); \}catch\(_\)\{\}/.test(html),
-      '--faint 不再作正文色（图表日期轴随既定政策改 --muted）；题号徽标 min-width；退出前 flush；回前台补算 --kb');
+      && /flushProgressWrite\(\); flushWarLogWrite\(\); saveGrillDraft\(true\);/.test(html)
+      && /window\.addEventListener\('pagehide', \(\) => \{ flushProgressWrite\(\); flushWarLogWrite\(\);/.test(html),
+      '--faint 不再作正文色（图表日期轴随既定政策改 --muted）；题号徽标 min-width；退出/隐藏前同时 flush 进度与战报（防抖不得丢最后一笔打卡）');
+   // 原同一条里的"回前台补算 --kb"拆出来单独守（不该因为另一条改文案就被顺手删掉）
+   ok(/try\{ syncKeyboardInset\(\); \}catch\(_\)\{\}/.test(html), '回前台补算 --kb（键盘在后台被系统收起时不会派发 resize）');
    // 战报与 SW：危险键、206 缓存（sw.js 本文件里没读过，就地读一次）
    const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
    ok(/if\(day==='__proto__'\|\|day==='constructor'\|\|day==='prototype'\) return;/.test(html)
