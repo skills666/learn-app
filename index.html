@@ -2141,7 +2141,7 @@ function burstParticles(x, y, opts){
    五条硬约束，改这里之前先读：
    1) 只在「评分」这一个动作上响。一天要点几百次，翻页 / 展开答案 / 切标签都出声的话，
       第三天就会来设置里关掉它 —— 反馈一旦变成噪音，功能就等于没了。
-   2) 每声 < 0.2s、峰值增益 0.05（≈系统通知的量级）。它是“这一下记上了”的回执，不是背景音。
+   2) 每声 < 0.2s、峰值增益 0.10（用户实测 0.05 偏轻后翻倍）。它是“这一下记上了”的回执，不是背景音。
    3) 现场用 Web Audio 合成，**不引任何音频文件**：与 sync-www.js 那套按 KB 抠包体的纪律一致，
       也不会给 sw.js 的 PRE_CACHE / manifest 的 icons 三处交叉校验再添新条目。
    4) 四档音高单调上行（忘了最低 → 倒背如流最高），和同一时刻爆发粒子的颜色
@@ -2164,9 +2164,9 @@ const TONE_STYLE = {
   aurora:   { wave:'triangle', base:659.25, dec:.20, oct:.25 },              // 极光：光幕，延音与泛音都最足
   ripple:   { wave:'sine',     base:587.33, dec:.14, lp:2400 },              // 波纹：低通抹掉高频 → 水下的闷
   zirong:   { wave:'triangle', base:740.00, dec:.11 },                       // 流萤：轻快的高位暖音
-  gruvbox:  { wave:'square',   base:392.00, dec:.09, lp:1600, vol:.042 }     // 余烬：方波的 8-bit 火星味；
+  gruvbox:  { wave:'square',   base:392.00, dec:.09, lp:1600, vol:.084 }     // 余烬：方波的 8-bit 火星味；
 };                                                                            //   方波天生刺耳，所以同时压音量 + 低通砍谐波
-const TONE_VOL = 0.05, TONE_CUTOFF = 4200;   // 默认峰值增益 / 默认低通截止
+const TONE_VOL = 0.1, TONE_CUTOFF = 4200;   // 默认峰值增益 / 默认低通截止（0.05 实测偏轻，用户要求翻倍）
 const GRADE_SEMI = {1:-7, 2:-3, 3:0, 4:5};   // 四档相对该主题根音的半音偏移，键与 Rate 的 1..4 对齐
 let _audioCtx = null;
 /* 默认开：这是用户主动要的功能，默认关等于功能不存在（装完没声音只会让人以为坏了）。
@@ -2613,9 +2613,6 @@ const WARLOG_DEV_KEY = 'learnAppWarDevId';   // 本机设备号（战报合并�
 const WARLOG_LEGACY_DEV = '_legacy';         // 云端若出现没有设备分层的旧桶，统一挂到这个名下（多端一致，不重复计数）
 const REVLOG_KEY = 'learnAppRevLog';
 const REVLOG_MAX = 2000;  // 保留最近 2000 次复习，足够保留率分桶，又不会无限膨胀
-// 整体保留率的最少样本数：一二十条算出来的百分比没有意义，还会给人虚假的安心或焦虑。
-// 低于这个数时总览那张卡片显示「—」，并在 title 里说明还差多少次复习
-const RETENTION_MIN_SAMPLES = 20;
 // 本地自然日键：由年月日拼出，不经 UTC，跨时区/夏令时都不会错位
 function dayKeyOf(ts){
   const d = new Date(ts), p = n => String(n).padStart(2,'0');
@@ -3558,7 +3555,7 @@ function computeAllStats(){
   const now = Date.now();
   const today = new Date(now); today.setHours(0,0,0,0);
   const today0 = today.getTime();
-  let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0, fresh = 0;
+  let tq = 0, ts = 0, tm = 0, due = 0, todayDone = 0, fresh = 0, rSum = 0, rCnt = 0;
   /* 打卡日集合：来自按日累计的战报日志（与热力图同源，见 hmDayCounts 的口径说明）。
      以前这里从 lastPracticed 建集合，而那个字段会被下一次练习覆盖 —— 连续天数的天花板
      因此被排期上限钉死在约 7 天：一天不落刷满一年，界面也报不出「连续 30 天」。 */
@@ -3570,6 +3567,11 @@ function computeAllStats(){
   DOCS.forEach(d => (d.questions||[]).forEach(q => {
     tq++;
     const p = PROGRESS[q.id];
+    // 平均可提取性：所有"估得出 R"的题此刻还记得的概率求平均（与进度页 renderAnalytics 的 avgR 同口径）。
+    // retrievabilityOf 对无状态/脏数据的题返回 null，这里直接跳过 —— 不当 0 平均（会把均值拉低、谎报已忘）。
+    // 借这次遍历一并算出：总览「保留率」卡复用它，免得为一张卡再全量走一遍题库。
+    const _r = retrievabilityOf(p, now);
+    if(_r !== null){ rSum += _r; rCnt++; }
     // 只统计"真实进度"：导入/云端同步可能带进来 {} 这类空条目，当待复习算会让统计虚高。
     // 但"从没刷过"的题必须单列出来（fresh）：记忆队列会把它们全部入队（见 buildMemoryQueue），
     // 若这里只报"到期"，就会出现"待复习 0、点进记忆却有 500 题"的口径错位
@@ -3599,7 +3601,7 @@ function computeAllStats(){
       else break;
     }
   }
-  const data = { tq, ts, tm, due, fresh, streak, todayDone };
+  const data = { tq, ts, tm, due, fresh, streak, todayDone, avgR: rCnt ? Math.round(rSum/rCnt*100) : null };
   _statsCache = { at: Date.now(), data };
   return data;
 }
@@ -3699,18 +3701,20 @@ function renderOverview(c){
   const dueTip = '点击进入记忆模式：' + (fresh > 0 ? `队列 = 到期 ${due} + 未学 ${fresh} = ${todo} 题` : `${todo} 题全部到期，开始复习`);
   const salary = tm * 100;
 
-  /* 整体保留率（样本不足时为 null）。它是总览里唯一"越练越好看"的数字 ——
-     其余几张卡都只是当前存量（有多少题、学了多少），只有它反映学习效果本身。
+  /* 保留率 = 平均可提取性（avgR，来自 computeAllStats）：所有已排期题"此刻还记得"的平均概率。
+     它按遗忘曲线实时算 —— 隔很多天不复习，这个数会自己往下掉，正好起到催促复习的作用；
+     与进度页「平均可提取性」同口径、同一次遍历（见 computeAllStats 的 avgR）。无可估题时为 null。
      颜色与提示文案都在这算好，模板里只做插值：一是避免把判断塞进 HTML 里难读，
      二是这段 HTML 本身就含引号，内联三元表达式会让那一行几乎无法维护。 */
-  const ret = overallRetention();
+  const ret = _ovStats.avgR;
   const retTarget = Math.round(FSRS_RETENTION * 100);
-  const retCls = ret ? '' : ' plain';
-  const retColor = !ret ? '' : (ret.pct >= retTarget ? ' style="color:var(--good)"' : (ret.pct < retTarget - 5 ? ' style="color:var(--warn)"' : ''));
-  const retTitle = ret
-    ? ' title="保留率：' + ret.n + ' 次复习里评「记得」的比例（目标 ' + retTarget + '%）"'
-    : ' title="复习满 ' + RETENTION_MIN_SAMPLES + ' 次后显示：样本太少时这个百分比没有意义"';
-  const retText = ret ? (ret.pct + '%') : '—';
+  // 用 == null 而非 !ret：avgR 可能是 0（所有题都忘了），那是真实读数，不能当"无数据"退成 —
+  const retCls = ret == null ? ' plain' : '';
+  const retColor = ret == null ? '' : (ret >= retTarget ? ' style="color:var(--good)"' : (ret < retTarget - 5 ? ' style="color:var(--warn)"' : ''));
+  const retTitle = ret == null
+    ? ' title="有可估的复习题后显示：此刻还记得的平均概率"'
+    : ' title="保留率：已排期题此刻还记得的平均概率（目标 ' + retTarget + '%）· 会随遗忘下降，隔久了不复习它会自己掉"';
+  const retText = ret == null ? '—' : (ret + '%');
   // 空题库引导：新装后这一页此前只有一排 0 和 ¥0，没有任何「下一步」的入口 ——
   // 而文档页早就有同样的引导（见 syncDocs 的 docsEmptySlot），这里复用同一个 openImportPicker。
   const emptyLead = (tq === 0)
@@ -3738,8 +3742,8 @@ function renderOverview(c){
         </div>
         <div class="t">${fresh>0?'待复习 · 未学':'待复习'}</div>
       </div>
-      <!-- 原「文档」卡：文档数在文档页随时可见，而"我的记忆到底靠不靠得住"是总览里
-           唯一能长期驱动复习的数字，所以用后者替掉它。样本不足时显示 —（见 RETENTION_MIN_SAMPLES） -->
+      <!-- 原「文档」卡：文档数在文档页随时可见，而"我的记忆此刻靠不靠得住"是总览里
+           唯一能长期驱动复习的数字，所以用后者替掉它。无可估题时显示 — -->
       <div class="ov-card"${retTitle}>
         <div class="n${retCls}" id="ovRetention"${retColor}>${retText}</div>
         <div class="t">保留率</div>
@@ -5782,17 +5786,6 @@ function buildForecastHtml(rows, days){
     </div>`;
 }
 
-
-/* 整体真实保留率：所有「有上次间隔」的复习里，评「记得」的比例。
-   与下面那条分桶曲线是同一个数据源（REVLOG）的两种切法：曲线按间隔看衰减趋势，
-   这个给一个总量口径 —— 它才是能当"目标进度"看、能给人动力的那个数字。
-   样本不足时返回 null（由调用方决定怎么展示），理由见 RETENTION_MIN_SAMPLES 的注释。 */
-function overallRetention(){
-  const n = REVLOG.length;
-  if(n < RETENTION_MIN_SAMPLES) return null;
-  const rec = REVLOG.reduce((s2,x) => s2 + (x.r ? 1 : 0), 0);
-  return { pct: Math.round(rec/n*100), n: n };
-}
 
 /* ---------- 进度页：真实保留率曲线 ----------
    按"上次间隔天数"分桶统计记得率（记得 = 评 GOOD/EASY），对照目标保留率看真实遗忘是否达标。
@@ -11016,7 +11009,7 @@ function drawNight(ctx,W,H,dt){
 }
 </script>
 <script>
-const SW_VERSION = '147';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '148';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

@@ -1559,7 +1559,7 @@ console.log('\n[关键实现点静态断言]');
       '颜色类 hover 统一关进 @media (hover:hover)（触屏上不再粘住高亮）');
    // 文案 / 语义 / 注入语义三处收尾
    ok(/mock:'八股练习'/.test(html) && /grill:'面试拷打'/.test(html)
-      && /' title="保留率：'/.test(html)
+      && /' title="保留率：/.test(html)
       && /\r?\n            \.\.\.q,/.test(html) && !/return Object\.assign\(\{\}, q, \{/.test(html)
       && /c\.setAttribute\('aria-pressed', on \? 'true' : 'false'\)/.test(html)
       && !/aria-selected', 'true'/.test(html),
