@@ -437,15 +437,28 @@
   .pbar > i.lv4,.an-dot.lv4{background:var(--lv4,#4068c0)}
   .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
   .an-dot.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc)}
-  .pbar > i.lvM{background:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);background-size:300% 100%;position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 7px rgba(255,224,102,.6),0 0 9px rgba(255,224,102,.7)}
+  /* 满级流光：色带与呼吸光晕都交给伪元素。background-position 与 box-shadow 都不可合成，
+     每帧要主线程重绘；而这是 infinite 动画，只要进度页停着就一直在吃帧预算。
+     改成 transform 平移 + opacity 呼吸后，两者都进合成层，主线程零成本。
+     色带放 ::before：宽 600%、背景按 50% 重复 —— 平移 -50%（正好一个 3W 周期）后首尾相接，
+     循环处无跳变。用 600% 而不是 300% 是为了让窗口里的色阶密度与原 background-size:300% 一致。
+     外发光必须留在元素本身：::after 在 overflow:hidden 里，向外那层会被裁掉。 */
+  .pbar > i.lvM{position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),0 0 9px rgba(255,224,102,.7)}
+  .pbar > i.lvM::before{content:'';position:absolute;top:0;left:0;height:100%;width:600%;pointer-events:none;
+    background-image:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);
+    background-size:50% 100%;background-repeat:repeat-x}
+  .pbar > i.lvM::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    box-shadow:inset 0 0 10px rgba(255,224,102,.8)}
   .an-dot.lvM{background:linear-gradient(90deg,#f5d0fe,#93c5fd,#86efac,#fde68a,#f472b6)}
   /* 流光与呼吸是纯装饰：包进 no-preference，系统开了「减少动态效果」时连 animation 声明都不存在。
      原先靠全局那条 .01ms !important 兜底，效果是"闪一下再停"，比干脆不动更糟 */
   @media (prefers-reduced-motion: no-preference){
-    .pbar > i.lvM{animation:lvM-flow 12s linear infinite,lvM-arc 1.4s ease-in-out infinite}
+    .pbar > i.lvM::before{animation:lvM-flow 6s linear infinite}
+    .pbar > i.lvM::after{animation:lvM-arc 1.4s ease-in-out infinite}
   }
-  @keyframes lvM-flow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
-  @keyframes lvM-arc{0%,100%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 5px rgba(255,224,102,.4),0 0 6px rgba(255,224,102,.55)}50%{box-shadow:0 0 12px rgba(192,132,252,.45),inset 0 0 10px rgba(255,224,102,.75),0 0 15px rgba(255,224,102,1)}}
+  /* 6s 走完 3W（一个周期），线速度 0.5W/s，与旧版 background-position 12s 走 6W 完全一致 */
+  @keyframes lvM-flow{from{transform:none}to{transform:translateX(-50%)}}
+  @keyframes lvM-arc{0%,100%{opacity:.35}50%{opacity:1}}
   .pmeta{display:flex;justify-content:space-between;font-size:var(--fs-sm);color:var(--muted);margin-bottom:22px}
   /* 进度页此前在 .content 的 28px 之外又自带 16px 横向内边距 → 左右留白实际 44px，
      与其它页面（28px）不同轴，翻页时整块内容会左右"漂"。横向留白统一交给 .content 的 --gutter，这里只管纵向节奏 */
@@ -535,7 +548,12 @@
   .mini i{display:block;transition:width var(--dur-slow) var(--ease-out)}
 
   /* search results */
-  .sr-item{border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;
+  /* content-visibility：搜索结果最多 200 条，一屏却只放得下五六条，屏幕外的条目原本也要走完
+     布局与绘制。auto 让浏览器跳过它们，滚到眼前才算。contain-intrinsic-size 带 auto 前缀：
+     首次按 110px 估算占位，渲染过一次后记住真实高度，滚动条长度不会来回跳。
+     只有搜索页能这么用 —— 浏览页的 .q 卡片要参与 flipAway，靠真实 getBoundingClientRect 算位移，
+     被跳过的元素会返回估算值，删除动画会算错。 */
+  .sr-item{border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;content-visibility:auto;contain-intrinsic-size:auto 110px;
            transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
   /* 搜索结果条目此前是"整行能点、但没有任何悬停反馈"。补的这套与卡片类刻意不同：
      卡片是"浮起 + 发光"，结果条目在列表流里、动太多会晃眼 —— 只做描边点亮 + 2px 横向位移 */
@@ -1175,11 +1193,13 @@
   /* ---------- 触屏手感（App / 手机浏览器）----------
      1) touch-action:manipulation = 只关掉"双击缩放"，双指缩放照常可用。记忆模式的评分键位置固定，
         快速连点两颗星（1→2）会被浏览器当成双击手势 → 整页突然放大；鼠标操作永远遇不到这个问题。
+        只给「纯点击控件」设：卡片（.q / .ov-card / .memory-card）里是正文，交给浏览器原生长按选字；
+        此前这几张卡也在列表里，锁成「只做平移和点击」后，长按选区在部分 Android WebView 上会被判成普通手势。
      2) 控件（按钮/标签/表头/图标键）长按不选中：手机没有 hover，长按会弹文字选择与复制菜单，
         点按就变成"选字"。正文与答案（.q / .memory-card / .answer）保持可选，方便复制。
      只列交互元素、不写 * —— 全站禁选会让答案复制不了。 */
   .btn,.iconbtn,.tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x,.tag-item,
-  .q,.ov-card,.memory-card,.theme-card,.grill-mode-card,.pbar,.bigbar,.hm-cell,.dt-count{touch-action:manipulation}
+  .theme-card,.grill-mode-card,.pbar,.bigbar,.hm-cell,.dt-count{touch-action:manipulation}
   .btn,.iconbtn,.tab,.set-head,.grade-btn,.grill-dur-btn,.modal-x{
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
@@ -1230,20 +1250,20 @@
   .confirm-ov.closing{animation:ovOut var(--dur-fast) ease both}
   .confirm-ov.closing .confirm-dlg{animation:scaleOut var(--dur-fast) ease both}
 
-  /* ---------- 主题切换：View Transitions 圆形扩散 ----------
-     修掉"背景在 .5s 渐变、卡片/面板瞬间硬切"的错位：切主题时整个 root 由旧色板"承接"、
-     新色板以点击点为圆心圆形铺开（Material / shadcn 主题切换同款），一次到位全站同步。
-     仅给 JS 主动画 clip-path，这里关掉浏览器默认的根交叉淡入避免叠加；.theme-vt 由 JS 临时挂在 <html>。 */
+  /* ---------- 主题切换：交叉淡入淡出 ----------
+     不用圆形扩散：它的扩散层是静态快照，时长一长就"冻住"、压短又像闪一下，两头都不对。
+     而淡入淡出本身就是连续渐变，看不出"画面静止"，且只动 opacity —— 合成动画，不重绘，
+     是所有方案里代价最低的一个（主题切换本来也不需要方向感）。
+     mix-blend-mode 必须改回 normal：VT 默认的 plus-lighter 是加色混合，
+     深浅主题之间交叉时会整体过曝发白。 */
   .theme-vt::view-transition-old(root),
-  .theme-vt::view-transition-new(root){animation:none;mix-blend-mode:normal}
-  .theme-vt::view-transition-old(root){z-index:0}
-  .theme-vt::view-transition-new(root){z-index:1}
-  /* 圆形扩散这 520ms 里，页面被旧/新两张快照盖着 —— 背景渐变的过渡此刻完全看不见，
-     而它每帧都要重画两道光晕（整屏），等于在最重的一段时间里白烧光栅，这里直接停掉。
-     渐变本身保留：不支持 VT / 开了减动效时走"直接应用"分支，那时它才是可见的过渡效果。 */
+  .theme-vt::view-transition-new(root){
+    mix-blend-mode:normal;
+    animation-duration:420ms;
+    animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  /* 快照盖着时背景渐变与背景特效的重绘全都看不见，白烧光栅，直接停掉；
+     canvas 那层不停 —— 它是 rAF 驱动的，停了再启动会空一两帧，接上时会弧一下。 */
   .theme-vt,.theme-vt body{transition:none}
-  /* 背景动效（松星的星雾 opacity 呼吸与流星位移）同理：快照盖着时看不见，
-     却仍在每帧重绘整屏，扩散期间一并暂停；canvas 那层由 JS 暂停（见 holdThemeCanvas） */
   .theme-vt body::before,.theme-vt body::after{animation-play-state:paused}
 
   /* 窄屏（≤768px）的两组微调合并成一块：同一个断点此前被拆在文件两处、中间还隔着别的规则，
@@ -1307,8 +1327,9 @@
   body.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
   /* 满级流光：保留色带流动（那是"满级"的语义本身），去掉向外扩散的呼吸光晕（纸面上会糊成一片） */
   @media (prefers-reduced-motion: no-preference){
-    body.light .pbar>i.lvM{animation:lvM-flow 12s linear infinite}
+    body.light .pbar>i.lvM::before{animation:lvM-flow 6s linear infinite}
   }
+  body.light .pbar>i.lvM::after{display:none}
 
   /* ---------- 宽屏桌面端（≥1024px）----------
      断点体系此前只有"移动端覆写"（≤768）和一条给 .qmodal 加宽的 min-width:769px，
@@ -2146,6 +2167,8 @@ function burstParticles(x, y, opts){
       也不会给 sw.js 的 PRE_CACHE / manifest 的 icons 三处交叉校验再添新条目。
    4) 四档音高单调上行（忘了最低 → 倒背如流最高），和同一时刻爆发粒子的颜色
       （红→橙→主色→绿）说的是同一件事，不需要额外学。
+      但音高不能沿用主题根音的低八度：手机外放对 500Hz 以下衰减很快，旧版最低档
+      落在 262~440Hz，实测只有最高档听得见（见 GRADE_SEMI 与 gradeRootOf 的钳位）。
    5) 这里**刻意不看 prefersReduce()**：减动效是给前庭敏感的人挡“画面在动”的，与声音无关；
       拿它当静音依据，会让“开着减动效、又想听音效”的人无论怎么设置都没声。静音只由设置面板
       那一个开关决定（见 _soundOn）。
@@ -2167,7 +2190,15 @@ const TONE_STYLE = {
   gruvbox:  { wave:'square',   base:392.00, dec:.09, lp:1600, vol:.084 }     // 余烬：方波的 8-bit 火星味；
 };                                                                            //   方波天生刺耳，所以同时压音量 + 低通砍谐波
 const TONE_VOL = 0.1, TONE_CUTOFF = 4200;   // 默认峰值增益 / 默认低通截止（0.05 实测偏轻，用户要求翻倍）
-const GRADE_SEMI = {1:-7, 2:-3, 3:0, 4:5};   // 四档相对该主题根音的半音偏移，键与 Rate 的 1..4 对齐
+/* 四档半音偏移：根音 → 大三度 → 纯五度 → 八度。
+   刻意不再用负偏移：手机外放对 500Hz 以下衰减很快，负偏移会把最低档压到听不见。 */
+const GRADE_SEMI = {1:0, 2:4, 3:7, 4:12};   // 键与 Rate 的 1..4 对齐
+/* 主题根音保留相对高低，但钳进 620~820Hz：低于 620 小喇叭几乎不出声，
+   高于 820 又容易在手机上发尖。评分与试听共用这个根音，比较音色时口径一致。 */
+function gradeRootOf(prof){
+  const base = (prof && prof.base) || TONE_DEFAULT.base;
+  return Math.min(820, Math.max(620, base));
+}
 let _audioCtx = null;
 /* 默认开：这是用户主动要的功能，默认关等于功能不存在（装完没声音只会让人以为坏了）。
    若要把这版发给别人用，这里改成 '0' 更稳妥 —— 图书馆/通勤场景里静音才是默认预期。 */
@@ -2217,17 +2248,22 @@ function playGradeTone(rate, delay){
   const semi = GRADE_SEMI[rate]; if(semi === undefined) return;
   const prof = TONE_STYLE[currentTheme] || TONE_DEFAULT;
   const d = delay || 0;
-  playTone(toneHz(prof.base, semi), prof, d);
+  const root = gradeRootOf(prof);
+  playTone(toneHz(root, semi), prof, d);
   // 只给「倒背如流」补第二个上行的音（与同一时刻的撒花呼应）。另外三档保持单音：
-  // “忘了”恰恰是最需要冷静的一次，多加一个音就变成惩罚了
-  if(rate === Rate.EASY) playTone(toneHz(prof.base, semi + 4), prof, d + .09);
+  // “忘了”恰恰是最需要冷静的一次，多加一个音就变成惩罚了。
+  // 这层奖励音只占半音量，否则第四档会比前三档明显响一截（用户实测“只听得见第四档”）。
+  if(rate === Rate.EASY){
+    const vol = prof.vol || TONE_VOL;
+    playTone(toneHz(root, semi + 4), { ...prof, vol: vol * 0.5 }, d + .09);
+  }
 }
 
 /* 主题试听：用在 pickTheme（切完响一声）与设置面板。
    这里弹的是该主题的根音（不带档位偏移）—— 试听要展示的是“这套主题的音色”，不是某个评分结果。 */
 function playThemeTone(id){
   const prof = TONE_STYLE[id || currentTheme] || TONE_DEFAULT;
-  playTone(prof.base, prof, 0);
+  playTone(gradeRootOf(prof), prof, 0);
 }
 
 /* ===== 烟花庆祝（通关等大节点，比礼炮更隆重）=====
@@ -2411,9 +2447,9 @@ function fsrsFromRate(rate){
 /* 展示等级（Lv0-Lv5 / M）由 FSRS 稳定性 S 派生，不再用「连续答对次数」计数器 srLevel。
    原因：计数器只跟"最近连对几次"有关，与"记得多牢"脱节 —— 同一天连点 5 次「简单」能把计数器堆到 Lv5，
    而一道很稳的题（S=87 天）忘一次计数器就归 0（S 仍有 7 天），于是出现「Lv0 的题比 Lv3 的题更牢」。
-   又因为 FSRS_MAX_INTERVAL=14 把排期硬截断（S≥18 天的题一律显示"14 天后"），等级条是界面上唯一
+   又因为 FSRS_MAX_INTERVAL=7 把排期硬截断（S≥18 天的题一律显示"7 天后"），等级条是界面上唯一
    能区分高稳定性题的展示位，它必须跟着 S 走而不是跟着打卡次数走。
-   分档只能用 S：p.interval 被 14 天截断，拿它分档会把最稳的一批挤成一坨。
+   分档只能用 S：p.interval 被 7 天截断，拿它分档会把最稳的一批挤成一坨。
    阈值单位是天（S 的物理含义就是"能稳多久"）；调松紧改这一组数字即可。 */
 const LV_S_TH = [3, 7, 21, 60];
 function levelOf(p, now){
@@ -3737,6 +3773,7 @@ function renderOverview(c){
       <div class="ov-card"><div class="n" id="ovMastered" style="color:var(--good)">${tm}</div><div class="t">掌握</div></div>
       <div class="ov-card${due>0?' ov-act':''}" id="ovDueCard"${todo>0?` role="button" tabindex="0" style="cursor:pointer" title="${dueTip}"`:''}>
         <div class="${fresh>0?'ov-pair':''}">
+          <!-- ovFresh 这个 id 只给渲染测试用（render-smoke 靠它判定"并排形态是否出现"），不是死属性，别删 -->
           <div class="n plain" id="ovDue" style="color:${due>0?'var(--warn)':'var(--good)'}">${due}</div>
           ${fresh>0?`<div class="n plain" id="ovFresh" style="color:var(--muted)">${fresh}</div>`:''}
         </div>
@@ -3775,8 +3812,10 @@ function renderOverview(c){
     roll('ovSalary', salary, 'salary', v=>'¥ '+Math.round(v).toLocaleString());
     roll('ovTotal', tq, 'total'); roll('ovSeen', ts, 'seen');
     roll('ovMastered', tm, 'mastered'); roll('ovDue', due, 'due');
-    // 保留率为 null（样本不足）时不滚动：countUpNum 会把 null 当成 0 滚出一个假的 0%
-    if(ret) roll('ovRetention', ret.pct, 'ret');
+    // 保留率为 null（无可用样本）时不滚动：countUpNum 会把 null 当成 0 滚出一个假的 0%。
+    // avgR 是数字（旧版是 {pct} 对象），且卡面单位是 % —— 格式化要带上；
+    // 此前写的 ret.pct 恒为 undefined，countUpNum 取 +undefined||0 → 每次动画都把正确读数盖成 0。
+    if(ret != null) roll('ovRetention', ret, 'ret', v => Math.round(v) + '%');
     animateSegBar(c, '.salary-bar > i', 'salary');   // 月薪条与数字同步滑到新值（同一会话内数值未变则不动）
   }, 30);
   // 待复习卡：点击直接进记忆模式开始复习（无到期题时不可点）
@@ -4054,6 +4093,44 @@ function browseMetaText(d){
   const mastered = docMastered(d);
   return `共 ${tot} 题 · 已看 ${seen} 题（${dp}%）${mastered?` · 掌握 ${mastered} 题`:''} · 通关 ${docClears(d.id)} 次 · 来源：${esc(d.source||'本地')}`;
 }
+/* 单张题目卡：初始渲染与「显示更多」追加共用同一份模板。
+   两条路径各写一遍的代价是 data-* 钩子迟早漂移 —— toggleAnswer / fillAnswerHtml / flipAway
+   全都按属性找节点，追加出来的那批一旦漏掉某个钩子，就是「点了没反应」且不报错。 */
+function browseCardHtml(q, i){
+  const p = PROGRESS[q.id]||{};
+  return `<div class="q" data-qid="${esc(q.id)}">
+    <div class="qhead" data-toggle="${esc(q.id)}" role="button" tabindex="0" aria-expanded="false">
+      <div class="qnum">${i+1}</div>
+      <div class="qtitle">${renderTitle(q.title)}</div>
+      <div class="qacts">
+        <button type="button" class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记掌握" aria-label="标记掌握" aria-pressed="${p.mastered?'true':'false'}">★</button>
+        <button type="button" class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">👁</button>
+        <button type="button" class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">✏️</button>
+        <button type="button" class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">🗑</button>
+      </div>
+    </div>
+    <div class="answer" data-ans="${esc(q.id)}">
+      <div class="inner" data-ansfill="${esc(q.id)}"></div><!-- 正文由 fillAnswerHtml 在首次展开时填入（见该函数说明） -->
+    </div>
+  </div>`;
+}
+
+/* 给一批卡片挂事件。参数是卡片数组，而不是「在 content 里全量查」：
+   追加时只处理新增的那一批，已经挂过的不必再扫一遍（题量大时每次多花几十毫秒）。 */
+function bindBrowseCards(cards, docId){
+  cards.forEach(card=>{
+    const tg = card.querySelector('[data-toggle]');
+    if(tg) tg.onclick = e=>{
+      if(e.target.closest('[data-master]')||e.target.closest('[data-eye]')||e.target.closest('[data-del]')||e.target.closest('[data-edit]')) return;
+      toggleAnswer(tg.dataset.toggle);
+    };
+    const eye = card.querySelector('[data-eye]'); if(eye) eye.onclick = ()=>toggleAnswer(eye.dataset.eye);
+    const mas = card.querySelector('[data-master]'); if(mas) mas.onclick = ()=>toggleMaster(mas.dataset.master);
+    const edt = card.querySelector('[data-edit]'); if(edt) edt.onclick = ()=>openEditModal(docId, edt.dataset.edit);
+    const del = card.querySelector('[data-del]'); if(del) del.onclick = ()=>deleteQuestion(docId, del.dataset.del);
+  });
+}
+
 function renderBrowse(c){
   const d = docById(currentDocId);
   if(!d){ view=Views.OVERVIEW; return renderContent(); }
@@ -4082,24 +4159,7 @@ function renderBrowse(c){
     const hi = highlightQid ? d.questions.findIndex(x=>x.id===highlightQid) : -1;
     if(hi >= browseLimit) browseLimit = Math.ceil((hi+1)/200)*200;   // 搜索跳转的目标必须落在渲染窗口内
     const shown = Math.min(d.questions.length, browseLimit);
-    html += d.questions.slice(0, shown).map((q,i)=>{
-      const p = PROGRESS[q.id]||{};
-      return `<div class="q" data-qid="${esc(q.id)}">
-        <div class="qhead" data-toggle="${esc(q.id)}" role="button" tabindex="0" aria-expanded="false">
-          <div class="qnum">${i+1}</div>
-          <div class="qtitle">${renderTitle(q.title)}</div>
-          <div class="qacts">
-            <button type="button" class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记掌握" aria-label="标记掌握" aria-pressed="${p.mastered?'true':'false'}">★</button>
-            <button type="button" class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">👁</button>
-            <button type="button" class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">✏️</button>
-            <button type="button" class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">🗑</button>
-          </div>
-        </div>
-        <div class="answer" data-ans="${esc(q.id)}">
-          <div class="inner" data-ansfill="${esc(q.id)}"></div><!-- 正文由 fillAnswerHtml 在首次展开时填入（见该函数说明） -->
-        </div>
-      </div>`;
-    }).join('');
+    html += d.questions.slice(0, shown).map(browseCardHtml).join('');
     if(d.questions.length > shown){
       html += `<div style="text-align:center;margin:18px 0"><button type="button" class="btn" id="browseMore">显示更多（还有 ${d.questions.length-shown} 题）</button></div>`;
     }
@@ -4107,7 +4167,25 @@ function renderBrowse(c){
   c.innerHTML = html;
   animateSegBar(c, '.bigbar > i', 'browse:'+d.id);   // 头部那根文档进度条：宽度从上次的值滑过来（见 animateSegBar）
   const moreBtn = c.querySelector('#browseMore');
-  if(moreBtn) moreBtn.onclick = () => { browseLimit += 200; renderContent(); };
+  if(moreBtn) moreBtn.onclick = () => {
+    /* 增量追加：只建新增这一批，已渲染的卡片连同展开状态、答案正文缓存一起保留。
+       旧实现是 browseLimit += 200 后整页重建 —— 第 N 次点要重新解析 N×200 张卡，
+       而且所有已展开的答案都会被收起（模板里的 .answer 不带 show），
+       与删除路径的局部更新（见 syncBrowseAfterDelete）自相矛盾。 */
+    const cur = docById(currentDocId);
+    if(!cur || cur !== d){ renderContent(); return; }   // 数据已被导入/云端替换：闭包里的 d 不可信，回退整页
+    const prev = Math.min(d.questions.length, browseLimit);
+    const next = Math.min(d.questions.length, browseLimit + 200);
+    if(next <= prev) return;
+    const holder = moreBtn.parentElement;
+    holder.insertAdjacentHTML('beforebegin', d.questions.slice(prev, next).map((q,i)=>browseCardHtml(q, prev+i)).join(''));
+    browseLimit = next;
+    // 新节点一定排在末尾：holder 不是 .q，所以取最后 (next-prev) 个就是刚插入的那批
+    const all = c.querySelectorAll('.q[data-qid]');
+    bindBrowseCards(Array.prototype.slice.call(all, all.length - (next - prev)), d.id);
+    if(next >= d.questions.length) holder.remove();
+    else moreBtn.textContent = '显示更多（还有 ' + (d.questions.length - next) + ' 题）';
+  };
   const backBtn = c.querySelector('#browseBack');
   if(backBtn) backBtn.onclick = () => {
     currentDocId = null; highlightQid = null;
@@ -4117,14 +4195,7 @@ function renderBrowse(c){
   const pracBtn = c.querySelector('[data-prac]'); if(pracBtn) pracBtn.onclick = () => startPractice(d.id);
   const addBtn = c.querySelector('#addQBtn'); if(addBtn) addBtn.onclick = () => openAddModal(d.id);
   const delDir = c.querySelector('[data-deldir]'); if(delDir) delDir.onclick = () => deleteDocument(d.id);
-  c.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=e=>{
-    if(e.target.closest('[data-master]')||e.target.closest('[data-eye]')||e.target.closest('[data-del]')||e.target.closest('[data-edit]')) return;
-    toggleAnswer(el.dataset.toggle);
-  });
-  c.querySelectorAll('[data-eye]').forEach(el=>el.onclick=()=>toggleAnswer(el.dataset.eye));
-  c.querySelectorAll('[data-master]').forEach(el=>el.onclick=()=>toggleMaster(el.dataset.master));
-  c.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>openEditModal(d.id, el.dataset.edit));
-  c.querySelectorAll('[data-del]').forEach(el=>el.onclick=()=>deleteQuestion(d.id, el.dataset.del));
+  bindBrowseCards(Array.prototype.slice.call(c.querySelectorAll('.q[data-qid]')), d.id);
   // 搜索跳转：自动展开高亮题目并滚动到它。
   // highlightQid 必须无条件消费：只在"命中"时才清掉的话，数据被云端拉取/导入替换后会留下一个
   // 悬空的高亮目标，下次从任意入口进入浏览页都可能意外展开一道同 id 的题
@@ -4359,6 +4430,10 @@ function submitEditQuestion(){
   saveDocs();
   hideModal($('#editModal'));   // 归还焦点给打开者（与 addModal 一致）
   toast('已保存修改');
+  // 记忆 / 刷题卡是局部更新：题面与答案只在「换题」时整块重写（见 paintMemoryCard / paintPractice 的 qid 判断）。
+  // 编辑的是当前这道题时 qid 没变 —— 不把判据作废，卡面会一直显示旧内容，只能刷新页面才更新。
+  _memCardQid = null;
+  _pracQid = null;
   renderAll();
 }
 
@@ -5083,7 +5158,7 @@ function renderHot(c){
       <div class="feature-wrap">
         <div class="pmeta"></div>
         <div class="memory-card" id="hotCard">
-          <div class="ptag">题目</div>
+          <div class="ptag" style="display:flex;align-items:center;justify-content:space-between"><span>题目</span><button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">📋</button></div>
           <div class="ptitle"></div>
           <div class="rv memory-answer" id="hotAnswer"><div class="rv-in"><div class="label">📝 答案</div></div></div>
           <div class="reveal-hint" id="hotHint">👆 点击卡片翻看答案</div>
@@ -5157,7 +5232,7 @@ function paintHotCard(doc, q, idx, tot, liveN){
   w.querySelector('.pmeta').innerHTML = `<span>🔥 趁热打铁${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${liveN} 题</span>`;
   card.querySelector('.ptitle').innerHTML = renderTitle(q.title);
   const an = w.querySelector('#hotAnswer');
-  an.querySelector('.rv-in').innerHTML = `<div class="label">📝 答案</div>${renderAnswer(q.answer)}`;
+  an.querySelector('.rv-in').innerHTML = `<div class="label">📝 答案</div><div id="hotAnswerBody">${renderAnswer(q.answer)}</div>`;
   an.classList.toggle('show', hot.flipped);
   w.querySelector('#hotHint').style.display = hot.flipped ? 'none' : '';
   w.querySelector('#hotGradeRow').style.display = hot.flipped ? '' : 'none';
@@ -5262,7 +5337,10 @@ function renderMemory(c){
       <div class="memory-card" id="memCard" role="button" tabindex="0" aria-expanded="false">
         <div class="ptag" style="display:flex;align-items:center;justify-content:space-between">
           <span>题目</span>
-          <button type="button" class="btn sm" id="flashEdit">✏️ 编辑</button>
+          <span style="display:flex;align-items:center;gap:6px">
+            <button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">📋</button>
+            <button type="button" class="btn sm" id="flashEdit">✏️ 编辑</button>
+          </span>
         </div>
         <div class="ptitle"></div>
         <div class="rv memory-answer" id="memAnswer">
@@ -7100,7 +7178,7 @@ searchInput.oninput = () => {
   注：CSS 动效只有 songxing（星雾 + 流星）需要，其余主题的光效全部由 CSS 变量 + Canvas 引擎负责，
   因此只有它带 cssFx 字段。 */
 const THEME_SPEC = {
-  /* 主题集：7 套 + 自定义背景图，**每套一个独立机制**（判断留删看机制，不看色温 —— 这条踩过）：
+  /* 主题集：11 套 + 自定义背景图，**每套一个独立机制**（判断留删看机制，不看色温 —— 这条踩过）：
        斜光   丁达尔光束（光锥 + 锥内浮尘）
        粒子   星链成网（近距连线）
        松星   两色星点缓慢漂移
@@ -7108,16 +7186,20 @@ const THEME_SPEC = {
        绢     斜纹织物 + 大面积高光斜掠        ← 浅色
        云海   FBM 云 + 透视压缩 + 地平线       ← 浅色
        霜原   冰晶自边缘生长 + 冰面反光
+       极光   绿→青→紫的光幕缓慢飘移
+       波纹   同心水波环（时间驱动，不依赖粒子）
+       流萤   萤火虫横向游走 + 呼吸明灭
+       余烬   底部升起的暖橙火星（上飘 + 闪灭）
      2026-10 下线四套（雨窗 / 垂帘 / 年轮 / 默片）：四套都是 WebGL2"物理型"，反复重做多轮
-     仍达不到真实材质的观感，与其占着主题位不如撤掉；四个 id 在 THEME_ALIAS 里就近映射。
+     仍达不到真实材质的观感，当前代码里已不存在，也就没有别名可映射。
      命名一律用"画面里能看到的现象"，不再用配色出处（原来的"北欧""复古"其实都是在说出处）。
      配色来源（GitHub 高星开源配色体系，或本项目自研，再按变量语义适配）：
        sunset 斜光 ← Kanagawa │ particle 粒子 ← 现代深空青紫（Linear/Vercel 风）
        paper  绢 ← Flexoki（象牙纸）│ night 星河 ← Ayu Mirage │ songxing 松星 ← 自研
        nord   霜原 ← Nord（压冷压暗）│ ziliang 云海 ← 自研
      主题 id 保持不变（改的是名字与机制）→ 老存档的偏好不需要迁移；
-     删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
-     更早删掉的那些 id 登记在 THEME_ALIAS 里就近映射，不会因为解析不到而退回「跟随系统深浅」。
+     真正删掉的旧配色 id（13 个）全部登记在 THEME_ALIAS 里就近映射，
+     不会因为解析不到而退回「跟随系统深浅」。
      另有三条与主题绑定的"手感"：缩略图签名（SWATCH_SIG + .sig-*）、评分爆发形态（BURST_STYLE）、
      评分音色（TONE_STYLE）—— 前者在主题选择器那段，后两者在 burstParticles 区（爆发在上、音色在下），
      **加主题时三处都要登记**。漏登记不会报错：缩略图没签名、爆发落回弹道圆点、
@@ -7160,8 +7242,7 @@ const THEME_SPEC = {
   /* 垂帘 / 雨窗 / 年轮 / 默片四套已整体下线（2026-10）：四套都是"物理型"WebGL2 主题，
      反复重做多轮仍达不到"真实材质"的标准（雨窗的折射、年轮的木纹、默片的单色胶片、垂帘的帘幕轮廓）——
      与其留四套不像东西的效果占着主题位，不如只留做得下来的（云海 / 霜原 / 绢）。
-     四个 id 全部登记在 THEME_ALIAS 里就近映射（垂帘、雨窗 → 星河；年轮、默片 → 斜光），
-     老存档里存着这四套的用户不会因此退回"跟随系统明暗"。 */
+     四套在当前代码里已不存在，也没有别名可映射；老存档若还存着它们，会走 savedThemeId 的兜底回到默认主题。 */
   /* 云海（自研，id 仍是 ziliang）：浅色 —— 云是暖白，天光在右上，云海从画面的下三分之二铺开。
      与"绢"一起承担浅色模式（跟随系统）的落点；配色沿用原来那套（同样按 WCAG AA 核过，不动）。 */
   ziliang: {
@@ -7396,7 +7477,7 @@ let _uTheme = '';
 let _uParticles = [];
 let _uFadeIn = 1;
 let _uAlphaBase = 1;
-// 页面是否在后台 / 换肤扩散期间是否挂起帧循环。放在本区的原因：这两个量会被 startUnifiedCanvas
+// 页面是否在后台 / 换肤过渡是否进行中。放在本区的原因：这两个量会被 startUnifiedCanvas
 // 读到，而它会经由 initTheme → applyTheme 在**脚本解析期**执行 —— 声明晚于调用点就会命中 TDZ，
 // 抛出的 ReferenceError 又会被 applyTheme 的 try/catch 吞掉（见 startUnifiedCanvas 里的解析期判断）
 let _uHidden = false;
@@ -7603,44 +7684,27 @@ function applyTheme(name, opts){
   if(_vtHold) drawOvChart(); else setTimeout(drawOvChart, 50);
 }
 
-// 主题选择：用 View Transitions API 做「从点击点向全屏」的圆形扩散，修掉"背景 .5s 渐变、卡片瞬间硬切"的错位。
-// 全平台一套，不做按机型的降级；只有两种真实的能力/偏好回退：内核不支持 VT、用户开了减动效。
+/* 主题选择：交叉淡入淡出。
+   View Transition 本身就是"旧画面淡出 + 新画面淡入"，直接把 commit 包进去就行；
+   不做圆形扩散 —— 那需要把静态快照做 clip-path 扩张，时长一长就冻住、压短又像闪一下，
+   而且自绘遮罩层还会在"洞从全屏跳到 0"那一帧多出一次屏闪。
+   时长与缓动写在 CSS 的 .theme-vt 那几条里。 */
 function pickTheme(id, evt){
   const root = document.documentElement;
   const commit = () => { applyTheme(id); hideModal($('#themePopup')); playThemeTone(id); };   // 换完就试听这一套的音色：不试听，“每套主题音效不同”永远听不出来
-  const reduce = prefersReduce();
-  if(typeof document.startViewTransition === 'function' && !reduce){
-    const x = (evt && evt.clientX) || (innerWidth - 30), y = (evt && evt.clientY) || 30;
-    const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-    // 扩散期间页面被两张快照盖住：画布与背景动效这时做的功一律看不见，先挂起（见 holdThemeCanvas），
-    // 把主线程与光栅全让给扩散本身；结束时统一恢复，并把这次要切的画布补启动
-    holdThemeCanvas(true);
-    root.classList.add('theme-vt');
-    const release = () => { root.classList.remove('theme-vt'); holdThemeCanvas(false); };
-    let vt = null;
-    try{ vt = document.startViewTransition(commit); }
-    catch(e){
-      // 启动失败（内核异常/被策略拦下）时不能把画布永久挂在 hold 上：解除挂起并直接把主题应用掉
-      warnSilent('换肤扩散启动失败，改为直接应用', e);
-      release(); commit(); return;
-    }
-    if(vt && vt.ready && vt.ready.then){
-      vt.ready.then(() => {
-        try{
-          root.animate(
-            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
-            { duration: 520, easing: EASE.out, pseudoElement: '::view-transition-new(root)' }
-          );
-        }catch(_){}
-      }).catch(()=>{});
-      if(vt.finished && vt.finished.finally) vt.finished.finally(release);
-      else release();
-    } else {
-      release();
-    }
-  } else {
-    commit();
+  if(prefersReduce() || typeof document.startViewTransition !== 'function'){ commit(); return; }
+  // 画布不停：rAF 循环停掉再启动会空一两帧，快照撤走那一刻会弧一下
+  holdThemeCanvas(true);
+  root.classList.add('theme-vt');
+  const release = () => { root.classList.remove('theme-vt'); holdThemeCanvas(false); };
+  let vt = null;
+  try{ vt = document.startViewTransition(commit); }
+  catch(e){
+    warnSilent('换肤过渡启动失败，改为直接应用', e);
+    release(); commit(); return;
   }
+  if(vt && vt.finished && vt.finished.finally) vt.finished.finally(release);
+  else release();
 }
 
 // ======== 主题选择器 UI 构建 ========
@@ -9430,7 +9494,7 @@ function syncKeyboardInset(){
 
   // 节奏迁移：存档里还留着「复习节奏」键（3d/7d/long 或已移除的 14d）→ 按现行固定参数重排一次。
   // 不重排的话，旧数据里按别的档位排出去的入队时间不会自己收回：比如 3d 档排到 3 天后的题，
-  // 在上限 14 天的新参数下本该更晚才回来，却会一直提前到期。
+  // 在上限还是 14 天的那个版本里本该更晚才回来，却会一直提前到期。
   if(_paceStale){
     _paceStale = false;
     try{ localStorage.removeItem('learnAppPace'); }catch(_){}   // 键已废弃，删掉才能避免每次启动重复迁移
@@ -10155,8 +10219,8 @@ function startUnifiedCanvas(theme){
   _uTheme = theme;
   _uParticles = [];
   _uTime = 0; _uLastTs = 0;
-  // 切换主题时淡入：0→1。但换肤扩散期间不淡入 —— 快照要拍"最终长相"，
-  // 从 0 起步会让铺开的那一片明显偏暗、和最终画面不一致（非扩散路径仍保留淡入）
+  // 切换主题时淡入：0→1。但换肤过渡期间不淡入 —— 新快照要拍"最终长相"，
+  // 从 0 起步会让淡入过程中透出的底色偏暗、和最终画面不一致（非换肤路径仍保留淡入）
   _uFadeIn = _vtHold ? 1 : 0;
   if(GL_SHADER_OF[canvasKeyOf(theme)]){
     // ── 物理型主题：整层交给 WebGL2（两层画布互斥，先把 2D 那层拆掉）──
@@ -10356,15 +10420,13 @@ function initThemeParticles(theme){
   //     其余内置主题在上方都有显式分支（要用粒子的就播种，纯几何的也留一行占位说明）；
   //     旧存档里的自建配色主题走下面那条通用星尘。
 }
-/* 换肤扩散期间挂起画布的帧循环：这 520ms 里页面被旧/新两张快照盖着，逐帧动画在快照后面看不见，
-   却仍在抢光栅 —— 而圆形扩散恰恰最吃这个。注意只是"停帧循环"，不是"不切主题"：
-   主题本身在 applyTheme 里已经同步切好并画好首帧（否则快照里就是旧特效）。
-   挂起期间 on 为真，供 applyTheme 判断"这次要不要淡入"。
+/* 标记「换肤过渡进行中」：供 applyTheme 判断趋势图要不要同步重绘、新画布要不要淡入。
+   刻意不停帧循环 —— rAF 停掉再启动会空一两帧，而过渡一结束快照立刻撤走，
+   那两帧空档看起来就是"切换完才动"。
    _uHidden / _vtHold 的声明已挪到 applyTheme 之前的状态区（解析期就会被读到，见那里的注释） */
 function holdThemeCanvas(on){
-  _vtHold = !!on;
-  if(_vtHold){ if(_uRaf){ cancelAnimationFrame(_uRaf); _uRaf = null; } return; }
-  restartCanvasLoop();
+  _vtHold = !!on;   // 只作「换肤进行中」的标记
+  if(!_vtHold) restartCanvasLoop();
 }
 function restartCanvasLoop(){
   // 判据用 canvasLayerActive() 而不是只看 2D：GPU 主题下 _uCtx 是 null，
@@ -10388,8 +10450,8 @@ document.addEventListener('visibilitychange', () => {
 });
 function tickUnified(ts){
   if(!canvasLayerActive()){ _uRaf = null; return; }
-  // 后台 / 换肤扩散期间停止调度，分别由 visibilitychange、holdThemeCanvas 重新拉起
-  if(_uHidden || _vtHold){ _uRaf = null; return; }
+  // 后台停止调度，由 visibilitychange 重新拉起。换肤扩散不再停帧（见 holdThemeCanvas）
+  if(_uHidden){ _uRaf = null; return; }
   _uRaf = requestAnimationFrame(tickUnified);
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
   _uLastTs = ts;
@@ -11007,9 +11069,54 @@ function drawNight(ctx,W,H,dt){
   // 说明：这里曾经叠过一层全屏颗粒做"抖动"（给色阶边界做随机化）。实测在深空底上会显成一整片麻点，
   // 观感代价远大于它压掉的那点色阶，已删除。星云若还有残留色阶，只能靠"缩小 + 提亮"继续压。
 }
+
+/* ===== 题目 + 答案一键复制 =====
+   背景：部分 Android WebView 上，长按选字后系统会画出一块空白浮层盖住正文，
+   连「复制」都点不到（那是系统/内核的选区工具条，页面 CSS 管不到）。
+   记忆 / 趁热卡片顶部只留一颗「复制」：一次取「题目 + 答案」两段，
+   不需要先展开答案、也不需要长按选区；走 copyText()（剪贴板 API + execCommand 兜底）。 */
+
+/* 渲染后的 HTML → 带换行的纯文本：克隆到屏幕外再读 innerText。
+   不能直接读原节点：答案收起时 .rv 是 0 行高 + overflow:hidden，innerText 会拿不到内容。 */
+function plainTextOf(el){
+  if(!el) return '';
+  let clone = null;
+  try{
+    clone = el.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.cssText = 'position:fixed;left:-9999px;top:0;width:640px;opacity:0;pointer-events:none';
+    document.body.appendChild(clone);
+    const t = String(clone.innerText || clone.textContent || '');
+    const lines = t.split(String.fromCharCode(13)).join('').split(String.fromCharCode(10));
+    const out = [];
+    for(const line of lines){
+      const s = line.trimEnd();
+      if(!s){ if(out.length && out[out.length - 1] !== '') out.push(''); continue; }
+      out.push(s);
+    }
+    return out.join(String.fromCharCode(10)).trim();
+  }catch(_){
+    return String(el.textContent || '').trim();
+  }finally{
+    if(clone && clone.parentNode) clone.parentNode.removeChild(clone);
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const btn = (e.target && e.target.closest) ? e.target.closest('[data-qa-copy]') : null;
+  if(!btn) return;
+  e.preventDefault();
+  const card = btn.closest('.memory-card');
+  if(!card) return;
+  const qText = plainTextOf(card.querySelector('.ptitle'));
+  const aText = plainTextOf(card.querySelector('#memAnswerBody, #hotAnswerBody'));
+  if(!qText && !aText){ toast('这道题还没有内容'); return; }
+  const payload = `题目：${qText || '（无标题）'}\n\n答案：${aText || '（暂无答案）'}`;
+  copyText(payload).then(ok => toast(ok ? '题目 + 答案已复制' : '复制失败，请手动选择'));
+});
 </script>
 <script>
-const SW_VERSION = '148';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '159';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

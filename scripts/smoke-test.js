@@ -1206,8 +1206,35 @@ console.log('\n[关键实现点静态断言]');
   ok(!/transition:width \.3s/.test(html), '清掉从未生效的 transition:width（段宽由 flex 分配）');
   ok(!/function animateLvBar/.test(html) && /data-n="\$\{sp\.n\}"/.test(html) && /flex-grow var\(--dur-slow\) var\(--ease-out\)/.test(html),
      '等级条段宽走 CSS 过渡（记忆页改局部更新后段节点得以复用，过渡才真正生效；WAAPI 补帧已删）');
-  ok(/@media \(prefers-reduced-motion: no-preference\)\{\s*\.pbar > i\.lvM\{animation:/.test(html),
+  ok(/@media \(prefers-reduced-motion: no-preference\)\{\s*\.pbar > i\.lvM::before\{animation:lvM-flow[^}]*\}\s*\.pbar > i\.lvM::after\{animation:lvM-arc/.test(html),
      'lvM 流光包进 no-preference（reduced-motion 下不再"闪一下再停"）');
+  /* 流光与呼吸都是 infinite：只要进度页停着就一直在跑。background-position / box-shadow
+     不可合成、每帧要主线程重绘；改成 transform + opacity 后才能进合成层。 */
+  ok(/@keyframes lvM-flow\{from\{transform:none\}to\{transform:translateX\(-50%\)\}\}/.test(html)
+     && !/@keyframes lvM-flow\{[^}]*background-position/.test(html)
+     && !/@keyframes lvM-arc\{[^}]*box-shadow/.test(html),
+     'lvM 流光/呼吸走 transform + opacity（合成动画，不再每帧重绘渐变与阴影）');
+  /* 搜索最多 200 条但一屏只放得下五六条，屏幕外的条目原本也要走完布局与绘制。
+     content-visibility 只能给搜索页：浏览页 .q 要参与 flipAway，估算尺寸会把位移算错。 */
+  ok((html.match(/content-visibility:auto/g)||[]).length === 1 && /\.sr-item\{[^}]*content-visibility:auto/.test(html),
+     'content-visibility 只给搜索结果条目（浏览页 .q 依赖真实位置，不能跳过布局）');
+  /* 旧实现是 browseLimit += 200 后整页重建：第 N 次点要重新解析 N×200 张卡，
+     而且已展开的答案会被模板重新盖回折叠态（见 syncBrowseAfterDelete 里对局部更新的说明）。 */
+  ok(/moreBtn\.onclick[\s\S]{0,1200}?insertAdjacentHTML\('beforebegin'/.test(html)
+     && !/browseLimit \+= 200; renderContent\(\)/.test(html),
+     '「显示更多」增量追加（不重建已渲染的卡片，展开状态与滚动位置都保留）');
+  /* 圆形扩散要把静态快照做 clip-path 扩张：时长一长就"冻住"、压短像闪一下，两头都不对；
+     自绘遮罩层还会在"洞从全屏跳到 0"那一帧多出屏闪。交叉淡入淡出只动两层 opacity。 */
+  ok(/document\.startViewTransition\(commit\)/.test(html)
+     && !/clipPath: \[`circle\(0px at/.test(html)
+     && /animation-duration:420ms/.test(html)
+     && /mix-blend-mode:normal/.test(html),
+     '换肤改为交叉淡入淡出（无圆形扩散、无全站颜色过渡）');
+  ok(!/theme-wipe/.test(html) && !/--vt-r/.test(html),
+     '自绘遮罩层已清干净（避免残留层再次造成整屏遮盖或屏闪）');
+  ok(/_vtHold = !!on;[\s\S]{0,400}?if\(!_vtHold\) restartCanvasLoop\(\);/.test(html)
+     && !/_uHidden \|\| _vtHold/.test(html),
+     '换肤期间不停画布循环（快照撤走那一刻接上的是连续画面）');
   ok(/role="img"/.test(html) && /setAttribute\('aria-label', lvBar\.label\)/.test(html),
      '等级条对读屏暴露一句话描述（纯色块否则等于没有信息）');
   ok(/title="\$\{LV_NAME\[sp\.lv\]\} · \$\{sp\.n\} 题（\$\{sp\.p\}%）"/.test(html),
@@ -1592,6 +1619,19 @@ console.log('\n[关键实现点静态断言]');
       && /@supports \(height:100dvh\)\{/.test(html)
       && !/connect-src 'self' https: http:;/.test(html),
       '总览待复习卡可键盘激活；CSP 去掉裸 http:（保留 localhost 调试）；dvh 兜底改绑 @supports');
+   // 总览保留率：avgR 是数字（旧版是 {pct} 对象），滚动动画必须传数字并带 %。
+   // 曾写成 ret.pct（恒 undefined）→ countUpNum 取 +undefined||0，每次把正确读数盖成 0。
+   ok(/if\(ret != null\) roll\('ovRetention', ret, 'ret', v => Math\.round\(v\) \+ '%'\)/.test(html)
+      && !/roll\('ovRetention', ret\.pct/.test(html),
+      '总览保留率的滚动传数字 avgR 并以 % 收尾（不再被 undefined 盖成 0）');
+   // 评分音效：手机外放对 500Hz 以下衰减很快 —— 四档必须整体抬进可听区，
+   // 否则会出现“只听得见倒背如流”（第四档还叠了一层高八度奖励音，更容易盖过前三档）
+   ok(/const GRADE_SEMI = \{1:0, 2:4, 3:7, 4:12\}/.test(html)
+      && /function gradeRootOf\(prof\)/.test(html)
+      && /Math\.min\(820, Math\.max\(620, base\)\)/.test(html)
+      && /vol: vol \* 0\.5/.test(html)
+      && /playTone\(gradeRootOf\(prof\), prof, 0\)/.test(html),
+      '四档音高抬进 620~820Hz 可听区，倒背如流的奖励音只占半音量（旧版只听得见第四档）');
    // 写入失败状态必须可恢复：只置位不清零会让一次瞬时失败永久锁死评分（见 clearFault）
    ok(/function clearFault\(\)\{/.test(html)
       && /if\(!_fault \|\| _frozen\) return;/.test(html)
@@ -1619,6 +1659,25 @@ console.log('\n[关键实现点静态断言]');
       && /missing\.push\(PERSIST_LABEL\[key\] \|\| key\)/.test(html)
       && /order: ls\.order \|\| \[\] \}\), \{ quiet: true \}\)/.test(html),
       '备份导入说明版本差异（旧格式缺项 / 备份比本机新），降级残留恢复不当成备份文件');
+   // 复制：不能再依赖系统长按菜单（部分 Android WebView 会画出一块空白浮层，点不到「复制」）——
+   // 复制入口只保留一颗：直接取「题目 + 答案」，不用先展开答案、也不用选区
+   ok(/data-qa-copy/.test(html) && (html.match(/data-qa-copy/g) || []).length >= 2
+      && /function plainTextOf\(/.test(html)
+      && /card\.querySelector\('#memAnswerBody, #hotAnswerBody'\)/.test(html)
+      && /题目：\$\{qText/.test(html) && /答案：\$\{aText/.test(html),
+      '题目 + 答案一键复制（记忆 / 趁热各一颗；不依赖长按选区，答案收起时也能复制）');
+   ok(!/id="selCopy"|\.sel-copy|data-answer-copy/.test(html),
+      '不再保留选区复制浮条 / 答案单独复制键（复制入口收敛为一颗）');
+   // 复制按钮只保留图标：文案交给 title / aria-label，避免题目行被两颗带字按钮挤满
+   ok(/aria-label="复制题目和答案">📋<\/button>/.test(html)
+      && !/aria-label="复制题目和答案">📋 复制/.test(html),
+      '复制按钮只显示图标，不再显示“复制”二字');
+   // 编辑保存后必须作废局部更新的 qid 判据：记忆 / 刷题卡只在换题时重写题面与答案，
+   // 编辑当前题时 qid 不变，不重置就会一直显示旧内容（用户实测：要刷新页面才更新）
+   ok(/_memCardQid = null;[\s\S]{0,60}_pracQid = null;[\s\S]{0,30}renderAll\(\);/.test(html),
+      '保存修改会作废 _memCardQid / _pracQid 后重渲染（当前卡立即显示新内容）');
+   ok(!/\.q,\.ov-card,\.memory-card,\.theme-card,\.grill-mode-card,\.pbar/.test(html),
+      '正文卡片不再设 touch-action:manipulation（长按选区不能被当成普通手势）');
 }
 
 console.log('\n结果：' + pass + ' 通过 / ' + fail + ' 失败');
