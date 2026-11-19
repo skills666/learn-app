@@ -26,17 +26,25 @@
     --good:#4fd08a; --warn:#f6a85b; --bad:#f06a6a;
     /* --radius 在下方设计令牌区统一赋值（= --r-card），此处不再重复写一遍 14px */
     --shadow:0 8px 30px rgba(0,0,0,.45);
-    --card-hover-shadow:0 8px 26px rgba(0,0,0,.35),0 0 0 1px rgba(var(--accent2-rgb),.12),0 0 22px rgba(var(--accent2-rgb),.16);
-    --scroll-thumb:var(--line2); --scroll-thumb-hover:var(--accent2);
+    /* 悬停只留中性轻投影：彩色外发光与紫描边环已按 unslop 审计移除（深度靠表面台阶与发丝线） */
+    --card-hover-shadow:0 4px 16px rgba(0,0,0,.28);
+    /* 强调色上的文字色：applyTheme 按 accent 的 WCAG 亮度覆写（浅accent→深字，深accent→白字） */
+    --on-accent:#0d1016;
+    --scroll-thumb:var(--line2); --scroll-thumb-hover:var(--accent);
 
     /* ===== 设计令牌（颜色之外的那一半）=====
        颜色已经变量化，但"节奏"没有：字体栈抄了 5 遍、缓动曲线 6 条、圆角 11 种、
        版心 1200/1040/880/820 四套，改一处要全文件搜字面量。这里把这一层抽出来，
        下文凡是有名字的地方一律引用令牌 —— 调一处、全站跟着变。 */
 
-    /* 字体栈：唯一两套（正文 / 等宽），等宽此前被复制在 5 个 <pre> 规则里 */
-    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
-    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    /* 字体栈：完全跟随系统，不点名任何 CJK 字体（用户要求：每台设备用它自己的默认字体）。
+       · 手机：generic sans-serif 落在厂商默认（MiSans / HarmonyOS Sans / 苹方 …），
+         点名 Roboto 之后的 CJK 族会抢在厂商字体前面，故不写；
+       · 电脑：system-ui 取 OS 界面字体（Win Segoe UI、Mac SF），CJK 由系统回退（雅黑 / 苹方）。
+       等宽支同理只留 ui-monospace + generic：数字/键帽/代码用系统自带等宽，
+       保证 tabular 数字不抖。标题不再另设展示面：层级靠字号/字重/颜色。 */
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,monospace;
 
     /* 圆角梯度：按"组件体量"命名，不按像素 —— 取值与既有实现逐一对齐，换上令牌不改变观感 */
     --r-card:14px;          /* 列表卡 / 统计卡 */
@@ -181,7 +189,7 @@
      实测加了 z-index:1 后，10 个动态主题的特效会被不透明卡片挡住、主题几乎失效。
      因此"不压住文字"改为在特效本身解决：所有主题都按"低对比、大面积、无高频小块"来做，峰值透明度逐个压过。
      height 用 100vh + 100dvh 双写：老内核忽略 dvh，新内核避免地址栏收展时底部被裁。 */
-  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100vw;overflow:hidden;isolation:isolate}
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100vw;overflow:hidden;isolation:isolate;position:relative;z-index:1}
 
   /* ---------- Topbar (导航标签) ---------- */
   /* 顶栏背景要铺满（含侧边安全区），但里面的标签不能钻到挖孔底下 ——
@@ -194,37 +202,38 @@
      GL 物理层是不透明的全屏背景、只能垫在内容之下，做不到“飘到顶栏之上”（真做上去会把整页盖没）。
      所以两类无法逐像素一致，这里统一的是“顶栏不额外挡背景”。
      顺带去掉上一版的 backdrop-filter：常驻顶栏的模糊每个主题都吃一层合成开销，不值当。 */
-  .topbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:calc(8px + env(safe-area-inset-top, 0px)) max(18px, var(--safe-x, 0px)) 8px max(18px, var(--safe-x, 0px));background:transparent;border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
+  .topbar{display:flex;align-items:center;justify-content:center;gap:8px;padding:calc(8px + env(safe-area-inset-top, 0px)) max(16px, var(--safe-x, 0px)) 8px max(16px, var(--safe-x, 0px));background:transparent;border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;min-height:44px}
   .tabs{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
-  .tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:5px 13px;border-radius:var(--r-sm);cursor:pointer;color:var(--muted);font-size:var(--fs-ui);font-weight:600;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background var(--dur-fast),color var(--dur-fast)}
+  .tab{display:inline-flex;align-items:center;justify-content:center;min-height:var(--ctl-sm);padding:4px 12px;border-radius:var(--r-sm);cursor:pointer;color:var(--muted);font-size:var(--fs-ui);font-weight:500;border:1px solid transparent;user-select:none;white-space:nowrap;transition:background var(--dur-fast),color var(--dur-fast)}
   @media (hover:hover){ .tab:hover{background:var(--panel);color:var(--text)} }
-  .tab.active{background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),rgba(var(--accent2-rgb),.14));color:var(--text);border-color:var(--line2);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+  /* 激活态＝表面台阶 + 发丝线：不再用双色渐变底与内高光 */
+  .tab.active{background:var(--panel2);color:var(--text);border-color:var(--line2)}
   .tab .ic{margin-right:3px}
   /* min-height：评分后统计项（待复习/今日已刷/连续）会增减，固定最小高度避免未换行时高度跳动；
      tabular-nums：数字等宽，评分后数字变化（23→22）不再让居中的整组统计项左右微移 */
   /* 底色不用 --bg2 + 分割线：那样与顶栏合成两条相距 28px 的平行硬线，整页被切成三段。
      改成从顶栏底色渐隐到画布，统计条成为"顶栏 → 内容"之间的过渡带；
      且对 img-bg 那种半透明的 --bg2 同样成立（实色渐变会盖掉背景图） */
-  .stats-bar{display:flex;align-items:center;justify-content:center;gap:var(--sp-4);padding:6px 18px 9px;background:linear-gradient(180deg,var(--bg2),transparent);flex:none;font-size:var(--fs-xs);color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
+  .stats-bar{display:flex;align-items:center;justify-content:center;gap:var(--sp-4);padding:4px 16px 8px;background:linear-gradient(180deg,var(--bg2),transparent);flex:none;font-size:var(--fs-xs);color:var(--muted);min-height:28px;font-variant-numeric:tabular-nums}
   /* min-width 是必需的，不是保险：flex:1 展开等于 flex-basis:0%，换行计算时这根条被当成 0 宽的项，
      于是它只能吃所在行的残余空间 —— 手机上统计项一多，残余就剩几像素，条"缩成一条线"看不见了。
      给了 min-width，flex 才会按固定宽度给它排版，当前行放不下就整根换到下一行，窄屏上始终可见 */
   .stats-bar .bar{flex:1;min-width:72px;max-width:300px;height:6px;border-radius:4px;background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden}
   /* 与全站其它条统一：段不自带圆角，左端交给容器 overflow:hidden 裁、末段右端描一个同半径（6px 高 ⇒ 3px）圆角。
      原先每段都自带 4px 圆角，两段接缝处是两个圆角背靠背，会露出底下的槽色形成一道豁口 */
-  .stats-bar .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .stats-bar .bar>i{display:block;height:100%;background:var(--accent)}
   .stats-bar .bar>i:last-child{border-radius:0 3px 3px 0}
-  .stats-bar b{color:var(--text);font-weight:700}
-  .stats-bar .urg{color:var(--warn);font-weight:700}
+  .stats-bar b{color:var(--text);font-weight:600}
+  .stats-bar .urg{color:var(--warn);font-weight:600}
   /* 搜索框此前是"输入框 outline 被清掉、外层也没有任何焦点反馈"—— 键盘 Tab 进来时看不出光标在哪。
      补 :focus-within：描边点亮 + 一圈 accent 光晕，与设置面板里的输入框同一套语言 */
   /* min-height 走控件高度令牌：此前没有任何高度约束，手机上（padding 3px + 12px 字）只有 ~22px，
      点不准 —— 它是顶栏最常用的入口之一，却是全站唯一没纳入 --ctl-* 的控件。 */
-  .topbar .search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:5px 10px;color:var(--muted);flex:none;min-height:var(--ctl-md);
+  .topbar .search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:4px 12px;color:var(--muted);flex:none;min-height:var(--ctl-md);
                   transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
-  .topbar .search:focus-within{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.16)}
-  .topbar .search:focus-within .search-ic{color:var(--accent2)}
+  .topbar .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.16)}
+  .topbar .search:focus-within .search-ic{color:var(--accent)}
   .topbar .search input{background:none;border:none;outline:none;color:var(--text);font-size:var(--fs-ui);width:180px}
   /* 占位符用 --muted 而不是最淡的 --faint：--faint 压 --panel 只有约 3.7:1，
      低于 WCAG 对小字的 4.5:1（热力图刻度早先已因同样原因改成 --muted，这里漏改了） */
@@ -233,12 +242,12 @@
      input 自身不再叠那条全局的 --focus-ring：两层套在一起是一深一浅、半径还不同的两个圈，
      而且 input 是 background:none;border:none 的 —— 光圈没有边框可依附，直接浮在文字外面，格外突兀 */
   .topbar .search input:focus-visible{box-shadow:none}
-  .btn{min-height:var(--ctl-md);border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:var(--r-md);cursor:pointer;font-size:var(--fs-ui);font-weight:600;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-  @media (hover:hover){ .btn:hover{border-color:var(--accent2)} }
-  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0b0e16;
-               box-shadow:0 2px 8px rgba(0,0,0,.25);transition:filter var(--dur-quick),box-shadow var(--dur),transform var(--dur)}
-  .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px);
-                     box-shadow:0 6px 22px rgba(var(--accent-rgb),.38),0 4px 16px rgba(var(--accent2-rgb),.32)}
+  .btn{min-height:var(--ctl-md);border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 12px;border-radius:var(--r-md);cursor:pointer;font-size:var(--fs-ui);font-weight:500;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  @media (hover:hover){ .btn:hover{border-color:var(--accent)} }
+  /* 主按钮＝单强调色实底 + 按亮度派生的文字色；悬停只做表面明度台阶，不抬升不发光 */
+  .btn.primary{background:var(--accent);border:none;color:var(--on-accent);
+               box-shadow:0 2px 8px rgba(0,0,0,.25);transition:filter var(--dur-fast),box-shadow var(--dur-fast)}
+  @media (hover:hover){ .btn.primary:hover{filter:brightness(.96)} }
   .btn.ghost{background:transparent}
   @media (hover:hover){ .btn.danger:hover{border-color:var(--bad);color:var(--bad)} }
   .btn.sm{min-height:var(--ctl-sm);padding:5px 9px;font-size:var(--fs-sm)}
@@ -259,22 +268,21 @@
   .sk-card::after,.sk-block::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(var(--text-rgb,255,255,255),.06),transparent);animation:skShimmer 1.4s ease-in-out infinite}
   @keyframes skShimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
   @media (max-width:640px){.sk-row{grid-template-columns:repeat(2,1fr)}}   /* 窄屏两列，贴合真实统计卡布局 */
-  /* 视图切换：内容块逐个「上浮 + 去模糊」交错入场（致敬 DeepSeek Harness 的 hero-enter） */
-  .content.in > *{animation:riseIn .55s var(--ease-out) backwards}
+  /* 视图切换：方向性滑入 + 逐项轻交错（恢复旧版空间连续感，幅度/时长收克制）：
+     往右切从右滑入、往左切从左滑入（data-nav 由 renderAll 写入）；交错封顶 .18s，整段约 .5s 演完 */
+  .content.in > *{animation:riseIn .34s var(--ease-out) backwards}
   .content.in > *:nth-child(1){animation-delay:.02s}
-  .content.in > *:nth-child(2){animation-delay:.06s}
-  .content.in > *:nth-child(3){animation-delay:.10s}
-  .content.in > *:nth-child(4){animation-delay:.14s}
-  .content.in > *:nth-child(5){animation-delay:.18s}
-  .content.in > *:nth-child(6){animation-delay:.22s}
-  .content.in > *:nth-child(7){animation-delay:.26s}
-  .content.in > *:nth-child(8){animation-delay:.30s}
-  .content.in > *:nth-child(n+9){animation-delay:.34s}
+  .content.in > *:nth-child(2){animation-delay:.05s}
+  .content.in > *:nth-child(3){animation-delay:.08s}
+  .content.in > *:nth-child(4){animation-delay:.11s}
+  .content.in > *:nth-child(5){animation-delay:.14s}
+  .content.in > *:nth-child(6){animation-delay:.17s}
+  .content.in > *:nth-child(n+7){animation-delay:.18s}
   /* 超长列表（搜索结果最多 200 条 .sr-item）只让首批入场：一屏最多看到十来条，
      第 25 条往后全部同时做 transform+opacity 动画只是白白拖慢低端机，直接显示观感无差别 */
   .content.in > *:nth-child(n+25){animation:none}
-  @keyframes riseIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-  @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
   /* 无障碍：系统开启「减少动态效果」时，缩短/禁用 CSS 动画与过渡 */
   @media (prefers-reduced-motion: reduce){
     /* 延迟也要清零：交错入场（.content.in > * 的阶梯延迟）只压时长会变成"逐项闪现" */
@@ -284,15 +292,12 @@
        与 lvM 等级条（见上方 no-preference 那段）同一处理原则 */
     .sk-card::after,.sk-block::after,.ov-card.ov-act .n{animation:none !important}
   }
-  .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .doc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}
   /* 页面标题：流体字号 + 平衡断行 + 签名式 accent 短竖条。
      字号用 clamp 在 768~1200px 之间从 20 升到 26 —— 两端比原来的 18/24 各抬 2px（窄屏下页面标题必须压过卡片标题 .ptitle 的 18~22），
      所以只是把断点处的"跳变"换成连续过渡，不是改设计。text-wrap:balance 让两行标题
      断得更匀（不再出现"第一行一个字 + 第二行一长串"） */
-  .doc-head h2{margin:0;font-size:clamp(20px,1.39vw + 9.3px,26px);font-weight:800;letter-spacing:.3px;line-height:1.25;text-wrap:balance}
-  /* 一级页面的视觉锚点：顶栏之下、每页左上角同一处短竖条（渐变取主题双主色） */
-  .doc-head h2::before{content:'';display:inline-block;width:3px;height:.76em;border-radius:2px;
-    background:linear-gradient(180deg,var(--accent),var(--accent2));margin-right:10px;vertical-align:-.04em}
+  .doc-head h2{margin:0;font-size:clamp(20px,1.39vw + 9.3px,26px);font-weight:600;letter-spacing:0;line-height:1.25;text-wrap:balance;font-family:var(--font-sans)}
   .doc-head .meta{color:var(--muted);font-size:var(--fs-ui);margin-top:4px}
   /* 槽底用主题文字色分量：写死深色在绢这类浅底主题下会变成白卡片上的一条黑槽 */
   /* --text-rgb 由 applyTheme 条件写入（浅底主题才算得出来），必须带兜底值：
@@ -300,7 +305,7 @@
   .bigbar{height:10px;border-radius:var(--r-sm);background:rgba(var(--text-rgb,255,255,255),.14);overflow:hidden;margin-top:12px;max-width:420px}
   /* 前沿圆角与单段 .pbar 统一（左端同样交给容器裁）：10px 高度下容器 8px 圆角的实际半径是 5px。
      宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点，过渡不触发） */
-  .bigbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:0 5px 5px 0}
+  .bigbar > i{display:block;height:100%;background:var(--accent);border-radius:0 5px 5px 0}
   /* 二级页返回按钮（题目浏览 / 刷题） */
   .back-btn{color:var(--muted)}
   @media (hover:hover){ .back-btn:hover{color:var(--text)} }
@@ -322,18 +327,17 @@
   .q-summary,.set-section,.grill-mode-card,.tag-item{
     background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card);
   }
-  .q{padding:16px 18px;margin-bottom:13px;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
-  .q:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);
-           box-shadow:var(--card-hover-shadow)}
+  .q{padding:16px;margin-bottom:12px;transition:border-color var(--dur-fast)}
+  .q:hover{border-color:var(--line2)}
   .q .qhead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
   /* 宽度用 min-width 而不是固定值：文档页那套（.docs-wrap .q .qnum）早就是 min-width + 内边距，
    而这里是写死的 26px —— 三位数题号（第 100 题起）加上放大字号会把徽标撑破。基线尺寸不变：
    一两位数字仍落在 26px 上，只有内容更宽时才长出来 */
-  .q .qnum{flex:none;min-width:26px;height:26px;padding:0 5px;border-radius:var(--r-sm);background:var(--panel2);
-          display:grid;place-items:center;font-size:var(--fs-sm);font-weight:700;color:var(--accent);margin-top:1px}
+  .q .qnum{flex:none;min-width:26px;height:26px;padding:0 4px;border-radius:var(--r-sm);background:var(--panel2);
+          display:grid;place-items:center;font-size:var(--fs-sm);font-weight:500;color:var(--muted);margin-top:1px;font-family:var(--font-mono)}
   /* 650 是"半粗"的写法，但系统字体栈没有这个字重，各平台会就近取整（Mac 取 600 / 部分安卓取 700），
      同一份代码在两端厚薄不一 —— 统一落 600，跨平台一致。text-wrap:pretty 让长标题的末行不留孤字 */
-  .q .qtitle{font-size:var(--fs-base);font-weight:600;line-height:var(--lh-snug);flex:1;text-wrap:pretty}
+  .q .qtitle{font-size:var(--fs-base);font-weight:500;line-height:var(--lh-snug);flex:1;text-wrap:pretty}
   .q .qacts{display:flex;gap:var(--sp-2);flex:none}
   .iconbtn{width:var(--ctl-md);height:var(--ctl-md);border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--panel);
            color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:var(--fs-base);transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
@@ -342,7 +346,7 @@
   @media (hover:hover){ .iconbtn.del:hover{color:var(--bad);border-color:var(--bad)} }
   /* 展开节奏与通用折叠容器 .rv 完全对齐（此前 .35s ease / .38s ease-out 两套，同一种交互两种手感） */
   .answer{overflow:hidden;transition:grid-template-rows .38s var(--ease-out),opacity .3s ease,margin-top .38s ease;display:grid;grid-template-rows:0fr;opacity:0;margin-top:0}
-  .answer.show{grid-template-rows:1fr;opacity:1;margin-top:14px}
+  .answer.show{grid-template-rows:1fr;opacity:1;margin-top:16px}
   .answer .inner{overflow:hidden;border-top:1px dashed var(--line2);padding-top:13px;color:var(--text);line-height:var(--lh-read);font-size:var(--fs-body)}
   .answer .inner p{margin:0 0 10px}
   .answer .inner p:last-child{margin-bottom:0}
@@ -352,7 +356,7 @@
   .answer .inner pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
   .answer .inner pre code{background:none;padding:0;color:var(--text);font-size:var(--fs-sm);font-family:var(--font-mono);white-space:pre}
   .answer .inner strong{color:var(--text)}
-  .answer .label{font-size:var(--fs-xs);color:var(--accent);letter-spacing:1px;font-weight:700;margin-bottom:6px}
+  .answer .label{font-size:var(--fs-xs);color:var(--muted);letter-spacing:0;font-weight:500;margin-bottom:8px}
   /* 通用「展开/收起」容器：grid-rows 0fr→1fr 让高度平滑增长，替代 display:none 的硬切换。
      用法：外层加 .rv（展开时再加 .show），内容包一层 .rv-in（负责裁剪与内边距/边框）。 */
   .rv{display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;
@@ -372,33 +376,31 @@
   .answer .inner,.pcard .panswer,.memory-answer,.ai-answer,.ai-review,.grill-msg,.grill-fb-content,
   .season-sub,.modal .desc,.cfg-card .desc,.q-summary .qa,.sr-item .snip{text-wrap:pretty}
   @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .anim-in{animation:fadeSlideUp .34s var(--ease-out) both}
+  .anim-in{animation:fadeSlideUp .24s var(--ease-out) both}
   /* 空状态（与 .flash-empty 同一套，共享声明见下）：
      图标落在一个随主题着色的圆形柔光底座上，文案限宽 52ch 居中 —— 宽屏上一行说明文字拉满 1200px 会散。
      原来靠 opacity:.62 压暗整块（连图标一起灰掉），改用 --muted 前景色，底座能保持清晰 */
   .empty,.flash-empty{text-align:center;padding:64px 20px;font-size:var(--fs-body);line-height:1.7;max-width:52ch;margin:0 auto}
   .empty{color:var(--muted)}
   .flash-empty{color:var(--muted)}
-  .empty .big,.flash-empty .big{position:relative;width:92px;height:92px;margin:0 auto 18px;
-    display:grid;place-items:center;font-size:40px;line-height:1}
-  .empty .big::before,.flash-empty .big::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
-    background:radial-gradient(circle at 50% 42%,rgba(var(--accent-rgb),.18),rgba(var(--accent2-rgb),.08) 58%,transparent 74%);
-    border:1px solid rgba(var(--accent-rgb),.14)}
+  .empty .big,.flash-empty .big{position:relative;width:64px;height:64px;margin:0 auto 16px;
+    display:grid;place-items:center;color:var(--muted)}
+  .empty .big svg,.flash-empty .big svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 
   /* ---------- 文档视图：块形（网格）展示 ---------- */
-  .docs-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-  .docs-toolbar .dt-count{color:var(--muted);font-size:var(--fs-ui);font-weight:600;font-variant-numeric:tabular-nums}
+  .docs-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .docs-toolbar .dt-count{color:var(--muted);font-size:var(--fs-ui);font-weight:500;font-variant-numeric:tabular-nums}
   .docs-toolbar .dt-count b{color:var(--accent)}
   /* 每张卡片等高等宽，标题撑开、进度与按钮贴底 */
-  .docs-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;align-items:stretch}
-  .docs-wrap .q{margin-bottom:0;display:flex;flex-direction:column;height:100%;padding:14px 15px}
+  .docs-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:16px;align-items:stretch}
+  .docs-wrap .q{margin-bottom:0;display:flex;flex-direction:column;height:100%;padding:16px}
   .docs-wrap .q .qhead{display:contents}   /* 让 编号/标题/按钮 直接参与卡片纵向排列 */
-  .docs-wrap .q .qnum{order:1;width:auto;height:22px;min-width:26px;padding:0 7px;border-radius:var(--r-sm);margin:0;align-self:flex-start;font-size:var(--fs-xs)}
+  .docs-wrap .q .qnum{order:1;width:auto;height:24px;min-width:26px;padding:0 8px;border-radius:var(--r-sm);margin:0;align-self:flex-start;font-size:var(--fs-xs)}
   .docs-wrap .q .qtitle{order:2;flex:1;margin-top:8px;font-size:var(--fs-body);
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .docs-wrap .q .mini{order:3}
   .docs-wrap .q .pct{order:4}
-  .docs-wrap .q .qacts{order:5;margin-top:10px;width:100%}
+  .docs-wrap .q .qacts{order:5;margin-top:12px;width:100%}
   .docs-wrap .q .qacts .btn{flex:1;justify-content:center}
   .docs-wrap .q .qacts .btn.danger{flex:0 0 auto;padding-left:11px;padding-right:11px}
 
@@ -414,14 +416,14 @@
   /* 单段条（刷题页进度）的宽度：本页已改为局部更新，节点复用后这条过渡才真正生效；
      新节点在插入前就把 width 设成最终值，因此不会"从 0 长出来"。
      记忆页的等级条另有 flex-grow 过渡（.pbar.lvbar > i，特异性更高，不受这条影响） */
-  .pbar > i{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0;transition:width var(--dur-slow) var(--ease-out)}
+  .pbar > i{display:block;height:100%;min-width:2px;border-radius:0 5px 5px 0}
   /* 等级条（分布条）专属：段间留 2px 缝让等级分界看得见，圆角改由容器 overflow:hidden 裁
      —— 逐段 3px 圆角会把 2px 宽的极小段压成怪胶囊，首尾圆角也接不上容器 */
   .pbar.lvbar{gap:2px}
   /* 段宽：记忆页已改为局部更新，段节点不再随每次评分重建，这条 flex-grow 过渡才真正生效 ——
      此前每次评分都是全新节点，CSS 过渡永不触发，只能用 animateLvBar 手动补帧（那套 22 行已删）。
      新加的段在插入前就把 flex 设成最终值，因此不会"从 0 长出来" */
-  .pbar.lvbar > i{min-width:4px;border-radius:0;transition:opacity var(--dur-quick),flex-grow var(--dur-slow) var(--ease-out)}
+  .pbar.lvbar > i{min-width:4px;border-radius:0;transition:opacity var(--dur-quick)}
   /* 悬停某一段：该段保持原色、其余变淡（GitHub 语言条的可读性做法），从条上就能读出单个等级的占比。
      包在 hover:hover 里：触屏没有真 hover，手指点过的那段会一直粘在高亮态 */
   @media (hover:hover){
@@ -435,78 +437,57 @@
   .pbar > i.lv2,.an-dot.lv2{background:var(--lv2,#50a050)}
   .pbar > i.lv3,.an-dot.lv3{background:var(--lv3,#30a0a0)}
   .pbar > i.lv4,.an-dot.lv4{background:var(--lv4,#4068c0)}
-  .pbar > i.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc);box-shadow:0 0 6px rgba(139,92,246,.45)}
-  .an-dot.lv5{background:linear-gradient(90deg,#8b5cf6,#c084fc)}
-  /* 满级流光：色带与呼吸光晕都交给伪元素。background-position 与 box-shadow 都不可合成，
-     每帧要主线程重绘；而这是 infinite 动画，只要进度页停着就一直在吃帧预算。
-     改成 transform 平移 + opacity 呼吸后，两者都进合成层，主线程零成本。
-     色带放 ::before：宽 600%、背景按 50% 重复 —— 平移 -50%（正好一个 3W 周期）后首尾相接，
-     循环处无跳变。用 600% 而不是 300% 是为了让窗口里的色阶密度与原 background-size:300% 一致。
-     外发光必须留在元素本身：::after 在 overflow:hidden 里，向外那层会被裁掉。 */
-  .pbar > i.lvM{position:relative;overflow:hidden;z-index:2;border:1.5px solid rgba(255,224,102,.95);box-shadow:0 0 12px rgba(192,132,252,.45),0 0 9px rgba(255,224,102,.7)}
-  .pbar > i.lvM::before{content:'';position:absolute;top:0;left:0;height:100%;width:600%;pointer-events:none;
-    background-image:linear-gradient(90deg,#f5d0fe,#e9b8ff,#c4b5fd,#93c5fd,#67e8f9,#5eead4,#86efac,#bef264,#fde68a,#fcd34d,#fdba74,#fb923c,#fb7185,#f472b6,#f5d0fe);
-    background-size:50% 100%;background-repeat:repeat-x}
-  .pbar > i.lvM::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    box-shadow:inset 0 0 10px rgba(255,224,102,.8)}
-  .an-dot.lvM{background:linear-gradient(90deg,#f5d0fe,#93c5fd,#86efac,#fde68a,#f472b6)}
-  /* 流光与呼吸是纯装饰：包进 no-preference，系统开了「减少动态效果」时连 animation 声明都不存在。
-     原先靠全局那条 .01ms !important 兜底，效果是"闪一下再停"，比干脆不动更糟 */
-  @media (prefers-reduced-motion: no-preference){
-    .pbar > i.lvM::before{animation:lvM-flow 6s linear infinite}
-    .pbar > i.lvM::after{animation:lvM-arc 1.4s ease-in-out infinite}
-  }
-  /* 6s 走完 3W（一个周期），线速度 0.5W/s，与旧版 background-position 12s 走 6W 完全一致 */
-  @keyframes lvM-flow{from{transform:none}to{transform:translateX(-50%)}}
-  @keyframes lvM-arc{0%,100%{opacity:.35}50%{opacity:1}}
-  .pmeta{display:flex;justify-content:space-between;font-size:var(--fs-sm);color:var(--muted);margin-bottom:22px}
+  .pbar > i.lv5{background:var(--accent)}
+  .an-dot.lv5{background:var(--accent)}
+  /* 满级＝主色实底 + 琥珀发丝描边（签名方格的同族记号）：虹彩色带与呼吸光晕已移除 */
+  .pbar > i.lvM{position:relative;z-index:2;border:1.5px solid var(--accent3-ink, var(--accent3));background:var(--accent)}
+  .an-dot.lvM{background:var(--accent)}
+  .pmeta{display:flex;justify-content:space-between;font-size:var(--fs-sm);color:var(--muted);margin-bottom:24px}
   /* 进度页此前在 .content 的 28px 之外又自带 16px 横向内边距 → 左右留白实际 44px，
      与其它页面（28px）不同轴，翻页时整块内容会左右"漂"。横向留白统一交给 .content 的 --gutter，这里只管纵向节奏 */
-  .an-wrap{max-width:var(--rail);margin:0 auto;padding:18px 0}   /* 进度页是图表仪表盘，与总览同档（原 1040 是第三个数） */
-  .an-h{font-size:clamp(17px,.8vw + 12.8px,19px);font-weight:800;line-height:1.3;margin:2px 0;text-wrap:balance}
-  .an-sub{color:var(--muted);font-size:var(--fs-ui);margin-bottom:14px;text-wrap:pretty}
-  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin:14px 0}
-  .an-card{padding:14px 16px}
+  .an-wrap{max-width:var(--rail);margin:0 auto;padding:16px 0}   /* 进度页是图表仪表盘，与总览同档（原 1040 是第三个数） */
+  .an-h{font-size:clamp(17px,.8vw + 12.8px,19px);font-weight:600;line-height:1.3;margin:2px 0;text-wrap:balance;font-family:var(--font-sans)}
+  .an-sub{color:var(--muted);font-size:var(--fs-ui);margin-bottom:16px;text-wrap:pretty}
+  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-3);margin:16px 0}
+  .an-card{padding:16px}
   /* 数字等宽：进度页的值随复习实时变化，等宽后 9→10 不会把整块卡片顶得左右抖 */
-  .an-card .n{font-size:23px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  .an-card .n{font-size:23px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
   .an-card .t{font-size:var(--fs-sm);color:var(--muted);margin-top:3px}
   /* 图表卡片：热力图/预测图此前是裸块（无背景无边框、宽度也与卡片不一致），包一层与其他卡片同风格同宽 */
-  .an-chart-card{padding:12px 16px;margin-bottom:6px}
-  .an-sec{font-weight:700;font-size:var(--fs-base);margin:22px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .an-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .an-chart-card{padding:16px;margin-bottom:8px}
+  .an-sec{font-weight:600;font-size:var(--fs-base);margin:24px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .an-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
   .an-dot{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
-  .pcard{border-color:var(--line2);border-radius:var(--r-hero);padding:30px 32px;min-height:260px;
+  .pcard{border-color:var(--line2);border-radius:var(--r-hero);padding:32px;min-height:260px;
          box-shadow:var(--shadow);display:flex;flex-direction:column}
-  .pcard .ptag{font-size:var(--fs-xs);letter-spacing:1.5px;color:var(--accent2);font-weight:700;text-transform:uppercase}
+  .pcard .ptag{font-size:var(--fs-xs);letter-spacing:0;color:var(--muted);font-weight:500;text-transform:none}
   /* 题目主标题：流体字号 —— 此前桌面 22px 一路带到 360px 手机屏上（该视图是全应用唯一没做窄屏缩放的标题），
      手机上换行三次、把答案区推到屏外。clamp 让它在 750px 以下收到 18px，桌面端仍是 22px */
-  .pcard .ptitle{font-size:clamp(18px,1.2vw + 13px,22px);font-weight:800;line-height:1.42;margin:10px 0 18px;flex:1;text-wrap:pretty}
+  .pcard .ptitle{font-size:clamp(18px,1.2vw + 13px,22px);font-weight:600;line-height:1.42;margin:12px 0 20px;flex:1;text-wrap:pretty}
   .pcard .panswer{color:var(--muted);line-height:1.8;font-size:var(--fs-base)}
   /* 边框与内边距放进 .rv-in：放外层时即使内容折叠也仍会占位，会留下一道虚线 */
   .pcard .panswer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
-  .pcard .panswer .label{font-size:var(--fs-xs);color:var(--accent3-ink, var(--accent3));letter-spacing:1px;font-weight:700;margin-bottom:8px}
+  .pcard .panswer .label{font-size:var(--fs-xs);color:var(--muted);letter-spacing:0;font-weight:500;margin-bottom:8px}
   .pcard .panswer p{margin:0 0 10px}
   .pcard .panswer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:var(--fs-ui);color:var(--accent)}
   .pcard .panswer pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
   .pcard .panswer pre code{background:none;padding:0;color:var(--text);font-size:var(--fs-sm);font-family:var(--font-mono);white-space:pre}
   .pcard .panswer strong{color:var(--text)}
-  .pcontrols{display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap}
+  .pcontrols{display:flex;gap:12px;margin-top:24px;align-items:center;flex-wrap:wrap}
   .pcontrols .spacer{flex:1}
-  .reveal-hint{color:var(--text);opacity:.6;font-size:var(--fs-ui);text-align:center;margin-top:14px}
+  .reveal-hint{color:var(--text);opacity:.6;font-size:var(--fs-ui);text-align:center;margin-top:16px}
 
   /* overview
      5 张统计卡：≥901px 一排五张；中间区间（769~900）此前被压到每张约 140px，
      数字和标签同时挤在一起 —— 补一条中间断点，落到 3 列（768 及以下的窄屏规则更靠后，不受影响） */
-  .ov-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-3);margin-bottom:20px}
-  @media (max-width:900px){.ov-grid{grid-template-columns:repeat(3,1fr);gap:10px}}
-  .ov-card{padding:16px;text-align:center;
-           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
-  /* 悬停阴影改走 --card-hover-shadow（由 applyTheme 按深浅各给一套）：
-     原先这里是写死的黑投影 + 彩色外发光，浅底主题（绢）上会糊成一团脏影 */
-  .ov-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-3px);box-shadow:var(--card-hover-shadow)}
-  .ov-card .n{font-size:var(--fs-num);font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
-             background:linear-gradient(135deg,var(--accent),var(--accent2));
-             -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .ov-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-flow:dense;gap:var(--sp-3);margin-bottom:20px}
+  /* 待复习行动卡占两列：五张等宽同内容卡是模板默认，给网格一个节奏 */
+  .ov-grid .ov-act{grid-column:span 2}
+  @media (max-width:900px){.ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}}
+  .ov-card{padding:16px;text-align:center;transition:border-color var(--dur-fast)}
+  .ov-card:hover{border-color:var(--line2)}
+  /* 统计大数字＝实心主文字色：渐变字填充已移除；层级靠字号与颜色，不靠渐变 */
+  .ov-card .n{font-size:var(--fs-num);font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--text)}
   .ov-card .t{color:var(--muted);font-size:var(--fs-ui);margin-top:4px}
   /* 总览待复习卡：「到期」与「未学」同字号同字重并排（过去未学只挂在大数字后面当小字尾巴，
      而记忆队列其实是两者之和 —— 只读卡面的人会把自己的欠账看少一半）。
@@ -517,35 +498,29 @@
   .ov-card .n.plain{background:none;-webkit-text-fill-color:currentColor}
   /* 提醒色走语义令牌：写死的橙在暖色主题（斜光）上与主色同调，等于没提醒 */
   .ov-card.ov-act{border-color:rgba(var(--warn-rgb),.55)}
-  .ov-card.ov-act .n{animation:duePulse 2.2s ease-in-out infinite}
-  @keyframes duePulse{0%,100%{opacity:1}50%{opacity:.68}}
   /* 薪资卡片 — 跟随主题色 */
   .salary-card{position:relative;border-radius:var(--r-hero);margin-bottom:20px;overflow:hidden;
-    background:linear-gradient(135deg,var(--panel),var(--card));border:2px solid var(--line2);
-    box-shadow:0 4px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.03)}
-  .salary-card .salary-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);
-    width:300px;height:80px;background:radial-gradient(ellipse,var(--accent3),transparent 70%);pointer-events:none;opacity:.15}
+    background:var(--card);border:1px solid var(--line2);
+    box-shadow:var(--shadow)}
   .salary-card .salary-inner{position:relative;padding:24px 28px;text-align:center;z-index:1}
-  .salary-card .salary-label{font-size:var(--fs-ui);color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px}
+  .salary-card .salary-label{font-size:var(--fs-ui);color:var(--muted);font-weight:500;letter-spacing:0;margin-bottom:8px}
   /* 大数字：字号流体化 —— 768~1200px 之间从 32 连续升到 52，768 以下自然收敛在 32，
      两端取值与原来的"桌面 52 / 窄屏 32"完全一致，只是把断点处的跳变换成过渡
      （≤400px 的 24px 覆写仍在，那条是另一档，见后面的媒体查询）。
-     等宽数字让"从旧值滚到新值"的画面不左右抖；字距从写死的 2px 收到 .01em ——
-     2px 是两位数时代的固定值，数值到五六位时会散开 */
-  .salary-card .salary-num{font-size:clamp(32px,4.63vw - 3.6px,52px);font-weight:900;letter-spacing:.01em;line-height:1.12;
-    font-variant-numeric:tabular-nums;
-    background:linear-gradient(180deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+     等宽数字让"从旧值滚到新值"的画面不左右抖；字距归零（旧版写死 2px 是两位数时代的固定值，
+     数值到五六位时会散开）；字体跟随系统（--font-sans），不再另设展示面 */
+  .salary-card .salary-num{font-size:clamp(32px,4.63vw - 3.6px,52px);font-weight:600;letter-spacing:0;line-height:1.12;
+    font-variant-numeric:tabular-nums;font-family:var(--font-sans);color:var(--accent3-ink, var(--accent3))}
   .salary-card .salary-sub{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
   .salary-card .salary-sub b{color:var(--accent3-ink, var(--accent3))}
-  .salary-card .salary-bar{height:8px;border-radius:var(--r-xs);background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:14px;max-width:500px;margin-left:auto;margin-right:auto}
+  .salary-card .salary-bar{height:8px;border-radius:var(--r-xs);background:rgba(var(--text-rgb,255,255,255),.1);overflow:hidden;margin-top:16px;max-width:500px;margin-left:auto;margin-right:auto}
   /* 圆角两端都是 4px（= 8px 高度下容器 6px 圆角的实际半径），与容器吻合，故保留自带写法；
      宽度变化动画见 animateSegBar() —— 原先那条 transition:width 是死代码（每次渲染都重建节点） */
-  .salary-card .salary-bar>i{display:block;height:100%;border-radius:var(--r-xs);background:linear-gradient(90deg,var(--accent3),var(--accent))}
+  .salary-card .salary-bar>i{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent3)}
   /* 进度条宽度：文档列表已改为局部更新，节点复用后这条过渡才真正生效 ——
      此前每次渲染都是全新节点，过渡永不触发（与 animateSegBar 处记录的同一原因）。
      首次建卡时宽度从 auto（不可插值）直接跳到目标值，不触发过渡，所以新卡不会"从 0 长出来" */
-  .mini i{display:block;transition:width var(--dur-slow) var(--ease-out)}
+  .mini i{display:block}
 
   /* search results */
   /* content-visibility：搜索结果最多 200 条，一屏却只放得下五六条，屏幕外的条目原本也要走完
@@ -553,21 +528,21 @@
      首次按 110px 估算占位，渲染过一次后记住真实高度，滚动条长度不会来回跳。
      只有搜索页能这么用 —— 浏览页的 .q 卡片要参与 flipAway，靠真实 getBoundingClientRect 算位移，
      被跳过的元素会返回估算值，删除动画会算错。 */
-  .sr-item{border-radius:var(--r-lg);padding:13px 16px;margin-bottom:10px;content-visibility:auto;contain-intrinsic-size:auto 110px;
-           transition:border-color var(--dur-fast),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
-  /* 搜索结果条目此前是"整行能点、但没有任何悬停反馈"。补的这套与卡片类刻意不同：
-     卡片是"浮起 + 发光"，结果条目在列表流里、动太多会晃眼 —— 只做描边点亮 + 2px 横向位移 */
+  .sr-item{border-radius:var(--r-lg);padding:12px 16px;margin-bottom:8px;content-visibility:auto;contain-intrinsic-size:auto 110px;
+           transition:border-color var(--dur-fast)}
+  /* 列表条目只做描边点亮：不上浮不位移不投影 */
   @media (hover:hover){
-    .sr-item:hover{border-color:rgba(var(--accent2-rgb),.5);transform:translateX(2px);box-shadow:var(--e-lift)}
+    .sr-item:hover{border-color:var(--line2)}
   }
-  .sr-item .src{font-size:var(--fs-xs);color:var(--accent2);font-weight:700;margin-bottom:3px}
-  .sr-item .qt{font-weight:600;cursor:pointer}
+  .sr-item .src{font-size:var(--fs-xs);color:var(--muted);font-weight:500;margin-bottom:4px}
+  .sr-item .qt{font-weight:500;cursor:pointer}
   .sr-item .snip{color:var(--muted);font-size:var(--fs-ui);margin-top:6px;line-height:1.6;text-wrap:pretty}
 
   /* 刷题完成卡片 */
   .done-card{text-align:center;padding:40px 20px}
-  .done-card .big{font-size:54px;line-height:1.1;margin-bottom:10px}
-  .done-card h3{font-size:var(--fs-h2);margin:0 0 8px}
+  .done-card .big{width:48px;height:48px;margin:0 auto 12px;color:var(--accent)}
+  .done-card .big svg,.mock-result .big svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .done-card h3{font-size:var(--fs-h2);margin:0 0 8px;font-weight:600}
   .done-card .sub{color:var(--muted);margin-bottom:20px}
 
   /* modal */
@@ -584,22 +559,22 @@
            display:grid;place-items:center;z-index:75;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast)}
   .modal-bg.show{visibility:visible;opacity:1}
   /* 入场用弹簧：弹窗是低频交互，"出现"本身就带"弹"的语义 */
-  .modal-bg.show .modal{animation:scaleIn var(--dur-pop) var(--ease-pop)}
+  .modal-bg.show .modal{animation:scaleIn var(--dur) var(--ease-out)}
   /* 弹窗用最高一级阴影 --e3：与卡片共用 --shadow 时，遮罩之上的一层浮窗和页面里的卡片是同一个深度，
      层级靠"半透明黑遮罩"一个人扛。--e3 更重 + 带 1px 内描边高光，深浅主题各有一套（见 applyTheme） */
   /* max-height 同样收 --kb：它算的是"键盘之上还剩多少高度"，不然弹窗仍按全屏高居中、
      底部按钮会落到键盘后面（弹窗内部是滚动的，够不到就等于没有） */
   .modal{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-panel);padding:24px;width:min(520px,92vw);
          box-shadow:var(--e3);max-height:calc(90vh - var(--kb));overflow-y:auto;scrollbar-gutter:stable}
-  .modal h3{margin:0 0 14px;font-size:var(--fs-lead)}
-  .modal label{display:block;font-size:var(--fs-ui);color:var(--muted);margin:12px 0 5px;font-weight:600}
+  .modal h3{margin:0 0 16px;font-size:var(--fs-lead);font-weight:600}
+  .modal label{display:block;font-size:var(--fs-ui);color:var(--muted);margin:12px 0 4px;font-weight:500}
   .modal input[type=text],.modal textarea{
     width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r-md);color:var(--text);
     padding:10px 12px;font-size:var(--fs-body);font-family:inherit;outline:none;resize:vertical}
-  .modal input:focus,.modal textarea:focus{border-color:var(--accent2)}
-  .modal .row{display:flex;gap:10px}
+  .modal input:focus,.modal textarea:focus{border-color:var(--accent)}
+  .modal .row{display:flex;gap:12px}
   .modal .row > div{flex:1}
-  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .modal .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:16px}
   .modal .desc{color:var(--text);opacity:.65;font-size:var(--fs-ui);line-height:1.7;margin:6px 0 0}
 
   /* ===== 题目表单弹窗（新增/编辑题目，.qmodal）======
@@ -631,32 +606,33 @@
      永远匹配不到 —— 会让吸顶头/独立滚动体整套布局静默失效 */
   .modal.settings-modal{display:flex;flex-direction:column;max-height:88vh;padding:0;overflow:hidden}
   .settings-modal .modal-head{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-  .settings-modal .modal-title{font-size:var(--fs-lead);font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+  .settings-modal .modal-title{font-size:var(--fs-lead);font-weight:600;letter-spacing:0;display:flex;align-items:center;gap:8px}
   .settings-modal .modal-x{width:var(--ctl-sm);height:var(--ctl-sm);border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--panel);color:var(--muted);cursor:pointer;font-size:var(--fs-ui);line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
   @media (hover:hover){ .settings-modal .modal-x:hover{color:var(--text);border-color:var(--bad)} }
   /* overflow-x:hidden + scrollbar-gutter:stable —— 展开分区后内容高度跨越弹窗高度时垂直滚动条会出现，
    其占位会挤压内容宽度，一瞬间触发水平滚动条（展开 AI 设置/进阶操作时最明显）。
    gutter 让槽位恒定（宽度不变），overflow-x:hidden 则保证任何瞬时溢出都不会画出水平滚动条 */
 .settings-modal .modal-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;padding:18px 24px}
-  .set-list{display:flex;flex-direction:column;gap:14px}
+  .set-list{display:flex;flex-direction:column;gap:16px}
   .set-section{border-radius:var(--r-lg);overflow:hidden;transition:border-color var(--dur-fast)}
   .set-section.open{border-color:var(--line2)}
-  .set-head{cursor:pointer;padding:14px 16px;font-size:var(--fs-body);font-weight:700;color:var(--text);background:var(--panel);display:flex;justify-content:space-between;align-items:center;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);user-select:none}
+  .set-head{cursor:pointer;padding:16px;font-size:var(--fs-body);font-weight:500;color:var(--text);background:var(--panel);display:flex;justify-content:flex-start;align-items:center;gap:8px;transition:background-color var(--dur-fast),color var(--dur-fast);user-select:none}
+  .set-head .set-arrow{margin-left:auto}
   /* 原来写的是 border-color —— .set-head 自身没有 border，改了也看不见，等于没有悬停反馈 */
   @media (hover:hover){ .set-head:hover{background:var(--panel2)} }   /* 触屏上颜色类 hover 会粘住：点开过的分区头一直挂着高亮底色 */
   .set-section.open .set-head{color:var(--accent)}
   .set-arrow{font-size:var(--fs-xs);transition:transform var(--dur);color:var(--muted)}
   .set-section.open .set-arrow{transform:rotate(180deg);color:var(--accent)}
-  .set-body{padding:16px;background:var(--panel);display:flex;flex-direction:column;gap:18px}
-  .set-hint{font-size:var(--fs-ui);color:var(--text);opacity:.72;line-height:1.6;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);margin:8px 0 18px}
+  .set-body{padding:16px;background:var(--panel);display:flex;flex-direction:column;gap:16px}
+  .set-hint{font-size:var(--fs-ui);color:var(--text);opacity:.72;line-height:1.6;padding:12px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);margin:8px 0 16px}
   .set-field{display:flex;align-items:center;gap:12px}
-  .set-field label{font-size:var(--fs-ui);font-weight:600;color:var(--text);min-width:66px;flex-shrink:0;text-align:right}
+  .set-field label{font-size:var(--fs-ui);font-weight:500;color:var(--text);min-width:66px;flex-shrink:0;text-align:right}
   .set-field input,.set-field select{flex:1 1 auto;min-width:0;width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:var(--r-sm);font-size:var(--fs-ui);outline:none;font-family:inherit;transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
-  .set-field input:focus,.set-field select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.18)}
-  .set-row2{display:flex;gap:14px;margin-bottom:12px}
+  .set-field input:focus,.set-field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.16)}
+  .set-row2{display:flex;gap:16px;margin-bottom:12px}
   .set-row2 .set-field{flex:1 1 0;min-width:0}
-  .set-col{display:flex;flex-direction:column;gap:18px}
-  .set-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .set-col{display:flex;flex-direction:column;gap:16px}
+  .set-btns{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center}
   .set-status{font-size:var(--fs-sm);color:var(--muted);margin-top:2px;width:100%;text-align:center}
 
   /* ===== 战报（.season-modal）======
@@ -664,30 +640,29 @@
      大数字 → 四档分布 → 关键变化 → 一句话点评，纵向层级本身就是阅读顺序。
      颜色一律走主题变量（四档色由 JS 从 RATE_META 取，与评分按钮同源），换主题不掉色。 */
   .modal.season-modal{width:min(560px,92vw);padding:0;overflow:hidden;display:flex;flex-direction:column}
-  .season-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 22px;
-    background:linear-gradient(135deg,rgba(var(--accent-rgb),.20),rgba(var(--accent2-rgb),.10));border-bottom:1px solid var(--line)}
-  .season-badge{font-size:var(--fs-base);font-weight:800;letter-spacing:2px;color:var(--accent)}
-  .season-date{font-size:var(--fs-sm);color:var(--muted);font-weight:600}
-  .season-body{padding:20px 22px 6px}
+  .season-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 24px;
+    background:var(--panel2);border-bottom:1px solid var(--line)}
+  .season-badge{font-size:var(--fs-base);font-weight:600;letter-spacing:0;color:var(--accent)}
+  .season-date{font-size:var(--fs-sm);color:var(--muted);font-weight:500}
+  .season-body{padding:20px 24px 8px}
   .season-hero{display:flex;align-items:baseline;justify-content:center;gap:8px}
   /* 数字用等宽数字：从 9 变到 10 时整组不会左右抖 */
-  .season-hero b{font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .season-hero span{font-size:var(--fs-ui);color:var(--muted);font-weight:600}
+  .season-hero b{font-size:52px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums;color:var(--text)}
+  .season-hero span{font-size:var(--fs-ui);color:var(--muted);font-weight:500}
   .season-sub{text-align:center;font-size:var(--fs-ui);color:var(--muted);margin-top:9px;line-height:1.6}
-  .season-bar{display:flex;height:12px;border-radius:var(--r-pill);overflow:hidden;background:var(--bg2);border:1px solid var(--line);margin:18px 0 12px}
+  .season-bar{display:flex;height:12px;border-radius:var(--r-pill);overflow:hidden;background:var(--bg2);border:1px solid var(--line);margin:16px 0 12px}
   .season-bar i{display:block;height:100%}
   .season-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
-  .season-legend div{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--muted)}
+  .season-legend div{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--muted)}
   .season-legend i{width:8px;height:8px;border-radius:3px;flex:none}
   .season-legend b{color:var(--text);font-size:var(--fs-body);font-variant-numeric:tabular-nums;margin-left:auto}
   .season-rows{margin-top:16px;border-top:1px solid var(--line)}
-  .season-rows div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;
+  .season-rows div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px;
     border-bottom:1px solid var(--line);font-size:var(--fs-ui);color:var(--muted)}
-  .season-rows b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
-  .season-quip{margin-top:14px;padding:11px 14px;border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
+  .season-rows b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+  .season-quip{margin-top:16px;padding:12px 16px;border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
     background:var(--bg2);font-size:var(--fs-ui);line-height:1.65;color:var(--text)}
-  .season-foot{display:flex;gap:10px;justify-content:center;padding:14px 22px 18px}
+  .season-foot{display:flex;gap:12px;justify-content:center;padding:12px 24px 16px}
   .season-foot .btn{min-width:132px;justify-content:center}
 
   .hidden{display:none!important}
@@ -698,7 +673,7 @@
          font-size:var(--fs-body);box-shadow:var(--e3);opacity:0;pointer-events:none;
          /* transform 走弹簧做出"弹出来"的手感；opacity 保持平滑 ——
             二者若共用同一条过冲曲线，透明度会在回冲段出现可见的忽明忽暗 */
-         transition:opacity var(--dur-slow),transform var(--dur-pop) var(--ease-pop);z-index:80}
+         transition:opacity var(--dur-slow),transform var(--dur) var(--ease-out);z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* 写入失败横幅：与 toast 的关键区别是「不会自动消失」——保存失败是持续状态，
      toast 3 秒后消失等于没提示（用户不会因此停下手上的复习）。
@@ -716,7 +691,7 @@
   /* 这 18px 是"离屏幕边"的距离，有侧边安全区时要在它之外再退一截，所以用加法而非 max()。
      这里共用 --safe-x 而不单独读 safe-area-inset-right：屏幕要么左右都不让、要么让一侧，
      取大值只是让按钮多退一点点，换来的好处是"全站侧边让位由一个变量统管"（改它即可整体核对） */
-  .backtop{position:fixed;right:calc(18px + var(--safe-x, 0px));bottom:calc(22px + env(safe-area-inset-bottom, 0px) + var(--kb));width:42px;height:42px;border-radius:var(--r-lg);border:1px solid var(--line2);
+  .backtop{position:fixed;right:calc(16px + var(--safe-x, 0px));bottom:calc(24px + env(safe-area-inset-bottom, 0px) + var(--kb));width:44px;height:44px;border-radius:var(--r-lg);border:1px solid var(--line2);
            background:var(--panel2);color:var(--muted);cursor:pointer;display:grid;place-items:center;z-index:70;opacity:0;pointer-events:none;transform:translateY(8px);
            transition:opacity var(--dur),transform var(--dur),color var(--dur-fast);box-shadow:var(--shadow)}
   .backtop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -730,58 +705,43 @@
     opacity:.9}
   .backtop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
   @media (hover:hover){ .backtop:hover{color:var(--accent);border-color:var(--accent)} }
-  /* ---------- 入场动画：全屏星空（warp 星野） ----------
-     进入 App 立刻全屏播放，与 init 并行：init 就绪且展示满最短时长后淡出，就绪后点一下可跳过。
-     画面全部由 JS（introStart/introTick）画在 canvas 上，这里只负责底色、柔光与收尾交接。 */
-  /* 底色跟着主题走：三个色阶由 introStart() 按当前主题色板算好后写在元素上（--intro-bg1/2/3），
-     下面的兜底值 = 默认深空，JS 没跑到时也不会难看 */
-  .app-loader{position:fixed;inset:0;z-index:9999;overflow:hidden;opacity:1;transform:scale(1);
-              background:radial-gradient(120% 85% at 50% 46%,
-                var(--intro-bg1, #13141f) 0%, var(--intro-bg2, #0d0e17) 52%, var(--intro-bg3, #07080f) 100%);
-              will-change:opacity,transform;
-              transition:opacity .78s var(--ease-spring),transform .78s var(--ease-spring)}
-  /* 收尾：星空一边放大一边淡出（镜头穿过星野），与下面 .app 的浮起交叉 = "解锁进桌面"的推进感 */
-  .app-loader.out{opacity:0;transform:scale(1.14);pointer-events:none}
-  /* 主界面入场：有遮罩时才先藏住（脚本没跑/报错时不会有 intro-on，界面照常可见，不会白屏），
-     交接时从略小浮到原位。两条规则都只动 transform/opacity —— 走合成器，手机上才不糊不卡 */
-  body.intro-on .app{opacity:0;transform:scale(.965)}
-  body.intro-on.intro-reveal .app{opacity:1;transform:scale(1);
-                 transition:opacity .78s var(--ease-spring),transform .92s var(--ease-out);
-                 will-change:opacity,transform}
-  .app-loader canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
-  /* 中心柔光：给星野一个"看得进去"的纵深。色相取主题的主/辅强调色
-     （applyTheme 已把 --accent-rgb / --accent2-rgb 写在 :root 上，这里直接吃，不另写一套） */
-  .app-loader::after{content:'';position:absolute;left:50%;top:50%;width:150vmin;height:150vmin;border-radius:50%;
-                     transform:translate(-50%,-50%);pointer-events:none;
-                     background:radial-gradient(circle, rgba(var(--accent-rgb,125,207,255),.17) 0%,
-                                                rgba(var(--accent2-rgb,139,124,246),.11) 26%, rgba(0,0,0,0) 62%)}
+  /* ---------- 入场：短淡入（星空 warp 与缩放交叉交接已按 unslop 审计移除） ----------
+     遮罩只作底色veil：init 就绪后 .3s 淡出，主界面同时一次短上浮。
+     脚本没跑/报错时不会有 intro-on，界面照常可见，不会白屏。 */
+  .app-loader{position:fixed;inset:0;z-index:9999;overflow:hidden;opacity:1;
+              background:var(--bg);
+              transition:opacity .3s var(--ease-out)}
+  .app-loader.out{opacity:0;pointer-events:none}
+  body.intro-on .app{opacity:0;transform:translateY(8px)}
+  body.intro-on.intro-reveal .app{opacity:1;transform:none;
+                 transition:opacity .3s var(--ease-out),transform .3s var(--ease-out)}
 
   /* ---------- 八股练习 ---------- */
   .feature-wrap{max-width:var(--rail-read);margin:0 auto}   /* 面试/记忆/拷打与刷题同为单列阅读（原 880 是第二套"窄版心"） */
-  .cfg-card{padding:24px;margin-bottom:18px}
-  .cfg-card h2{margin:0 0 4px;font-size:var(--fs-h2)}
+  .cfg-card{padding:24px;margin-bottom:16px}
+  .cfg-card h2{margin:0 0 4px;font-size:var(--fs-h2);font-weight:600;font-family:var(--font-sans)}
   .cfg-card .desc{color:var(--text);opacity:.65;font-size:var(--fs-ui);margin-bottom:18px;line-height:1.6}
   .cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
-  .cfg-field label{display:block;font-size:var(--fs-sm);color:var(--muted);margin-bottom:7px;font-weight:600}
+  .cfg-field label{display:block;font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px;font-weight:500}
   .cfg-field input,.cfg-field select{width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:var(--r-md);padding:10px 12px;font-size:var(--fs-body);outline:none;box-sizing:border-box}
-  .cfg-field input:focus,.cfg-field select:focus{border-color:var(--accent2)}
-  .mock-card{padding:24px;margin-bottom:18px}
-  .mock-card .ptag{font-size:var(--fs-sm);color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase}
-  .mock-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
-  .memory-card{padding:28px 24px;cursor:pointer;transition:border-color var(--dur-quick),box-shadow var(--dur),transform var(--dur-pop) var(--ease-pop)}
-  .memory-card:hover{border-color:rgba(var(--accent2-rgb),.55);transform:translateY(-2px);box-shadow:var(--card-hover-shadow)}
-  .memory-card .ptag{font-size:var(--fs-sm);color:var(--accent3-ink, var(--accent3));font-weight:700;letter-spacing:1px;text-transform:uppercase}
-  .memory-card .ptitle{font-size:var(--fs-lead);font-weight:700;line-height:1.55;margin:10px 0 16px}
+  .cfg-field input:focus,.cfg-field select:focus{border-color:var(--accent)}
+  .mock-card{padding:24px;margin-bottom:16px}
+  .mock-card .ptag{font-size:var(--fs-sm);color:var(--muted);font-weight:500;letter-spacing:0;text-transform:none}
+  .mock-card .ptitle{font-size:var(--fs-lead);font-weight:600;line-height:1.55;margin:12px 0 16px}
+  .memory-card{padding:28px 24px;cursor:pointer;transition:border-color var(--dur-fast)}
+  .memory-card:hover{border-color:var(--line2)}
+  .memory-card .ptag{font-size:var(--fs-sm);color:var(--muted);font-weight:500;letter-spacing:0;text-transform:none}
+  .memory-card .ptitle{font-size:var(--fs-lead);font-weight:600;line-height:1.55;margin:12px 0 16px}
   /* 记忆卡牌堆视觉：卡片下方露出两层「余牌」，暗示还有一摞题待复习 */
   .mem-stack{position:relative;margin-bottom:16px}
-  .mem-stack::before,.mem-stack::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-7px;width:calc(100% - 22px);height:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);z-index:-1;opacity:.58}
-  .mem-stack::after{bottom:-13px;width:calc(100% - 44px);opacity:.3}
-  @keyframes memCardIn{from{opacity:0;transform:translateY(26px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
-  .mem-stack.card-enter{animation:memCardIn var(--dur-slow) var(--ease-out)}
+  .mem-stack::before,.mem-stack::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:-8px;width:calc(100% - 22px);height:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);z-index:-1;opacity:.58}
+  .mem-stack::after{bottom:-12px;width:calc(100% - 44px);opacity:.3}
+  @keyframes memCardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .mem-stack.card-enter{animation:memCardIn var(--dur) var(--ease-out)}
   .memory-answer{color:var(--muted);line-height:1.8;font-size:var(--fs-base)}
   .memory-answer > .rv-in{border-top:1px dashed var(--line2);padding-top:16px}
-  .memory-answer .label{font-size:var(--fs-xs);color:var(--accent3-ink, var(--accent3));letter-spacing:1px;font-weight:700;margin-bottom:8px}
+  .memory-answer .label{font-size:var(--fs-xs);color:var(--muted);letter-spacing:0;font-weight:500;margin-bottom:8px}
 
   .memory-answer p{margin:0 0 10px}
   .memory-answer code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:var(--fs-ui);color:var(--accent)}
@@ -789,31 +749,31 @@
   .memory-answer pre code{background:none;padding:0;color:var(--text);font-size:var(--fs-sm);font-family:var(--font-mono);white-space:pre}
   .memory-answer strong{color:var(--text)}
   .memory-card .ai-answer{margin-top:0;margin-bottom:0}
-  .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:14px}
-  .mem-ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .mem-ai-wrap{margin-top:16px;border-top:1px dashed var(--line2);padding-top:16px}
+  .mem-ai-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .mem-ai-tip{color:var(--muted);font-size:var(--fs-sm)}
   .mem-ai-wrap .ai-answer{margin-top:12px;max-height:none;overflow-y:visible}
   /* 生成内容放在 320px 内滚窗口里；标题行与隐藏按钮在窗口外顶部，不随内容滚动 */
   .mem-ai-wrap .mem-ai-scroll{max-height:320px;overflow-y:auto;scrollbar-gutter:stable}
   .answer-area{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:var(--r-lg);padding:14px;font-size:var(--fs-body);line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
-  .answer-area:focus{border-color:var(--accent2)}
+  .answer-area:focus{border-color:var(--accent)}
   /* 参考答案框同样走 .rv 展开：背景/边框/内边距放 .rv-in（外层是折叠容器，放它上面即使收起也会占位） */
-  .ref-answer > .rv-in{background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.3);border-radius:var(--r-lg);padding:14px 16px}
-  .ref-answer.show{margin-top:14px}
+  .ref-answer > .rv-in{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:14px 16px}
+  .ref-answer.show{margin-top:16px}
   .ref-answer .label{font-size:var(--fs-sm);color:var(--accent);font-weight:700;margin-bottom:8px}
-  .grade-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+  .grade-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
   /* 记忆四档评分是真 <button>（键盘/读屏原生可达）：button 不继承字体，必须显式 inherit */
   .grade-btn{min-height:var(--ctl-lg);flex:1;min-width:120px;border:1px solid var(--line2);background:var(--panel);color:var(--text);
-    padding:12px;border-radius:var(--r-lg);cursor:pointer;font-size:var(--fs-body);font-weight:700;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast);display:flex;
+    padding:12px;border-radius:var(--r-lg);cursor:pointer;font-size:var(--fs-body);font-weight:500;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),transform var(--dur-fast);display:flex;
     align-items:center;justify-content:center;gap:8px;font-family:inherit}
   /* 记忆模式四档评分：纵向两行（档位 + 下次间隔预览）。
      用网格排一行四个：最长文案 4 字（😰 完全忘了 ≈ 72px），320px 窄屏也放得下，不需要折行 */
   .grade-row.mem-grade-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-  .grade-btn.mem-grade{flex-direction:column;gap:3px;padding:10px 6px;min-width:0;background:var(--panel)}
+  .grade-btn.mem-grade{flex-direction:column;gap:4px;padding:12px 8px;min-width:0;background:var(--panel)}
   /* 兜底：万一窄到文案仍放不下，宁可省略号也不要文字溢出到隔壁按钮上 */
-  .grade-btn.mem-grade .gb-main{font-size:var(--fs-body);font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-  .grade-btn.mem-grade .gb-int{font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
+  .grade-btn.mem-grade .gb-main{font-size:var(--fs-body);font-weight:500;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .grade-btn.mem-grade .gb-int{font-size:var(--fs-xs);font-weight:500;color:var(--muted)}
   /* 只做变色不做位移：按下时的 :active 缩放若与 hover 位移叠加，手指点按会看到按钮"弹"一下 */
   @media (hover:hover){ .grade-btn.mem-grade:hover{background:var(--panel2)} }
   .grade-btn.mem-grade:active{transform:scale(.97)}
@@ -840,29 +800,29 @@
   .grade-btn.g-hard.sel{border-color:var(--warn);background:rgba(var(--warn-rgb),.18)}
   .grade-btn.g-easy.sel{border-color:var(--good);background:rgba(var(--good-rgb),.18)}
   .grade-btn:disabled{opacity:.45;cursor:default}
-  .pstatus{font-size:var(--fs-sm);color:var(--text);opacity:.85;margin-top:12px;padding:10px 14px;background:var(--card);border-radius:var(--r-sm);line-height:1.5}
+  .pstatus{font-size:var(--fs-sm);color:var(--text);opacity:.85;margin-top:12px;padding:12px 16px;background:var(--card);border-radius:var(--r-sm);line-height:1.5}
   .mock-result{padding:24px}
-  .mock-result .big{text-align:center}
-  .mock-result h2{text-align:center;margin:6px 0 2px;font-size:var(--fs-h2)}
+  .mock-result .big{text-align:center;color:var(--accent)}
+  .mock-result h2{text-align:center;margin:6px 0 2px;font-size:var(--fs-h2);font-weight:600}
   .mock-result .sub{text-align:center}
-  .score-summary{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
-  .mock-result .si{flex:1;min-width:120px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:14px;text-align:center}
-  .mock-result .si .n{font-size:var(--fs-num);font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+  .score-summary{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
+  .mock-result .si{flex:1;min-width:120px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:16px;text-align:center}
+  .mock-result .si .n{font-size:var(--fs-num);font-weight:500;line-height:1.15;font-variant-numeric:tabular-nums}
   .mock-result .si .t{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
-  .q-summary{border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
-  .q-summary .qt{font-weight:700;margin-bottom:8px}
+  .q-summary{border-radius:var(--r-lg);padding:16px;margin-bottom:8px}
+  .q-summary .qt{font-weight:600;margin-bottom:8px}
   .q-summary .qa{font-size:var(--fs-ui);color:var(--muted);line-height:1.6}
   .q-summary .qa b{color:var(--text)}
   .ai-review{font-size:var(--fs-ui);line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
   .ai-review strong{color:var(--accent)}.ai-review code{background:var(--card);padding:2px 5px;border-radius:4px;font-size:var(--fs-sm)}
   .ai-loading{color:var(--muted);font-size:var(--fs-ui);text-align:center;padding:20px}
-  .ai-loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:8px;vertical-align:middle}
+  .ai-loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:8px;vertical-align:middle}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-top:14px;font-size:var(--fs-ui);line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
-  .ai-answer .ai-head{font-size:var(--fs-sm);color:var(--accent2);font-weight:700;margin-bottom:8px}
+  .ai-answer{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-top:16px;font-size:var(--fs-ui);line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+  .ai-answer .ai-head{font-size:var(--fs-sm);color:var(--muted);font-weight:500;margin-bottom:8px}
   .ai-answer pre{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6}
   .ai-answer pre code{background:none;padding:0;color:var(--text);font-size:var(--fs-sm);font-family:var(--font-mono);white-space:pre}
-  .ai-answer h3,.ai-answer h4{margin:14px 0 6px;color:var(--text);font-size:var(--fs-body);font-weight:700}
+  .ai-answer h3,.ai-answer h4{margin:14px 0 6px;color:var(--text);font-size:var(--fs-body);font-weight:600}
   .ai-answer ul,.ai-answer ol{margin:8px 0;padding-left:22px}
   .ai-answer li{margin:4px 0}
   .ai-stream{font-family:var(--font-mono);font-size:var(--fs-ui);line-height:1.7;white-space:pre-wrap;word-break:break-word}
@@ -872,13 +832,14 @@
 
   /* 主题选择器 */
   .theme-popup{display:flex;flex-direction:column;position:fixed;background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:12px;z-index:100;box-shadow:var(--e3);max-width:340px;max-height:min(72vh,560px);overflow-y:auto;visibility:hidden;opacity:0;transition:opacity var(--dur-fast) ease,visibility var(--dur-fast);gap:8px}
-  .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur-pop) var(--ease-pop)}
+  .theme-popup.show{visibility:visible;opacity:1;animation:scaleIn var(--dur) var(--ease-out)}
   /* 分组标签那一行（连同它的样式）已随主题集收敛撤掉：只剩一套分组时，标签行是纯负担 */
-  .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);position:relative;background:var(--bg2)}
-  @media (hover:hover){ .theme-card:hover{transform:translateY(-2px);border-color:var(--accent2);box-shadow:var(--e-lift)} }
-  .theme-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
-  .theme-card.sel::after{content:'✓';position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--good);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .theme-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 4px;border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;transition:border-color var(--dur-fast),background-color var(--dur-fast);position:relative;background:var(--bg2)}
+  @media (hover:hover){ .theme-card:hover{border-color:var(--accent)} }
+  .theme-card.sel{border-color:var(--accent)}
+  /* 选中标＝签名方格：小方徽章取代圆形绿勾 + 投影 */
+  .theme-card.sel::after{content:'✓';position:absolute;top:-6px;right:-6px;width:16px;height:16px;background:var(--accent);border-radius:4px;font-size:10px;display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-weight:600}
   .theme-card .tc-swatch{width:42px;height:30px;border-radius:var(--r-sm);position:relative;overflow:hidden;flex:none;border:1px solid var(--line2);box-sizing:border-box}
   .theme-card .tc-swatch::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
   .theme-card .tc-swatch .tc-band{position:absolute;left:0;right:0;top:0;height:9px}
@@ -901,49 +862,50 @@
   .sig-gruvbox{background:radial-gradient(circle at 30% 82%,rgba(224,123,63,.9) 0 1.3px,transparent 1.9px),radial-gradient(circle at 55% 66%,rgba(200,85,61,.8) 0 1.2px,transparent 1.8px),radial-gradient(circle at 70% 40%,rgba(216,176,113,.7) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 30%,rgba(224,123,63,.5) 0 .9px,transparent 1.4px)}
   .theme-card .tc-name{font-size:var(--fs-xs);font-weight:600;color:var(--text);line-height:1}
   /* 项目拷打 */
-  .grill-mode-row{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
-  .grill-mode-card{flex:1;min-width:140px;border-width:2px;padding:14px 12px;cursor:pointer;transition:border-color var(--dur-quick),background-color var(--dur-quick),color var(--dur-quick),box-shadow var(--dur-quick),transform var(--dur-pop) var(--ease-pop);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-  @media (hover:hover){ .grill-mode-card:hover{border-color:var(--accent2);transform:translateY(-2px);box-shadow:var(--e-lift)} }
-  .grill-mode-card.sel{border-color:var(--accent);background:linear-gradient(135deg,rgba(var(--accent-rgb),.08),rgba(var(--accent2-rgb),.08));box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
-  .gm-icon{font-size:var(--fs-num)}
-  .gm-title{font-size:var(--fs-body);font-weight:700;color:var(--text)}
+  .grill-mode-row{display:flex;gap:12px;margin:16px 0 4px;flex-wrap:wrap}
+  .grill-mode-card{flex:1;min-width:140px;border-width:1px;padding:16px 12px;cursor:pointer;transition:border-color var(--dur-fast),background-color var(--dur-fast);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+  @media (hover:hover){ .grill-mode-card:hover{border-color:var(--accent)} }
+  .grill-mode-card.sel{border-color:var(--accent);background:var(--panel2)}
+  .gm-icon{width:28px;height:28px;color:var(--muted)}
+  .gm-icon svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .gm-title{font-size:var(--fs-body);font-weight:500;color:var(--text)}
   .gm-desc{font-size:var(--fs-xs);color:var(--muted);line-height:1.5}
-  .grill-dur-btn{min-height:var(--ctl-sm);display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:600;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),box-shadow var(--dur-fast),transform var(--dur-fast)}
+  .grill-dur-btn{min-height:var(--ctl-sm);display:inline-flex;align-items:center;justify-content:center;padding:4px 12px;border-radius:var(--r-sm);font-size:var(--fs-xs);font-weight:500;cursor:pointer;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:4px;transition:border-color var(--dur-fast),background-color var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
   @media (hover:hover){ .grill-dur-btn:hover{color:var(--text);border-color:var(--line2)} }
   .grill-dur-btn.sel{color:var(--accent);background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.3)}
   .grill-resume{width:100%;min-height:120px;background:var(--panel);border:1px solid var(--line2);color:var(--text);
     border-radius:var(--r-lg);padding:14px;font-size:var(--fs-body);line-height:1.6;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box}
-  .grill-resume:focus{border-color:var(--accent2)}
+  .grill-resume:focus{border-color:var(--accent)}
   .grill-chat{display:flex;flex-direction:column;gap:12px;max-height:55vh;overflow-y:auto;scrollbar-gutter:stable;padding-right:4px;margin:16px 0}
   .grill-msg{max-width:85%;padding:12px 16px;border-radius:var(--r-card);font-size:var(--fs-body);line-height:1.65;white-space:pre-wrap;word-break:break-word}
   .grill-msg.ai{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
-  .grill-msg.user{align-self:flex-end;background:rgba(var(--accent2-rgb),.15);border:1px solid rgba(var(--accent2-rgb),.3);border-bottom-right-radius:4px}
+  .grill-msg.user{align-self:flex-end;background:rgba(var(--accent-rgb),.10);border:1px solid var(--line2);border-bottom-right-radius:4px}
   .grill-input-row{display:flex;gap:10px;margin-top:12px;align-items:flex-end}
   .grill-input-row textarea{flex:1;min-height:44px;max-height:180px;resize:none;padding:11px 14px;background:var(--panel);border:1px solid var(--line2);color:var(--text);border-radius:var(--r-lg);font-size:var(--fs-body);line-height:1.5;outline:none;font-family:inherit;overflow-y:auto}
-  .grill-input-row textarea:focus{border-color:var(--accent2)}
+  .grill-input-row textarea:focus{border-color:var(--accent)}
   .grill-loading{color:var(--muted);font-size:var(--fs-ui);text-align:center;padding:12px}
-  .grill-loading::after{content:'';display:inline-block;width:12px;height:12px;border:2px solid var(--accent2);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:6px;vertical-align:middle}
-  .grill-feedback{margin-top:16px;padding:20px;background:var(--panel);border:1px solid var(--accent2);border-radius:var(--r-panel)}
-  .grill-fb-title{font-size:var(--fs-lead);font-weight:700;color:var(--accent2);margin-bottom:12px}
+  .grill-loading::after{content:'';display:inline-block;width:12px;height:12px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:sp 0.7s linear infinite;margin-left:6px;vertical-align:middle}
+  .grill-feedback{margin-top:16px;padding:20px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-panel)}
+  .grill-fb-title{font-size:var(--fs-lead);font-weight:600;color:var(--text);margin-bottom:12px}
   .grill-fb-content{font-size:var(--fs-body);color:var(--text);line-height:1.75}
   .grill-fb-content p{margin:8px 0}
-  .grill-fb-content strong{color:var(--accent2)}
+  .grill-fb-content strong{color:var(--text);font-weight:600}
   .grill-fb-content ul,.grill-fb-content ol{padding-left:20px;margin:8px 0}
   /* ---------- 移动端适配 ---------- */
   @media(max-width:768px){
-      .topbar{padding:calc(6px + env(safe-area-inset-top, 0px)) max(8px, var(--safe-x, 0px)) 6px max(8px, var(--safe-x, 0px));gap:3px;justify-content:flex-start}
+      .topbar{padding:calc(4px + env(safe-area-inset-top, 0px)) max(8px, var(--safe-x, 0px)) 4px max(8px, var(--safe-x, 0px));gap:4px;justify-content:flex-start}
     .tab{padding:4px 8px;font-size:var(--fs-sm);border-radius:6px;min-height:var(--ctl-md)}   /* 主导航是最高频入口，窄屏也要够 38px */
-    .topbar .search{padding:3px 8px}
+    .topbar .search{padding:4px 8px}
     .topbar .search input{width:100px;font-size:var(--fs-sm)}
-    .btn{font-size:var(--fs-xs);padding:5px 8px}
+    .btn{font-size:var(--fs-xs);padding:4px 8px}
     /* 这里原本还有 padding:3px 6px —— 已被表末 ≤768 块里的 .btn.sm{padding:6px 9px} 完全覆盖（死规则）；
        font-size 与 .btn 同值，保留一行是为了说明窄屏不会放大字号 */
     .btn.sm{font-size:var(--fs-xs)}
-    .stats-bar{font-size:var(--fs-xs);gap:8px;padding:4px 10px;flex-wrap:wrap;justify-content:center}
+    .stats-bar{font-size:var(--fs-xs);gap:8px;padding:4px 8px;flex-wrap:wrap;justify-content:center}
     /* 窄屏左右留白：原先 12px 只剩一条缝，卡片整体"贴边"，与卡内 10px 的内边距几乎分不开；
        16px 才让"页面留白 > 卡片内边距"的层级成立 */
     :root{--gutter:max(16px, var(--safe-x, 0px))}
-    .content{padding:14px var(--gutter) calc(30px + env(safe-area-inset-bottom, 0px) + var(--kb));max-width:100%}
+    .content{padding:16px var(--gutter) calc(32px + env(safe-area-inset-bottom, 0px) + var(--kb));max-width:100%}
     .ov-grid{grid-template-columns:repeat(3,1fr);gap:8px}
     .ov-card{padding:12px 8px}
     .ov-card .n{font-size:var(--fs-h2)}
@@ -956,28 +918,28 @@
     .memory-card{padding:20px 16px}
     .memory-card .ptitle{font-size:16px}
     .memory-answer{font-size:var(--fs-ui)}
-    .q{padding:12px 14px}
+    .q{padding:12px 16px}
     .docs-toolbar{margin-bottom:10px;gap:8px}
     .docs-toolbar .dt-count{font-size:var(--fs-xs)}
-    .docs-wrap{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-    .docs-wrap .q{padding:11px 12px}
-    .docs-wrap .q .qtitle{font-size:var(--fs-ui);margin-top:6px}
+    .docs-wrap{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+    .docs-wrap .q{padding:12px}
+    .docs-wrap .q .qtitle{font-size:var(--fs-ui);margin-top:8px}
     .set-section{border-radius:var(--r-md)}
-    .set-head{padding:12px 14px;font-size:var(--fs-ui)}
-    .set-body{padding:14px 14px 14px;gap:14px}
+    .set-head{padding:12px 16px;font-size:var(--fs-ui)}
+    .set-body{padding:16px;gap:16px}
     .set-field label{min-width:56px;font-size:var(--fs-sm)}
-    .set-field input,.set-field select{padding:8px 10px;font-size:var(--fs-sm)}
-    .set-row2{gap:10px;flex-direction:column}
+    .set-field input,.set-field select{padding:8px 12px;font-size:var(--fs-sm)}
+    .set-row2{gap:12px;flex-direction:column}
     .set-row2 .set-field{flex:1 1 auto}
     /* 3 档在窄屏挤成一列太窄：前两档并排，第三档独占整行 */
-    .settings-modal .modal-head{padding:14px 18px}
-    .settings-modal .modal-scroll{padding:14px 18px}
+    .settings-modal .modal-head{padding:16px}
+    .settings-modal .modal-scroll{padding:16px}
     .modal-title{font-size:16px}
-    .qhead{gap:6px}
+    .qhead{gap:8px}
     .qnum{width:24px;height:24px;font-size:var(--fs-xs);line-height:24px}
     .qtitle{font-size:var(--fs-ui)}
     .grill-msg{font-size:var(--fs-ui);max-width:90%}
-    .qacts{gap:6px}
+    .qacts{gap:8px}
     /* 尺寸交给主表的 --ctl-md 控件高度令牌（见「控件高度」那段），这里只留字号 */
     .iconbtn{font-size:var(--fs-ui)}
     /* .doc-head h2 的字号已交给 clamp（≤768 时收敛到 20px），不在断点处硬切 */
@@ -985,19 +947,19 @@
     .theme-popup{max-width:300px;padding:8px;gap:4px}
     #themePopup{right:6px!important}
     .theme-card .tc-swatch{width:36px;height:26px}
-    .theme-card .tc-name{font-size:9px}
+    .theme-card .tc-name{font-size:var(--fs-xs)}
     .answer .inner{font-size:var(--fs-ui);line-height:1.6}
     .ref-answer{font-size:var(--fs-ui)}
-    .ref-answer > .rv-in{padding:10px 12px}
+    .ref-answer > .rv-in{padding:12px}
     .grade-btn{padding:8px;font-size:var(--fs-sm);min-width:80px}
     .grade-btn.mem-grade{min-width:0;padding:8px 4px}
     .grade-btn.mem-grade .gb-main{font-size:var(--fs-sm)}
-    .grade-btn.mem-grade .gb-int{font-size:10px}
-    .modal{width:96vw!important;max-width:500px;padding:18px}
-    .mock-result{padding:14px}
+    .grade-btn.mem-grade .gb-int{font-size:var(--fs-xs)}
+    .modal{width:96vw!important;max-width:500px;padding:16px}
+    .mock-result{padding:16px}
     .mock-result h2{font-size:18px}
     .score-summary{gap:8px}
-    .mock-result .si{padding:10px;min-width:80px}
+    .mock-result .si{padding:12px;min-width:80px}
     .mock-result .si .n{font-size:var(--fs-h2)}
     .cfg-card{padding-bottom:80px}
     /* .grill-chat 的高度不在这里设：表末 ≤768 块已给出 40vh + 40dvh 双写，这里再写一遍只会被覆盖 */
@@ -1027,21 +989,20 @@
     /* 顶栏那三条（藏图标 / 字号降到 --fs-xs / 搜索框 70px）已上移到上面的 ≤480 两层结构：
        六等分后每个标签约 62px，图标 15 + 间距 3 + 两个字 24 + padding 4 ≈ 46px 放得下，
        没有再砍掉图标的必要 —— 那六个 SVG 是照主题色 currentColor 描的，手机上一直不显示等于白画。 */
-    .ov-grid{grid-template-columns:repeat(2,1fr);gap:6px}
-    .memory-card{padding:14px 10px}
+    .ov-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+    .memory-card{padding:16px 12px}
     .memory-card .ptitle{font-size:var(--fs-body)}
-    .btn{font-size:var(--fs-xs);padding:4px 6px;gap:3px}
+    .btn{font-size:var(--fs-xs);padding:4px 8px;gap:4px}
     .salary-card .salary-num{font-size:24px}
     .theme-card .tc-swatch{width:30px;height:22px}
-    .theme-card .tc-name{font-size:10px}
+    .theme-card .tc-name{font-size:var(--fs-xs)}
   }
   /* 颜色类 hover 与几何类一样会在触屏上「粘住」（点过的按钮一直挂着 accent 描边）。
      统一的处理是把它们关进 @media (hover:hover)，而不是在 hover:none 里逐条写复位值 ——
      复位值等于把非悬停态的颜色再抄一份，同一件事写两处迟早漂移。 */
   /* 无 hover 能力的设备（触屏）：点击后 :hover 会"粘住"，导致卡片上浮/发光一直不恢复，这里统一复位 */
   @media (hover:none){
-    .q:hover,.ov-card:hover,.memory-card:hover,.grill-mode-card:hover,
-    .theme-card:hover,.btn.primary:hover{transform:none;filter:none;box-shadow:none}
+    .btn.primary:hover{filter:none}
     .q:hover,.ov-card:hover,.memory-card:hover{border-color:var(--line)}
     .btn.primary:hover{box-shadow:0 2px 8px rgba(0,0,0,.25)}
   }
@@ -1063,7 +1024,7 @@
   .hm-months>i{position:relative}
   /* 月份刻度用 --muted 而不是 --faint：--faint 是"最淡的一档"，作 10px 文字时在深底主题上
      对比度只有 3.3:1（WCAG 小字要求 4.5:1）。刻度是数据，不是装饰 */
-  .hm-months>i>b{position:absolute;left:0;top:1px;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap}
+  .hm-months>i>b{position:absolute;left:0;top:1px;font-size:var(--fs-xs);font-weight:400;color:var(--muted);white-space:nowrap}
   /* 1 号落在最右两列时标签改右对齐：否则「12月」这类两字标签会越出 hm-inner 右缘，被 overflow 裁掉 */
   .hm-months>i>b.rt{left:auto;right:0}
   .hm-grid{display:grid;grid-auto-flow:column;grid-template-columns:repeat(var(--hm-w,53),minmax(11px,1fr));grid-template-rows:repeat(7,auto);gap:3px}
@@ -1076,7 +1037,7 @@
   .hm-cell.l1{background:rgba(var(--accent-rgb),.24)}
   .hm-cell.l2{background:rgba(var(--accent-rgb),.46)}
   .hm-cell.l3{background:rgba(var(--accent-rgb),.72)}
-  .hm-cell.l4{background:var(--accent);box-shadow:0 0 7px rgba(var(--accent-rgb),.5)}
+  .hm-cell.l4{background:var(--accent)}
   .hm-cell.hm-out{background:transparent;visibility:hidden}   /* 域外占位格：透明不可见，仅补满矩形 */
   /* 「今天」那一格：JS 一直在输出 hm-today（并靠它定位滚动），但此前没有任何样式 ——
      于是"今天"和今年的任意一天长得一模一样，热力图看不出当前站在哪天。
@@ -1085,7 +1046,7 @@
   /* 格子可点（弹当天明细），但此前没有任何"可点"提示。用 outline 而非 border：
      不参与布局，悬停时格子不会位移；不会误命中域外占位格（它们 visibility:hidden） */
   @media (hover:hover){
-    .hm-cell:not(.hm-out):hover{outline:1.5px solid var(--accent2);outline-offset:1px}
+    .hm-cell:not(.hm-out):hover{outline:1.5px solid var(--accent);outline-offset:1px}
   }
   .hm-pop{position:fixed;z-index:95;background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:8px 12px;border-radius:var(--r-md);font-size:var(--fs-sm);box-shadow:var(--e-lift);opacity:0;pointer-events:none;transition:opacity var(--dur-fast);max-width:270px;line-height:1.6}
   .hm-pop.show{opacity:1}
@@ -1094,17 +1055,17 @@
      父层 .hm-pop 是 pointer-events:none 的纯提示，这里必须显式收回指针事件 ——
      否则按钮画得出、点不到（点击会穿透到气泡背后，还会被"点别处关闭"的逻辑顺手关掉） */
   .hm-war{display:flex;align-items:center;justify-content:center;pointer-events:auto;width:100%;
-    margin:7px 0 1px;padding:2px 8px;min-height:var(--ctl-sm);font-family:inherit;font-size:var(--fs-xs);
+    margin:8px 0 0;padding:4px 8px;min-height:var(--ctl-sm);font-family:inherit;font-size:var(--fs-xs);
     color:var(--accent);background:transparent;border:1px solid var(--line2);border-radius:var(--r-xs);cursor:pointer}
   .hm-war:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),.12)}
   /* 未刷题 / 今年还没到的日期 / 1/1 前与 12/31 后的域外余格：统一走 .hm-cell 的同一个灰底，
      年度图是一整块完整的矩形、不留空洞；三者的区别只在悬停提示（未刷题 / 未开始 / 无提示） */
 
-  .stat-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-    margin-top:10px;font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
+  .stat-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin-top:12px;font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
   .stat-foot b{color:var(--text)}
   .hm-scale{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
-  .hm-peak{color:var(--accent3-ink, var(--accent3));font-weight:700}
+  .hm-peak{color:var(--accent3-ink, var(--accent3));font-weight:600}
 
   /* 未来到期预测：柱高按当日题量归一化；空日留 3px 基线，避免"没排期"和"柱太矮看不见"混淆 */
   .fc-strip{display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:4px}
@@ -1112,41 +1073,41 @@
      （innerHTML 拼串，新节点一出生就是最终高度），过渡永远不会触发，与 .pbar 的 transition:width 同一个坑。
      要让柱高有动画得走 animateSegBar 那种"改现有节点"的路径，这里不需要 */
   .fc-strip>i{flex:1 1 0;min-width:2px;border-radius:2px 2px 0 0;opacity:.78;
-    background:linear-gradient(180deg,var(--accent2),var(--accent));
+    background:var(--accent);
     transition:opacity var(--dur-fast)}
   @media (hover:hover){ .fc-strip>i:hover{opacity:1} }   /* 同上：手指点过的柱子会一直高亮 */
-  .fc-strip>i.today{background:linear-gradient(180deg,var(--accent3),#e07a4a);opacity:1}
+  .fc-strip>i.today{background:var(--accent3);opacity:1}
   .fc-strip>i.fc-empty{background:rgba(var(--text-rgb,255,255,255),.09);opacity:1}   /* 类名不能叫 empty：会撞上上面空状态样式的 padding:60px 20px；底色须用 --text-rgb，否则浅色主题下白 x% 隐形 */
   /* 真实保留率：按间隔分桶的柱状 + 百分比 */
-  .rt-grid{display:flex;gap:10px;align-items:flex-end;height:118px;margin-top:6px}
-  .rt-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;min-width:0}
-  .rt-pct{font-size:var(--fs-xs);font-weight:700;color:var(--text);height:14px;line-height:14px;font-variant-numeric:tabular-nums}
+  .rt-grid{display:flex;gap:12px;align-items:flex-end;height:120px;margin-top:8px}
+  .rt-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
+  .rt-pct{font-size:var(--fs-xs);font-weight:500;color:var(--text);height:16px;line-height:16px;font-variant-numeric:tabular-nums}
   .rt-pct b{color:var(--accent)}
   .rt-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
   /* 高度过渡同样去掉：与预测柱同理（整段重建，过渡不触发）。写过 transition:height 反而让人以为这里有动画 */
-  .rt-bar{width:64%;max-width:42px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:4px 4px 0 0;min-height:3px}
+  .rt-bar{width:64%;max-width:42px;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px}
   .rt-label{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
-  .rt-n{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rt-n{font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
   /* 每日复习构成：堆叠柱 */
-  .st-grid{display:flex;gap:var(--sp-1);align-items:flex-end;height:110px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
+  .st-grid{display:flex;gap:var(--sp-1);align-items:flex-end;height:112px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
   .st-grid::-webkit-scrollbar{display:none}
   /* min-width 取 26px：日期标签（"MM-DD" 9.5px）实宽 19~26px。此前是 8px + flex 平分，
      375px 下 14 列每列只有 18.5px，相邻标签直接压在一起。给足宽度让容器真的横向滚动。 */
-  .st-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+  .st-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
   .st-bar{width:72%;max-width:26px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden;background:rgba(var(--text-rgb,255,255,255),.05)}
   .st-bar>i{display:block;width:100%;flex:none}
-  .st-label{font-size:9.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .st-label{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
   .st-legend{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);color:var(--muted);flex-wrap:wrap}
   .st-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
   /* 标签掌握度：donut 环形网格 */
-  .tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:6px}
-  .tag-item{display:flex;align-items:center;gap:10px;border-radius:var(--r-lg);padding:10px 12px;transition:border-color var(--dur-fast)}
-  @media (hover:hover){ .tag-item:hover{border-color:var(--accent2)} }   /* 同上：触屏点过的标签行会一直像"被选中" */
+  .tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:8px}
+  .tag-item{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px;transition:border-color var(--dur-fast)}
+  @media (hover:hover){ .tag-item:hover{border-color:var(--accent)} }   /* 同上：触屏点过的标签行会一直像"被选中" */
   .tag-donut{width:38px;height:38px;flex:none}
   .td-bg{stroke:rgba(var(--text-rgb,255,255,255),.08)}
   .td-fg{transition:stroke-dasharray var(--dur-slow) ease}
   .tag-info{min-width:0}
-  .tag-name{font-size:var(--fs-ui);font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tag-name{font-size:var(--fs-ui);font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tag-sub{font-size:var(--fs-xs);color:var(--muted)}
   .tag-sub b{color:var(--accent)}
 
@@ -1216,27 +1177,44 @@
      用 --accent 画环、:where() 保持零特异度（不抢既有样式的优先级），只在键盘导航时出现。 */
   :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.q,.memory-card,.iconbtn,
          .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt,.sr-item,.backtop,.ov-card,.an-card):focus-visible{
-    outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+    outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm);
+    transition:outline-offset .15s var(--ease-out)}
+  /* 焦点环工艺（借鉴 argyleink/open-props normalize，5.6k★）：非按下态焦点环外扩一点，
+     配合 outline-offset 过渡，键盘落点更醒目；下划线离字身 2px 不贴笔画 */
+  :where(a,button,input,select,textarea,summary,[tabindex],.tab,.theme-card,.q,.memory-card,.iconbtn,
+         .grade-btn,.set-head,.grill-dur-btn,.grill-mode-card,.qt,.sr-item,.backtop,.ov-card,.an-card):not(:active):focus-visible{outline-offset:3px}
+  a{text-underline-offset:2px;text-decoration-thickness:1px}
+  /* 滚动链收敛（tailwindcss overscroll-contain 语义，98.6k★）：内层滚动容器滚到底不链到外层，
+     安卓 WebView 上也不会触发下拉刷新/橡皮筋把整页拽走 */
+  .content,.modal,.modal-scroll,.grill-chat,.theme-popup,.hm-wrap,.st-grid,.ai-answer,.mem-ai-scroll{overscroll-behavior:contain}
+  /* 聊天输入框随内容长高（open-props 的 field-sizing:content，Chrome 123+ 渐进增强）：
+     不支持的内核仍走 resize:none + max-height 旧行为 */
+  @supports (field-sizing: content){
+    .grill-input-row textarea{field-sizing:content}
+  }
+  /* Windows 高对比（借鉴 primer/css native-colors，13.1k★）：强调/焦点跟随系统 Highlight；
+     数据色块保留作者色（forced-color-adjust:none），否则热力图/等级条/方格点在高对比下全成同色 */
+  @media (forced-colors: active){
+    body{--accent:Highlight;--on-accent:HighlightText;--accent3:Highlight;--accent3-ink:Highlight;--focus-ring:0 0 0 3px Highlight}
+    .hm-cell,.pbar>i,.st-bar>i,.an-dot,.sq,.tag-donut{forced-color-adjust:none}
+  }
   /* 焦点光晕单独一条、不套 :where()：:where 特异度为 0，光晕会被元素自身的 box-shadow 盖掉
      （例如 .backtop 的 --shadow），焦点态就只剩一圈描边。单靠描边在低饱和主色的浅底主题上偏淡 */
   :focus-visible{box-shadow:var(--focus-ring)}
   /* 屏幕阅读器专用（视觉隐藏，供 aria-live 播报切页） */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-  /* ---------- 视图切换：方向性入场 ----------
-     原来无论往哪个标签切都是同一种 riseIn（向上浮）。现在按标签左右顺序给出水平方向：
-     往右切（fwd）新页从右侧滑入、往左切（back）从左侧滑入，建立"横向桌面"的空间连续感。
-     仅覆盖 animation-name，沿用原有 duration/easing/delay 交错（来自 .content.in>* 的 animation 简写）。 */
+  /* ---------- 视图切换：方向性滑入（幅度 20px，比旧版 30px 克制） ---------- */
   .content.in[data-nav="fwd"] > *{animation-name:slideInFwd}
   .content.in[data-nav="back"] > *{animation-name:slideInBack}
-  @keyframes slideInFwd{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-  @keyframes slideInBack{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+  @keyframes slideInFwd{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  @keyframes slideInBack{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
 
   /* ---------- 换题翻卡：刷题 / 趁热（复用记忆模式已验证的「飞出 + 入场」手感） ----------
      旧卡用 WAAPI 飞出（见 practiceStep / 趁热评分），新卡在模板里挂 .flip-in-* / .card-enter 做入场；
      memCardIn 复用记忆卡牌堆入场的关键帧（全局定义）。均不加 fill，动画结束后自然交还 hover 位移。 */
-  @keyframes cardInFwd{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:none}}
-  @keyframes cardInBack{from{opacity:0;transform:translateX(-48px)}to{opacity:1;transform:none}}
+  @keyframes cardInFwd{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+  @keyframes cardInBack{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
   .pcard.flip-in-fwd{animation:cardInFwd .3s var(--ease-out)}
   .pcard.flip-in-back{animation:cardInBack .3s var(--ease-out)}
   .memory-card.card-enter{animation:memCardIn var(--dur-slow) var(--ease-out)}
@@ -1304,32 +1282,25 @@
     transition:transform var(--dur) var(--ease-out)}
   .skip-link:focus-visible{transform:translateY(0);outline:2px solid var(--accent);outline-offset:2px}
 
-  /* ---------- 顶栏 SVG 图标：跟随文字颜色(currentColor)，尺寸与旧 emoji 对齐 ---------- */
-  .ic svg,.btn-ic,.search-ic{width:15px;height:15px;display:inline-block;vertical-align:-3px;
-    fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .topbar .search .search-ic{width:14px;height:14px;color:var(--muted);flex:none}
+  /* ---------- 顶栏 SVG 图标：跟随文字颜色(currentColor)，全站一套 16px / 1.5 描边 ---------- */
+  .ic svg,.btn-ic,.search-ic{width:16px;height:16px;display:inline-block;vertical-align:-3px;
+    fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .topbar .search .search-ic{width:16px;height:16px;color:var(--muted);flex:none}
+  /* 键帽：快捷键提示里的小方块（签名方格同族） */
+  .keycap{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;background:var(--panel2);font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--muted);line-height:1;vertical-align:-4px}
+  /* 签名方格点：状态/等级记号统一用小方格（呼应热力图打卡格） */
+  .sq{display:inline-block;width:8px;height:8px;border-radius:2px;background:currentColor;margin-right:6px;vertical-align:0}
 
   /* ---------- 浅底主题（绢 / 云海）的收尾微调 ----------
      body.light 由 applyTheme 按底色明度挂着（isLightColor），主题集里只要还有浅底主题，
      这一段就得在 —— 同理「跟随系统浅色」那条路的落点也是它。
      这里只做一类调整：**收敛发光**。几何与排版一律不动，浅底主题之外零影响。
      理由：彩色外发光在深空底上是氛围，在纸面上是脏斑（色块旁边糊一团颜色）。 */
-  body.light .hm-cell.l4{box-shadow:none}
-  body.light .pbar>i.lv5{box-shadow:0 0 0 1px rgba(139,92,246,.45)}
-  body.light .salary-card .salary-glow{opacity:.05}
-  /* 薪资卡：写死的 25% 黑投影在纸白底上是一团发飘的灰云，浅底换成轻投影
-     （内层那点 3% 白色高光在浅底上本来就等于不存在，一并去掉） */
   body.light .salary-card{box-shadow:0 6px 20px rgba(0,0,0,.10)}
   /* 弹窗遮罩：85% 的近黑是"深色主题下关灯聚焦"的浓度，纸白主题上同一浓度会把整屏压成黑板，
      与页面自身的明亮基调反差过大。浅底降到 50%，并与确认框（rgba(0,0,0,.5)）取同一浓度，全站一致 */
   body.light .modal-bg{background:linear-gradient(180deg, rgba(18,16,12,.38), rgba(18,16,12,.52))}
-  body.light .tab.active{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}   /* 纸面上的"高光"要亮一些才看得见 */
   body.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
-  /* 满级流光：保留色带流动（那是"满级"的语义本身），去掉向外扩散的呼吸光晕（纸面上会糊成一片） */
-  @media (prefers-reduced-motion: no-preference){
-    body.light .pbar>i.lvM::before{animation:lvM-flow 6s linear infinite}
-  }
-  body.light .pbar>i.lvM::after{display:none}
 
   /* ---------- 宽屏桌面端（≥1024px）----------
      断点体系此前只有"移动端覆写"（≤768）和一条给 .qmodal 加宽的 min-width:769px，
@@ -1342,7 +1313,7 @@
      直接套用拉丁文本的 65~75ch 会偏宽。 */
   @media(min-width:1024px){
     /* 单列阅读类页面（题目浏览 / 搜索结果）：正文块收到 --rail-read 并居中。
-       题目浏览页只挑 .doc-head / .q / .empty 三类：底部"显示更多"那行带内联 margin:18px 0，
+       题目浏览页只挑 .doc-head / .q / .empty 三类：底部"显示更多"那行带内联 margin:16px 0，
        一起收进来会让它相对卡片列左移 (1144-820)/2 = 162px；它本身 text-align:center，
        留在全宽容器里反而和居中后的卡片列同轴。
        搜索结果页此前是 display:grid 双列，而 .empty 没被指定跨列 → 它就落在**第一列**，
@@ -1388,9 +1359,7 @@
 <!-- 跳转链接：键盘用户的第一个 Tab 停靠点，Enter 直达主内容（平时视觉隐藏，聚焦才浮出） -->
 <a class="skip-link" href="#content">跳到主要内容</a>
 <!-- 入场动画：全屏星空（纯画面，不叠文字）。canvas 星野由 introStart() 驱动；init 完成并展示满最短时长后淡出移除 -->
-<div class="app-loader" id="appLoader">
-  <canvas id="introCanvas"></canvas>
-</div>
+<div class="app-loader" id="appLoader"></div>
 <div class="app">
   <!-- TOPBAR -->
   <div class="topbar">
@@ -1405,7 +1374,7 @@
       <div class="tab" data-view="hot" role="tab" aria-controls="content" tabindex="-1" aria-selected="false" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span>趁热</span></div>
     </div>
     <div class="search">
-      <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索题目…" autocomplete="off" aria-label="搜索题目">
+      <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索" autocomplete="off" aria-label="搜索题目">
     </div>
     <button type="button" class="btn ghost" id="dataBtn" title="设置" aria-label="设置"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M1 15h6M9 9h6M17 17h6"/></svg><span class="btn-label">设置</span></button>
     <button type="button" class="btn ghost" id="themeBtn" title="切换主题" aria-label="切换主题"><svg class="btn-ic" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 10.6C21.4 5.8 17.1 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7" r="1.2"/></svg></button>
@@ -1441,27 +1410,27 @@
 <div class="theme-popup" id="themePopup" role="dialog" aria-label="选择主题" style="right:12px;top:calc(48px + env(safe-area-inset-top, 0px))">
   <div class="theme-grid" id="themeGrid"></div>
   <div class="theme-grid" id="themeBgRow" style="border-top:1px solid var(--line);padding-top:6px;margin-top:2px"></div>
-  <button type="button" class="btn sm" id="uploadBgBtn" style="width:100%;justify-content:center;font-size:var(--fs-xs);padding:6px;margin-top:4px">📤 上传背景图</button>
+  <button type="button" class="btn sm" id="uploadBgBtn" style="width:100%;justify-content:center;font-size:var(--fs-xs);padding:6px;margin-top:4px"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 21h14"/></svg> 上传背景图</button>
 </div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="dataModal" role="dialog" aria-modal="true" aria-label="设置">
   <div class="modal settings-modal">
     <div class="modal-head">
-      <span class="modal-title">⚙️ 设置</span>
+      <span class="modal-title"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M1 15h6M9 9h6M17 17h6"/></svg>设置</span>
       <button type="button" class="modal-x" id="closeModalX" type="button" aria-label="关闭">✕</button>
     </div>
     <div class="modal-scroll">
     <div class="set-list">
       <!-- 0. 云同步 -->
       <div class="set-section">
-        <div class="set-head">☁️ Gitee 云同步 <span class="set-arrow">▾</span></div>
+        <div class="set-head"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .42-8.98 6 6 0 0 0-11.7 1.62A3.5 3.5 0 0 0 6.5 19z"/></svg>Gitee 云同步 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" rel="noopener noreferrer" style="color:var(--accent2)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
+          <div class="set-hint">多设备数据同步。先去 <a href="https://gitee.com/profile/personal_access_tokens" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">gitee.com</a> 生成私人令牌（勾选 gists），再创建代码片段获取 Gist ID。</div>
           <div class="set-col">
             <div class="set-field" style="flex:1"><label for="giteeToken">Token</label><input placeholder="Gitee 私人令牌" id="giteeToken" type="password" autocomplete="new-password" name="gtoken" aria-label="Gitee 私人令牌"></div>
             <div class="set-field" style="flex:1"><label for="giteeGistId">Gist ID</label><input placeholder="代码片段 ID" id="giteeGistId" autocomplete="off" name="gistid" aria-label="Gitee 代码片段 ID"></div>
-            <div class="set-btns"><button type="button" class="btn sm" id="cloudPull">⬇️ 拉取云端</button> <button type="button" class="btn sm" id="cloudPush">⬆️ 推送本地</button></div>
+            <div class="set-btns"><button type="button" class="btn sm" id="cloudPull"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> 拉取云端</button> <button type="button" class="btn sm" id="cloudPush"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 21h14"/></svg> 推送本地</button></div>
           </div>
           <div class="set-hint" style="margin-top:8px">在线时每 10 分钟自动推送一次。</div>
           <div id="cloudStatus" class="set-status"></div>
@@ -1469,15 +1438,15 @@
       </div>
       <!-- 1. 数据备份 -->
       <div class="set-section">
-        <div class="set-head">📦 数据备份与恢复 <span class="set-arrow">▾</span></div>
+        <div class="set-head"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>数据备份与恢复 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
           <div class="set-hint">备份 / 换机请用 <b>JSON</b>（含题库、进度、掌握、通关数，可原样回导）；Markdown 只导出题目正文，适合交给 AI 阅读，回导会丢结构。<br><span id="storageUsage" style="color:var(--accent);font-weight:600">计算中…</span></div>
-          <div class="set-btns"><button type="button" class="btn" id="exportJsonBtn">🗄️ 导出备份（JSON · 可回导）</button> <button type="button" class="btn" id="exportMDBtn">📄 导出题库（Markdown · 给 AI 看）</button> <button type="button" class="btn primary" id="importBtn">⬆️ 导入题目（JSON / Markdown）</button></div>
+          <div class="set-btns"><button type="button" class="btn" id="exportJsonBtn"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg> 导出备份（JSON · 可回导）</button> <button type="button" class="btn" id="exportMDBtn"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg> 导出题库（Markdown · 给 AI 看）</button> <button type="button" class="btn primary" id="importBtn"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 21h14"/></svg> 导入题目（JSON / Markdown）</button></div>
         </div></div></div>
       </div>
       <!-- 2. AI 设置 -->
       <div class="set-section">
-        <div class="set-head">🤖 AI 模型设置 <span class="set-arrow">▾</span></div>
+        <div class="set-head"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="10" y="10" width="4" height="4"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>AI 模型设置 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
           <div class="set-hint">Key 只保存在本机浏览器，不会随题库上传。<br>说明：本地存储只做了<b>可逆混淆</b>（防肩窥，不是加密），能读到你浏览器的程序同样能读到它。<br>App（Android）默认禁止明文传输，API 地址必须用 <b style="color:var(--accent)">https://</b>；填 http:// 会直接报网络错误（浏览器里却可能正常）。</div>
           <div class="set-row2"><div class="set-field" style="flex:1"><label for="aiUrl">API 地址</label><input placeholder="https://api.siliconflow.cn/v1/chat/completions" id="aiUrl" aria-label="AI API 地址"></div></div>
@@ -1486,17 +1455,17 @@
       </div>
       <!-- 3. 声音与反馈 -->
       <div class="set-section">
-        <div class="set-head">🔊 声音与反馈 <span class="set-arrow">▾</span></div>
+        <div class="set-head"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>声音与反馈 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
           <div class="set-hint">只在<b>评分那一下</b>出声（翻页、展开答案不响），每声不到 0.2 秒。音色跟随当前主题，换主题时会自动试听一声；四档的音高由低到高，和爆发粒子的颜色（红→橙→主色→绿）说的是同一件事。</div>
-          <div class="set-btns"><button type="button" class="btn sm" id="soundToggle" aria-pressed="true">🔊 答题音效：开</button> <button type="button" class="btn sm" id="soundPreview">🎵 试听四档</button></div>
+          <div class="set-btns"><button type="button" class="btn sm" id="soundToggle" aria-pressed="true"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg> 答题音效：开</button> <button type="button" class="btn sm" id="soundPreview"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> 试听四档</button></div>
         </div></div></div>
       </div>
       <!-- 4. 进阶操作 -->
       <div class="set-section">
-        <div class="set-head">⚠️ 进阶操作 <span class="set-arrow">▾</span></div>
+        <div class="set-head"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.8 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>进阶操作 <span class="set-arrow">▾</span></div>
         <div class="rv"><div class="rv-in"><div class="set-body">
-          <div class="set-btns"><button type="button" class="btn danger" id="resetBtn">🗑️ 仅清除进度</button> <button type="button" class="btn danger" id="clearAllBtn">🗑️ 清空全部文档</button></div>
+          <div class="set-btns"><button type="button" class="btn danger" id="resetBtn"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg> 仅清除进度</button> <button type="button" class="btn danger" id="clearAllBtn"><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg> 清空全部文档</button></div>
         </div></div></div>
       </div>
     </div>
@@ -1530,7 +1499,7 @@
 <!-- ADD QUESTION MODAL -->
 <div class="modal-bg" id="addModal" role="dialog" aria-modal="true" aria-label="添加题目">
   <div class="modal qmodal">
-    <h3>➕ 在「<span id="addDocName"></span>」中添加题目</h3>
+    <h3><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> 在「<span id="addDocName"></span>」中添加题目</h3>
     <label for="aqTitle">题目 *</label>
     <input type="text" id="aqTitle" placeholder="例如：说一下 HashMap 的底层结构？" aria-label="题目">
     <div class="row">
@@ -1551,7 +1520,7 @@
 <!-- EDIT QUESTION MODAL -->
 <div class="modal-bg" id="editModal" role="dialog" aria-modal="true" aria-label="编辑题目">
   <div class="modal qmodal">
-    <h3>✏️ 编辑题目（「<span id="editDocName"></span>」）</h3>
+    <h3><svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑题目（「<span id="editDocName"></span>」）</h3>
     <label for="eqTitle">题目 *</label>
     <input type="text" id="eqTitle" aria-label="题目">
     <div class="row">
@@ -1707,7 +1676,7 @@ const Store = (() => {
     try{
       const str = JSON.stringify(o);
       // 检查序列化后是否接近 localStorage 5MB 上限
-      if(str.length > 4500000 && !_capWarned){ _capWarned = true; toast('⚠️ 数据量接近存储上限，建议导出备份或清理旧题目'); }
+      if(str.length > 4500000 && !_capWarned){ _capWarned = true; toast('数据量接近存储上限，建议导出备份或清理旧题目'); }
       localStorage.setItem(LS_KEY, str);
       mem = o; _memPrimed = true;
       markDegradedWrite();
@@ -1716,7 +1685,7 @@ const Store = (() => {
     catch(e){
       // localStorage 满或不可用时的兜底保护
       mem = o; _memPrimed = true;
-      if(!_lsFailWarned){ _lsFailWarned = true; toast('⚠️ 存储空间不足，数据未保存到本地！请导出备份并清理浏览器存储'); }
+      if(!_lsFailWarned){ _lsFailWarned = true; toast('存储空间不足，数据未保存到本地。请导出备份并清理浏览器存储'); }
       warnSilent('localStorage 写入失败，数据仅保留在内存中', e);
       return false;   // 同上：把真实结果交回 set()，否则降级分支永远报成功
     }
@@ -2318,7 +2287,7 @@ function celebrateTrophy(){
   if(prefersReduce()){ celebrateConfetti({count:60}); return; }
   celebrateFireworks();
   const el = document.createElement('div');
-  el.textContent = '🏆';
+  el.innerHTML = ic('award');
   el.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);font-size:88px;z-index:76;pointer-events:none;filter:drop-shadow(0 8px 24px rgba(0,0,0,.4))';
   document.body.appendChild(el);
   el.animate([
@@ -2360,10 +2329,10 @@ const FSRS_AGAIN_INTERVAL = 0.5;                // 「忘了」的间隔（天�
 const FSRS_MIN_STABILITY = 0.01, FSRS_MAX_STABILITY = 36500;
 const Rate = { AGAIN:1, HARD:2, GOOD:3, EASY:4 };   // 四档评分（与 Anki / ts-fsrs 的 Rating 对齐）
 const RATE_META = {
-  1:{label:'完全忘了', icon:'😰', color:'var(--bad)',    cls:'g-again'},
-  2:{label:'记得一点', icon:'🤔', color:'#e09040',       cls:'g-hard'},
-  3:{label:'差不多',   icon:'😐', color:'var(--accent)', cls:'g-good'},
-  4:{label:'倒背如流', icon:'😎', color:'var(--good)',   cls:'g-easy'}
+  1:{label:'完全忘了', icon:'', color:'var(--bad)',    cls:'g-again'},
+  2:{label:'记得一点', icon:'', color:'var(--warn)',       cls:'g-hard'},
+  3:{label:'差不多',   icon:'', color:'var(--accent)', cls:'g-good'},
+  4:{label:'倒背如流', icon:'', color:'var(--good)',   cls:'g-easy'}
 };
 /* 记忆模式的评分档位 = FSRS 的四档，一一对应（按钮的 data-rate 就是 FSRS 的 Rating 值）。
    不要再引入"UI 档位 → 调度档位"的换算层：FSRS 只有四档，多出来的档必然与某一档等价，
@@ -2936,7 +2905,7 @@ function renderWarReport(r){
   const masteryPct = st.tq ? Math.round(st.tm / st.tq * 100) : 0;
   $('#warSub').innerHTML = '覆盖 <b style="color:var(--text)">' + r.uniq + '</b> 道题'
     + (r.newQ ? ' · 其中首刷 ' + r.newQ + ' 道' : '')
-    + (st.streak > 0 ? '<br>🔥 连续打卡第 <b style="color:var(--accent3-ink, var(--accent3))">' + st.streak + '</b> 天' : '');
+    + (st.streak > 0 ? '<br>' + sq('var(--accent3-ink, var(--accent3))') + '连续打卡第 <b style="color:var(--accent3-ink, var(--accent3))">' + st.streak + '</b> 天' : '');
   // 四档占比条：宽度按次数占比，颜色直接取 RATE_META（与评分按钮同源，改一处两处都对）
   $('#warBar').innerHTML = [1,2,3,4].map(g => r.c[g-1]
     ? '<i style="width:' + (r.c[g-1]/r.total*100).toFixed(2) + '%;background:' + RATE_META[g].color + '"></i>' : '').join('');
@@ -3067,6 +3036,50 @@ function pruneOrphanProgress(){
 }
 /* ---------- 工具 ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* unslop：全站唯一线图标集（16px / 1.5 描边 / currentColor）。emoji 退出界面，
+   状态记号统一走签名方格点 sq()（呼应热力图打卡格）。 */
+const ICON_PATHS = {
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  award:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/>',
+  flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  skip:'<path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-4"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+  briefcase:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  trend:'<polyline points="3 17 9 11 13 15 21 6"/><path d="M15 6h6v6"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  trash:'<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>',
+  pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+  eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  upload:'<path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 21h14"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  code:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+  mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',
+  play:'<path d="M6 4l14 8-14 8z"/>',
+  refresh:'<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+  door:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  paperclip:'<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+  alert:'<path d="M10.3 3.8 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  tag:'<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/>',
+  percent:'<path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+  cpu:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="10" y="10" width="4" height="4"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>',
+  chip:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>',
+  star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  volume:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>',
+  mute:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>'
+};
+function ic(name){ return '<svg class="btn-ic" viewBox="0 0 24 24" aria-hidden="true">' + (ICON_PATHS[name] || '') + '</svg>'; }
+function sq(color){ return '<i class="sq" style="color:' + color + '"></i>'; }
 // 标题渲染：先还原 Markdown 反斜杠转义（\< \> \- \_ … → 字面符），再转义并处理 **加粗**。
 // 反斜杠先转成占位符（记录原始字符），回填时再 esc，确保还原出的 * / 尖括号 不会被下面的加粗正则二次解释。
 function renderTitle(s){
@@ -3187,7 +3200,7 @@ function renderAnswer(t){
   s = s.replace(/\u0002B(\d+)\u0002/g, (m, i) => bsEsc[+i]);
   return s.replace(/\u0001CB(\d+)\u0001/g, (m, i) => codeBlocks[+i]);
 }
-const AI_BLOCK_HEAD = '<div class="ai-head">🤖 AI 回复</div>';
+const AI_BLOCK_HEAD = '<div class="ai-head">' + ic('cpu') + ' AI 回复</div>';
 function renderAIBlock(qid){
   if(!aiAnswer[qid]) return '';
   if(aiAnswer[qid]==='loading') return '<div class="ai-answer" data-qid="'+esc(qid)+'">'+AI_BLOCK_HEAD+'<div class="ai-body"><div class="ai-loading">AI 思考中…</div></div></div>';
@@ -3275,6 +3288,36 @@ function hideModal(el){
   if(was && holding && el.__returnTo && document.contains(el.__returnTo)){ try{ el.__returnTo.focus(); }catch(_){}}
   el.__returnTo = null;
 }
+/* 焦点陷阱（借鉴 radix-ui/primitives FocusScope，19.5k★）：Tab 在最上层浮层的首/末可聚焦元素间循环，
+   焦点被程序化移出时收回；嵌套浮层只陷阱最上层（radix focusScopesStack 的 pause 语义）。
+   中文输入法组合态的 Tab 属于选候选词，绝不拦截（isComposing / keyCode 229）；
+   程序化聚焦一律 preventScroll，避免焦点跳动带着页面滚。 */
+function _topLayer(){
+  const shown = Array.from(document.querySelectorAll('.modal-bg.show, .theme-popup.show, .confirm-ov'));
+  if(!shown.length) return null;
+  return shown.sort((a,b)=> (parseInt(getComputedStyle(b).zIndex,10)||0) - (parseInt(getComputedStyle(a).zIndex,10)||0))[0];
+}
+function _tabbables(root){
+  return Array.from(root.querySelectorAll('a[href],button,input,select,textarea,[tabindex]'))
+    .filter(el => !el.disabled && el.type !== 'hidden' && el.tabIndex >= 0
+      && (typeof el.checkVisibility === 'function' ? el.checkVisibility({checkVisibilityCSS:true}) : el.offsetParent !== null));
+}
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Tab' || e.isComposing || e.keyCode === 229 || e.altKey || e.ctrlKey || e.metaKey) return;
+  const layer = _topLayer(); if(!layer) return;
+  const list = _tabbables(layer);
+  const cur = document.activeElement;
+  if(!list.length){ e.preventDefault(); return; }
+  const first = list[0], last = list[list.length-1];
+  if(!layer.contains(cur)){ e.preventDefault(); (e.shiftKey ? last : first).focus({preventScroll:true}); return; }
+  if(!e.shiftKey && cur === last){ e.preventDefault(); first.focus({preventScroll:true}); }
+  else if(e.shiftKey && cur === first){ e.preventDefault(); last.focus({preventScroll:true}); }
+});
+document.addEventListener('focusin', e => {
+  const layer = _topLayer(); if(!layer || layer.contains(e.target)) return;
+  const list = _tabbables(layer);
+  try{ (list[0] || layer).focus({preventScroll:true}); }catch(_){}
+});
 let _confirmOpen = false;
 let _confirmQueue = [];   // 待弹出的确认框：{msg, resolve}
 let _confirmCancel = null;   // 当前确认框的取消回调（供 Esc 关闭；原先只赋值不读取，Esc 其实关不掉）
@@ -3649,8 +3692,8 @@ function renderStatsBar(){
   const masteredPct = Math.min(seenPct, tq ? Math.round(tm/tq*100) : 0);
   // 宽度为 0 的段不渲染：留着它会占住 :last-child，让真正可见的末段拿不到前沿圆角（见 .stats-bar .bar>i:last-child）
   const seenOnlyPct = seenPct - masteredPct;
-  const barSegs = (masteredPct>0 ? `<i style="width:${masteredPct}%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></i>` : '')
-                + (seenOnlyPct>0 ? `<i style="width:${seenOnlyPct}%;background:var(--accent)"></i>` : '');
+  const barSegs = (masteredPct>0 ? `<i style="width:${masteredPct}%;background:var(--accent)"></i>` : '')
+                + (seenOnlyPct>0 ? `<i style="width:${seenOnlyPct}%;background:rgba(var(--accent-rgb),.45)"></i>` : '');
   /* data-num / data-val / data-suf：重建后据此把数字从「上一次的值」滚上来（见下方滚动段）。
      为什么用属性而不是闭包变量：这段 HTML 是整段新拼的，节点一出生就是最终值，
      「从旧值滚到新值」只能靠重建之后的后处理，而那时已经拿不到旧值了。 */
@@ -3658,10 +3701,10 @@ function renderStatsBar(){
     <span>总进度 <b data-num="seenPct" data-val="${seenPct}" data-suf="%">${seenPct}%</b></span>
     <div class="bar" style="display:flex">${barSegs}</div>
     <span>题目 <b data-num="tq" data-val="${tq}">${tq}</b></span><span>已看 <b data-num="ts" data-val="${ts}">${ts}</b></span><span>掌握 <b data-num="tm" data-val="${tm}">${tm}</b></span>
-    ${streak>0?`<span style="color:var(--accent3-ink, var(--accent3))">🔥 连续 <b data-num="streak" data-val="${streak}">${streak}</b> 天</span>`:''}
+    ${streak>0?`<span style="color:var(--accent3-ink, var(--accent3))">${sq('var(--accent3-ink, var(--accent3))')}连续 <b data-num="streak" data-val="${streak}">${streak}</b> 天</span>`:''}
     ${todayDone>0?`<span title="按每题「最后一次练习时间」归日：刷题模式里翻看过的题也算在内，不等于答题次数">今日已刷 <b data-num="todayDone" data-val="${todayDone}">${todayDone}</b> 题</span>`:''}
-    ${due>0?`<span class="urg">🧠 记忆 <b data-num="due" data-val="${due}">${due}</b> 题待复习</span>`:''}
-    ${fresh>0?`<span>🌱 未学 <b data-num="fresh" data-val="${fresh}">${fresh}</b></span>`:''}
+    ${due>0?`<span class="urg">${sq('var(--warn)')}记忆 <b data-num="due" data-val="${due}">${due}</b> 题待复习</span>`:''}
+    ${fresh>0?`<span>${sq('var(--muted)')}未学 <b data-num="fresh" data-val="${fresh}">${fresh}</b></span>`:''}
   `;
   /* 内容没变就不重建：renderStatsBar 每次 renderAll 都会被调用（翻题、切页、切换掌握、评分……），
      而多数时候这几个数字完全一样 —— innerHTML 赋值会让浏览器重新解析 HTML 并重排这一条。 */
@@ -3754,14 +3797,14 @@ function renderOverview(c){
   // 空题库引导：新装后这一页此前只有一排 0 和 ¥0，没有任何「下一步」的入口 ——
   // 而文档页早就有同样的引导（见 syncDocs 的 docsEmptySlot），这里复用同一个 openImportPicker。
   const emptyLead = (tq === 0)
-    ? `<div class="empty"><div class="big">📚</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
-       <div style="text-align:center;margin:0 0 18px"><button type="button" class="btn primary" id="ovImport">⬆️ 导入题库（JSON / Markdown）</button></div>`
+    ? `<div class="empty"><div class="big">${ic('book')}</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
+       <div style="text-align:center;margin:0 0 16px"><button type="button" class="btn primary" id="ovImport">${ic('upload')} 导入题库（JSON / Markdown）</button></div>`
     : '';
   c.innerHTML = emptyLead + `
     <div class="salary-card">
       <div class="salary-glow"></div>
       <div class="salary-inner">
-        <div class="salary-label">💼 预计月薪</div>
+        <div class="salary-label">${ic('briefcase')} 预计月薪</div>
         <div class="salary-num" id="ovSalary">¥ ${salary.toLocaleString()}</div>
         <div class="salary-sub">每掌握 1 道面试题 = <b>+¥100</b> · 掌握 <b>${tm}</b> 题 · 目标 ¥${(tq*100).toLocaleString()}</div>
         <div class="salary-bar"><i style="width:${tq?Math.round(tm/tq*100):0}%;background:linear-gradient(90deg,#f5c542,#f6a85b,#f5c542)"></i></div>
@@ -3787,8 +3830,8 @@ function renderOverview(c){
       </div>
     </div>
     <div class="ov-trend" style="background:var(--card);border:1px solid var(--line);border-radius:var(--r-panel);padding:20px;margin-top:0">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-weight:700;font-size:var(--fs-base)">📈 刷题趋势</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="font-weight:600;font-size:var(--fs-base)">${ic('trend')} 刷题趋势</span>
         <div style="display:flex;gap:4px">
           <!-- 固定展示近 30 天（不再提供 7/30 切换）；默认折线，可切回柱状 -->
           <button type="button" class="btn sm ${(window._ovChartMode||'line')==='bar'?'primary':''}" id="chartBtnBar">柱状</button>
@@ -4027,10 +4070,10 @@ function buildDocCard(d){
   if(form==='empty') el.style.opacity = '.55';
   el.innerHTML = form==='empty'
     ? `<div class="qhead"><div class="qnum">—</div><div class="qtitle"></div>
-        <div class="qacts"><button type="button" class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档">🗑</button></div></div>`
+        <div class="qacts"><button type="button" class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档">${ic('trash')}</button></div></div>`
     : `<div class="qhead"><div class="qnum"></div><div class="qtitle"></div>
-        <div class="qacts"><button type="button" class="btn sm" data-goprac="${esc(d.id)}">🎯 刷题</button><button type="button" class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档及其全部题目">🗑</button></div></div>
-        <div class="mini" style="margin-top:10px"><i style="height:5px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
+        <div class="qacts"><button type="button" class="btn sm" data-goprac="${esc(d.id)}">${ic('target')} 刷题</button><button type="button" class="btn sm danger" data-del-doc="${esc(d.id)}" title="删除本文档及其全部题目">${ic('trash')}</button></div></div>
+        <div class="mini" style="margin-top:12px"><i style="height:5px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))"></i></div>
         <div class="pct" style="font-size:var(--fs-xs);color:var(--muted);margin-top:4px"></div>`;
   return el;
 }
@@ -4058,8 +4101,8 @@ function syncDocs(c, wrap){
   const wantEmpty = DOCS.length === 0;
   if((slot.children.length > 0) !== wantEmpty){
     slot.innerHTML = wantEmpty
-      ? `<div class="empty"><div class="big">📚</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
-        <div style="text-align:center;margin:0 0 18px"><button type="button" class="btn primary" id="docsImport">⬆️ 导入题库（JSON / Markdown）</button></div>`
+      ? `<div class="empty"><div class="big">${ic('book')}</div>题库还是空的。先导入 JSON / Markdown 题库，或从零新建一篇文档。</div>
+        <div style="text-align:center;margin:0 0 16px"><button type="button" class="btn primary" id="docsImport">${ic('upload')} 导入题库（JSON / Markdown）</button></div>`
       : '';
   }
   // 列表：能复用的复用，只有"没建过"或"形态变了"才重建那一张；顺序靠 insertBefore 维持 ——
@@ -4103,10 +4146,10 @@ function browseCardHtml(q, i){
       <div class="qnum">${i+1}</div>
       <div class="qtitle">${renderTitle(q.title)}</div>
       <div class="qacts">
-        <button type="button" class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记掌握" aria-label="标记掌握" aria-pressed="${p.mastered?'true':'false'}">★</button>
-        <button type="button" class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">👁</button>
-        <button type="button" class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">✏️</button>
-        <button type="button" class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">🗑</button>
+        <button type="button" class="iconbtn ${p.mastered?'on':''}" data-master="${esc(q.id)}" title="标记掌握" aria-label="标记掌握" aria-pressed="${p.mastered?'true':'false'}">${ic('star')}</button>
+        <button type="button" class="iconbtn" data-eye="${esc(q.id)}" title="显示/隐藏答案" aria-label="显示答案">${ic('eye')}</button>
+        <button type="button" class="iconbtn" data-edit="${esc(q.id)}" title="编辑题目" aria-label="编辑题目">${ic('pencil')}</button>
+        <button type="button" class="iconbtn del" data-del="${esc(q.id)}" title="删除题目" aria-label="删除题目">${ic('trash')}</button>
       </div>
     </div>
     <div class="answer" data-ans="${esc(q.id)}">
@@ -4141,19 +4184,19 @@ function renderBrowse(c){
   let html = `
     <div class="doc-head">
       <div>
-        <button type="button" class="btn sm back-btn" id="browseBack">⬅ ${backToSearch?'返回搜索结果':'返回文档列表'}</button>
+        <button type="button" class="btn sm back-btn" id="browseBack">${ic('back')} ${backToSearch?'返回搜索结果':'返回文档列表'}</button>
         <h2>${renderTitle(d.title)}</h2>
         <div class="meta">${browseMetaText(d)}</div>
         <div class="bigbar"><i style="width:${dp}%"></i></div>
       </div>
       <div style="display:flex;gap:8px">
-        <button type="button" class="btn" id="addQBtn">➕ 添加题目</button>
-        <button type="button" class="btn primary" data-prac="${esc(d.id)}">🎯 进入刷题</button>
-        <button type="button" class="btn danger" data-deldir="${esc(d.id)}" title="删除本文档及其全部题目">🗑️ 删除文档</button>
+        <button type="button" class="btn" id="addQBtn">${ic('plus')} 添加题目</button>
+        <button type="button" class="btn primary" data-prac="${esc(d.id)}">${ic('target')} 进入刷题</button>
+        <button type="button" class="btn danger" data-deldir="${esc(d.id)}" title="删除本文档及其全部题目">${ic('trash')} 删除文档</button>
       </div>
     </div>`;
   if(!d.questions.length){
-    html += `<div class="empty"><div class="big">📭</div>该文档暂无题目。可点「➕ 添加题目」，或在「⚙️ 设置」中导入 JSON / Markdown。</div>`;
+    html += `<div class="empty"><div class="big">${ic('inbox')}</div>该文档暂无题目。可点「添加题目」，或在「设置」中导入 JSON / Markdown。</div>`;
   } else {
     // 大文档分页渲染：单次最多 browseLimit 张卡片，避免上千题时一次性建 DOM 卡死页面
     const hi = highlightQid ? d.questions.findIndex(x=>x.id===highlightQid) : -1;
@@ -4161,7 +4204,7 @@ function renderBrowse(c){
     const shown = Math.min(d.questions.length, browseLimit);
     html += d.questions.slice(0, shown).map(browseCardHtml).join('');
     if(d.questions.length > shown){
-      html += `<div style="text-align:center;margin:18px 0"><button type="button" class="btn" id="browseMore">显示更多（还有 ${d.questions.length-shown} 题）</button></div>`;
+      html += `<div style="text-align:center;margin:16px 0"><button type="button" class="btn" id="browseMore">显示更多（还有 ${d.questions.length-shown} 题）</button></div>`;
     }
   }
   c.innerHTML = html;
@@ -4226,8 +4269,8 @@ function fillAnswerHtml(qid){
   const q = QINDEX.get(qid);
   if(!q) return;
   const tags = (Array.isArray(q.tags) && q.tags.length)
-    ? `<div class="label" style="margin-top:14px;color:var(--accent2)">标 签</div><div style="font-size:var(--fs-ui);color:var(--muted)">${esc(q.tags.join(' · '))}</div>` : '';
-  box.innerHTML = '<div class="label">答 案</div>' + renderAnswer(q.answer) + tags;
+    ? `<div class="label" style="margin-top:16px;color:var(--muted)">标签</div><div style="font-size:var(--fs-ui);color:var(--muted)">${esc(q.tags.join(' · '))}</div>` : '';
+  box.innerHTML = '<div class="label">答案</div>' + renderAnswer(q.answer) + tags;
   box.__filled = true;
 }
 function toggleAnswer(qid){
@@ -4238,7 +4281,7 @@ function toggleAnswer(qid){
   if(nowOpen) fillAnswerHtml(qid);   // 见 fillAnswerHtml：正文第一次展开时才解析（默认折叠着，不必先算）
   if(ans) ans.classList.toggle('show', nowOpen);
   if(eye){
-    eye.classList.toggle('on', nowOpen); eye.textContent = nowOpen?'🙈':'👁';
+    eye.classList.toggle('on', nowOpen); eye.innerHTML = nowOpen?ic('eyeoff'):ic('eye');
     eye.title = nowOpen?'隐藏答案':'显示答案';                 // 按钮换了图标，语义也要跟着换
     eye.setAttribute('aria-label', nowOpen?'隐藏答案':'显示答案');
   }
@@ -4535,17 +4578,17 @@ function renderPractice(c){
     c.innerHTML = `
     <div class="practice-wrap">
       <div class="pbar"><i style="width:0%"></i></div>
-      <div class="pmeta"><span class="pmeta-l"><button type="button" class="btn sm back-btn" id="practiceBack">⬅ 返回</button><span id="pracDocTitle"></span></span><span id="pracIdx"></span></div>
+      <div class="pmeta"><span class="pmeta-l"><button type="button" class="btn sm back-btn" id="practiceBack">${ic('back')} 返回</button><span id="pracDocTitle"></span></span><span id="pracIdx"></span></div>
       <div class="pcard">
         <div class="ptag">题目</div>
         <div class="ptitle"></div>
-        <div class="rv panswer" id="pAnswerArea"><div class="rv-in"><div class="label">📝 答案</div><div id="pAnswerBody"></div></div></div>
+        <div class="rv panswer" id="pAnswerArea"><div class="rv-in"><div class="label">答案</div><div id="pAnswerBody"></div></div></div>
       </div>
       <div class="pcontrols">
         <button type="button" class="btn" id="prevBtn">← 上一题</button>
         <button type="button" class="btn" id="revealBtn"></button>
-        <button type="button" class="btn" id="aiAskBtn" title="AI 深度讲解此题：校验参考答案 + 必要补充 + 追问预测">🔬 精讲</button>
-        <button type="button" class="btn" id="editAnswerBtn" title="修改本题答案">✏️ 编辑</button>
+        <button type="button" class="btn" id="aiAskBtn" title="AI 深度讲解此题：校验参考答案 + 必要补充 + 追问预测">${ic('cpu')} 精讲</button>
+        <button type="button" class="btn" id="editAnswerBtn" title="修改本题答案">${ic('pencil')} 编辑</button>
         <button type="button" class="btn" id="masterBtn"></button>
         <div class="spacer"></div>
         <button type="button" class="btn" id="nextBtn"></button>
@@ -4616,7 +4659,7 @@ function paintPractice(c){
   const canComplete = canCompletePractice();
   // 顶部单段进度条：节点复用后它的 width 变化终于能走 CSS 过渡（见 .pbar > i）
   w.querySelector('.pbar > i').style.width = Math.round(idx/tot*100) + '%';
-  w.querySelector('#pracDocTitle').innerHTML = `${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 🔁'+docClears(doc.id)+'次':''}`;
+  w.querySelector('#pracDocTitle').innerHTML = `${renderTitle(doc?doc.title:'')}${docClears(doc?doc.id:null)?' · 通关 '+docClears(doc.id)+' 次':''}`;
   w.querySelector('#pracIdx').textContent = `${idx} / ${tot}`;
   // 卡片：方向性入场。重建版靠模板里拼 flip-in-*，节点复用后要手动重播（摘类 → 强制回流 → 加类）
   const card = w.querySelector('.pcard');
@@ -4640,17 +4683,17 @@ function paintPractice(c){
   prev.style.cursor = prevOff ? 'not-allowed' : '';
   const rv = w.querySelector('#revealBtn');
   rv.className = 'btn' + (revealed ? '' : ' primary');
-  rv.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案';
+  rv.innerHTML = revealed ? ic('eyeoff')+' 隐藏答案' : ic('eye')+' 显示答案';
   const mb = w.querySelector('#masterBtn');
   mb.className = 'btn' + (p.mastered ? ' primary' : '');
-  mb.textContent = p.mastered ? '★ 掌握' : '☆ 标记掌握';
+  mb.innerHTML = p.mastered ? ic('star')+' 掌握' : ic('star')+' 标记掌握';
   const nx = w.querySelector('#nextBtn');
   const nxOff = atLast && !canComplete;
   nx.className = 'btn' + (atLast ? ' primary' : '');
   nx.disabled = nxOff;
   nx.style.opacity = nxOff ? '.5' : '';
   nx.style.cursor = nxOff ? 'not-allowed' : '';
-  nx.textContent = atLast ? (canComplete?'🎉 完成刷题':'需先把本关题目过一遍') : '下一题 →';
+  nx.innerHTML = atLast ? (canComplete?ic('award')+' 完成刷题':'需先把本关题目过一遍') : '下一题 →';
 }
 function renderDone(c){
   const docId = currentLevelDocId();
@@ -4658,12 +4701,12 @@ function renderDone(c){
   c.innerHTML = `
     <div class="practice-wrap">
       <div class="done-card">
-        <div class="big">🎉</div>
-        <h3>刷题完成！</h3>
+        <div class="big">${ic('award')}</div>
+        <h3>刷题完成</h3>
         <div class="sub">「${esc(d?d.title:'')}」已完成，累计刷过 <b style="color:var(--accent3-ink, var(--accent3))">${docClears(docId)}</b> 次</div>
         <div class="pcontrols" style="justify-content:center">
-          <button type="button" class="btn" id="backDocs">📁 返回文档</button>
-          <button type="button" class="btn" id="replayAgain">🔄 再刷一次</button>
+          <button type="button" class="btn" id="backDocs">${ic('folder')} 返回文档</button>
+          <button type="button" class="btn" id="replayAgain">${ic('refresh')} 再刷一次</button>
         </div>
       </div>
     </div>`;
@@ -4683,7 +4726,7 @@ function toggleMasterP(qid){
   // 局部更新：只改那颗按钮与顶部统计条（整页重建会丢掉已展开的答案与 AI 讲解块，也白建一页 DOM）
   if(view === Views.PRACTICE && _pracWrap){
     const mb = _pracWrap.querySelector('#masterBtn');
-    if(mb){ mb.className = 'btn' + (p.mastered ? ' primary' : ''); mb.textContent = p.mastered ? '★ 掌握' : '☆ 标记掌握'; }
+    if(mb){ mb.className = 'btn' + (p.mastered ? ' primary' : ''); mb.innerHTML = p.mastered ? ic('star')+' 掌握' : ic('star')+' 标记掌握'; }
     renderStatsBar();
   } else {
     renderAll();
@@ -4706,7 +4749,7 @@ function toggleRevealP(qid){
   const answerEl = $('#pAnswerArea');
   const btnEl = $('#revealBtn');
   if(answerEl) answerEl.classList.toggle('show', revealed);
-  if(btnEl){ btnEl.textContent = revealed ? '🙈 隐藏答案' : '👁 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
+  if(btnEl){ btnEl.innerHTML = revealed ? ic('eyeoff')+' 隐藏答案' : ic('eye')+' 显示答案'; btnEl.className = 'btn' + (revealed ? '' : ' primary'); }
 }
 // 通关门槛：本关所有题目都需"刷过"（在刷题里用「下一题/上一题」过一遍）；
 // 仅 1 题的关卡则要求至少查看过一次答案，避免点一下就通关。按钮与键盘快捷键共用此判定。
@@ -4737,28 +4780,28 @@ function renderMock(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="pbar"><i style="width:${Math.round(idx/tot*100)}%"></i></div>
-      <div class="pmeta"><span>🎤 八股练习 · 第 ${idx}/${tot} 题</span></div>
+      <div class="pmeta"><span>${ic('mic')} 八股练习 · 第 ${idx}/${tot} 题</span></div>
       <div class="mock-card">
         <div class="ptag">题目</div>
         <div class="ptitle">${renderTitle(q.title)}</div>
-        <label style="font-size:var(--fs-sm);color:var(--muted);font-weight:600;display:block;margin-bottom:7px">✍️ 写下你的回答</label>
+        <label style="font-size:var(--fs-sm);color:var(--muted);font-weight:500;display:block;margin-bottom:8px">写下你的回答</label>
         <textarea class="answer-area" id="mockAnswer" placeholder="在此作答…" aria-label="写下你的回答">${esc(a.answer)}</textarea>
         <div class="rv ref-answer${mock.revealed?' show':''}" id="mockRefAnswer"><div class="rv-in"><div class="label">参考答案</div>${renderAnswer(q.answer)}</div></div>
       </div>
       <div class="grade-row">
-        <button type="button" class="grade-btn g-good ${a.selfRate==='good'?'sel':''}" data-rate="good">✅ 熟练</button>
-        <button type="button" class="grade-btn g-mid ${a.selfRate==='mid'?'sel':''}" data-rate="mid">🟡 模糊</button>
-        <button type="button" class="grade-btn g-bad ${a.selfRate==='bad'?'sel':''}" data-rate="bad">❌ 不会</button>
+        <button type="button" class="grade-btn g-good ${a.selfRate==='good'?'sel':''}" data-rate="good">${sq('var(--good)')}熟练</button>
+        <button type="button" class="grade-btn g-mid ${a.selfRate==='mid'?'sel':''}" data-rate="mid">${sq('var(--warn)')}模糊</button>
+        <button type="button" class="grade-btn g-bad ${a.selfRate==='bad'?'sel':''}" data-rate="bad">${sq('var(--bad)')}不会</button>
       </div>
-      <div class="pcontrols" style="margin-top:18px">
-        <button type="button" class="btn" id="mockReveal">${mock.revealed?'🙈 隐藏答案':'👁 显示答案'}</button>
-        <button type="button" class="btn" id="mockAIBtn">🤖 问问 AI</button>
-        <button type="button" class="btn ghost" id="mockQuit" style="color:var(--bad)">🚪 退出</button>
+      <div class="pcontrols" style="margin-top:16px">
+        <button type="button" class="btn" id="mockReveal">${mock.revealed?ic('eyeoff')+' 隐藏答案':ic('eye')+' 显示答案'}</button>
+        <button type="button" class="btn" id="mockAIBtn">${ic('cpu')} 问问 AI</button>
+        <button type="button" class="btn ghost" id="mockQuit" style="color:var(--bad)">${ic('door')} 退出</button>
         <div class="spacer"></div>
-        <button type="button" class="btn ${mock.index===tot-1?'primary':''}" id="mockNext">${mock.index===tot-1?'🏁 交卷':'下一题 →'}</button>
+        <button type="button" class="btn ${mock.index===tot-1?'primary':''}" id="mockNext">${mock.index===tot-1?ic('flag')+' 交卷':'下一题 →'}</button>
       </div>
       ${renderAIBlock(qid)}
-      <div class="pstatus">自评（✅ 熟练 / 🟡 模糊 / ❌ 不会）后才能进入下一题或交卷。</div>
+      <div class="pstatus">自评（熟练 / 模糊 / 不会）后才能进入下一题或交卷。</div>
     </div>`;
   const ta = $('#mockAnswer');
   ta.oninput = () => {
@@ -4772,13 +4815,13 @@ function renderMock(c){
     const refEl = $('#mockRefAnswer');
     const btnEl = $('#mockReveal');
     if(refEl) refEl.classList.toggle('show', mock.revealed);
-    if(btnEl) btnEl.textContent = mock.revealed ? '🙈 隐藏答案' : '👁 显示答案';
+    if(btnEl) btnEl.innerHTML = mock.revealed ? ic('eyeoff')+' 隐藏答案' : ic('eye')+' 显示答案';
   };
   $('#mockAIBtn').onclick = () => { askAI(qid, 'mock'); };
   $('#mockQuit').onclick = async () => { if(!await confirmDialog('确定退出八股练习？已作答的内容将保留。')) return; mock.queue=[]; mock.done=false; view=Views.OVERVIEW; renderAll(); };
   $('#mockNext').onclick = () => {
     const a = mock.answers[qid] || {};
-    if(!a.selfRate){ toast('请先自评（✅ 熟练 / 🟡 模糊 / ❌ 不会）再进入下一题'); return; }
+    if(!a.selfRate){ toast('请先自评（熟练 / 模糊 / 不会）再进入下一题'); return; }
     if(mock.index < tot-1){ mock.index++; mock.revealed=false; renderAll(); }
     else { mock.done = true; renderAll(); }
   };
@@ -4791,13 +4834,13 @@ function renderMockConfig(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
-        <h2>🎤 八股练习</h2>
+        <h2>${ic('mic')} 八股练习</h2>
         <div class="desc">随机抽题、自由作答、自评掌握；交卷后可导出复盘 MD 交给 AI 阅卷。</div>
         <div class="cfg-grid">
           <div class="cfg-field"><label>题目数量</label><input type="number" id="mockCount" min="1" max="50" value="${mock.cfg.count}"></div>
           <div class="cfg-field"><label>题目范围</label><select id="mockScope">${opts}</select></div>
         </div>
-        <button type="button" class="btn primary" id="mockStart">🚀 开始八股练习</button>
+        <button type="button" class="btn primary" id="mockStart">${ic('play')} 开始八股练习</button>
       </div>
     </div>`;
   $('#mockStart').onclick = () => {
@@ -4842,29 +4885,29 @@ function renderMockResult(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="mock-result">
-        <div class="big">🏁</div>
-        <h2>八股练习完成！</h2>
+        <div class="big">${ic('flag')}</div>
+        <h2>八股练习完成</h2>
         <div class="sub">范围：${esc(mock.scopeName)} · 共 ${tot} 题</div>
         <div class="score-summary">
-          <div class="si"><div class="n" style="color:var(--good)">${good}</div><div class="t">✅ 熟练</div></div>
-          <div class="si"><div class="n" style="color:var(--warn)">${mid}</div><div class="t">🟡 模糊</div></div>
-          <div class="si"><div class="n" style="color:var(--bad)">${bad}</div><div class="t">❌ 不会</div></div>
+          <div class="si"><div class="n" style="color:var(--good)">${good}</div><div class="t">${sq('var(--good)')}熟练</div></div>
+          <div class="si"><div class="n" style="color:var(--warn)">${mid}</div><div class="t">${sq('var(--warn)')}模糊</div></div>
+          <div class="si"><div class="n" style="color:var(--bad)">${bad}</div><div class="t">${sq('var(--bad)')}不会</div></div>
           <div class="si"><div class="n">${rated}/${tot}</div><div class="t">已自评</div></div>
         </div>
         <div class="pcontrols">
-          <button type="button" class="btn primary" id="mockExport">⬇️ 导出复盘 MD</button>
-          <button type="button" class="btn primary" id="mockAIGrade" style="background:linear-gradient(135deg,#f5c542,#f59e42);border:none;color:#1a1a2e">🤖 AI 阅卷</button>
+          <button type="button" class="btn primary" id="mockExport">${ic('download')} 导出复盘 MD</button>
+          <button type="button" class="btn primary" id="mockAIGrade" style="background:var(--accent3);border:none;color:#201409">${ic('cpu')} AI 阅卷</button>
           <div class="spacer"></div>
-          <button type="button" class="btn" id="mockRedo">🔄 再来一次</button>
+          <button type="button" class="btn" id="mockRedo">${ic('refresh')} 再来一次</button>
           <button type="button" class="btn ghost" id="mockExit">返回总览</button>
         </div>
       </div>
       ${(aiGrading || aiGradingLoading) ? '<div class="ai-grading" id="aiGradingBox">'+(aiGrading || '<div class="ai-loading">AI 阅卷中…</div>')+'</div>' : ''}
-      <div style="margin-top:18px">
+      <div style="margin-top:16px">
         ${mock.queue.map((id,i)=>{
           const q = questionById(id); const a = mock.answers[id]||{};
           if(!q) return '';   // 题目已被删除：跳过，避免读 q.title 抛错
-          const rm = {good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'}[a.selfRate]||'（未自评）';
+          const rm = {good:'熟练',mid:'模糊',bad:'不会'}[a.selfRate]||'（未自评）';
           return `<div class="q-summary"><div class="qt">${i+1}. ${renderTitle(q.title)} <span style="color:var(--muted);font-weight:500;font-size:var(--fs-sm)">${rm}</span></div>
             <div class="qa"><b>我的回答：</b>${esc(a.answer&&a.answer.trim()?a.answer.trim():'（未填写）')}</div></div>`;
         }).join('')}
@@ -5109,7 +5152,7 @@ function renderHot(c){
   if(!hot.inPass){
     if(!list.length){
       _hotWrap = null;
-      c.innerHTML = `<div class="flash-empty"><div class="big">🔥</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">热榜是空的</div><div style="color:var(--muted)">在「记忆」模式里没答<em>简单</em>的题会自动进这里，趁热再过一遍。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="hotGoMemory">🧠 去记忆模式</button></div></div>`;
+      c.innerHTML = `<div class="flash-empty"><div class="big">${ic('flame')}</div><div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:8px">热榜是空的</div><div style="color:var(--muted)">在「记忆」模式里没答<em>简单</em>的题会自动进这里，趁热再过一遍。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="hotGoMemory">${ic('chip')} 去记忆模式</button></div></div>`;
       const gb = $('#hotGoMemory'); if(gb) gb.onclick = () => {
         memory = { queue: [], index: 0, flipped: false, _history: memory._history || [] };   // 同总览入口：不复用旧队列快照
         view = Views.MEMORY; renderAll();
@@ -5158,11 +5201,11 @@ function renderHot(c){
       <div class="feature-wrap">
         <div class="pmeta"></div>
         <div class="memory-card" id="hotCard">
-          <div class="ptag" style="display:flex;align-items:center;justify-content:space-between"><span>题目</span><button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">📋</button></div>
+          <div class="ptag" style="display:flex;align-items:center;justify-content:space-between"><span>题目</span><button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">${ic('clipboard')}</button></div>
           <div class="ptitle"></div>
-          <div class="rv memory-answer" id="hotAnswer"><div class="rv-in"><div class="label">📝 答案</div></div></div>
-          <div class="reveal-hint" id="hotHint">👆 点击卡片翻看答案</div>
-          <div class="grade-row" id="hotGradeRow"><div class="grade-btn g-good" data-hot="done">✅ 记住了 · 移出热榜</div><div class="grade-btn g-bad" data-hot="again">🔁 还没 · 留在榜上</div></div>
+          <div class="rv memory-answer" id="hotAnswer"><div class="rv-in"><div class="label">答案</div></div></div>
+          <div class="reveal-hint" id="hotHint">点击卡片翻看答案</div>
+          <div class="grade-row" id="hotGradeRow"><div class="grade-btn g-good" data-hot="done">${sq('var(--good)')}记住了 · 移出热榜</div><div class="grade-btn g-bad" data-hot="again">${sq('var(--warn)')}还没 · 留在榜上</div></div>
         </div>
         <div class="pstatus">这里只是把记忆模式里没答简单的题再认一遍，<b>不改动等级、排期与统计</b>；点「记住了」= 从热榜移出。</div>
       </div>`;
@@ -5229,10 +5272,10 @@ function paintHotCard(doc, q, idx, tot, liveN){
   const card = w.querySelector('#hotCard');
   // 先取消上一次的飞出动画：不取消的话卡片会一直停在 opacity:0（见 _hotFlyAnim 的说明）
   if(_hotFlyAnim){ try{ _hotFlyAnim.cancel(); }catch(_){ } _hotFlyAnim = null; }
-  w.querySelector('.pmeta').innerHTML = `<span>🔥 趁热打铁${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${liveN} 题</span>`;
+  w.querySelector('.pmeta').innerHTML = `<span>${sq('var(--accent3-ink, var(--accent3))')}趁热打铁${doc?` · ${renderTitle(doc.title||'')}`:''}</span><span><span style="font-weight:600;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span> · 在榜 ${liveN} 题</span>`;
   card.querySelector('.ptitle').innerHTML = renderTitle(q.title);
   const an = w.querySelector('#hotAnswer');
-  an.querySelector('.rv-in').innerHTML = `<div class="label">📝 答案</div><div id="hotAnswerBody">${renderAnswer(q.answer)}</div>`;
+  an.querySelector('.rv-in').innerHTML = `<div class="label">答案</div><div id="hotAnswerBody">${renderAnswer(q.answer)}</div>`;
   an.classList.toggle('show', hot.flipped);
   w.querySelector('#hotHint').style.display = hot.flipped ? 'none' : '';
   w.querySelector('#hotGradeRow').style.display = hot.flipped ? '' : 'none';
@@ -5250,7 +5293,7 @@ function renderHotDone(c){
   const cleared = hot.cleared||0;
   c.innerHTML = `
     <div class="feature-wrap"><div class="done-card">
-      <div class="big">🔥</div><h3>热榜清空了</h3>
+      <div class="big">${ic('flame')}</div><h3>热榜清空了</h3>
       <div class="sub">共过 ${cleared} 题 · 没有剩下的了</div>
       <div class="pcontrols" style="justify-content:center">
         <button type="button" class="btn" id="hotBack">返回</button>
@@ -5302,17 +5345,17 @@ function renderMemory(c){
     if(!memory.queue.length){
       _memWrap = null;   // 切到空态：作废答题卡骨架
       const _ms = computeAllStats();
-      // 题库为空（新装 / 清空后）不能说"全部掌握！"：那是"复习已完成"的结论，对空库是假结论
+      // 题库为空（新装 / 清空后）不能说"全部掌握"：那是"复习已完成"的结论，对空库是假结论
       if(!_ms.tq){
-        c.innerHTML = `<div class="flash-empty"><div class="big">📚</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">题库还是空的</div><div style="color:var(--muted)">记忆模式按 FSRS 给题目排期。先导入 JSON / Markdown 题库（或新建文档），再回到这里。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="memImport">⬆️ 导入题库（JSON / Markdown）</button></div></div>`;
+        c.innerHTML = `<div class="flash-empty"><div class="big">${ic('book')}</div><div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:8px">题库还是空的</div><div style="color:var(--muted)">记忆模式按 FSRS 给题目排期。先导入 JSON / Markdown 题库（或新建文档），再回到这里。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="memImport">${ic('upload')} 导入题库（JSON / Markdown）</button></div></div>`;
         const mi = $('#memImport'); if(mi) mi.onclick = () => openImportPicker();
         return;
       }
-      // 本轮仍有到期题、只是全被跳过：不能报“全部掌握！”（题其实还在），给“重看跳过”的出口；
+      // 本轮仍有到期题、只是全被跳过：不能报“全部掌握”（题其实还在），给“重看跳过”的出口；
       // 不做也行的提醒：下次进记忆模式这些题会照常重现（跳过零副作用、不落存储）。
       if(_skippedN > 0){
         _memWrap = null;
-        c.innerHTML = `<div class="flash-empty"><div class="big">⏭️</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">本轮已刷完</div><div style="color:var(--muted)">还跳过着 <b style="color:var(--text)">${_skippedN}</b> 题——它们仍在复习计划里，下次进记忆模式会再次出现（适合先去电脑上改掉题目再来）。也可现在就重看一遍。</div><div style="margin-top:14px"><button type="button" class="btn primary" id="memSkippedAgain">↩ 重看本轮跳过的 ${_skippedN} 题</button></div></div>`;
+        c.innerHTML = `<div class="flash-empty"><div class="big">${ic('skip')}</div><div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:8px">本轮已刷完</div><div style="color:var(--muted)">还跳过着 <b style="color:var(--text)">${_skippedN}</b> 题——它们仍在复习计划里，下次进记忆模式会再次出现（适合先去电脑上改掉题目再来）。也可现在就重看一遍。</div><div style="margin-top:16px"><button type="button" class="btn primary" id="memSkippedAgain">${ic('back')} 重看本轮跳过的 ${_skippedN} 题</button></div></div>`;
         const ag = $('#memSkippedAgain'); if(ag) ag.onclick = () => { memory._skipped = new Set(); memory.flipped = false; memory.index = 0; memory.queue = buildMemoryQueue(true); renderAll(); };
         return;
       }
@@ -5320,7 +5363,7 @@ function renderMemory(c){
       const todayDone = _ms.todayDone;
       const canUndo = !!(memory._history && memory._history.length);
       const hotLive = hotLiveQueue().length;   // 真实可练题数：会顺带回收被删题遗留的孤儿 qid，不能直接用 HOT.length
-      c.innerHTML = `<div class="flash-empty"><div class="big">🎉</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">全部掌握！</div><div style="color:var(--muted)">所有题目都在 FSRS 复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3-ink, var(--accent3));font-weight:700;margin-top:10px">🔥 连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:14px"><button type="button" class="btn primary" id="memGoHot">🔥 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button type="button" class="btn" id="flashUndoEmpty" style="margin-top:14px">↩ 撤销上一步评分</button>`:''}</div>`;
+      c.innerHTML = `<div class="flash-empty"><div class="big">${ic('award')}</div><div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:8px">全部掌握</div><div style="color:var(--muted)">所有题目都在 FSRS 复习计划中，暂无需要复习的。</div>${streak>0?`<div style="color:var(--accent3-ink, var(--accent3));font-weight:600;margin-top:12px">${sq('var(--accent3-ink, var(--accent3))')}连续打卡 <b>${streak}</b> 天</div>`:''}${todayDone>0?`<div style="color:var(--muted);margin-top:4px">今日已复习 <b>${todayDone}</b> 题</div>`:''}${hotLive>0?`<div style="margin-top:16px"><button type="button" class="btn primary" id="memGoHot">${ic('flame')} 趁热打铁：还有 ${hotLive} 题没答简单 →</button></div>`:''}${canUndo?`<button type="button" class="btn" id="flashUndoEmpty" style="margin-top:16px">${ic('back')} 撤销上一步评分</button>`:''}</div>`;
       const ub = $('#flashUndoEmpty'); if(ub) ub.onclick = (e) => { e.stopPropagation(); undoMemoryGrade(); };
       const gh = $('#memGoHot'); if(gh) gh.onclick = () => { hot.inPass = false; hot.index = 0; hot.cleared = 0; view = Views.HOT; renderAll(); };
       return;
@@ -5337,31 +5380,31 @@ function renderMemory(c){
       <div class="memory-card" id="memCard" role="button" tabindex="0" aria-expanded="false">
         <div class="ptag" style="display:flex;align-items:center;justify-content:space-between">
           <span>题目</span>
-          <span style="display:flex;align-items:center;gap:6px">
-            <button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">📋</button>
-            <button type="button" class="btn sm" id="flashEdit">✏️ 编辑</button>
+          <span style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="btn sm" data-qa-copy title="复制题目 + 答案" aria-label="复制题目和答案">${ic('clipboard')}</button>
+            <button type="button" class="btn sm" id="flashEdit">${ic('pencil')} 编辑</button>
           </span>
         </div>
         <div class="ptitle"></div>
         <div class="rv memory-answer" id="memAnswer">
           <div class="rv-in">
-            <div class="label">📝 答案</div>
+            <div class="label">答案</div>
             <div id="memAnswerBody"></div>
             <div class="mem-ai-wrap">
               <div class="mem-ai-head">
-                <button type="button" class="btn sm" id="memAICodeBtn">💻 分析</button>
+                <button type="button" class="btn sm" id="memAICodeBtn">${ic('code')} 分析</button>
                 <span class="mem-ai-tip">校验正误 · 判断是否要代码 · 讲解并提炼记忆锚点</span>
               </div>
               <div id="memAICodeOut"></div>
             </div>
           </div>
         </div>
-        <div class="reveal-hint" id="memHint">👆 点击卡片查看答案</div>
+        <div class="reveal-hint" id="memHint">点击卡片查看答案</div>
         <div class="grade-row mem-grade-row" id="memGradeRow"></div>
-        <div class="pcontrols" id="memControls" style="margin-top:14px"></div>
+        <div class="pcontrols" id="memControls" style="margin-top:16px"></div>
       </div>
       </div>
-      <div class="pstatus">键盘快捷键：Enter / 空格 展开答案，数字键 1-4 评分（忘了 → 简单），S 跳过</div>
+      <div class="pstatus">键盘快捷键：<span class="keycap">Enter</span> / <span class="keycap">空格</span> 展开答案，<span class="keycap">1</span>-<span class="keycap">4</span> 评分（忘了 → 简单），<span class="keycap">S</span> 跳过</div>
     </div>
   `;
     _memWrap = c.querySelector('.feature-wrap');
@@ -5477,12 +5520,12 @@ function paintMemoryCard(c){
   const sinceLastDays = p.lastPracticed ? Math.max(0, Math.round((Date.now()-p.lastPracticed)/86400000)) : 0;
   // 队列构建时已算好（见 buildMemoryQueue）；兼容没有该字段的旧快照，兜底再算一次
   const maxOverdue = typeof memory.queue.maxOverdue === 'number' ? memory.queue.maxOverdue : memory.queue.reduce((m,it)=>Math.max(m,it.overdue||0),0);
-  w.querySelector('.pmeta').innerHTML = `<span>${item.mastered?'✅ 复查':'🧠 记忆'} · ${renderTitle(d.title)}</span>
+  w.querySelector('.pmeta').innerHTML = `<span>${item.mastered?sq('var(--good)')+'复查':sq('var(--accent)')+'记忆'} · ${renderTitle(d.title)}</span>
         <span>
-          <span style="font-weight:700;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
-          ${lastInterval===0?' · ✨ 第一次刷':` · 📅 距上次 ${sinceLastDays} 天`}
+          <span style="font-weight:600;color:var(--accent)">${idx}</span>/<span style="color:var(--text)">${tot}</span>
+          ${lastInterval===0?' · 第一次刷':` · ${ic('calendar')} 距上次 ${sinceLastDays} 天`}
           · ${memRHtml(item.r, memory.flipped)}
-          ${maxOverdue>0?` · <span style="color:${memOverdueTone(maxOverdue)}" title="这是整个队列里最久的逾期天数，不是当前这道题">${maxOverdue>FSRS_MAX_INTERVAL?'🕒':'⚠'} 队列最久欠 ${maxOverdue} 天</span>`:''}
+          ${maxOverdue>0?` · <span style="color:${memOverdueTone(maxOverdue)}" title="这是整个队列里最久的逾期天数，不是当前这道题">${maxOverdue>FSRS_MAX_INTERVAL?ic('clock'):ic('alert')} 队列最久欠 ${maxOverdue} 天</span>`:''}
         </span>`;
   // 卡片：先取消上一次的飞出动画（不取消会把 #memStack 永久钉在飞出状态）
   const stack = w.querySelector('#memStack');
@@ -5514,14 +5557,14 @@ function paintMemoryCard(c){
     const days = pv[g];
     const hint = (isFreshQ && g===Rate.EASY) ? ' title="新题：排期照常按「倒背如流」走，掌握标记要等下一轮复习再评一次"' : '';
     // 真 <button>：键盘 Tab 可聚焦、Enter/Space 可评分（div 版读屏与键盘用户根本点不到）
-    return `<button type="button" class="grade-btn mem-grade ${m.cls}" data-rate="${g}"${hint} style="border-color:${m.color};color:${m.color}"><span class="gb-main">${m.icon} ${m.label}</span><span class="gb-int">${days<1?'半天后':days+' 天后'}</span></button>`;
+    return `<button type="button" class="grade-btn mem-grade ${m.cls}" data-rate="${g}"${hint} style="border-color:${m.color}"><span class="gb-main">${m.label}</span><span class="gb-int">${days<1?'半天后':days+' 天后'}</span></button>`;
   }).join('');
   w.querySelector('#memGradeRow').style.display = memory.flipped ? '' : 'none';
   // 撤销按钮：同理整块重写（有无取决于撤销栈长度）
   const mc = w.querySelector('#memControls');
-  const _undoHtml = (memory._history&&memory._history.length>0) ? `<button type="button" class="btn sm" id="flashUndo">↩ 撤销</button>` : '';
+  const _undoHtml = (memory._history&&memory._history.length>0) ? `<button type="button" class="btn sm" id="flashUndo">${ic('back')} 撤销</button>` : '';
   // 撤销（有才出）靠左 + 撑开的 spacer + 跳过 恒靠右；整行随 #memControls 的 flipped 显隐
-  mc.innerHTML = `${_undoHtml}<span class="spacer"></span><button type="button" class="btn sm" id="memSkip" title="不评分，先看下一道；这道题下次进记忆模式会再出现">⏭ 跳过</button>`;
+  mc.innerHTML = `${_undoHtml}<span class="spacer"></span><button type="button" class="btn sm" id="memSkip" title="不评分，先看下一道；这道题下次进记忆模式会再出现">${ic('skip')} 跳过</button>`;
   mc.style.display = memory.flipped ? '' : 'none';
 }
 // 统计条中的待复习数
@@ -5658,7 +5701,7 @@ function hmDayDetail(dayNo, counts, plain){
   const parts = [`${d.getUTCMonth()+1}月${d.getUTCDate()}日`];
   parts.push(count > 0 ? `复习${wl && wl.est ? '约' : ''} ${b(count)} 题` : '未刷题');   // wl.est = 含已折叠的桶 → 题数是上界，不假装精确
   if(wl && wl.c){
-    const names = ['😰 忘了','🤔 困难','😐 记得','😎 简单'];
+    const names = ['忘了','困难','记得','简单'];
     const cs = wl.c.map((n,i)=>`${names[i]} ${n}`).filter(s=>!/ 0$/.test(s));
     if(cs.length) parts.push(cs.join(' · '));
   }
@@ -5684,7 +5727,7 @@ function showHmDetail(dayNo, el){
   if(ek){
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'hm-war'; b.dataset.warDay = ek;
-    b.textContent = '📜 查看当日战报';
+    b.innerHTML = ic('file') + ' 查看当日战报';
     b.onclick = () => { hideHmDetail(); openWarReport(ek); };
     _hmPop.appendChild(b);
   }
@@ -5860,7 +5903,7 @@ function buildForecastHtml(rows, days){
     <div class="fc-strip">${cells}</div>
     <div class="stat-foot">
       <span>未来 ${days} 天共 <b>${sum}</b> 题待复习${overdue>0?` · <span style="color:${memOverdueTone(maxOd)};font-weight:700">含逾期 ${overdue} 题（1~${days} 天 ${seg[0]} · ${days+1}~${days*2} 天 ${seg[1]} · 超过 ${days*2} 天 ${seg[2]}）</span>`:''}${undated>0?` · <span style="color:var(--muted)">另有 ${undated} 题从未排期，进队列但无到期日</span>`:''}${later>0?` · <span style="color:var(--muted)">另有 ${later} 题排在 ${days} 天以后</span>`:''}</span>
-      ${futureMax>0?`<span class="hm-peak">📅 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${futureMax} 题</span>`:(sum>0?`<span style="color:var(--muted)">今天之后 ${days} 天内无新排期 · 欠账 ${overdue} 题</span>`:`<span style="color:var(--good);font-weight:700">✅ ${days} 天内无排期</span>`)}
+      ${futureMax>0?`<span class="hm-peak">${ic('calendar')} 峰值 ${pd.getMonth()+1}月${pd.getDate()}日 · ${futureMax} 题</span>`:(sum>0?`<span style="color:var(--muted)">今天之后 ${days} 天内无新排期 · 欠账 ${overdue} 题</span>`:`<span style="color:var(--good);font-weight:600">${sq('var(--good)')}${days} 天内无排期</span>`)}
     </div>`;
 }
 
@@ -5870,7 +5913,7 @@ function buildForecastHtml(rows, days){
    首刷不计入：没有"上次间隔"就谈不上"保持"。桶宽按 FSRS 间隔的自然分布切 */
 function buildRetentionHtml(){
   if(!REVLOG.length){
-    return `<div class="flash-empty" style="padding:22px 0"><div class="big">📊</div><div style="font-weight:700;margin-bottom:4px">暂无复习记录</div><div style="color:var(--muted)">去「🧠 记忆」复习几轮后，这里会展示不同间隔下的真实记得率。</div></div>`;
+    return `<div class="flash-empty" style="padding:24px 0"><div class="big">${ic('chart')}</div><div style="font-weight:700;margin-bottom:4px">暂无复习记录</div><div style="color:var(--muted)">去「记忆」复习几轮后，这里会展示不同间隔下的真实记得率。</div></div>`;
   }
   const buckets = [
     { label:'≤2天', lo:0, hi:2 }, { label:'3-4天', lo:3, hi:4 }, { label:'5-7天', lo:5, hi:7 },
@@ -5890,7 +5933,7 @@ function buildRetentionHtml(){
     </div>`).join('');
   return `
     <div class="rt-wrap"><div class="rt-grid">${cols}</div>
-    <div class="stat-foot"><span>共 ${REVLOG.length} 次复习 · 记得 = 评「差不多 / 倒背如流」</span><span class="hm-peak">🎯 目标保留率 ${Math.round(FSRS_RETENTION*100)}%</span></div>
+    <div class="stat-foot"><span>共 ${REVLOG.length} 次复习 · 记得 = 评「差不多 / 倒背如流」</span><span class="hm-peak">${ic('target')} 目标保留率 ${Math.round(FSRS_RETENTION*100)}%</span></div>
     </div>`;
 }
 
@@ -5915,7 +5958,7 @@ function buildStackedActivityHtml(days){
     const seg = (n, color) => n ? `<i style="height:${Math.max(3, (n/max*100))}%;background:${color}"></i>` : '';
     const label = keys[i].slice(5);   // MM-DD
     return `<div class="st-col" title="${keys[i]}：首刷 ${d.nw} · 掌握 ${d.mUp} · 复习 ${d.rev}">
-      <div class="st-bar">${seg(d.rev, 'var(--accent)')}${seg(d.mUp, 'var(--accent2)')}${seg(d.nw, 'var(--accent3)')}</div>
+      <div class="st-bar">${seg(d.rev, 'var(--accent)')}${seg(d.mUp, 'rgba(var(--accent-rgb),.45)')}${seg(d.nw, 'rgba(var(--text-rgb,255,255,255),.18)')}</div>
       <div class="st-label">${label}</div>
     </div>`;
   }).join('');
@@ -5923,7 +5966,7 @@ function buildStackedActivityHtml(days){
     <div class="st-grid">${bars}</div>
     <div class="stat-foot">
       <span>最近 ${days} 天每日复习构成</span>
-      <span class="st-legend"><i style="background:var(--accent)"></i>复习 <i style="background:var(--accent2)"></i>掌握 <i style="background:var(--accent3)"></i>首刷</span>
+      <span class="st-legend"><i style="background:var(--accent)"></i>复习 <i style="background:rgba(var(--accent-rgb),.45)"></i>掌握 <i style="background:rgba(var(--text-rgb,255,255,255),.18)"></i>首刷</span>
     </div>`;
 }
 
@@ -5945,7 +5988,7 @@ function buildTagMasteryHtml(){
   const list = Array.from(map.entries())
     .map(([name,s])=>({ name, total:s.total, mastered:s.mastered, pct: s.total ? Math.round(s.mastered/s.total*100) : 0 }))
     .sort((a,b)=>b.total-a.total);
-  if(!list.length) return `<div class="flash-empty" style="padding:22px 0"><div style="color:var(--muted)">暂无标签数据（导入题目后可给题目打标签，未打标签的按文档名归类）。</div></div>`;
+  if(!list.length) return `<div class="flash-empty" style="padding:24px 0"><div style="color:var(--muted)">暂无标签数据（导入题目后可给题目打标签，未打标签的按文档名归类）。</div></div>`;
   const items = list.slice(0, 18).map(t=>{
     const full = t.pct >= 100;
     return `<div class="tag-item" title="${esc(t.name)}：掌握 ${t.mastered}/${t.total}（${t.pct}%）">
@@ -5986,9 +6029,9 @@ function renderAnalytics(c){
   const streak = _an.streak, todayDone = _an.todayDone;
   c.innerHTML = `
   <div class="an-wrap">
-    <div class="an-h">📈 进度分析</div>
+    <div class="an-h">${ic('trend')} 进度分析</div>
     <div class="an-sub">复习计划由 FSRS 间隔重复算法调度，数据仅存于本机浏览器。</div>
-    ${total===0 ? `<div class="flash-empty"><div class="big">📭</div><div style="font-weight:700;margin-bottom:6px">还没有打卡记录</div><div style="color:var(--muted)">去「🧠 记忆」或「📝 八股」练过之后，这里会展示你的全部进度。</div></div>`
+    ${total===0 ? `<div class="flash-empty"><div class="big">${ic('inbox')}</div><div style="font-weight:700;margin-bottom:8px">还没有打卡记录</div><div style="color:var(--muted)">去「记忆」或「八股」练过之后，这里会展示你的全部进度。</div></div>`
     : `
     <div class="an-grid">
       <div class="an-card"><div class="n" id="anTotal">${total}</div><div class="t">记忆题目</div></div>
@@ -5999,20 +6042,20 @@ function renderAnalytics(c){
       <div class="an-card"><div class="n">${avgR}</div><div class="t" title="此刻还能回忆起来的平均概率（DSR 的 R），与目标保留率不是一回事">平均可提取性</div></div>
       <div class="an-card"><div class="n" id="anOverdue" style="color:${maxOverdue>0?'var(--bad)':'var(--good)'}">${maxOverdue}</div><div class="t">最久逾期(天)</div></div>
     </div>
-    <div class="an-sec">🗓️ 今年打卡热力图<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（点击格子看当天明细；颜色 = 那天练过的题数）</span></div>
+    <div class="an-sec">${ic('calendar')} 今年打卡热力图<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（点击格子看当天明细；颜色 = 那天练过的题数）</span></div>
     <div class="an-chart-card">${buildHeatmapHtml()}</div>
-    <div class="an-sec">🧠 真实保留率<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（按上次间隔分桶的记得率）</span></div>
+    <div class="an-sec">${ic('percent')} 真实保留率<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（按上次间隔分桶的记得率）</span></div>
     <div class="an-chart-card">${buildRetentionHtml()}</div>
-    <div class="an-sec">🔮 未来 ${FSRS_MAX_INTERVAL} 天到期预测<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（排期上限 ${FSRS_MAX_INTERVAL} 天，提前看到哪天会积压）</span></div>
+    <div class="an-sec">${ic('clock')} 未来 ${FSRS_MAX_INTERVAL} 天到期预测<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（排期上限 ${FSRS_MAX_INTERVAL} 天，提前看到哪天会积压）</span></div>
     <div class="an-chart-card">${buildForecastHtml(rows, FSRS_MAX_INTERVAL)}</div>
-    <div class="an-sec">📊 每日复习构成<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（首刷 / 掌握 / 复习堆叠）</span></div>
+    <div class="an-sec">${ic('chart')} 每日复习构成<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（首刷 / 掌握 / 复习堆叠）</span></div>
     <div class="an-chart-card">${buildStackedActivityHtml(14)}</div>
-    <div class="an-sec">🏷️ 标签掌握度<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（按题量排序，环 = 掌握占比）</span></div>
+    <div class="an-sec">${ic('tag')} 标签掌握度<span style="font-weight:500;font-size:var(--fs-sm);color:var(--muted)">（按题量排序，环 = 掌握占比）</span></div>
     <div class="an-chart-card">${buildTagMasteryHtml()}</div>
     <div class="an-toolbar">
-      <button type="button" class="btn sm" id="anExport">⬇ 导出 CSV</button>
-      <button type="button" class="btn sm" id="anCopy">📋 复制分析报告</button>
-      <button type="button" class="btn sm ghost" id="anRefresh">🔄 刷新</button>
+      <button type="button" class="btn sm" id="anExport">${ic('download')} 导出 CSV</button>
+      <button type="button" class="btn sm" id="anCopy">${ic('clipboard')} 复制分析报告</button>
+      <button type="button" class="btn sm ghost" id="anRefresh">${ic('refresh')} 刷新</button>
       <span id="anCopyStatus" style="font-size:var(--fs-sm);color:var(--good)"></span>
     </div>`}
   `;
@@ -6037,7 +6080,7 @@ function renderAnalytics(c){
   }
   // 数据工具条：导出 CSV（全部题目明细，可用于 Excel/备份）、复制统计报告（发给 AI）、刷新
   $('#anExport').onclick = ()=> exportAnalyticsCSV(rows);
-  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgS,avgD,avgR,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '✅ 已复制，发给 AI 即可分析' : '⚠️ 复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
+  $('#anCopy').onclick = ()=>{ const rep = buildAnalyticsReport({rows,docStats,total,mastered,due,avgInterval,avgS,avgD,avgR,maxOverdue,topOverdue,streak,todayDone,lvCounts}); copyText(rep).then(ok=>{ const s=$('#anCopyStatus'); if(s) s.textContent = ok ? '已复制，发给 AI 即可分析' : '复制失败，请手动选择文本复制'; toast(ok ? '分析报告已复制到剪贴板' : '复制失败，请手动选择文本复制'); }); };
   $('#anRefresh').onclick = ()=> { _statsCache = null; renderAnalytics(c); };   // 连统计缓存一起清：否则"今日已刷/连续天数"还是 10 秒内的旧值
   // 热力图交互：点击格子看当天明细
   const bindHmChart = () => {
@@ -6053,12 +6096,12 @@ function renderGrill(c){
   const modeName = grill.mode==='project'?'项目深挖':grill.mode==='theory'?'八股扫荡':'高压实战';
   c.innerHTML = `
     <div class="feature-wrap">
-      <div class="pmeta"><span>🔥 ${modeName}</span><span>${grill.messages.filter(m=>m.role==='user' && !m.content.startsWith('我想结束本场面试')).length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
+      <div class="pmeta"><span>${sq('var(--accent3-ink, var(--accent3))')}${modeName}</span><span>${grill.messages.filter(m=>m.role==='user' && !m.content.startsWith('我想结束本场面试')).length} 轮对话</span>${grill.ended?'<span style="color:var(--warn)">面试已结束</span>':''}</div>
       <div class="grill-chat" id="grillChat">${grill.messages.map((m,i)=>`
         <div class="grill-msg ${m.role}" id="gm-${i}">${md2html(m.content)}</div>
       `).join('')}${grill.loading?'<div class="grill-loading" id="grillLoading">专家思考中…</div>':''}${grill.ended&&grill.feedback?`
         <div class="grill-feedback">
-          <div class="grill-fb-title">📋 面试总结反馈</div>
+          <div class="grill-fb-title">${ic('clipboard')} 面试总结反馈</div>
           <div class="grill-fb-content">${md2html(grill.feedback)}</div>
         </div>`:''}</div>
       ${grill.ended?`
@@ -6113,40 +6156,40 @@ function renderGrillConfig(c){
   c.innerHTML = `
     <div class="feature-wrap">
       <div class="cfg-card">
-        <h2>🔥 面试拷打</h2>
+        <h2>${ic('flame')} 面试拷打</h2>
         <div class="grill-mode-row" id="grillModeRow">
           <div class="grill-mode-card" data-mode="project">
-            <div class="gm-icon">📂</div>
+            <div class="gm-icon">${ic('folder')}</div>
             <div class="gm-title">项目深挖</div>
             <div class="gm-desc">根据简历中的项目经历，逐层追问技术选型、架构决策、踩坑细节</div>
           </div>
           <div class="grill-mode-card" data-mode="theory">
-            <div class="gm-icon">📚</div>
+            <div class="gm-icon">${ic('book')}</div>
             <div class="gm-title">八股扫荡</div>
             <div class="gm-desc">AI 现场出题，或切换「本地题库」用你录入的题自测（抽题→自评→复盘 MD）</div>
           </div>
           <div class="grill-mode-card" data-mode="real">
-            <div class="gm-icon">🎯</div>
+            <div class="gm-icon">${ic('target')}</div>
             <div class="gm-title">高压实战</div>
             <div class="gm-desc">真实面试模拟：项目追问 + 八股穿插，限时压力，结束前会告知"面试到这里"</div>
           </div>
         </div>
         <div id="grillDurRow" style="display:none;margin:8px 0 4px">
-          <span style="font-size:var(--fs-sm);color:var(--muted);font-weight:600;margin-right:10px">⏱ 面试时长</span>
+          <span style="font-size:var(--fs-sm);color:var(--muted);font-weight:500;margin-right:8px">${ic('clock')} 面试时长</span>
           <span class="grill-dur-btn" data-dur="quick">快速 (10轮)</span>
           <span class="grill-dur-btn sel" data-dur="standard">标准 (20轮)</span>
           <span class="grill-dur-btn" data-dur="deep">深度 (30轮)</span>
         </div>
         <div id="grillSrcRow" style="display:none;margin:8px 0 4px">
-          <span style="font-size:var(--fs-sm);color:var(--muted);font-weight:600;margin-right:10px">📚 题目来源</span>
+          <span style="font-size:var(--fs-sm);color:var(--muted);font-weight:500;margin-right:8px">${ic('book')} 题目来源</span>
           <span class="grill-dur-btn sel" data-src="ai">AI 现场出题</span>
           <span class="grill-dur-btn" data-src="local">本地题库</span>
         </div>
-        <label id="grillResumeLabel" for="grillResume" style="font-size:var(--fs-sm);color:var(--muted);font-weight:600;display:block;margin:16px 0 7px">📄 简历内容（八股扫荡可不填）</label>
-        <textarea class="grill-resume" id="grillResume" placeholder="在此粘贴简历…&#10;&#10;示例：&#10;张三，5年Java开发&#10;项目：电商秒杀系统（SpringBoot + Redis + Kafka）&#10;- 负责秒杀接口优化，QPS从500提升到5000&#10;- 用Redis预减库存 + 消息队列异步下单&#10;- 解决超卖问题，使用Lua脚本保证原子性" aria-label="简历内容"></textarea>
-        <div style="margin-top:14px">
-          <button type="button" class="btn primary" id="grillStart" disabled>🔥 开始拷打</button>
-          <button type="button" class="btn ghost" id="grillUpload" data-resume-ctl>📎 上传简历（txt/md/pdf）</button>
+        <label id="grillResumeLabel" for="grillResume" style="font-size:var(--fs-sm);color:var(--muted);font-weight:500;display:block;margin:16px 0 8px">${ic('file')} 简历内容（八股扫荡可不填）</label>
+        <textarea class="grill-resume" id="grillResume" placeholder="粘贴简历" aria-label="简历内容"></textarea>
+        <div style="margin-top:16px">
+          <button type="button" class="btn primary" id="grillStart" disabled>${ic('flame')} 开始拷打</button>
+          <button type="button" class="btn ghost" id="grillUpload" data-resume-ctl>${ic('paperclip')} 上传简历（txt/md/pdf）</button>
           <input type="file" id="grillFileInput" accept=".txt,.md,.json,.pdf,text/plain,application/pdf" style="display:none">
         </div>
       </div>
@@ -6373,7 +6416,7 @@ async function doGrillChat(){
 7. 候选人答不上来时给予引导和鼓励，不要批评
 8. Markdown 格式，提问轮控制在 3-5 句话（结束轮的总结反馈不受此限）
 
-面试结束规则（重要！）：
+面试结束规则（重要）：
 - ${ROUND_DEF}
 - 正常结束：追问完所有项目后，或面试达到${realRounds.min}-${realRounds.max}轮后，选择合适时机结束
 - 提前结束：仅当候选人连续4轮以上完全答不上来（说不知道、乱编、明显不是自己做的），才可以提前结束。前5轮内即使答得不好也不允许结束，必须继续追问
@@ -6396,7 +6439,7 @@ ${hasResume?'':`不要假装知道简历，不要说"看你简历上写了XXX"�
 动态调难度：答不上来时降一档出更简单的题；答上了不要升难度，保持当前难度继续。
 Markdown 格式，题目加粗，点评简洁不啰嗦，参考答案完整清晰。
 
-面试结束规则（重要！）：
+面试结束规则（重要）：
 - ${ROUND_DEF}
 - 正常结束：面试达到${realRounds.min}-${realRounds.max}轮后，选择合适时机结束
 - 提前结束：仅当候选人连续5轮以上完全答不上来、或者连续答错且没有进步迹象，才可以提前结束。前5轮内不允许结束，即使答得不好也要降难度继续出题
@@ -6421,7 +6464,7 @@ ${hasResume?'':'\n现在，直接出第一道题。'}`,
 5. 难度严格匹配${lv}水平
 6. Markdown 格式，提问轮控制在 3-5 句话（结束轮的总结反馈不受此限）
 
-面试结束规则（重要！）：
+面试结束规则（重要）：
 - ${ROUND_DEF}
 - 正常结束：面试达到${realRounds.min}-${realRounds.max}轮后，选一个合适的时机说"好的，面试就到这里，你有什么想问我的吗？"
 - 提前结束：仅当候选人连续4轮以上完全答不上来、项目明显不是自己做的、或态度敷衍，才可以提前结束。前5轮内不允许提前结束，必须按流程走完项目深挖和八股穿插阶段
@@ -6492,7 +6535,7 @@ ${RESUME_NOTE}`
     // 如果流式过程中已经渲染了部分内容，只追加错误提示，不全量覆盖
     const existing = _curMsg.content;
     if(!existing || existing==='...') _curMsg.content = '抱歉，API 调用失败，请检查 AI 配置。';
-    else _curMsg.content = existing + '\n\n⚠️ 响应中断，以上为部分内容。';
+    else _curMsg.content = existing + '\n\n响应中断，以上为部分内容。';
   } else {
     // 检测 AI 是否结束了面试（回复中包含 [FEEDBACK] 标记；手动退出时也会触发）
     const fb = splitFeedbackMark(r);
@@ -6592,7 +6635,7 @@ function estimateYears(resume){
   return 3;
 }
 function exportMockMD(){
-  const rateMap = {good:'✅ 熟练', mid:'🟡 模糊', bad:'❌ 不会'};
+  const rateMap = {good:'熟练', mid:'模糊', bad:'不会'};
   const L = [];
   L.push('# 八股练习复盘（AI 阅卷版）');
   L.push('');
@@ -6678,7 +6721,7 @@ async function callAI(messages, onChunk, opts={}){
       // 流结束：末行可能不带换行符（被留在 buf 里没处理），补一次，避免丢掉最后一段内容
       if(buf.trim()) handleLine(buf);
       clearTimeout(timer);
-      if(finishReason==='length' && f) f += '\n\n⚠️（回答达到长度上限被截断）';
+      if(finishReason==='length' && f) f += '\n\n（回答达到长度上限被截断）';
       return f;
     }else{
       let j;
@@ -6701,7 +6744,7 @@ async function gradeInterview(){
   if(!aiConfig){ toast('请先配置 AI API'); return; }
   if(aiGradingLoading){ toast('AI 阅卷进行中，请稍候…'); return; }
   aiGradingLoading=true; aiGrading=null; renderAll();
-  const rm={good:'✅ 熟练',mid:'🟡 模糊',bad:'❌ 不会'};
+  const rm={good:'熟练',mid:'模糊',bad:'不会'};
   // 评分标准与「导出复盘 MD」共用 GRADE_RUBRIC：带分数锚点 + 固定输出格式，跨批次分数才可比
   let p='你是资深技术面试官，请对以下八股练习作答进行客观阅卷。\n\n'+GRADE_RUBRIC+'\n\n---\n\n';
   for(let i=0;i<mock.queue.length;i++){ const q=questionById(mock.queue[i]); if(!q) continue;const a=mock.answers[mock.queue[i]]||{};
@@ -6875,8 +6918,8 @@ async function askAICode(qid){
 
 ## 答案校验
 - 以你自己的知识独立判断本题的正确结论，不要盲信「参考答案」。
-- 若「参考答案」正确：写「✅ 参考答案正确，无需纠正」。
-- 若有错误、遗漏或不准确：用 ⚠️ 明确指出错误点，并给出正确表述。
+- 若「参考答案」正确：写「参考答案正确，无需纠正」。
+- 若有错误、遗漏或不准确：用「注意」明确指出错误点，并给出正确表述。
 
 ## 是否需要代码
 - 若本题是纯概念 / 理论 / 对比类题目，文字就能讲清楚：写「本题为概念题，无需代码演示」，下方「示例代码」小节直接省略。
@@ -6894,7 +6937,7 @@ async function askAICode(qid){
 - 若判定无需代码：用文字把核心概念、关键点、推导过程讲清楚。
 
 ## 易错点
-若有常见误区或易错点，列出 1-2 条（用 ⚠️ 标注）；没有则写"无"。
+若有常见误区或易错点，列出 1-2 条（用「注意」标注）；没有则写"无"。
 
 ## 记忆锚点
 给出一句面试时可以直接背诵的总结（50 字以内），覆盖本题核心结论，方便快速回忆。`;
@@ -6917,21 +6960,21 @@ function renderAICodeBlock(qid){
   const v = aiCodeAnswer[qid];
   if(!v) return '';
   if(v === 'loading') return '<div class="ai-answer"><div class="ai-loading">AI 正在分析…</div></div>';
-  const head = '<div style="font-size:var(--fs-sm);color:var(--accent2);font-weight:700;margin-bottom:8px">💻 分析</div>';
+  const head = '<div style="font-size:var(--fs-sm);color:var(--muted);font-weight:500;margin-bottom:8px">' + ic('code') + ' 分析</div>';
   // 流式生成期间：Markdown 标记（##、**、```）是逐字出现的，实时解析会导致字体/样式反复跳变，
   // 因此期间用纯文本稳定展示（esc 后由 pre-wrap 保留换行），生成完整后再一次性渲染。
   if(aiCodeStreaming[qid]) return '<div class="ai-answer">'+head+'<div class="mem-ai-scroll"><div class="ai-stream">'+esc(v)+'</div></div></div>';
   // 已隐藏：只显示标题 + 展开按钮
   if(aiCodeHidden[qid]){
     return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      + '<span style="font-size:var(--fs-sm);color:var(--accent2);font-weight:700">💻 分析</span>'
-      + '<button type="button" class="btn sm" data-hide-qid="'+esc(qid)+'">👁 展开</button></div>'
+      + '<span style="font-size:var(--fs-sm);color:var(--muted);font-weight:500">' + ic('code') + ' 分析</span>'
+      + '<button type="button" class="btn sm" data-hide-qid="'+esc(qid)+'">' + ic('eye') + ' 展开</button></div>'
       + '<div style="color:var(--muted);font-size:var(--fs-sm)">内容已隐藏</div></div>';
   }
   // 正常显示：标题行 + 隐藏按钮（盒子顶部，不随内容滚动）+ 内滚内容窗口
   return '<div class="ai-answer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    + '<span style="font-size:var(--fs-sm);color:var(--accent2);font-weight:700">💻 分析</span>'
-    + '<button type="button" class="btn sm" data-hide-qid="'+esc(qid)+'">🙈 隐藏</button></div>'
+    + '<span style="font-size:var(--fs-sm);color:var(--muted);font-weight:500">' + ic('code') + ' 分析</span>'
+    + '<button type="button" class="btn sm" data-hide-qid="'+esc(qid)+'">' + ic('eyeoff') + ' 隐藏</button></div>'
     + '<div class="mem-ai-scroll">'+md2html(v)+'</div></div>';
 }
 // 折叠/展开记忆模式的 AI 代码分析生成内容
@@ -6996,7 +7039,7 @@ function renderSearch(c){
     }
   });
   if(!results.length){
-    c.innerHTML = `<div class="empty"><div class="big">🔍</div>没有匹配"${esc(searchTerm)}"的题目</div>`;
+    c.innerHTML = `<div class="empty"><div class="big">${ic('search')}</div>没有匹配"${esc(searchTerm)}"的题目</div>`;
     return;
   }
   const MAX_RESULTS = 200;
@@ -7014,9 +7057,9 @@ function renderSearch(c){
       const snip = (from > 0 ? '…' : '') + raw.slice(from, from + 90).replace(/\n/g,' ') + (from + 90 < raw.length ? '…' : '');
       // 标签也参与匹配（见上方 hitTag），那就得让它可见，否则用户不知道这条为什么被命中
       const tagLine = (Array.isArray(q.tags) && q.tags.length)
-        ? `<div class="snip" style="margin-top:4px">🏷 ${esc(q.tags.join(' · '))}</div>` : '';
+        ? `<div class="snip" style="margin-top:4px">${ic('tag')} ${esc(q.tags.join(' · '))}</div>` : '';
       return `<div class="sr-item">
-        <div class="src">${renderTitle(doc.title)}${docClears(doc.id)?' · 🔁'+docClears(doc.id)+'次':''}</div>
+        <div class="src">${renderTitle(doc.title)}${docClears(doc.id)?' · 通关 '+docClears(doc.id)+' 次':''}</div>
         <div class="qt" role="button" tabindex="0" data-jump="${esc(q.id)}">${renderTitle(q.title)}</div>
         <div class="snip">${esc(snip)}</div>${tagLine}
       </div>`;
@@ -7591,15 +7634,18 @@ function applyTheme(name, opts){
      取不到（非 6 位 hex）时不写这个变量，CSS 侧的 var(--accent3-ink, var(--accent3)) 会落回调色板原值。 */
   const a3i = inkOn(t.accent3, t.card || t.bg);
   if(a3i) cssVars += ';--accent3-ink:'+a3i;
-  // 等级色板（lv0~lv4）：深底沿用原配色；浅底换一版明度适配的（原 lv0 深灰蓝在纸白底上就是一块脏斑）
+  // 等级色板：主色单色四档（与热力图同一套语言），lv0 用中性槽色；
+  // 虹彩色带 / 紫渐变 / 多色并排已按 unslop 审计移除
   const isLight = isLightColor(t.bg);
-  const lvPal = isLight
-    ? ['#C3CBD1','#C08A18','#2F8A55','#1E8894','#3A5FC4']
-    : ['#3a3f55','#d0b030','#50a050','#30a0a0','#4068c0'];
-  cssVars += ';--lv0:'+lvPal[0]+';--lv1:'+lvPal[1]+';--lv2:'+lvPal[2]+';--lv3:'+lvPal[3]+';--lv4:'+lvPal[4];
+  const lvA = hexToRgbStr(t.accent) || '90,209,201';
+  const lvN = hexToRgbStr(t.text) || '231,234,243';
+  cssVars += ';--lv0:rgba('+lvN+',.14);--lv1:rgba('+lvA+',.28);--lv2:rgba('+lvA+',.50);--lv3:rgba('+lvA+',.74);--lv4:rgb('+lvA+')';
+  // 强调色上的文字色：按 WCAG 亮度派生（浅 accent → 深字，深 accent → 白字），保证主按钮 ≥4.5:1
+  const al = _wcagLum(t.accent);
+  cssVars += ';--on-accent:' + (isNaN(al) ? '#0d1016' : (al > 0.4 ? '#0d1016' : '#ffffff'));
   // 明暗分量的投影：浅底用轻投影（重投影在纸白上像浮尘、发飘），深底用重投影增强层次
   cssVars += ';--shadow:' + (isLight ? '0 6px 20px rgba(0,0,0,.10)' : '0 8px 30px rgba(0,0,0,.45)');
-  cssVars += ';--card-hover-shadow:' + (isLight ? '0 12px 30px rgba(0,0,0,.14),0 0 0 1px rgba(var(--accent2-rgb),.10)' : '0 8px 26px rgba(0,0,0,.35),0 0 0 1px rgba(var(--accent2-rgb),.12),0 0 22px rgba(var(--accent2-rgb),.16)');
+  cssVars += ';--card-hover-shadow:' + (isLight ? '0 4px 14px rgba(0,0,0,.10)' : '0 4px 16px rgba(0,0,0,.28)');
   // 浮层阴影（弹窗/气泡，最高一级）：浅底换成轻投影 + 一道极淡描边，深底用重投影 + 顶部高光
   cssVars += ';--e3:' + (isLight ? '0 16px 40px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05)' : '0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)');
   // 轻抬升（小卡/模式卡/主题卡悬停）：写死的黑投影在浅底主题上发脏，按深浅各给一套
@@ -7634,12 +7680,14 @@ function applyTheme(name, opts){
     document.body.style.backgroundSize='';
     document.body.style.backgroundPosition='';
     document.body.style.backgroundAttachment='';
-    document.body.style.background = BODY_BG_MAP[name] || `radial-gradient(1200px 700px at 12% -8%, ${t.accent}18 0%, transparent 55%), radial-gradient(1000px 600px at 100% 0%, ${t.accent2}15 0%, transparent 50%), var(--bg)`;
+    /* 底色只留中性单色微台阶（bg2 → bg）：双 hue 径向 wash 已按 unslop 审计移除；
+       主题的氛围交给内容层之下的画布 / GL 背景，不再 wash 到 chrome 上 */
+    document.body.style.background = 'linear-gradient(180deg, var(--bg2), var(--bg))';
     if(_bgColorStyle){ _bgColorStyle.remove(); _bgColorStyle = null; }
   }
 
-  // 3. CSS 特效 + 写入
-  themeVars.textContent = cssVars + (CSS_FX[name]||'');
+  // 3. CSS 变量写入（per-theme cssFx 的呼吸 nebula / 色 wash 已随审计停用：特效只走内容层之下的画布）
+  themeVars.textContent = cssVars;
   if(name==='img-bg'){
     try{ applyBgTextMode(); }catch(e){ warnSilent('应用背景图配色失败', e); }
   }
@@ -8531,7 +8579,7 @@ function parseMarkdownToDoc(text, fallbackTitle){
    不必为一个新的开关形态再造一套样式。文案就是状态，不靠颜色传达。 */
 function setSoundUI(){
   const b = $('#soundToggle'); if(!b) return;
-  b.textContent = _soundOn ? '🔊 答题音效：开' : '🔇 答题音效：关';
+  b.innerHTML = _soundOn ? ic('volume')+' 答题音效：开' : ic('mute')+' 答题音效：关';
   b.setAttribute('aria-pressed', _soundOn ? 'true' : 'false');
 }
 $('#soundToggle').onclick = () => {
@@ -8600,7 +8648,7 @@ function saveGiteeCfg(){
   /* 存储不可用（隐私模式 / 配额满 / 受限 WebView）时 safeLocalSet 返回 false，原先只打一行 console.warn：
      输入框里明明有值、重开页面却没了，用户会以为"应用把配置弄丢了"，然后反复重填 Token。
      这里给一次可见反馈（配置没存住是必须让用户知道的事）。 */
-  if(okToken === false || okGist === false) toast('⚠️ 配置未保存（浏览器存储不可用），重启后会丢失');
+  if(okToken === false || okGist === false) toast('配置未保存（浏览器存储不可用），重启后会丢失');
   // 保存后立即迁移：如果 Token 还是明文，下次读取会自动识别
   startAutoSyncTimer();   // 配置变更后立即启用/重置定时自动推送，无需重启页面
 }
@@ -8672,7 +8720,7 @@ async function cloudPush(){
   $('#cloudStatus').textContent='推送中…';
   await doPushToGist(token, gistId,
     (data, contentStr, t, gid) => {
-      $('#cloudStatus').textContent='✅ 推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
+      $('#cloudStatus').textContent='推送成功 时间：'+new Date().toLocaleTimeString();toast('已推送到云端');
       // 推送后 2 秒验证
       setTimeout(async()=>{
         try{
@@ -8686,13 +8734,13 @@ async function cloudPush(){
             let expectedBytes = contentStr.length, gotBytes = vFile.content.length;
             try{ expectedBytes = new Blob([contentStr]).size; gotBytes = new Blob([vFile.content]).size; }catch(_){}
             if(gotBytes >= expectedBytes && vFile.content !== contentStr){
-              $('#cloudStatus').textContent='⚠️ 推送可能失败：Token 无写入权限或 Gist 不属于你';
+              $('#cloudStatus').textContent='推送可能失败：Token 无写入权限或 Gist 不属于你';
             }
           }
         }catch(_){console.warn('[push] 推送验证请求失败，网络可能不稳定');}
       }, 2000);
     },
-    (errMsg) => { $('#cloudStatus').textContent='❌ '+errMsg; }
+    (errMsg) => { $('#cloudStatus').textContent='失败：'+errMsg; }
   );
 }
 async function cloudPull(){
@@ -8710,11 +8758,11 @@ async function cloudPull(){
     let resp;
     try{ resp = await fetch(`https://gitee.com/api/v5/gists/${gistId}`,{headers:{'Authorization':'token '+token},signal:ctrl.signal}); }
     finally{ clearTimeout(to); }
-    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='❌ '+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='❌ 拉取失败';}return;}
+    if(!resp.ok){try{const e=await resp.json();$('#cloudStatus').textContent='失败：'+((e.message||'拉取失败'));}catch(_){$('#cloudStatus').textContent='失败：拉取失败';}return;}
     const gist=await resp.json();
-    if(gist.public && !cloudPull._pubWarned){ cloudPull._pubWarned=true; toast('⚠️ 该 Gist 是公开的，任何知道地址的人都能看到你的数据，建议改为私有'); }
+    if(gist.public && !cloudPull._pubWarned){ cloudPull._pubWarned=true; toast('该 Gist 是公开的，任何知道地址的人都能看到你的数据，建议改为私有'); }
     const file=gist.files['learn-data.json'];
-    if(!file){$('#cloudStatus').textContent='❌ 云端无 learn-data.json';toast('云端无 learn-data.json，请确认 Gist ID 是否正确');return;}
+    if(!file){$('#cloudStatus').textContent='失败：云端无 learn-data.json';toast('云端无 learn-data.json，请确认 Gist ID 是否正确');return;}
     let rawContent=file.content||'';
     // Gitee 对 content 按字节截断（1MB）：按字节数比较，文件比返回内容大即为被截断，改走 raw_url 取完整内容
     let contentBytes = rawContent.length;
@@ -8725,16 +8773,16 @@ async function cloudPull(){
         if(rawResp.ok){ const full=await rawResp.text(); if(full.length>rawContent.length) rawContent=full; }
       }catch(_){}
       let newBytes = rawContent.length; try{ newBytes = new Blob([rawContent]).size; }catch(_){}
-      if(file.size && newBytes < file.size) toast('⚠️ 数据量较大，拉取可能不完整。建议清理部分题目后重新推送');
+      if(file.size && newBytes < file.size) toast('数据量较大，拉取可能不完整。建议清理部分题目后重新推送');
     }
-    if(!rawContent){$('#cloudStatus').textContent='❌ 云端数据为空';toast('云端 learn-data.json 内容为空');return;}
+    if(!rawContent){$('#cloudStatus').textContent='失败：云端数据为空';toast('云端 learn-data.json 内容为空');return;}
     let data;
-    try{data=JSON.parse(rawContent);}catch(_){$('#cloudStatus').textContent='❌ 云端数据格式异常，请重新推送';toast('云端数据格式异常（可能被截断），请在其他设备重新推送一次');return;}
+    try{data=JSON.parse(rawContent);}catch(_){$('#cloudStatus').textContent='失败：云端数据格式异常，请重新推送';toast('云端数据格式异常（可能被截断），请在其他设备重新推送一次');return;}
     // 检查本地与云端数据是否一致（可能之前推送没生效）
     const localUpdated = DOCS.length ? (safeLocalGet('lastPushTime', '') || '') : '';
     const cloudSame = data.updatedAt && localUpdated && data.updatedAt === localUpdated;
     if(cloudSame){
-      $('#cloudStatus').textContent='✅ 本地已是最新数据 时间：'+new Date().toLocaleTimeString();
+      $('#cloudStatus').textContent='本地已是最新数据 时间：'+new Date().toLocaleTimeString();
       toast('云端数据与本地一致，无需拉取');
       return;
     }
@@ -8743,9 +8791,9 @@ async function cloudPull(){
     const stampBeforeConfirm = _dirtyStamp;
     if(!await confirmDialog(`云端数据更新时间：${timeLabel}\n\n（Gist 服务器时间：${gistTimeLabel}）\n\n拉取将覆盖本地数据，确定？`))return;
     // 确认等待期间本地若有新变更（定时器可能已把更新的数据推上云），放弃用旧快照覆盖，防止回滚丢数据
-    if(_dirtyStamp !== stampBeforeConfirm){ $('#cloudStatus').textContent='⚠️ 本地数据已变化，已取消拉取'; toast('本地数据有变化，请先推送再拉取'); return; }
+    if(_dirtyStamp !== stampBeforeConfirm){ $('#cloudStatus').textContent='本地数据已变化，已取消拉取'; toast('本地数据有变化，请先推送再拉取'); return; }
     // 形状校验：畸形云端数据不能污染内存
-    if(!data || !Array.isArray(data.documents)){ $('#cloudStatus').textContent='❌ 云端数据结构异常'; toast('云端数据结构异常，已取消拉取'); return; }
+    if(!data || !Array.isArray(data.documents)){ $('#cloudStatus').textContent='失败：云端数据结构异常'; toast('云端数据结构异常，已取消拉取'); return; }
     const newDocs = normalizeDocs(data.documents);
     const newProgress = sanitizeProgressMap(data.progress);
     const newOrder = Array.isArray(data.order) ? [...new Set(data.order)] : newDocs.map(d=>d.id);
@@ -8755,7 +8803,7 @@ async function cloudPull(){
       // 半更新保护：磁盘可能已写入一部分（如文档换了、进度没换），而内存仍是旧数据。
       // 若继续用旧内存覆盖磁盘，会把刚写进去的那部分冲掉 —— 冻结写入，让用户刷新后从磁盘恢复一致状态。
       if(typeof Store.freeze === 'function') Store.freeze();
-      $('#cloudStatus').textContent='❌ 保存失败（部分写入可能已生效），已暂停保存，请刷新页面恢复';
+      $('#cloudStatus').textContent='失败：保存失败（部分写入可能已生效），已暂停保存，请刷新页面恢复';
       toast('保存失败：已暂停本地保存以避免数据错乱，请刷新页面');
       return;
     }
@@ -8776,18 +8824,18 @@ async function cloudPull(){
     safeLocalSet('lastPushTime', data.updatedAt || '');   // 同步 lastPushTime：再次拉取同一版本会命中"已是最新"，不反复弹确认
     _autoSyncDirty = false;
     if(warMerged) markDirty();   // 并进了别的设备的战报：把并集推回去，否则云端会一直停在"两台设备各推一半"
-    $('#cloudStatus').textContent='✅ 拉取成功 时间：'+new Date().toLocaleTimeString();
+    $('#cloudStatus').textContent='拉取成功 时间：'+new Date().toLocaleTimeString();
     toast('已从云端同步');renderAll();hideModal($('#dataModal'));
   }catch(e){
     console.error('[pull] 异常:', e);
     if(e instanceof SyntaxError){
-      $('#cloudStatus').textContent='❌ 数据格式异常，可能推送不完整';
+      $('#cloudStatus').textContent='失败：数据格式异常，可能推送不完整';
       toast('云端数据损坏，请在其他设备重新推送一次');
     }else if(e.message&&/fetch|network|timeout/i.test(e.message)){
-      $('#cloudStatus').textContent='❌ 网络异常：'+e.message.substring(0,30);
+      $('#cloudStatus').textContent='失败：网络异常：'+e.message.substring(0,30);
       toast('网络异常，请检查 Token 或网络连接');
     }else{
-      $('#cloudStatus').textContent='❌ '+(e.message||'未知错误').substring(0,40);
+      $('#cloudStatus').textContent='失败：'+(e.message||'未知错误').substring(0,40);
       toast('拉取失败：'+(e.message||'未知错误').substring(0,50));
     }
   }
@@ -8805,12 +8853,12 @@ async function autoPush(){
   if(!token || !gistId || !_autoSyncDirty) return;
   if(!navigator.onLine) return;
   await doPushToGist(token, gistId,
-    () => { const el = $('#cloudStatus'); if(el) el.textContent = '⬆️ 自动推送成功 时间：'+new Date().toLocaleTimeString(); },
+    () => { const el = $('#cloudStatus'); if(el) el.textContent = '自动推送成功 时间：'+new Date().toLocaleTimeString(); },
     (errMsg) => {
       // 原来失败完全静默：弱网/Token 失效时用户会以为"一直在同步"（只在设置面板开着时提示，避免后台打扰）
       warnSilent('自动推送失败：' + errMsg);
       const dm = $('#dataModal'), el = $('#cloudStatus');
-      if(el && dm && dm.classList.contains('show')) el.textContent = '❌ 自动推送失败：' + errMsg;
+      if(el && dm && dm.classList.contains('show')) el.textContent = '失败：自动推送失败：' + errMsg;
     }
   );
 }
@@ -8849,7 +8897,7 @@ async function askPullOnStart(){
     // 先检查是否有 learn-data.json 文件，没有就跳过
     const file = gist.files['learn-data.json'];
     if(!file || !file.content) return;
-    if(gist.public && !askPullOnStart._pubWarned){ askPullOnStart._pubWarned=true; toast('⚠️ 你的同步 Gist 是公开的，题库和打卡记录对任何知道地址的人可见，建议改为私有'); }
+    if(gist.public && !askPullOnStart._pubWarned){ askPullOnStart._pubWarned=true; toast('你的同步 Gist 是公开的，题库和打卡记录对任何知道地址的人可见，建议改为私有'); }
     let rawContent = file.content || '';
     // Gitee 对 content 按字节截断（1MB）：按字节数比较，被截断时从 raw_url 获取完整内容
     let contentBytes = rawContent.length;
@@ -9135,187 +9183,42 @@ async function checkDegradedResidue(){
   }catch(e){ warnSilent('降级残留数据恢复失败（临时数据仍留在浏览器存储中）', e); }
 }
 
-// ======== 入场动画：全屏星空（warp 星野） ========
-// 与 init 并行播放：init 就绪 + 展示满最短时长 → 淡出；就绪后点一下可立即跳过。
-// 同一会话内重复加载（调试刷新/返回）只快速带过，避免每次都被动画拦住。
+// ======== 入场：短淡入（unslop 审计移除星空 warp 与缩放交叉交接） ========
+// 遮罩只作底色 veil：init 就绪 + 展示满最短时长后 .3s 淡出，主界面同时一次短上浮。
+// 同一会话内重复加载只快速带过；就绪后点一下可立即跳过。
 const INTRO = {
   t0: performance.now(),
-  minShow: 1800,     // 展示时长（毫秒）：太短会闪一下就没，太长则拖慢进入
-  ready: false,      // init 是否完成：完成后才允许点击跳过（未就绪时点了也没用，索性先不给点）
-  disabled: false,   // 无障碍降级 / 环境不支持：不播动画，遮罩直接收起
-  exited: false, destroyed: false, hidden: false,
-  raf: null, timer: null, canvas: null, ctx: null,
-  stars: [], W: 0, H: 0, cx: 0, cy: 0,
-  t: 0, lastTs: 0, fade: 0, speed: 0, rush: 0,
-  cols: ['194,215,255','152,231,255','198,181,253'],   // 星点三色：introStart 里按主题色板重算（此处是兜底）
-  speedK: 1                                            // 整体速度系数：浅色主题（纸/雾）放慢些，别像在飞
+  minShow: 420,      // 展示时长（毫秒）：veil 只需遮住首帧骨架，不再演仪式
+  ready: false,      // init 是否完成：完成后才允许点击跳过
+  exited: false, destroyed: false,
+  timer: null
 };
 try{
   // "看过"的标记走 localStorage：App 里 WebView 进程被回收会清掉 sessionStorage，
-  // 于是每次冷启动都重播满 1800ms 入场（网页端同一标签刷新只要 840ms）。改存 localStorage 后，
-  // 只有"装完第一次"看完整版，之后一律半程带过
-  if(safeLocalGet('learnAppIntroSeen', '')) INTRO.minShow = 840;
+  // 改存 localStorage 后只有"装完第一次"看完整 veil，之后一律半程带过
+  if(safeLocalGet('learnAppIntroSeen', '')) INTRO.minShow = 160;
   safeLocalSet('learnAppIntroSeen', '1');
 }catch(_){}
-
-// 星野模型：归一化坐标 x/y（-1~1）+ 深度 z（越小越近）；绘制时除以 z 投影，得到"从中心向外飞出"的透视
-function introSpawnStar(s, anywhere){
-  s.z = anywhere ? 0.12 + Math.random()*0.88 : 1;
-  s.x = (Math.random()*2-1)*0.92;
-  s.y = (Math.random()*2-1)*0.92;
-  s.tint = Math.random()<0.14 ? 2 : (Math.random()<0.30 ? 1 : 0);   // 0 冷白 / 1 淡青 / 2 淡紫
-  s.b = 0.55 + Math.random()*0.45;   // 出生亮度差：避免同一层的星星像复制粘贴
-  return s;
-}
-function introResize(){
-  if(!INTRO.canvas) return;
-  const dpr = Math.min(window.devicePixelRatio||1, 2);
-  INTRO.W = window.innerWidth; INTRO.H = window.innerHeight;
-  INTRO.cx = INTRO.W/2; INTRO.cy = INTRO.H/2;
-  INTRO.canvas.width = INTRO.W*dpr;
-  INTRO.canvas.height = INTRO.H*dpr;
-  INTRO.canvas.style.width = INTRO.W+'px';
-  INTRO.canvas.style.height = INTRO.H+'px';
-  if(INTRO.ctx) INTRO.ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-// 入场配色：不再写死一套青紫，直接吃当前主题的色板（THEMES + savedThemeId）——
-// 换主题后重进 App，底色与星点就跟着主题走：
-//   底色：主题 bg2 → bg → 再压一档（深底）/再实一档（浅底），保住"看得进去"的纵深
-//   星点：text（深底近白、浅底墨黑，天然是"星"）+ accent2 + accent，按底色明暗拉到可辨识区间，
-//         免得浅底配浅星、深底配深星，互相看不见
-function introRgbOf(v, fb){
-  const s = hexToRgbStr(v);              // 复用 applyTheme 的颜色工具，不留第二份实现
-  if(!s) return fb;
-  const p = s.split(',');
-  return [parseInt(p[0],10)||0, parseInt(p[1],10)||0, parseInt(p[2],10)||0];
-}
-function introLuma(c){ return (0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]) / 255; }
-function introScale(c, k){ return c.map(v => Math.max(0, Math.min(255, Math.round(v*k)))); }
-function introFit(c, dark){
-  const want = dark ? 0.80 : 0.30, l = Math.max(introLuma(c), 0.02);
-  if(dark && l < want) return introScale(c, Math.min(want/l, 3));      // 深底：过暗的星点提亮（等比放大，色相基本不动）
-  if(!dark && l > want) return introScale(c, Math.max(want/l, 0.3));   // 浅底：过亮的星点压暗
-  return c;
-}
-function introPalette(){
-  const t = getTheme(savedThemeId() || 'particle') || THEMES.particle;
-  const dark = !isLightColor(t.bg);
-  // 兜底色取默认主题（粒子）与绢的底色：取不到主题值时入场动画也不会突然换成一屏黑
-  const bg2 = introRgbOf(t.bg2, dark ? [13,15,22] : [239,237,226]);
-  const bg  = introRgbOf(t.bg,  dark ? [8,9,13]   : [247,245,234]);
-  return {
-    bg1: bg2.join(','),
-    bg2: bg.join(','),
-    bg3: (dark ? introScale(bg, 0.55) : introScale(bg2, 0.93)).join(','),
-    cols: [t.text, t.accent2, t.accent].map(v => introFit(introRgbOf(v, [200,202,245]), dark).join(',')),
-    speedK: dark ? 1 : 0.8   // 浅底主题（绢）放慢一档：纸上飘的是尘，不该像在穿越星野
-  };
-}
-const INTRO_ALPHAS = [0.30, 0.56, 0.80, 1.00];                    // 亮度档 → 透明度（再乘整体渐显）
-const INTRO_WIDTHS = [0.7, 1.1, 1.5, 1.9];                        // 亮度档 → 线宽（越亮的星越粗）
-// 分桶容器：3 色 × 4 亮度档 = 12 个桶，桶内星点共用一次 stroke（见 introTick 的说明）
-const INTRO_BUCKETS = [];
-for(let c=0;c<3;c++){ for(let l=0;l<4;l++) INTRO_BUCKETS.push({ c:c, l:l, pts:[] }); }
-function introTick(ts){
-  const I = INTRO;
-  I.raf = null;
-  if(I.destroyed || I.hidden || !I.ctx) return;
-  I.raf = requestAnimationFrame(introTick);
-  const dt = I.lastTs ? Math.min((ts-I.lastTs)/1000, 0.05) : 0.016;
-  I.lastTs = ts;
-  I.t += dt;
-  I.fade = Math.min(1, I.fade + dt/0.55);   // 星野尽快亮起来：渐显太慢的话，开场那段观感就是"一片黑"
-  // 速度曲线：起步就在流动（原来 0.25 的慢起让星野看着像一张静止图片）→ 1.35s 冲到最快 → 回落到巡航。
-  // 巡航值 1.05 不算低：整段过程中星野始终明显向外走，才谈得上"过渡"而不是"定格"
-  let target = (I.t < 0.45 ? 0.80 : (I.t < 1.35 ? 1.45 : 1.05)) * I.speedK;   // speedK：浅底主题整体放慢一档
-  if(I.rush > 0){ I.rush = Math.max(0, I.rush - dt); target += I.rush*2.0; }   // 跳过/淡出时再补一次"冲出"
-  I.speed += (target - I.speed) * Math.min(1, dt*3.2);   // 平滑跟随，速度曲线不留折角
-
-  // 运镜：投影系数缓慢放大（0.90 → 1.04），星野像被镜头持续推近 —— 保证任何时刻画面都在动
-  const K = 0.90 + 0.14*Math.min(1, I.t/1.9);
-  const ctx = I.ctx, W = I.W, H = I.H, cx = I.cx, cy = I.cy;
-  ctx.clearRect(0, 0, W, H);
-  // 分桶批量描边：按「颜色 × 亮度档」归类，每桶一条路径一次 stroke。
-  // 逐颗 stroke（原来最多 200 次/帧）在手机上会掉帧，正是"看着像卡住"的元凶
-  for(const b of INTRO_BUCKETS) b.pts.length = 0;
-  for(const s of I.stars){
-    const pz = s.z;
-    s.z -= dt * I.speed * s.z * 1.6;
-    if(s.z <= 0.02){ introSpawnStar(s, false); continue; }   // 飞出屏幕：回到最远处（画面中心附近）重新出发
-    const x0 = cx + s.x/pz*cx*K,  y0 = cy + s.y/pz*cy*K;     // 上一帧位置 → 本帧位置：两点连线即拖尾
-    const x1 = cx + s.x/s.z*cx*K, y1 = cy + s.y/s.z*cy*K;
-    if(x1 < -80 || x1 > W+80 || y1 < -80 || y1 > H+80) continue;   // 已出界：不画（z 仍在衰减，会自动重置）
-    const a = Math.min(1, (0.18 + (1-s.z)*1.05) * s.b) * I.fade;   // 越近越亮，最远也留一点底噪，否则远处没有"星空"
-    if(a <= 0.02) continue;
-    const lv = a < 0.32 ? 0 : a < 0.58 ? 1 : a < 0.82 ? 2 : 3;
-    INTRO_BUCKETS[s.tint*4 + lv].pts.push(x0, y0, x1, y1);
-  }
-  for(const b of INTRO_BUCKETS){
-    const n = b.pts.length;
-    if(!n) continue;
-    ctx.strokeStyle = 'rgba(' + I.cols[b.c] + ',' + (INTRO_ALPHAS[b.l]*I.fade).toFixed(3) + ')';
-    ctx.lineWidth = INTRO_WIDTHS[b.l];
-    ctx.beginPath();
-    for(let i=0;i<n;i+=4){ ctx.moveTo(b.pts[i], b.pts[i+1]); ctx.lineTo(b.pts[i+2], b.pts[i+3]); }
-    ctx.stroke();
-  }
-}
 function introStart(){
   const el = document.getElementById('appLoader');
-  const canvas = document.getElementById('introCanvas');
   if(!el) return;
-  // 无障碍降级 / 环境不支持：不播动画，遮罩交给 hideAppLoader 直接收起
-  if(!canvas || typeof canvas.getContext !== 'function' || typeof requestAnimationFrame !== 'function'
-     || prefersReduce()){
-    INTRO.disabled = true;
-    if(canvas) canvas.style.display = 'none';
-    return;
-  }
-  INTRO.canvas = canvas;
-  INTRO.ctx = canvas.getContext('2d');
-  INTRO.ctx.lineCap = 'round';   // 短拖尾的末端是圆的：速度慢时该星就是一粒圆点，不会变成方格
-  introResize();
-  // 配色跟随当前主题：三个底色写到遮罩的 CSS 变量上（CSS 的渐变直接吃），星点色与速度系数交给 tick
-  const pal = introPalette();
-  el.style.setProperty('--intro-bg1', 'rgb(' + pal.bg1 + ')');
-  el.style.setProperty('--intro-bg2', 'rgb(' + pal.bg2 + ')');
-  el.style.setProperty('--intro-bg3', 'rgb(' + pal.bg3 + ')');
-  INTRO.cols = pal.cols;
-  INTRO.speedK = pal.speedK;
-  // 星数随屏幕面积给，上下限兜住两端：小屏不至于空，大屏不至于白耗电（数量也直接关系到手机掉不掉帧）
-  const n = Math.max(90, Math.min(150, Math.round(INTRO.W*INTRO.H/10000)));
-  for(let i=0;i<n;i++) INTRO.stars.push(introSpawnStar({}, true));
-  document.body.classList.add('intro-on');   // 先藏住主界面，交接时再浮现（脚本异常时不会有这个类，界面照常可见）
-  window.addEventListener('resize', introResize);
-  document.addEventListener('visibilitychange', () => {
-    INTRO.hidden = document.hidden;
-    if(INTRO.hidden){
-      if(INTRO.raf){ cancelAnimationFrame(INTRO.raf); INTRO.raf = null; }   // 切后台：停掉，省电
-    } else if(!INTRO.destroyed){
-      INTRO.lastTs = 0;   // 重置时间基准：回来时不会因 dt 跳变让星野瞬移
-      if(!INTRO.raf) INTRO.raf = requestAnimationFrame(introTick);
-    }
-  });
+  if(prefersReduce()) INTRO.minShow = 0;   // 无障碍降级：不演入场，veil 直接收起
+  document.body.classList.add('intro-on');   // 先藏住主界面（脚本异常时不会有这个类，界面照常可见）
   el.addEventListener('pointerdown', () => { if(INTRO.ready) introExit(); });
-  INTRO.raf = requestAnimationFrame(introTick);
 }
 function introExit(){
   const I = INTRO, el = document.getElementById('appLoader');
   if(!el || I.exited || I.destroyed) return;
   I.exited = true;
   if(I.timer){ clearTimeout(I.timer); I.timer = null; }
-  if(I.disabled){ el.remove(); I.destroyed = true; return; }
-  I.rush = 0.55;   // 淡出时星野再冲一下：收在"跃迁"的动感上，而不是让画面慢慢停住
-  el.classList.add('out');                      // 星空放大淡出
-  document.body.classList.add('intro-reveal');  // 主界面同时从略小浮到原位：两者交叉 = 解锁进桌面的推进感
+  el.classList.add('out');                      // veil .3s 淡出
+  document.body.classList.add('intro-reveal');  // 主界面同时一次短上浮
   setTimeout(() => {
     I.destroyed = true;
-    if(I.raf){ cancelAnimationFrame(I.raf); I.raf = null; }
     const node = document.getElementById('appLoader');
     if(node) node.remove();
     document.body.classList.remove('intro-on', 'intro-reveal');   // 撤掉过渡态类，别长期占着合成层
-    I.canvas = null; I.ctx = null; I.stars = [];
-  }, 900);   // 与 CSS 的 .78s 过渡对齐（多留余量）
+  }, 340);   // 与 CSS 的 .3s 淡出对齐（多留余量）
 }
 // 收起启动遮罩：成功/失败路径共用，避免初始化异常时页面一直转圈。
 // 这里只标记"就绪"，真正的淡出交给 introExit —— 否则动画会被 init 的速度切成"闪一下就没"
@@ -9323,7 +9226,6 @@ function hideAppLoader(){
   const el = document.getElementById('appLoader');
   if(!el || INTRO.ready || INTRO.destroyed) return;
   INTRO.ready = true;
-  if(INTRO.disabled){ introExit(); return; }
   INTRO.timer = setTimeout(introExit, Math.max(0, INTRO.minShow - (performance.now() - INTRO.t0)));
 }
 
@@ -10106,7 +10008,7 @@ function glTrackFrame(dt){
    —— 正常路径不创建这个节点，不影响任何用户。 */
 function glDebugOverlay(){
   const lines = [];
-  if(_uGLNote) lines.push('⚠ ' + _uGLNote);
+  if(_uGLNote) lines.push('注意：' + _uGLNote);
   lines.push('webgl2 ' + (_uGLFail ? '不可用' : '可用') + ' · 当前层 ' + (_uGLProg ? 'GPU' : '静态兜底'));
   const keys = Object.keys(GL_FS);
   if(keys.length) lines.push(keys.map(k => k + ':' + (_uGLBadKeys[k] ? '失败' : 'ok')).join('  '));
@@ -11116,7 +11018,7 @@ document.addEventListener('click', (e) => {
 });
 </script>
 <script>
-const SW_VERSION = '159';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '163';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

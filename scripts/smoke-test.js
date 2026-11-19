@@ -118,7 +118,7 @@ function extractConst(name){
 }
 
 /* ---------- 组装沙箱：被依赖的调度/存储函数用替身，只测目标函数自身逻辑 ---------- */
-const funcs = ['esc', 'renderTitle', 'stripMarkdown', 'mdToPlain', 'parseMarkdownToDoc', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'fsrsRetrievability', 'retrievabilityOf', 'memRHtml', 'memOverdueTone', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'overdueOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey', 'hmDayCounts', 'hmDayNo', 'warDayAge', 'warFoldBucket', 'warDayMidnight'];
+const funcs = ['esc', 'ic', 'sq', 'renderTitle', 'stripMarkdown', 'mdToPlain', 'parseMarkdownToDoc', 'renderAnswer', 'csvCell', 'estimateYears', 'fsrsFromRate', 'applySm2Grade', 'dayKeyOf', 'dayIndexOf', 'normalizeDocs', 'warLogAdd', 'warLogUndo', 'warDevId', 'warDayMap', 'warLocalBucket', 'warDayAgg', 'warLogTrim', 'warLogMerge', 'revLogUndo', 'feedHotFromMemory', 'hotLiveQueue', 'buildMemoryQueue', 'undoMemoryGrade', 'skipMemoryQuestion', 'fsrsClamp', 'fsrsStateOf', 'fsrsRetrievability', 'retrievabilityOf', 'memRHtml', 'memOverdueTone', 'buildAnalyticsData', 'buildForecastHtml', 'levelOf', 'lvRank', 'buildLvBarHtml', 'invalidateMemQueue', 'bumpLvCounts', 'computeLvCounts', 'effectiveNextOf', 'overdueOf', 'pruneHot', 'pruneOrphanProgress', 'hmCivil', 'hmDayKey', 'warPrevKey', 'buildWarReport', 'warEntryKey', 'hmDayCounts', 'hmDayNo', 'warDayAge', 'warFoldBucket', 'warDayMidnight'];
 const parts = funcs.map(n => {
   const f = extractFunction(n);
   if (!f) throw new Error('提取函数失败（可能已改名）：' + n);
@@ -126,6 +126,9 @@ const parts = funcs.map(n => {
 });
 const rateConst = extractConst('Rate');
 if (!rateConst) throw new Error('提取常量失败：Rate');
+// 线图标表（ic/sq 依赖）：unslop 后模板函数会调 ic()，沙箱里必须带上同一份表
+const iconPathsConst = extractConst('ICON_PATHS');
+if (!iconPathsConst) throw new Error('提取常量失败：ICON_PATHS');
 // 评分档位表（四档）：与 Rate 同一套刻度，必须在 Rate 之后求值
 const rateMetaConst = extractConst('RATE_META');
 if (!rateMetaConst) throw new Error('提取常量失败：RATE_META');
@@ -200,6 +203,7 @@ ${schedConsts}
 ${fsrsCurveConst}
 ${rThConsts}
 ${lvConsts}
+${iconPathsConst}
 ${parts.join('\n')}
 ({ esc, renderTitle, stripMarkdown, mdToPlain, parseMarkdownToDoc, renderAnswer, csvCell, estimateYears, fsrsFromRate, applySm2Grade, dayKeyOf, dayIndexOf, normalizeDocs, warLogAdd, warLogUndo, warDevId, warDayAgg, warLogMerge, revLogUndo, Rate, RATE_META, MASTERED_MIN_DAYS, levelOf, lvRank, LV_S_TH, buildLvBarHtml, invalidateMemQueue, bumpLvCounts, computeLvCounts, feedHotFromMemory, hotLiveQueue, buildMemoryQueue, undoMemoryGrade, skipMemoryQuestion, retrievabilityOf, R_GOOD_TH, R_WARN_TH, FSRS_MAX_INTERVAL, memRHtml, memOverdueTone, buildAnalyticsData, buildForecastHtml, getProgress: () => PROGRESS, getHot: () => HOT, getWarLog: () => WARLOG, getRevLog: () => REVLOG, getMemory: () => memory, getDocs: () => DOCS, getLvCache: () => _lvCountsCache, getLS: () => LS, hmDayKey, warPrevKey, buildWarReport, warEntryKey, hmDayCounts, hmDayNo, warLogTrim });
 `;
@@ -1204,16 +1208,14 @@ console.log('\n[关键实现点静态断言]');
   ok(/const lvLine = LV_ORDER\.map\(lv=>`\$\{LV_NAME\[lv\]\}: \$\{o\.lvCounts\[lv\]\|\|0\}`\)/.test(html),
      '复制给 AI 的报告里掌握档写作「掌握」，不再拼出 "LvM"');
   ok(!/transition:width \.3s/.test(html), '清掉从未生效的 transition:width（段宽由 flex 分配）');
-  ok(!/function animateLvBar/.test(html) && /data-n="\$\{sp\.n\}"/.test(html) && /flex-grow var\(--dur-slow\) var\(--ease-out\)/.test(html),
-     '等级条段宽走 CSS 过渡（记忆页改局部更新后段节点得以复用，过渡才真正生效；WAAPI 补帧已删）');
-  ok(/@media \(prefers-reduced-motion: no-preference\)\{\s*\.pbar > i\.lvM::before\{animation:lvM-flow[^}]*\}\s*\.pbar > i\.lvM::after\{animation:lvM-arc/.test(html),
-     'lvM 流光包进 no-preference（reduced-motion 下不再"闪一下再停"）');
-  /* 流光与呼吸都是 infinite：只要进度页停着就一直在跑。background-position / box-shadow
-     不可合成、每帧要主线程重绘；改成 transform + opacity 后才能进合成层。 */
-  ok(/@keyframes lvM-flow\{from\{transform:none\}to\{transform:translateX\(-50%\)\}\}/.test(html)
-     && !/@keyframes lvM-flow\{[^}]*background-position/.test(html)
-     && !/@keyframes lvM-arc\{[^}]*box-shadow/.test(html),
-     'lvM 流光/呼吸走 transform + opacity（合成动画，不再每帧重绘渐变与阴影）');
+  ok(!/function animateLvBar/.test(html) && /data-n="\$\{sp\.n\}"/.test(html) && !/flex-grow var\(/.test(html)
+     && /\.pbar\.lvbar > i\{min-width:4px;border-radius:0;transition:opacity var\(--dur-quick\)\}/.test(html),
+     '等级条不做布局属性动画（unslop：段宽出生即终值，只留 opacity 过渡；WAAPI 补帧与 flex-grow 过渡均已删）');
+  ok(!/animation:lvM-/.test(html) && /\.pbar > i\.lvM\{position:relative;z-index:2;border:1\.5px solid var\(--accent3-ink, var\(--accent3\)\);background:var\(--accent\)\}/.test(html),
+     'lvM 满级＝主色实底 + 琥珀发丝描边，无 infinite 动画（unslop：虹彩流光与呼吸光晕移除）');
+  /* 流光与呼吸已整体移除：不再存在任何 lvM 关键帧，reduced-motion 下也无"闪一下再停" */
+  ok(!/@keyframes lvM-flow/.test(html) && !/@keyframes lvM-arc/.test(html),
+     'lvM 流光/呼吸关键帧已删除（纯装饰循环动画退出进度页）');
   /* 搜索最多 200 条但一屏只放得下五六条，屏幕外的条目原本也要走完布局与绘制。
      content-visibility 只能给搜索页：浏览页 .q 要参与 flipAway，估算尺寸会把位移算错。 */
   ok((html.match(/content-visibility:auto/g)||[]).length === 1 && /\.sr-item\{[^}]*content-visibility:auto/.test(html),
@@ -1473,9 +1475,9 @@ console.log('\n[关键实现点静态断言]');
    // 卡片不得有自己的 :active：:active 会沿祖先链生效，卡片级的 :active 会让"点卡片里的按钮"也动整张卡片
    // （题卡的刷题/编辑/删除、记忆卡与趁热卡的评分键都踩过）。谁被点、谁响应 —— 卡片只保留 hover 反馈。
    ok(!/\.q:active/.test(html) && !/\.memory-card:active/.test(html)
-      && /\.q:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html)
-      && /\.memory-card:hover\{border-color:rgba\(var\(--accent2-rgb\),\.55\)/.test(html),
-      '卡片没有 :active 按下态（点内部按钮时不再整卡跟着响应），悬停反馈保持不变');
+      && /\.q:hover\{border-color:var\(--line2\)\}/.test(html)
+      && /\.memory-card:hover\{border-color:var\(--line2\)\}/.test(html),
+      '卡片没有 :active 按下态（点内部按钮时不再整卡跟着响应）；悬停只做描边台阶（unslop：不上浮不发光）');
    // 趁热本轮游标不得归零：重进本页要沿用、走完要停在结果页、云端覆盖要按当前题重定位
    // （inPass=false 曾经同时表示"还没开始"与"已走完"，于是重渲染会把结果页顶掉、从第一题重开）
    ok(/let hot = \{ queue:\[\], index:0, flipped:false, cleared:0, inPass:false, done:false \};/.test(html)
@@ -1555,7 +1557,7 @@ console.log('\n[关键实现点静态断言]');
    ok(!/color:var\(--faint\)/.test(html)
       && /const mutedColor = style\.getPropertyValue\('--muted'\)/.test(html)
       && !/faintColor/.test(html)
-      && /\.q \.qnum\{flex:none;min-width:26px;height:26px;padding:0 5px;/.test(html)
+      && /\.q \.qnum\{flex:none;min-width:26px;height:26px;padding:0 4px;/.test(html)
       && /flushProgressWrite\(\); flushWarLogWrite\(\); saveGrillDraft\(true\);/.test(html)
       && /window\.addEventListener\('pagehide', \(\) => \{ flushProgressWrite\(\); flushWarLogWrite\(\);/.test(html),
       '--faint 不再作正文色（图表日期轴随既定政策改 --muted）；题号徽标 min-width；退出/隐藏前同时 flush 进度与战报（防抖不得丢最后一笔打卡）');
@@ -1576,9 +1578,9 @@ console.log('\n[关键实现点静态断言]');
    // 对比度：装饰色派生出「作文字」的一版，九处文字用它；主题调色板一个值都没动
    ok(/function inkOn\(color, bg\)\{/.test(html)
       && /const a3i = inkOn\(t\.accent3, t\.card \|\| t\.bg\);/.test(html)
-      && (html.match(/color:var\(--accent3-ink, var\(--accent3\)\)/g) || []).length === 9
+      && (html.match(/color:var\(--accent3-ink, var\(--accent3\)\)/g) || []).length === 7
       && /color:'\+_accInk\+';/.test(html),
-      'accent3 派生 --accent3-ink 供小字使用（九处），确认框确定按钮按 accent 明度取前景');
+      'accent3 派生 --accent3-ink 供小字使用（七处，unslop 后标签类改 --muted），确认框确定按钮按 accent 明度取前景');
    // 触屏：颜色类 hover 关进 @media (hover:hover)，不再靠 hover:none 里逐条抄复位值
    ok(/@media \(hover:hover\)\{ \.tab:hover\{/.test(html)
       && /@media \(hover:hover\)\{ \.grade-btn\.g-easy:hover\{/.test(html)
@@ -1669,9 +1671,9 @@ console.log('\n[关键实现点静态断言]');
    ok(!/id="selCopy"|\.sel-copy|data-answer-copy/.test(html),
       '不再保留选区复制浮条 / 答案单独复制键（复制入口收敛为一颗）');
    // 复制按钮只保留图标：文案交给 title / aria-label，避免题目行被两颗带字按钮挤满
-   ok(/aria-label="复制题目和答案">📋<\/button>/.test(html)
-      && !/aria-label="复制题目和答案">📋 复制/.test(html),
-      '复制按钮只显示图标，不再显示“复制”二字');
+   ok(/aria-label="复制题目和答案">\$\{ic\('clipboard'\)\}<\/button>/.test(html)
+      && !/aria-label="复制题目和答案">[^<]*复制/.test(html),
+      '复制按钮只显示线图标，不再显示“复制”二字（unslop：emoji 换单套线图标）');
    // 编辑保存后必须作废局部更新的 qid 判据：记忆 / 刷题卡只在换题时重写题面与答案，
    // 编辑当前题时 qid 不变，不重置就会一直显示旧内容（用户实测：要刷新页面才更新）
    ok(/_memCardQid = null;[\s\S]{0,60}_pracQid = null;[\s\S]{0,30}renderAll\(\);/.test(html),
