@@ -1237,6 +1237,74 @@ console.log('\n[关键实现点静态断言]');
   ok(/_vtHold = !!on;[\s\S]{0,400}?if\(!_vtHold\) restartCanvasLoop\(\);/.test(html)
      && !/_uHidden \|\| _vtHold/.test(html),
      '换肤期间不停画布循环（快照撤走那一刻接上的是连续画面）');
+  /* —— 进场不得演底色渐变（真实回归：主题“进首页后才闪出来”）——
+     实测（CPU 6x）：主脚本里的 initTheme 在 1063ms 才落地，而首绘在 420ms。此时若 html/body 上
+     常驻 `transition:background var(--dur-theme)`，applyTheme 写 --bg 与 GL 主题置 html 透明
+     会各自演完一遍 .5s 渐变（逐帧采到 54 个中间色）。 */
+  ok(!/html,body\{[^}]*transition:background/.test(html),
+     'html/body 不再常驻底色过渡（只有换肤那一下才开）');
+  /* 早注入必须在 <head> 里，而不是 <body> 开头：合成器录帧实测，刷新时浏览器会先把
+     “只有兜底 <style> 的空文档”吐一帧（整屏 rgb(14,16,24)）才轮到主题色 ——
+     放在 body 里赶不上这一帧，用户看到的就是“刷新屏闪” */
+  ok((() => { const bt = html.indexOf('id="bootTheme"'), he = html.indexOf('</head>');
+       return bt > 0 && he > 0 && bt < he; })(),
+     '首屏主题早注入在 <head> 里（能盖住刷新的空文档帧）');
+  ok(/<script id="bootTheme">[\s\S]{0,1400}learnAppThemeCss_v1[\s\S]{0,900}document\.head\.appendChild/.test(html)
+     && /function saveThemeSnapshot\(/.test(src)
+     && /if\(!opts \|\| opts\.persist !== false\)\{[\s\S]{0,260}saveThemeSnapshot\(name,/.test(src),
+     '快照回放与写入都在位（快照由 applyTheme 写、“临时应用”不写）');
+  /* 浅底靠 html.light（不是 body.light）：head 里脚本执行时 body 还不存在，挂不上就丢帧 */
+  ok(/html\.light \.salary-card/.test(html) && !/body\.light /.test(html)
+     && /cl = document\.documentElement\.classList;[\s\S]{0,160}indexOf\('tp-'\)/.test(src),
+     '浅底与主题标记挂在 <html>（前缀 tp-，不会误删 theme-vt / theme-anim）');
+  ok(/html\.theme-anim,html\.theme-anim body\{transition:background/.test(html)
+     && /function themeFadeOnce\(fn\)/.test(src) && /themeFadeOnce\(commit\)/.test(src),
+     '底色淡入只在主动换肤（无 View Transition）与跟随系统深浅时短暂开启');
+  /* 启动遮罩不能只是“一块盖住骨架屏的纯色板”：旧 unslop 撑掉星空后它就是这个状态，
+     画面完全是死的，看完死板还要再等 minShow + .3s 淡出 —— 那就是用户说的“进入卡顿”。
+     星空入场复原时必须带着星野与交棒，不能再回到纯色板。 */
+  /* 星空入场已复原（用户明确要它），但不得回到旧版的两个坑：
+     · 旧版底色由 introStart() 现算（主脚本执行期），于是遮罩第一帧是兜底深空、下一帧才转主题色；
+       现在三个底色进 :root 变量表（随之进快照），首帧就是主题色；
+     · 旧版 t0 = performance.now()，等于在真实加载时间之后又白加一个 minShow。 */
+  ok(/<div class="app-loader" id="appLoader">[\s\S]{0,80}<canvas id="introCanvas"/.test(html),
+     '星空入场遮罩与 canvas 在位');
+  ok(/cssVars \+= ';--intro-bg1:rgb\('/.test(src) && /window\._introPal = introPal/.test(src)
+     && /var\(--intro-bg1, /.test(html) && !/el\.style\.setProperty\('--intro-bg1/.test(src),
+     '星空底色由 applyTheme 算并写进 :root 变量表（所以能进快照；不再往遮罩元素上写）');
+  ok(!/introPalette\(\)/.test(src) && /function introPaletteOf\(t\)/.test(src),
+     '入场配色只一份实现（introPaletteOf(t)），不存第二套“自己读 localStorage 重算”的路子');
+  ok(/t0: 0,/.test(src) && !/t0: performance\.now\(\)/.test(src)
+     && /minShow: 700,/.test(src) && /INTRO\.minShow = 400;/.test(src),
+     '最短镜头从导航开始计时，且时长收到 700/400（不把“有内容可看”挡在门外）');
+  ok(/renderAll\(\);\s*\n\s*hideAppLoader\(\);/.test(src) && /\}\)\.finally\(\(\) => \{\s*\n\s*hideAppLoader\(\);/.test(src),
+     'init 的成功与异常两条路径都会交棒（否则开场不会收）');
+  /* 快照与权威变量表都用 html:root（特异度 0,1,1）而不是单写 :root（0,1,0）：
+     本文档 566KB、内联样式表 93KB，真实网络就是一块块到达的 ——
+     靠源码顺序赢，就等于把正确性押在“谁先到”上。 */
+  ok(/let cssVars = 'html:root \{/.test(src) && /_bgColorStyle\.textContent = 'html:root\{/.test(src),
+     '主题变量用 html:root（压得住兜底 :root，不依赖到达顺序）');
+  ok(html.indexOf('id="bootTheme"') < html.indexOf('\n<style>'),
+     'bootTheme 排在那个巨型内联 <style> 之前（第一块到达就能应用主题）');
+  /* —— 刷新时“导航先亮总览、再跳回原页”的护栏（真实回归，记忆页实测）——
+     顶栏静态标记里的 active 只能代表默认页（总览）；真正该亮哪页要问 sessionStorage.lastView。
+     这一步必须在主脚本之前做：实测 renderAll 要到 572ms（带数据时 1036ms）才把高亮改回来。 */
+  ok(html.indexOf('id="bootNav"') > html.indexOf('id="bootTheme"') && html.indexOf('id="bootNav"') < html.indexOf('window.SEED'),
+     '导航高亮的提前恢复在 <body> 里、主脚本之前（赶得上首帧）');
+  /* 两处读取必须是同一个键：bootNav 在早期独立脚本里只能裸 localStorage（那时安全封装函数
+     还没定义），主脚本则走 safeLocalGet/safeLocalSet。计数写成 1 + 1，将来谁多开一份就会报红。 */
+  ok((html.match(/localStorage\.getItem\('lastView'\)/g) || []).length === 1
+     && /safeLocalGet\('lastView', ''\)/.test(src)
+     && /safeLocalSet\('lastView', view\)/.test(src)
+     && /tabs\[i\]\.tabIndex = on \? 0 : -1/.test(html),
+     'bootNav 与主脚本读同一个 lastView（各一处），并补齐 class + aria-selected + roving tabindex');
+  /* 本应用不再用 sessionStorage：原生壳里 WebView 进程被系统回收会把它清空，于是“被系统吹掉”与
+     “用户主动关掉”这两种不同的事会被当成同一件 —— 上次停的页、趁热本轮游标都会莫名归零。
+     需要“跨重载、不跨太久”的状态一律 localStorage（配合自行划界，如趁热的当天日期戳）。 */
+  ok(!/sessionStorage\.(getItem|setItem|removeItem)\(/.test(html),
+     '没有残留的 sessionStorage 调用（视图/趁热存档已改 localStorage）');
+  ok(/day: dayKeyOf\(Date\.now\(\)\)/.test(src) && /o\.day !== dayKeyOf\(Date\.now\(\)\)/.test(src),
+     '趁热本轮存档带当天戳并隔天作废（改用 localStorage 后不能无限期接着演）');
   ok(/role="img"/.test(html) && /setAttribute\('aria-label', lvBar\.label\)/.test(html),
      '等级条对读屏暴露一句话描述（纯色块否则等于没有信息）');
   ok(/title="\$\{LV_NAME\[sp\.lv\]\} · \$\{sp\.n\} 题（\$\{sp\.p\}%）"/.test(html),

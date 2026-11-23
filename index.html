@@ -14,6 +14,41 @@
 
 <meta name="theme-color" content="#0d0e17">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self';">
+<!-- 首屏主题早注入。它只干一件事：在浏览器画出第一帧之前，把“用户上次看到的那套颜色”贴回去。
+     要修的 bug（合成器录帧实测，旧版无此段）：刷新时画面有 22 帧纯黑 rgb(14,16,24)、约 227ms，
+     因为主题要靠 450KB 主脚本里的 initTheme 应用，而首绘在 420ms 就发生了；旧版那块不透明
+     启动遮罩自己的底色也是这个兜底深空，所以同一帧黑被当成“启动画面”而看不到异常。
+     位置放在那个 93KB 内联 <style> 之前（第 ~1700 字节）：本文档 566KB，真实网络是一块一块到达的，
+     排在样式表后面就得等 93KB 到齐才轮到自己。（注：本地分块 A/B 实测两个位置都未重现黑帧 ——
+     流式+编译期间本机 Chrome 根本没有绘制机会；提前到第一块属于“不押注到达顺序”的保险，
+     而不是已重现的根因。真正已重现的根因是上面那句：主题要等主脚本。）
+     它与兜底样式谁先到已不重要：快照里的选择器是 html:root（特异度 0,1,1）压得住后面的 :root（0,1,0）。
+     另外：标记挂在 <html> 而不是 body，因为解析器走到 <body> 之前 body 还不存在。
+     这里不重新实现派生逻辑，只回放上一次 applyTheme 存下的变量表快照（见 saveThemeSnapshot）；
+     主脚本跑起来后用权威结果覆盖（#themeVars 同样用 html:root，且它在文档顺序上更后）。
+     没快照（装完第一次 / 用户清了数据）就直接返回，行为与以前一致。 -->
+<script id="bootTheme">
+(function(){
+  try{
+    var s = JSON.parse(localStorage.getItem('learnAppThemeCss_v1') || '');
+    if(!s || !s.css) return;
+    var st = document.createElement('style');
+    st.id = 'themeEarly';
+    st.textContent = s.css;
+    document.head.appendChild(st);
+    var root = document.documentElement;
+    /* 主题标记前缀用 tp-（而不是 theme-）：theme-vt / theme-anim 也是 theme- 开头且同在 <html> 上，
+       同步清理时误删它们就等于把换肤动画拆了 */
+    if(s.id) root.classList.add('tp-' + String(s.id).replace(/[^a-z0-9_-]/g, ''));
+    root.classList.toggle('light', !!s.light);      // 浅底微调靠它（见 html.light 那一段）
+    root.style.colorScheme = s.light ? 'light' : 'dark';
+    // 浏览器取色（地址栏/主题色带）也提前，否则浅底主题刷新时顶条先黑一下
+    var bg = s.css.match(/--bg:\s*(#[0-9a-fA-F]{3,8})/);
+    var mt = document.querySelector('meta[name="theme-color"]');
+    if(bg && mt) mt.content = bg[1];
+  }catch(_){}
+})();
+</script>
 <title>万法归元</title>
 <style>
   :root{
@@ -121,13 +156,18 @@
     --dur-fast:.15s; --dur-quick:.18s; --dur:.22s; --dur-slow:.42s;
     /* 弹簧专用时长：过冲需要时间才看得见，.18s 太短会只剩"抖一下" */
     --dur-pop:.3s;
-    /* 主题底色淡入（换肤时 body/html 的背景过渡）：它比任何组件动效都慢得多，是独立的一档 */
+    /* 主题底色淡入（html/body 的背景过渡）：它比任何组件动效都慢得多，是独立的一档。
+       ⚠️ 这一档只在「用户主动换肤且内核没有 View Transition」与「跟随系统深浅」时开启
+       （见 html.theme-anim 那条规则与 JS 的 themeFadeOnce）：常驻会让进场路径上
+       applyTheme 写 --bg、GL 主题置 html 透明这两次各演一遍 .5s 渐变，
+       表现就是「进首页之后主题才闪出来」 */
     --dur-theme:.5s;
 
     /* 以下时长刻意保留字面量 —— 它们是「特调」，不是漏网之鱼，别收进上面的档位：
        · .rv / .answer（折叠）  .38s / .3s    展开答案的专用手感，比 --dur-slow(.42s) 略快
-       · .app-loader / intro   .78s / .92s   启动仪式的交叉交接：.92s 故意比 .78s 长（错开才有推进感），
-                                             JS 侧还有 900ms 定时器按 .78s 对齐
+       · .app-loader / intro   .78s / .92s   星空镜头的交棒：星野放大淡出 .78s，主界面浮起 .92s
+                                             （故意比 .78s 长，错开才有推进感；JS 侧 introExit 的 900ms
+                                             定时器就是按它对齐的，改这里必须同时改那行）
        · .pcard 换题翻卡        .3s           飞出 / 进场专用
        · .anim-in 列表入场      .34s          渐入专用 */
 
@@ -158,7 +198,11 @@
   /* .tabs 等需要隐藏滚动条的区域已在各自规则中以 display:none / scrollbar-width:none 处理 */
   /* 背景与它的过渡只声明一次（在 html,body 上）：body 里原本又写了一遍 background + transition，
      同样的值与时长抄两份，改一处就容易只改一半 */
-  html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg);transition:background var(--dur-theme) ease}
+  html,body{height:100%;margin:0;overflow:hidden;overflow:clip;background:var(--bg)}
+  /* 底色淡入是「增强层」而不是一律生效：只在 JS 明确点名的那两次换肤期间存在。
+     进场期间的底色必须瞬变 —— 主题已经由 <body> 开头的 bootTheme 快照提前定好，
+     再淡入一次就是用户眼里的「闪一下才对上」 */
+  html.theme-anim,html.theme-anim body{transition:background var(--dur-theme) ease}
   body{
     font-family:var(--font-sans);
     color:var(--text); -webkit-font-smoothing:antialiased; font-size:var(--fs-base);
@@ -705,16 +749,45 @@
     opacity:.9}
   .backtop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
   @media (hover:hover){ .backtop:hover{color:var(--accent);border-color:var(--accent)} }
-  /* ---------- 入场：短淡入（星空 warp 与缩放交叉交接已按 unslop 审计移除） ----------
-     遮罩只作底色veil：init 就绪后 .3s 淡出，主界面同时一次短上浮。
-     脚本没跑/报错时不会有 intro-on，界面照常可见，不会白屏。 */
-  .app-loader{position:fixed;inset:0;z-index:9999;overflow:hidden;opacity:1;
-              background:var(--bg);
-              transition:opacity .3s var(--ease-out)}
-  .app-loader.out{opacity:0;pointer-events:none}
-  body.intro-on .app{opacity:0;transform:translateY(8px)}
-  body.intro-on.intro-reveal .app{opacity:1;transform:none;
-                 transition:opacity .3s var(--ease-out),transform .3s var(--ease-out)}
+  /* ---------- 入场动画：全屏星空（warp 星野） ----------
+     进入 App 立刻全屏播放，与 init 并行：init 就绪且展示满最短时长后淡出，就绪后点一下可跳过。
+     画面由 JS（introStart/introTick）画在 canvas 上，这里只负责底色、柔光与收尾交接。 */
+  /* 底色三个色阶由 applyTheme 按当前主题算好写在 :root 上（--intro-bg1/2/3），
+     并且随变量表快照一起存盘 —— <head> 的 bootTheme 在首帧前就把它们贴回来，
+     所以遮罩“出生”就是主题色，不存在旧版那种“先用兜底深空画一帧、再转成主题色”。
+     下面的兜底值 = 默认深空，只在“还没有快照”（装完第一次）时生效，且仍与星野同一色系。 */
+  .app-loader{position:fixed;inset:0;z-index:9999;overflow:hidden;opacity:1;transform:scale(1);
+              background:radial-gradient(120% 85% at 50% 46%,
+                var(--intro-bg1, #13141f) 0%, var(--intro-bg2, #0d0e17) 52%, var(--intro-bg3, #07080f) 100%);
+              will-change:opacity,transform;
+              transition:opacity .78s var(--ease-spring),transform .78s var(--ease-spring)}
+  /* 收尾：星空一边放大一边淡出（镜头穿过星野），与下面 .app 的浮起交叉 = “解锁进桌面”的推进感 */
+  .app-loader.out{opacity:0;transform:scale(1.14);pointer-events:none}
+  /* 主界面入场：有遮罩时才先藏住（脚本没跑/报错时不会有 intro-on，界面照常可见，不会白屏），
+     交接时从略小浮到原位。两条规则都只动 transform/opacity —— 走合成器，手机上才不糊不卡 */
+  body.intro-on .app{opacity:0;transform:scale(.965)}
+  body.intro-on.intro-reveal .app{opacity:1;transform:scale(1);
+                 transition:opacity .78s var(--ease-spring),transform .92s var(--ease-out);
+                 will-change:opacity,transform}
+  .app-loader canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+  /* 星野之前先有一段“活的底色”：星星要等主脚本（451KB）执行才开始画，手机上那是 1 秒多；
+     没有这一层的话，开场头一段就是“静止色板”（观感等同于卡死）。用纯 CSS 的缓慢位移+呼吸把这个窗口填上：
+     不依赖 JS、不依赖大文件，**第一帧就在动**。只动 transform/opacity（合成器），不碰布局。
+     它坐在 canvas 之下、底色之上：星星出来后成为星野背后的微亮气团，不会互抖。 */
+  .app-loader::before{content:'';position:absolute;left:50%;top:50%;width:170vmin;height:170vmin;border-radius:50%;
+                      transform:translate(-50%,-50%);pointer-events:none;opacity:.6;
+                      background:radial-gradient(closest-side, rgba(var(--accent-rgb,125,207,255),.13) 0%,
+                                                 rgba(var(--accent2-rgb,139,124,246),.08) 45%, rgba(0,0,0,0) 72%);
+                      animation:introDrift 7.2s var(--ease-out) infinite alternate}
+  @keyframes introDrift{
+    from{transform:translate(-54%,-52%) scale(.86);opacity:.42}
+    to  {transform:translate(-46%,-48%) scale(1.06);opacity:.72}}
+  /* 中心柔光：给星野一个“看得进去”的纵深。色相取主题的主/辅强调色
+     （applyTheme 已把 --accent-rgb / --accent2-rgb 写在 :root 上，这里直接吃，不另写一套） */
+  .app-loader::after{content:'';position:absolute;left:50%;top:50%;width:150vmin;height:150vmin;border-radius:50%;
+                     transform:translate(-50%,-50%);pointer-events:none;
+                     background:radial-gradient(circle, rgba(var(--accent-rgb,125,207,255),.17) 0%,
+                                                rgba(var(--accent2-rgb,139,124,246),.11) 26%, rgba(0,0,0,0) 62%)}
 
   /* ---------- 八股练习 ---------- */
   .feature-wrap{max-width:var(--rail-read);margin:0 auto}   /* 面试/记忆/拷打与刷题同为单列阅读（原 880 是第二套"窄版心"） */
@@ -1240,8 +1313,9 @@
     animation-duration:420ms;
     animation-timing-function:cubic-bezier(.4,0,.2,1)}
   /* 快照盖着时背景渐变与背景特效的重绘全都看不见，白烧光栅，直接停掉；
-     canvas 那层不停 —— 它是 rAF 驱动的，停了再启动会空一两帧，接上时会弧一下。 */
-  .theme-vt,.theme-vt body{transition:none}
+     canvas 那层不停 —— 它是 rAF 驱动的，停了再启动会空一两帧，接上时会弧一下。
+     选择器多写一个 html：与上面那条 `html.theme-anim body` 同特异度，靠源码顺序赢（万一两个类共存，不能被底色淡入抢回去） */
+  html.theme-vt,html.theme-vt body{transition:none}
   .theme-vt body::before,.theme-vt body::after{animation-play-state:paused}
 
   /* 窄屏（≤768px）的两组微调合并成一块：同一个断点此前被拆在文件两处、中间还隔着别的规则，
@@ -1292,15 +1366,15 @@
   .sq{display:inline-block;width:8px;height:8px;border-radius:2px;background:currentColor;margin-right:6px;vertical-align:0}
 
   /* ---------- 浅底主题（绢 / 云海）的收尾微调 ----------
-     body.light 由 applyTheme 按底色明度挂着（isLightColor），主题集里只要还有浅底主题，
-     这一段就得在 —— 同理「跟随系统浅色」那条路的落点也是它。
+     html.light 由 applyTheme 按底色明度挂着（isLightColor），也是 <head> 里 bootTheme 提前挂同一个；
+     主题集里只要还有浅底主题，这一段就得在 —— 同理「跟随系统浅色」那条路的落点也是它。
      这里只做一类调整：**收敛发光**。几何与排版一律不动，浅底主题之外零影响。
      理由：彩色外发光在深空底上是氛围，在纸面上是脏斑（色块旁边糊一团颜色）。 */
-  body.light .salary-card{box-shadow:0 6px 20px rgba(0,0,0,.10)}
+  html.light .salary-card{box-shadow:0 6px 20px rgba(0,0,0,.10)}
   /* 弹窗遮罩：85% 的近黑是"深色主题下关灯聚焦"的浓度，纸白主题上同一浓度会把整屏压成黑板，
      与页面自身的明亮基调反差过大。浅底降到 50%，并与确认框（rgba(0,0,0,.5)）取同一浓度，全站一致 */
-  body.light .modal-bg{background:linear-gradient(180deg, rgba(18,16,12,.38), rgba(18,16,12,.52))}
-  body.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+  html.light .modal-bg{background:linear-gradient(180deg, rgba(18,16,12,.38), rgba(18,16,12,.52))}
+  html.light .theme-card .tc-swatch::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
 
   /* ---------- 宽屏桌面端（≥1024px）----------
      断点体系此前只有"移动端覆写"（≤768）和一条给 .qmodal 加宽的 min-width:769px，
@@ -1356,10 +1430,13 @@
 </style>
 </head>
 <body>
+<!-- 入场星空：画面由 JS 画在 canvas 上，底色与星点色全部来自当前主题（见 .app-loader 的注释）。
+     它在主脚本跑到 introStart() 之前就已经是一块“主题色底色”的全屏遮罩，不会先黑一帧。 -->
+<div class="app-loader" id="appLoader">
+  <canvas id="introCanvas"></canvas>
+</div>
 <!-- 跳转链接：键盘用户的第一个 Tab 停靠点，Enter 直达主内容（平时视觉隐藏，聚焦才浮出） -->
 <a class="skip-link" href="#content">跳到主要内容</a>
-<!-- 入场动画：全屏星空（纯画面，不叠文字）。canvas 星野由 introStart() 驱动；init 完成并展示满最短时长后淡出移除 -->
-<div class="app-loader" id="appLoader"></div>
 <div class="app">
   <!-- TOPBAR -->
   <div class="topbar">
@@ -1373,6 +1450,35 @@
       <div class="tab" data-view="memory" role="tab" aria-controls="content" tabindex="-1" aria-selected="false"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span> <span>记忆</span></div>
       <div class="tab" data-view="hot" role="tab" aria-controls="content" tabindex="-1" aria-selected="false" title="趁热打铁：把记忆模式里没答简单的题再过一遍"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 24a8 8 0 0 0-16 0"/><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg></span> <span>趁热</span></div>
     </div>
+    <!-- 导航高亮的提前恢复。顶栏静态标记里的 active 只能代表“第一次打开”的默认页（总览），
+         而真正该亮哪一页要问 localStorage.lastView（与主脚本同一个键；用 sessionStorage 的话
+         原生壳里进程被回收就没了，提前恢复也恢复不出东西）。不提前处理就会：首帧先把总览点亮，
+         等主脚本跑完 renderAll（实测 572ms）才跳回记忆 —— 用户看到的就是“刷新时导航图标先亮总览再回记忆”。
+         权威口径仍在 renderAll（按 owner 映射），这里只做首帧的就近近似。
+         位置必须在紧接导航之后、主脚本之前：那里还在导航标记自己的解析窗口里，当下改完类名就不会被看到一个中间态。 -->
+    <script id="bootNav">
+    (function(){
+      try{
+        var v = localStorage.getItem('lastView') || 'overview';
+        // search 归总览；docs 的三个子页（浏览 / 刷题 / 八股）归文档
+        if(v === 'search') v = 'overview';
+        if(v === 'browse' || v === 'practice' || v === 'mock') v = 'docs';
+        var tabs = document.querySelectorAll('.tab'), hit = null;
+        for(var i = 0; i < tabs.length; i++){
+          var on = tabs[i].getAttribute('data-view') === v;
+          tabs[i].classList.toggle('active', on);
+          tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+          tabs[i].tabIndex = on ? 0 : -1;   // roving tabindex 与 renderAll 同一套语义
+          if(on) hit = tabs[i];
+        }
+        // 存了个认不出的视图（旧版本遗留 / 已下线视图）：回到默认总览，不能留下“全都不亮”的顶栏
+        if(!hit){
+          var ov = document.querySelector('.tab[data-view="overview"]');
+          if(ov){ ov.classList.add('active'); ov.setAttribute('aria-selected','true'); ov.tabIndex = 0; }
+        }
+      }catch(_){}
+    })();
+    </script>
     <div class="search">
       <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <input id="searchInput" placeholder="搜索" autocomplete="off" aria-label="搜索题目">
     </div>
@@ -1391,7 +1497,8 @@
        注：这里刻意不加 aria-live：面板每次评分/翻页都会重建，live region 会把整块内容反复念一遍，
        切页播报另有 #srAnnounce（role=status）在按需输出 -->
   <div class="content" id="content" role="tabpanel" tabindex="-1">
-    <!-- 首屏骨架屏：数据未就绪时（如无入场动画 / 数据库打开慢）占位，renderAll 首次渲染后自然覆盖 -->
+    <!-- 首屏骨架屏：数据未就绪时（数据库打开慢 / 题库还未渲染）占位，renderAll 首次渲染后自然覆盖。
+         它不再被一块全屏遮罩盖住（那样的话用户在遮罩期间只能盯着一片死色），流光本身就是加载反馈 -->
     <div class="skeleton" aria-hidden="true">
       <div class="sk-row"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></div>
       <div class="sk-block"></div>
@@ -1823,7 +1930,11 @@ const Views = { OVERVIEW:'overview', DOCS:'docs', SEARCH:'search', PRACTICE:'pra
 // 视图中文名：供切页时给屏幕阅读器播报（aria-live）
 const VIEW_NAMES = { overview:'总览', docs:'文档', search:'搜索结果', practice:'刷题', mock:'八股练习', memory:'记忆复习', grill:'面试拷打', browse:'题目浏览', analytics:'进度', hot:'趁热打铁' };
 
-let view; try{ view = sessionStorage.getItem('lastView') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
+/* 上次停在哪个页面：用 localStorage 而不是 sessionStorage。
+   原生壳里 WebView 进程被系统回收会清掉 sessionStorage（本文件 learnAppIntroSeen 就是为这个改的），
+   于是“手机把应用吹掉了”和“我主动关了”两件不同的事都会被当成“回到默认页”—— 用户每次重开都要从总览重新进去。
+   写入走安全封装（隐私模式 / 限额时冷处不抛）；非法值下一行就回退总览。 */
+let view; try{ view = safeLocalGet('lastView', '') || Views.OVERVIEW; }catch(_){ view = Views.OVERVIEW; }
 if(!Object.values(Views).includes(view)) view = Views.OVERVIEW;   // 兜底旧版本遗留的视图值
 let currentDocId = null;
 let searchTerm = '';
@@ -2539,22 +2650,29 @@ function applySm2Grade(qid, rate, historyArr){
    本队列绝不写 PROGRESS、不改排期/统计/打卡；数据单独存 localStorage + 单独 gist 文件，不与学习数据混。 */
 function saveHot(){ try{ localStorage.setItem('learnAppHot', JSON.stringify(HOT)); }catch(_){ console.warn('[hot] 热榜持久化失败'); } }
 function loadHot(){ try{ const a = JSON.parse(localStorage.getItem('learnAppHot') || '[]'); return Array.isArray(a) ? a.filter(x => x && x.qid) : []; }catch(_){ return []; } }
-/* 本轮游标的会话存档：只存"停在哪道题（qid）+ 移出了几题 + 是否已走完"，不存队列本身
-   （队列由热榜现算，见 hotLiveQueue）。用 sessionStorage，与 view 同一个存档域：
-   页面被重载（刷新、App 被系统回收后恢复）能接着上次那道题刷；关掉标签页即失效 ——
-   它是会话级状态，不该像热榜那样长期留存，更不该进云同步。 */
+/* 本轮游标的存档：只存"停在哪道题（qid）+ 移出了几题 + 是否已走完"，不存队列本身
+   （队列由热榜现算，见 hotLiveQueue）。存 localStorage + 一个当天日期戳，不再用 sessionStorage：
+   原生壳里进程被回收会清掉 sessionStorage，于是“被系统吹掉”与“我自己关了”这两种完全不同的事
+   都会被当成“本轮结束”—— 用户接着刷却发现回到第一题。同一个坑 learnAppIntroSeen 已经踩过一次。
+   靠当天划界：同一天内重开能接着上次那道题，隔天自然作废（本轮游标本来就是会话级，
+   不该长期留存的语义没变，变的只是“别把系统回收当成用户主动结束”）；仍然不进云同步。 */
 const HOT_PASS_KEY = 'learnAppHotPass';
 let _hotPassRestored = false;   // 存档只恢复一次：本会话内用户的实际位置优先
 function saveHotPass(){
   try{
-    sessionStorage.setItem(HOT_PASS_KEY, JSON.stringify({
+    localStorage.setItem(HOT_PASS_KEY, JSON.stringify({
       qid: hot.queue[hot.index] || null, cleared: hot.cleared || 0,
-      inPass: !!hot.inPass, done: !!hot.done
+      inPass: !!hot.inPass, done: !!hot.done, day: dayKeyOf(Date.now())
     }));
-  }catch(_){}   // 隐私模式 / 受限 WebView 下 sessionStorage 会抛异常，存档失败不影响刷题
+  }catch(_){}   // 隐私模式 / 配额满时写入会抛，存档失败不影响刷题
 }
 function readHotPass(){
-  try{ const o = JSON.parse(sessionStorage.getItem(HOT_PASS_KEY) || 'null'); return (o && typeof o === 'object') ? o : null; }catch(_){ return null; }
+  try{
+    const o = JSON.parse(localStorage.getItem(HOT_PASS_KEY) || 'null');
+    if(!o || typeof o !== 'object') return null;
+    if(o.day !== dayKeyOf(Date.now())) return null;   // 隔天作废：昨天的本轮不该今天接着演
+    return o;
+  }catch(_){ return null; }
 }
 function hotHas(qid){ return HOT.some(h => h.qid === qid); }
 function hotAdd(qid){ if(hotHas(qid)) return false; HOT.push({ qid, addedAt: Date.now() }); saveHot(); markDirty(); return true; }
@@ -7125,8 +7243,8 @@ function renderAll(){
   renderContent();
   const viewChanged = _persistedView !== view;
   if(viewChanged){
-    // sessionStorage 在隐私模式/受限 WebView 下写入会抛异常，包一层避免影响后续渲染
-    try{ sessionStorage.setItem('lastView', view); }catch(_){}
+    // 上一行注释说过：这里必须在 renderContent 之后写，否则会把“指向一个已不存在的页”的脏视图落盘
+    safeLocalSet('lastView', view);
     _persistedView = view;
   }
   // 统计条放在 renderContent 之后：tab 的高亮归属依赖最终视图（可能已被渲染层改写）
@@ -7607,6 +7725,49 @@ window.addEventListener('scroll', markParticleMaskStale, {passive:true, capture:
 window.addEventListener('resize', markParticleMaskStale, {passive:true});
 
 // ======== applyTheme：从配置表驱动 ========
+/* 首屏主题快照：每次换肤都把算好的 :root 变量表存一份，供 <body> 开头的 bootTheme 脚本在首帧前贴回去。
+   为什么要存「结果」而不是存 id：RGB 分量、--lv* 四档、--on-accent、投影深浅这些派生值全在 applyTheme 里，
+   在头部重算一遍就是第二套说法（一改就漂）。主脚本跑起来后仍会重算并覆盖，快照只负责首帧那一段。
+   键里的 v1 就是派生规则的版本：改动这些派生值时递增一位（并同步 bootTheme 里读的键名），老快照自动作废。 */
+function saveThemeSnapshot(id, css, isLight){
+  try{ safeLocalSet('learnAppThemeCss_v1', JSON.stringify({ id: id, css: css, light: !!isLight })); }catch(e){}
+}
+/* ======== 入场星空的配色：全站只这一份实现 ========
+   旧版不是这样的：它只在 introStart() 里算一次，而那时已是主脚本执行期（手机上 1 秒开外），
+   于是遮罩先用 CSS 兜底深空画了一帧、下一帧才转成主题色 —— 浅底主题因此看到“深→浅”的一下。
+   现在改成：**由 applyTheme 算**，三个底色当作 CSS 变量写进 :root 变量表（并随之进快照），
+   星点色与速度系数则挂在 window._introPal 上交给 canvas。于是：<head> 的 bootTheme 回放快照时，
+   遮罩的第一帧已经是主题色的星空，而不是“先黑一下再对色”。
+   浅底主题（绢/云海）另外拿两档优待：底色不再压暗、星点拉深、整体速度降到 0.8 ——
+   纸上飘的是尘，不该像在穿越星野。 */
+function introRgbOf(v, fb){
+  const s = hexToRgbStr(v);              // 复用 applyTheme 的颜色工具，不留第二份实现
+  if(!s) return fb;
+  const p = s.split(',');
+  return [parseInt(p[0],10)||0, parseInt(p[1],10)||0, parseInt(p[2],10)||0];
+}
+function introLuma(c){ return (0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]) / 255; }
+function introScale(c, k){ return c.map(v => Math.max(0, Math.min(255, Math.round(v*k)))); }
+function introFit(c, dark){
+  const want = dark ? 0.80 : 0.30, l = Math.max(introLuma(c), 0.02);
+  if(dark && l < want) return introScale(c, Math.min(want/l, 3));      // 深底：过暗的星点提亮（等比放大，色相基本不动）
+  if(!dark && l > want) return introScale(c, Math.max(want/l, 0.3));   // 浅底：过亮的星点压暗
+  return c;
+}
+function introPaletteOf(t){
+  const dark = !isLightColor(t.bg);
+  // 兜底色取默认主题（粒子）与绢的底色：取不到主题值时入场动画也不会突然换成一屏黑
+  const bg2 = introRgbOf(t.bg2, dark ? [13,15,22] : [239,237,226]);
+  const bg  = introRgbOf(t.bg,  dark ? [8,9,13]   : [247,245,234]);
+  return {
+    dark: dark,
+    bg1: bg2.join(','),
+    bg2: bg.join(','),
+    bg3: (dark ? introScale(bg, 0.55) : introScale(bg2, 0.93)).join(','),
+    cols: [t.text, t.accent2, t.accent].map(v => introFit(introRgbOf(v, [200,202,245]), dark).join(',')),
+    speedK: dark ? 1 : 0.8
+  };
+}
 function applyTheme(name, opts){
   currentTheme = name;
   const t = getTheme(name)||THEMES.particle;
@@ -7616,7 +7777,11 @@ function applyTheme(name, opts){
 
   // 1. CSS 变量（附 accent RGB 分量，供高亮/选中态的 rgba() 使用）
   // 每个值先过白名单：主题对象可能来自 localStorage（用户自建主题），含 `}` / `url(` 的值等于 CSS 注入
-  let cssVars = ':root {' + Object.entries(t).map(([k,v])=>{ const sv = safeThemeValue(v); return sv ? '--'+k+':'+sv : ''; }).filter(Boolean).join(';');
+  /* 选择器用 html:root 而不是单写 :root：特异度 (0,1,1) 高于兜底样式表的 :root (0,1,0)。
+     为什么不靠文档顺序而靠特异度：本文档 566KB，光那个内联 <style> 就 93KB；
+     真实网络是分块到达、分块解析的，靠顺序赢就得假定“谁先到”已知（实测分块时首帧会先喷一屏兜底深色）。
+     抬高特异度后，无论本段与前面的 themeEarly 快照谁先落到 DOM，主题变量都压得住兜底。 */
+  let cssVars = 'html:root {' + Object.entries(t).map(([k,v])=>{ const sv = safeThemeValue(v); return sv ? '--'+k+':'+sv : ''; }).filter(Boolean).join(';');
   const ar = hexToRgbStr(t.accent), a2 = hexToRgbStr(t.accent2), tr = hexToRgbStr(t.text);
   if(ar) cssVars += ';--accent-rgb:'+ar;
   if(a2) cssVars += ';--accent2-rgb:'+a2;
@@ -7650,6 +7815,13 @@ function applyTheme(name, opts){
   cssVars += ';--e3:' + (isLight ? '0 16px 40px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05)' : '0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)');
   // 轻抬升（小卡/模式卡/主题卡悬停）：写死的黑投影在浅底主题上发脏，按深浅各给一套
   cssVars += ';--e-lift:' + (isLight ? '0 4px 14px rgba(0,0,0,.10)' : '0 4px 16px rgba(0,0,0,.34)');
+  /* 入场星空的三个底色也进这张表：CSS 的 .app-loader 直接吃 var(--intro-bg*)，而整张表会被
+     saveThemeSnapshot 存一份 → 首帧（bootTheme 回放）就已经是主题色的星空。
+     星点色/速度系数则挂在 window 上（不是 INTRO.xxx：const INTRO 声明在本函数之后，
+     解析期写它会命中 TDZ 抛 ReferenceError，又是个被 try/catch 吞掉静默失效的经典坑）*/
+  const introPal = introPaletteOf(t);
+  cssVars += ';--intro-bg1:rgb('+introPal.bg1+');--intro-bg2:rgb('+introPal.bg2+');--intro-bg3:rgb('+introPal.bg3+')';
+  window._introPal = introPal;
   cssVars += ';}';
 
   // 2. 图片背景主题
@@ -7691,8 +7863,13 @@ function applyTheme(name, opts){
   if(name==='img-bg'){
     try{ applyBgTextMode(); }catch(e){ warnSilent('应用背景图配色失败', e); }
   }
-  // opts.persist === false：只做"临时应用"，不写偏好（避免解析期用默认主题覆盖用户保存的 img-bg）
-  if(!opts || opts.persist !== false) safeLocalSet('learnAppTheme', name);
+  // opts.persist === false：只做"临时应用"，偏好与首屏快照都不写 —— 否则解析期那次
+  // applyTheme('particle', {persist:false})（img-bg 的临时默认主题）会把用户真正的 img-bg 快照盖掉
+  if(!opts || opts.persist !== false){
+    safeLocalSet('learnAppTheme', name);
+    // 存的是已经算好的变量表（含 img-bg 那层额外强调色），而不是主题 id：派生逻辑只有一份
+    saveThemeSnapshot(name, cssVars + (_bgColorStyle ? _bgColorStyle.textContent : ''), isLight);
+  }
 
   // 3.5 状态栏/任务栏跟随主题 + 声明 color-scheme（让原生表单控件/滚动条/UA 样式随深浅切换）
   //     底色：App 内 WebView 铺满整屏（edge-to-edge），系统栏区域显示的就是页面背景，网页侧无需设色
@@ -7708,11 +7885,13 @@ function applyTheme(name, opts){
   // 4. 更新主题选择器 UI
   document.querySelectorAll('#themeGrid .theme-card, #themeBgRow .theme-card').forEach(c=>c.classList.toggle('sel',c.dataset.theme===name));
 
-  // 4.5 body 主题标记：供 CSS 做主题级微调（如网格主题下把数据方块收成方角）；light 标记供浅底微调
+  /* 4.5 主题标记：挂在 <html> 上，前缀 tp- / light
+     · 挂 html 而不是 body：<head> 里的 bootTheme 要能在第一帧就把它贴上去（见那里的注释）
+     · 前缀不用 theme-：theme-vt / theme-anim 是换肤过渡类，同在 <html> 上，会被这个清理循环误删 */
   try{
-    const cl = document.body.classList;
-    for(const c of Array.from(cl)) if(c.indexOf('theme-') === 0) cl.remove(c);
-    cl.add('theme-'+name);
+    const cl = document.documentElement.classList;
+    for(const c of Array.from(cl)) if(c.indexOf('tp-') === 0) cl.remove(c);
+    cl.add('tp-'+name);
     cl.toggle('light', isLight);
   }catch(e){ warnSilent('同步主题 class 失败', e); }
 
@@ -7737,10 +7916,24 @@ function applyTheme(name, opts){
    不做圆形扩散 —— 那需要把静态快照做 clip-path 扩张，时长一长就冻住、压短又像闪一下，
    而且自绘遮罩层还会在"洞从全屏跳到 0"那一帧多出一次屏闪。
    时长与缓动写在 CSS 的 .theme-vt 那几条里。 */
+/* 底色淡入只在“画面已经站定、用户主动改了配色”这两条路上开：见 CSS 的 html.theme-anim。
+   进场期间绝对不能开：initTheme 写 --bg 与 GL 主题把 html 置透明（见 startUnifiedCanvas）都发生在进场，
+   常驻的话它们会各自演完一次 .5s 渐变，用户看到的就是“首页已经打开、配色才跟着浮现”。 */
+function themeFadeOnce(fn){
+  const root = document.documentElement;
+  root.classList.add('theme-anim');
+  try{ fn(); } finally {
+    // 比 --dur-theme(.5s) 多留 100ms：过渡未完就摘类会把淡入断在中间
+    setTimeout(() => root.classList.remove('theme-anim'), 600);
+  }
+}
 function pickTheme(id, evt){
   const root = document.documentElement;
   const commit = () => { applyTheme(id); hideModal($('#themePopup')); playThemeTone(id); };   // 换完就试听这一套的音色：不试听，“每套主题音效不同”永远听不出来
-  if(prefersReduce() || typeof document.startViewTransition !== 'function'){ commit(); return; }
+  if(prefersReduce() || typeof document.startViewTransition !== 'function'){
+    // 没有 View Transition 接跨深浅切换时，靠底色淡入顶上去（系统开了“减少动态效果”时 CSS 会把这一档压成 0）
+    themeFadeOnce(commit); return;
+  }
   // 画布不停：rAF 循环停掉再启动会空一两帧，快照撤走那一刻会弧一下
   holdThemeCanvas(true);
   root.classList.add('theme-vt');
@@ -7983,7 +8176,7 @@ function applyBgTextMode(){
         _bgColorStyle = document.createElement('style');
         // 自定义主题只覆盖强调色，保持暗色面板+浅色文字方案；同步 RGB 分量变量（含 Material You 的第三强调色）
         const ar = hexToRgbStr(c1), a2 = hexToRgbStr(c2), a3 = hexToRgbStr(c3);
-        _bgColorStyle.textContent = ':root{'+(c1?`--accent:${c1};`:'')+(c2?`--accent2:${c2};`:'')+
+        _bgColorStyle.textContent = 'html:root{'+(c1?`--accent:${c1};`:'')+(c2?`--accent2:${c2};`:'')+
           (ar?`--accent-rgb:${ar};`:'')+(a2?`--accent2-rgb:${a2};`:'')+
           // 背景图模式下没有调色板可依，按当前实际底色派生根 —— 这条路径只在换配色时走一次
           +(c3?`--accent3-ink:${inkOn(c3, getComputedStyle(document.documentElement).getPropertyValue('--bg').trim())};`:'')
@@ -8114,7 +8307,7 @@ loadCustomThemes();   // 必须在 initTheme 前加载：用户上次保存的�
       applyTheme(_light ? 'paper' : 'particle', {persist:false});
       try{
         const mq = matchMedia('(prefers-color-scheme: light)');
-        const onSys = () => { if(savedThemeId()) return; applyTheme(mq.matches ? 'paper' : 'particle', {persist:false}); };
+        const onSys = () => { if(savedThemeId()) return; themeFadeOnce(() => applyTheme(mq.matches ? 'paper' : 'particle', {persist:false})); };
         if(mq.addEventListener) mq.addEventListener('change', onSys); else if(mq.addListener) mq.addListener(onSys);
       }catch(_){}
     }
@@ -9183,49 +9376,170 @@ async function checkDegradedResidue(){
   }catch(e){ warnSilent('降级残留数据恢复失败（临时数据仍留在浏览器存储中）', e); }
 }
 
-// ======== 入场：短淡入（unslop 审计移除星空 warp 与缩放交叉交接） ========
-// 遮罩只作底色 veil：init 就绪 + 展示满最短时长后 .3s 淡出，主界面同时一次短上浮。
-// 同一会话内重复加载只快速带过；就绪后点一下可立即跳过。
+/* ======== 入场动画：全屏星空（warp 星野） ========
+   与 init 并行播放：init 就绪 + 展示满最短时长 → 淡出；就绪后点一下可立即跳过。
+   中间那段骨架屏仍在（只是被遮罩盖住），init 一旦完成就直接换成真内容。
+   与旧版的三处区别（都是实测后的决定）：
+   · 底色不在这里算：由 applyTheme 算好写进 :root 变量表与快照，首帧已是主题色（见 introPaletteOf）；
+   · 不再演那么久：1800/840 → 700/400。旧值是在“画面全是静态”的年份里定的，而星野本身就在动，
+     短镜头同样成立；多出的每一毫秒全部扣在“用户看到第一个真画面”前面（实测星野 620~880ms 已铺满，
+     再长的遮罩已经把“有内容可看”挡在门外了）；
+   · 交棒与渲染不再抢主线程：淡出走 opacity/transform（合成器），不碰布局。 */
 const INTRO = {
-  t0: performance.now(),
-  minShow: 420,      // 展示时长（毫秒）：veil 只需遮住首帧骨架，不再演仪式
-  ready: false,      // init 是否完成：完成后才允许点击跳过
-  exited: false, destroyed: false,
-  timer: null
+  /* t0 故意算成 0 = “从导航开始计时”，而不是旧版的 performance.now()（那是主脚本执行时刻，
+     手机上已经 1 秒开外）：旧写法等于在真实加载时间之后又白加一个 minShow。
+     现在最短镜头与加载是重叠的：慢机器上镜头早已演够，就绪就走；快机器上至少演满这一枪 */
+  t0: 0,
+  minShow: 700,      // 展示时长（毫秒）：太短会闪一下就没，太长则拖慢进入
+  ready: false,      // init 是否完成：完成后才允许点击跳过（未就绪时点了也没用，索性先不给点）
+  disabled: false,   // 无障碍降级 / 环境不支持：不播动画，遮罩直接收起
+  exited: false, destroyed: false, hidden: false,
+  raf: null, timer: null, canvas: null, ctx: null,
+  stars: [], W: 0, H: 0, cx: 0, cy: 0,
+  t: 0, lastTs: 0, fade: 0, speed: 0, rush: 0,
+  cols: ['194,215,255','152,231,255','198,181,253'],   // 星点三色兜底：introStart 里换成 _introPal
+  speedK: 1                                            // 整体速度系数：浅色主题（绢/云海）放慢些，别像在飞
 };
 try{
   // "看过"的标记走 localStorage：App 里 WebView 进程被回收会清掉 sessionStorage，
-  // 改存 localStorage 后只有"装完第一次"看完整 veil，之后一律半程带过
-  if(safeLocalGet('learnAppIntroSeen', '')) INTRO.minShow = 160;
+  // 只存 sessionStorage 的话每次冷启动都重播完整版。改存 localStorage 后只有"装完第一次"看满，
+  // 之后一律短镜头带过
+  if(safeLocalGet('learnAppIntroSeen', '')) INTRO.minShow = 400;
   safeLocalSet('learnAppIntroSeen', '1');
 }catch(_){}
+
+// 星野模型：归一化坐标 x/y（-1~1）+ 深度 z（越小越近）；绘制时除以 z 投影，得到"从中心向外飞出"的透视
+function introSpawnStar(s, anywhere){
+  s.z = anywhere ? 0.12 + Math.random()*0.88 : 1;
+  s.x = (Math.random()*2-1)*0.92;
+  s.y = (Math.random()*2-1)*0.92;
+  s.tint = Math.random()<0.14 ? 2 : (Math.random()<0.30 ? 1 : 0);   // 0 主色 / 1 辅色 / 2 文字色
+  s.b = 0.55 + Math.random()*0.45;   // 出生亮度差：避免同一层的星星像复制粘贴
+  return s;
+}
+function introResize(){
+  if(!INTRO.canvas) return;
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  INTRO.W = window.innerWidth; INTRO.H = window.innerHeight;
+  INTRO.cx = INTRO.W/2; INTRO.cy = INTRO.H/2;
+  INTRO.canvas.width = INTRO.W*dpr;
+  INTRO.canvas.height = INTRO.H*dpr;
+  INTRO.canvas.style.width = INTRO.W+'px';
+  INTRO.canvas.style.height = INTRO.H+'px';
+  if(INTRO.ctx) INTRO.ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+const INTRO_ALPHAS = [0.30, 0.56, 0.80, 1.00];                    // 亮度档 → 透明度（再乘整体渐显）
+const INTRO_WIDTHS = [0.7, 1.1, 1.5, 1.9];                        // 亮度档 → 线宽（越亮的星越粗）
+// 分桶容器：3 色 × 4 亮度档 = 12 个桶，桶内星点共用一次 stroke（见 introTick 的说明）
+const INTRO_BUCKETS = [];
+for(let c=0;c<3;c++){ for(let l=0;l<4;l++) INTRO_BUCKETS.push({ c:c, l:l, pts:[] }); }
+function introTick(ts){
+  const I = INTRO;
+  I.raf = null;
+  if(I.destroyed || I.hidden || !I.ctx) return;
+  I.raf = requestAnimationFrame(introTick);
+  const dt = I.lastTs ? Math.min((ts-I.lastTs)/1000, 0.05) : 0.016;
+  I.lastTs = ts;
+  I.t += dt;
+  I.fade = Math.min(1, I.fade + dt/0.32);   // 星野尽快亮起来：渐显太慢的话，手机上星星要 1.9 秒才看得见，开场前半段就看着像静止的
+  // 速度曲线：起步就在流动（慢起会让星野看着像一张静止图片）→ 冲到最快 → 回落到巡航。
+  // 巡航值 1.05 不算低：整段过程中星野始终明显向外走，才谈得上"过渡"而不是"定格"
+  let target = (I.t < 0.45 ? 0.62 : (I.t < 1.35 ? 1.10 : 0.82)) * I.speedK;   // speedK：浅底主题整体再慢一档（用户反馈“太快”）
+  if(I.rush > 0){ I.rush = Math.max(0, I.rush - dt); target += I.rush*2.0; }   // 跳过/淡出时再补一次"冲出"
+  I.speed += (target - I.speed) * Math.min(1, dt*3.2);   // 平滑跟随，速度曲线不留折角
+
+  // 运镜：投影系数缓慢放大（0.90 → 1.04），星野像被镜头持续推近 —— 保证任何时刻画面都在动
+  const K = 0.90 + 0.14*Math.min(1, I.t/1.9);
+  const ctx = I.ctx, W = I.W, H = I.H, cx = I.cx, cy = I.cy;
+  ctx.clearRect(0, 0, W, H);
+  // 分桶批量描边：按「颜色 × 亮度档」归类，每桶一条路径一次 stroke。
+  // 逐颗 stroke（最多 200 次/帧）在手机上会掉帧，正是"看着像卡住"的元凶
+  for(const b of INTRO_BUCKETS) b.pts.length = 0;
+  for(const s of I.stars){
+    const pz = s.z;
+    s.z -= dt * I.speed * s.z * 1.6;
+    if(s.z <= 0.02){ introSpawnStar(s, false); continue; }   // 飞出屏幕：回到最远处（画面中心附近）重新出发
+    const x0 = cx + s.x/pz*cx*K,  y0 = cy + s.y/pz*cy*K;     // 上一帧位置 → 本帧位置：两点连线即拖尾
+    const x1 = cx + s.x/s.z*cx*K, y1 = cy + s.y/s.z*cy*K;
+    if(x1 < -80 || x1 > W+80 || y1 < -80 || y1 > H+80) continue;   // 已出界：不画（z 仍在衰减，会自动重置）
+    const a = Math.min(1, (0.18 + (1-s.z)*1.05) * s.b) * I.fade;   // 越近越亮，最远也留一点底噪，否则远处没有"星空"
+    if(a <= 0.02) continue;
+    const lv = a < 0.32 ? 0 : a < 0.58 ? 1 : a < 0.82 ? 2 : 3;
+    INTRO_BUCKETS[s.tint*4 + lv].pts.push(x0, y0, x1, y1);
+  }
+  for(const b of INTRO_BUCKETS){
+    const n = b.pts.length;
+    if(!n) continue;
+    ctx.strokeStyle = 'rgba(' + I.cols[b.c] + ',' + (INTRO_ALPHAS[b.l]*I.fade).toFixed(3) + ')';
+    ctx.lineWidth = INTRO_WIDTHS[b.l];
+    ctx.beginPath();
+    for(let i=0;i<n;i+=4){ ctx.moveTo(b.pts[i], b.pts[i+1]); ctx.lineTo(b.pts[i+2], b.pts[i+3]); }
+    ctx.stroke();
+  }
+}
 function introStart(){
   const el = document.getElementById('appLoader');
+  const canvas = document.getElementById('introCanvas');
   if(!el) return;
-  if(prefersReduce()) INTRO.minShow = 0;   // 无障碍降级：不演入场，veil 直接收起
-  document.body.classList.add('intro-on');   // 先藏住主界面（脚本异常时不会有这个类，界面照常可见）
+  // 无障碍降级 / 环境不支持：不播动画，遮罩交给 hideAppLoader 直接收起
+  if(!canvas || typeof canvas.getContext !== 'function' || typeof requestAnimationFrame !== 'function'
+     || prefersReduce()){
+    INTRO.disabled = true;
+    if(canvas) canvas.style.display = 'none';
+    return;
+  }
+  INTRO.canvas = canvas;
+  INTRO.ctx = canvas.getContext('2d');
+  INTRO.ctx.lineCap = 'round';   // 短拖尾的末端是圆的：速度慢时该星就是一粒圆点，不会变成方格
+  introResize();
+  /* 星点色与速度系数直接拿 applyTheme 已经算好的那份（_introPal）：底色三个阶在 CSS 变量里，
+     所这里不再往遮罩上写任何颜色 —— 写就已经由 <head> 的快照回放完成了。
+     拿不到时（解析期异常之类）才现场重算一次，保证不会出现“星点全黑 / 全透”的死画面 */
+  const pal = window._introPal || introPaletteOf(getTheme(savedThemeId() || 'particle') || THEMES.particle);
+  INTRO.cols = pal.cols;
+  INTRO.speedK = pal.speedK;
+  // 星数随屏幕面积给，上下限兜住两端：小屏不至于空，大屏不至于白耗电（数量也直接关系到手机掉不掉帧）
+  const n = Math.max(90, Math.min(150, Math.round(INTRO.W*INTRO.H/10000)));
+  for(let i=0;i<n;i++) INTRO.stars.push(introSpawnStar({}, true));
+  document.body.classList.add('intro-on');   // 先藏住主界面，交接时再浮现（脚本异常时不会有这个类，界面照常可见）
+  window.addEventListener('resize', introResize);
+  document.addEventListener('visibilitychange', () => {
+    INTRO.hidden = document.hidden;
+    if(INTRO.hidden){
+      if(INTRO.raf){ cancelAnimationFrame(INTRO.raf); INTRO.raf = null; }   // 切后台：停掉，省电
+    } else if(!INTRO.destroyed){
+      INTRO.lastTs = 0;   // 重置时间基准：回来时不会因 dt 跳变让星野瞬移
+      if(!INTRO.raf) INTRO.raf = requestAnimationFrame(introTick);
+    }
+  });
   el.addEventListener('pointerdown', () => { if(INTRO.ready) introExit(); });
+  INTRO.raf = requestAnimationFrame(introTick);
 }
 function introExit(){
   const I = INTRO, el = document.getElementById('appLoader');
   if(!el || I.exited || I.destroyed) return;
   I.exited = true;
   if(I.timer){ clearTimeout(I.timer); I.timer = null; }
-  el.classList.add('out');                      // veil .3s 淡出
-  document.body.classList.add('intro-reveal');  // 主界面同时一次短上浮
+  if(I.disabled){ el.remove(); I.destroyed = true; return; }
+  I.rush = 0.55;   // 淡出时星野再冲一下：收在"跃迁"的动感上，而不是让画面慢慢停住
+  el.classList.add('out');                      // 星空放大淡出
+  document.body.classList.add('intro-reveal');  // 主界面同时从略小浮到原位：两者交叉 = 解锁进桌面的推进感
   setTimeout(() => {
     I.destroyed = true;
+    if(I.raf){ cancelAnimationFrame(I.raf); I.raf = null; }
     const node = document.getElementById('appLoader');
     if(node) node.remove();
     document.body.classList.remove('intro-on', 'intro-reveal');   // 撤掉过渡态类，别长期占着合成层
-  }, 340);   // 与 CSS 的 .3s 淡出对齐（多留余量）
+    I.canvas = null; I.ctx = null; I.stars = [];
+  }, 900);   // 与 CSS 的 .78s/.92s 交接对齐（多留余量）
 }
-// 收起启动遮罩：成功/失败路径共用，避免初始化异常时页面一直转圈。
+// 收起启动遮罩：成功/失败两条路径共用，避免初始化异常时页面一直转圈。
 // 这里只标记"就绪"，真正的淡出交给 introExit —— 否则动画会被 init 的速度切成"闪一下就没"
 function hideAppLoader(){
   const el = document.getElementById('appLoader');
   if(!el || INTRO.ready || INTRO.destroyed) return;
   INTRO.ready = true;
+  if(INTRO.disabled){ introExit(); return; }
   INTRO.timer = setTimeout(introExit, Math.max(0, INTRO.minShow - (performance.now() - INTRO.t0)));
 }
 
@@ -9445,7 +9759,7 @@ function syncKeyboardInset(){
   // 上次没结束时留下的面试草稿：摆回来接着聊（只恢复对话，不重发任何消息）
   if(restoreGrillDraft()) toast('已恢复上次未结束的 AI 面试，可切到「面试」页继续');
   renderAll();
-  hideAppLoader();
+  hideAppLoader();   // 数据就绪：星空镜头要么已经演满、要么补到演满，然后交棒（见 INTRO.t0）
   // 降级残留数据恢复：上次降级期间写进临时存储的数据，这次以正常路径启动时提示合并
   checkDegradedResidue();
 // 页面加载时询问是否拉取云端数据
@@ -9458,12 +9772,12 @@ function syncKeyboardInset(){
   // 与 5790 那段"被空 catch 吞掉导致粒子永远不启动"的旧坑是同一个错误，必须留痕
   try{ startUnifiedCanvas(savedThemeId()||'particle'); }catch(e){ warnSilent('主题画布启动失败', e); }
 })().catch(e => {
-  // 初始化异常时也要给可见反馈并收起遮罩（原先会永久转圈，用户看到的是"卡在加载中"）
+  // 初始化异常：控制台留痕 + 屏幕上给可见反馈，并且必须交棒 —— 否则遮罩会把错误页一直盖住，用户看到的是“卡在开场”
   warnSilent('应用初始化失败', e);
   try{ toast('初始化失败：' + ((e && e.message) || e)); }catch(_){}
 }).finally(() => {
-  hideAppLoader();
-  // 首帧后补一次系统栏同步：解析期若 Capacitor 桥尚未就绪会静默失败，这里兜底
+  hideAppLoader();   // 成功/失败都要收遮罩（catch 里抛过时也能走到这里）
+  // 首帧后补一次系统栏（状态栏/导航栏图标明暗）同步：解析期若 Capacitor 桥尚未就绪会静默失败
   //（幂等：明暗值没变时不会重复过桥）
   resyncSystemBarsTone();
 });
@@ -11018,7 +11332,7 @@ document.addEventListener('click', (e) => {
 });
 </script>
 <script>
-const SW_VERSION = '163';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '169';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。

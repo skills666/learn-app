@@ -33,7 +33,8 @@
              960×1600 的启动图在 20:9 长屏上会把中间的图标纵向拉长约 30%。详见 drawable/splash_launch.xml -->
         <item name="android:background">@drawable/splash_launch</item>
         <!-- Android 12+ 的启动画面只认 windowSplashScreenBackground，不设就会用库默认的白底：
-             App 是深色主题，白底一闪再进星空入场非常刺眼，这里对齐启动图底色 -->
+             App 是深色主题，白底一闪再进页面首帧非常刺眼，这里对齐启动图底色（页内不再有启动遮罩，
+             首帧的底色由 index.html 开头的 bootTheme 快照提前定好，接缝靠的就是这一段纯色） -->
         <item name="windowSplashScreenBackground">@color/splashBg</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
