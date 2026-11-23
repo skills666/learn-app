@@ -7275,7 +7275,11 @@ function renderAll(){
       // 屏幕阅读器播报当前页（视觉隐藏 aria-live 区）
       const sa = $('#srAnnounce'); if(sa) sa.textContent = (VIEW_NAMES[view]||'') + ' 页面';
       // 只有切换视图才播放进入动画；视图内操作（评分/切题）不闪动画，但仍回顶部
-      c.classList.remove('in'); void c.offsetWidth; // 强制 reflow，确保连续切换时动画能重启
+      /* 重启动画要“先摘掉 .in 再强制 reflow 再加回”，但首次渲染没有旧动画要清场：
+         上一行 renderContent 刚把整块 innerHTML 换掉，这一次 offsetWidth 会让浏览器立刻把
+         全部新内容同步量一遍（手机上是几十毫秒，正好砸在星野播放中）。
+         没有 .in 时直接挂回也会从头播，省掉的只是一次多余的同步布局。 */
+      if(c.classList.contains('in')){ c.classList.remove('in'); void c.offsetWidth; }
       c.classList.add('in');
       // 最长一路动画是 .34s 延迟 + .55s 时长 ≈ .89s，留足余量再摘 class；
       // 先 clear 上一轮：否则快速连点标签时，旧定时器会在新动画播到一半时移除 class 导致入场动画中断
@@ -10668,6 +10672,20 @@ function tickUnified(ts){
   if(!canvasLayerActive()){ _uRaf = null; return; }
   // 后台停止调度，由 visibilitychange 重新拉起。换肤扩散不再停帧（见 holdThemeCanvas）
   if(_uHidden){ _uRaf = null; return; }
+  /* 入场遮罩尚未开始揭幕时，这一层被完全不透明的遮罩整个盖住（.app-loader 是不透明的全屏层，
+     且此时 .app 还是 opacity:0）。照常绘制等于和星野抢同一帧的预算：手机上两层全屏 canvas
+     同帧各画一遍，正是星野偶尔顿一下的来源。这里只续链、不画，整帧留给星野。
+     判据用 intro-reveal 而不是 intro-on —— 揭幕一开始遮罩就半透明了，背景必须已经在动；
+     startUnifiedCanvas 早已同步画过一帧静态底，跳过期间恢复绘制不会露出空白。
+     _uLastTs 清零：恢复的那一帧按 0.016 起算，粒子不会因累积的 dt 瞬移。 */
+  if(document.body.classList.contains('intro-on') && !document.body.classList.contains('intro-reveal')){
+    _uLastTs = 0;
+    /* 淡入状态直接置满：旧路径下这段时间背景一直在画，揭幕那一刻早已是满亮；
+       跳过绘制后若让 _uFadeIn 停在 0.03，揭幕时会多出一段“背景比界面晚半秒”的渐变。 */
+    _uFadeIn = 1;
+    _uRaf = requestAnimationFrame(tickUnified);
+    return;
+  }
   _uRaf = requestAnimationFrame(tickUnified);
   const dt = _uLastTs ? Math.min((ts - _uLastTs) / 1000, 0.1) : 0.016;
   _uLastTs = ts;
@@ -11332,7 +11350,7 @@ document.addEventListener('click', (e) => {
 });
 </script>
 <script>
-const SW_VERSION = '169';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
+const SW_VERSION = '170';   // ⚠️ 必须与 sw.js 里的 CACHE 版本号（learn-vNN）同步递增，否则离线缓存不会刷新（sync-www.js 已加校验）。图标等预缓存资源变更时也必须递增
 /* 原生壳里不注册 Service Worker：资源本来就随 APK 一起打包，SW 只会多一层启动开销与"缓存住旧资源"的风险；
    而且网页版那句「有新版本可用，是否立即刷新？」在 App 里含义错位 —— 装一次新版 APK（sw.js 变了）就弹一次。
    老版本已经在原生壳里注册过：光"不再注册"不够 —— 那个 SW 仍会接管页面继续发旧缓存，这里一并注销并清缓存。
