@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色模式下的启动期取值（浅色值在 values/colors.xml）。
+     两个文件必须成对改：只加一边会让另一种系统设置拿到不存在的资源，构建直接失败。
+     底色取近黑 #0D0E17（= 默认主题「粒子」的底色一档），图标配浅色。 -->
+<resources>
+    <color name="startupWindowBg">#0D0E17</color>
+    <bool name="startupLightBars">false</bool>
+</resources>
